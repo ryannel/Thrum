@@ -142,6 +142,8 @@ pub struct SyntheticScene {
     /// Optional Sun-path optical-depth provider. Presence is fixed at prepare
     /// time. Metadata and same-sized contents may change on the live frame.
     pub sun_optical_depth: Option<SunOpticalDepth>,
+    /// Optional Sun-path illumination, fixed when this scene is prepared.
+    pub sun_path: Option<crate::sun_path::SunPathProvider>,
     /// Optional ground wetness field. Its presence and shape are fixed at preparation.
     pub wetness: Option<crate::wetness::WetnessProvider>,
     /// Allocate a world-space cloud sky overlay for a scene contribution.
@@ -253,6 +255,7 @@ impl SyntheticScene {
             ambient_occlusion_radius: None,
             sun_optical_depth: None,
             wetness: None,
+            sun_path: None,
             sky_overlay: false,
             materials: Vec::new(),
             instances: Vec::new(),
@@ -316,6 +319,7 @@ impl SyntheticScene {
         Ok(Self {
             sun_optical_depth: None,
             wetness: None,
+            sun_path: None,
             sky_overlay: false,
             materials,
             instances,
@@ -556,6 +560,7 @@ pub struct PreparedSynthetic {
     taau: Option<taau::Taau>,
     cloud: Option<CloudPrepared>,
     wetness: Option<crate::wetness::PreparedWetness>,
+    sun_path: Option<crate::sun_path::SunPathTarget>,
     capabilities: DeviceCapabilities,
     classes: TextureClasses,
     owner: Arc<()>,
@@ -1247,6 +1252,7 @@ impl PreparedSynthetic {
 
     fn cascade_casters(&self) -> bool {
         self.surface_uses_cascades()
+            || self.sun_path.is_some()
             || self
                 .atmosphere
                 .as_ref()
@@ -1403,6 +1409,25 @@ impl PreparedSynthetic {
             && (self.native.is_none() || self.view_sample.requests_metalfx())
     }
 
+    fn validate_forward_providers(&self, scene: &SyntheticScene) -> Result<(), RenderError> {
+        match (&self.sun_path, scene.sun_path) {
+            (None, None) => {}
+            (Some(target), Some(provider)) if target.accepts(provider) => {}
+            _ => return Err(RenderError::SunPathLayout),
+        }
+        match (&self.wetness, &scene.wetness) {
+            (None, None) => {}
+            (Some(prepared), Some(provider)) if prepared.accepts(provider) => {}
+            _ => return Err(RenderError::WetnessFieldLayout),
+        }
+        match (&self.cloud, &scene.sun_optical_depth) {
+            (None, None) => {}
+            (Some(cloud), Some(field)) if cloud.accepts(field) => {}
+            _ => return Err(RenderError::CloudFieldLayout),
+        }
+        Ok(())
+    }
+
     /// Update one live view and its directional, local-light and cascade data.
     /// Pipelines, bind groups and target textures stay prepared. Call after the
     /// previous frame was submitted, then commit the view only after this frame
@@ -1443,16 +1468,7 @@ impl PreparedSynthetic {
         {
             return Err(RenderError::InvalidLighting);
         }
-        match (&self.wetness, &scene.wetness) {
-            (None, None) => {}
-            (Some(prepared), Some(provider)) if prepared.accepts(provider) => {}
-            _ => return Err(RenderError::WetnessFieldLayout),
-        }
-        match (&self.cloud, &scene.sun_optical_depth) {
-            (None, None) => {}
-            (Some(cloud), Some(field)) if cloud.accepts(field) => {}
-            _ => return Err(RenderError::CloudFieldLayout),
-        }
+        self.validate_forward_providers(scene)?;
         if scene.instances.len()
             != usize::try_from(self.instance_count)
                 .map_err(|_| RenderError::InstanceCountMismatch)?

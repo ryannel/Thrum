@@ -2,7 +2,7 @@ pub(crate) mod hollow_tiles;
 
 use super::{
     Profile, SURFACE_PASS,
-    caustics::Caustics,
+    caustics::{Caustics, shafts},
     foam::{self, Foam},
     interaction::{self, Interaction},
     map_gpu::{self, MapGpu},
@@ -38,6 +38,7 @@ pub(crate) const SURF_EIGHT_METRE_RING_HALF_WIDTH: i32 = 40;
 
 pub(super) struct Prepared {
     pub(super) caustics: Option<Caustics>,
+    pub(super) shafts: Option<shafts::Shafts>,
     pub(super) ambient: thrum_sea::Ambient,
     pub(super) ambient_passes: usize,
     pub(super) rain: Option<Rain>,
@@ -211,6 +212,12 @@ impl Prepared {
             + usize::from(self.foam.is_some())
     }
 
+    pub(super) fn shaft_index(&self) -> Option<usize> {
+        self.shafts
+            .as_ref()
+            .map(|_| 1 + usize::from(self.lens_cut.is_some()) + usize::from(self.film.is_some()))
+    }
+
     pub(super) fn graph(&self) -> EffectGraph {
         let mut graph = self.ambient.graph();
         let wake = self
@@ -236,9 +243,11 @@ impl Prepared {
             surface.accesses.extend(rain.bands.declare(&mut graph));
         }
         graph.opaque_reads.clear();
-        if let Some((caustics, reads)) = self.caustics.as_ref().zip(caustic_reads.as_ref()) {
-            caustics.declare(&mut graph, reads);
-        }
+        let caustic_field = self
+            .caustics
+            .as_ref()
+            .zip(caustic_reads.as_ref())
+            .and_then(|(caustics, reads)| caustics.declare(&mut graph, reads));
         if self.gather.is_some() {
             graph.after_opaque.push(optics::declaration());
         }
@@ -284,6 +293,9 @@ impl Prepared {
                 .after_opaque
                 .insert(usize::from(self.gather.is_some()), pass);
             surface.accesses.push(read);
+        }
+        if let Some((shafts, field)) = self.shafts.as_ref().zip(caustic_field) {
+            surface.accesses.push(shafts.declare(&mut graph, field));
         }
         graph.after_opaque.push(surface);
         graph
@@ -529,6 +541,16 @@ pub(super) fn new(
         entries.extend(cut_gpu::Buffers::render_bindings());
         bindings.extend(buffers.render_entries(&mesh));
     }
+    let shaft_image = (profile.shafts
+        && profile.caustics
+        && profile.underwater
+        && surface.sun_path.is_some()
+        && gather.is_some())
+    .then(|| shafts::Image::new(device));
+    if let Some((image, field)) = shaft_image.as_ref().zip(surface.sun_path) {
+        entries.extend(shafts::Image::read_layout(&field.mapping));
+        bindings.extend(image.read_entries(&field.mapping));
+    }
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("water field"),
         entries: &entries,
@@ -561,11 +583,27 @@ pub(super) fn new(
         flow,
         (wet_ground, standing_film),
         first_caustic,
+        (profile.optics, shaft_image.is_some()),
     )?;
     let lens_cut = lens_buffers
         .as_ref()
         .zip(pipelines.lens_shader.as_ref())
         .map(|(buffers, shader)| Cut::new(surface, shader, buffers.clone(), &entries, &bindings));
+    let shafts = shaft_image
+        .zip(pipelines.lens_shader.as_ref())
+        .zip(gather.as_ref())
+        .zip(surface.sun_path)
+        .map(|(((image, shader), gather), field)| {
+            shafts::Shafts::new(
+                surface,
+                shader,
+                image,
+                &environment,
+                gather.buffer(),
+                &parameters,
+                field,
+            )
+        });
     let pattern = foam.as_ref().map(|_| Pattern {
         device: device.clone(),
         layout: layout.into_raw(),
@@ -575,6 +613,7 @@ pub(super) fn new(
     });
     Ok(Prepared {
         caustics: pipelines.caustics,
+        shafts,
         ambient,
         ambient_passes,
         rain,
@@ -743,6 +782,7 @@ fn surface_pipelines(
     flow: Option<(thrum_water_model::FlowBandsProfile, u32)>,
     (wet_ground, standing_film): (Option<&thrum_render::wetness::PreparedWetness>, bool),
     first_caustic: Option<usize>,
+    (caustic_optics, shafts): (Option<optics::Optics>, bool),
 ) -> Result<SurfacePipelines, String> {
     use std::fmt::Write;
 
@@ -845,7 +885,16 @@ fn surface_pipelines(
     };
     let ordinary_source = source.clone() + UNUSED_UNDERSIDE;
     let caustics = first_caustic
-        .map(|index| Caustics::new(surface, &ordinary_source, layout, index, map.is_some()))
+        .map(|index| {
+            Caustics::new(
+                surface,
+                &ordinary_source,
+                layout,
+                index,
+                map.is_some(),
+                caustic_optics,
+            )
+        })
         .transpose()?;
     #[cfg(not(target_arch = "wasm32"))]
     let sampled_textures = rain.then(|| sampled_textures(&ordinary_source, "water_fragment"));
@@ -895,12 +944,12 @@ fn surface_pipelines(
         } else {
             include_str!("underwater/rest_sheet.wgsl")
         };
-        module(
-            source
-                + include_str!("underwater/cut_gpu.wgsl")
-                + sheet
-                + include_str!("underwater.wgsl"),
-        )
+        let lens = if shafts {
+            shafts::shader(surface)
+        } else {
+            include_str!("underwater.wgsl").into()
+        };
+        module(source + include_str!("underwater/cut_gpu.wgsl") + sheet + &lens)
     });
     let underwater = shader.as_ref().map(|shader| UnderwaterPipelines {
         surface: create_pipeline(surface, layout, environment, shader, sheet),

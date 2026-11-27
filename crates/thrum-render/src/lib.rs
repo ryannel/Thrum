@@ -36,6 +36,7 @@ pub mod sprite;
 pub use records::{RecordLayout, RecordMember, RecordScalar, layouts as record_layouts};
 #[doc(hidden)]
 pub use shaders::composed_sources;
+pub mod sun_path;
 pub mod synthetic;
 #[cfg(test)]
 mod test_device;

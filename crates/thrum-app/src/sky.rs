@@ -721,6 +721,7 @@ pub struct SkyGame {
     local_lights: Vec<thrum_render::synthetic::SyntheticPointLight>,
     sun_optical_depth: Option<thrum_render::atmosphere::SunOpticalDepth>,
     wetness: Option<thrum_render::wetness::WetnessProvider>,
+    sun_path: Option<thrum_render::sun_path::SunPathProvider>,
     contribution: Option<Box<dyn SceneContribution>>,
     status: Option<StatusProbe>,
     #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
@@ -759,6 +760,16 @@ impl SkyGame {
     pub fn with_sky_overlay(mut self, medium: Option<thrum_render::atmosphere::Aerosol>) -> Self {
         self.sky_overlay = true;
         self.overlay_medium = medium;
+        self
+    }
+
+    /// Register a contribution's field for the scene's direct Sun.
+    #[must_use]
+    pub fn with_sun_path(
+        mut self,
+        provider: Option<thrum_render::sun_path::SunPathProvider>,
+    ) -> Self {
+        self.sun_path = provider;
         self
     }
 
@@ -822,6 +833,7 @@ impl SkyGame {
             local_lights: Vec::new(),
             sun_optical_depth: None,
             wetness: None,
+            sun_path: None,
             contribution: None,
             status: None,
             #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
@@ -1313,6 +1325,7 @@ impl SkyGame {
         scene.sky_overlay = self.sky_overlay;
         scene.sun_optical_depth.clone_from(&self.sun_optical_depth);
         scene.wetness.clone_from(&self.wetness);
+        scene.sun_path = self.sun_path;
         let mut host = FrameHost::new(
             capabilities,
             queue,

@@ -29,7 +29,7 @@ pub(super) fn mesh_stage_visibility(features: wgpu::Features) -> wgpu::ShaderSta
 pub(super) fn view_entries(
     meshes: bool,
     camera_mode: super::CullMode,
-    shadowed: bool,
+    shadow_stages: Option<wgpu::ShaderStages>,
     air_shadow: bool,
 ) -> Vec<wgpu::BindGroupLayoutEntry> {
     let mut entries = vec![
@@ -58,16 +58,12 @@ pub(super) fn view_entries(
     } else {
         entries.extend(super::camera_culling::view_layout_entry(camera_mode));
     }
-    if shadowed {
+    if let Some(stages) = shadow_stages {
         entries.extend([
-            binding::uniform(
-                2,
-                wgpu::ShaderStages::FRAGMENT,
-                super::shadow::SAMPLE_BYTES as u64,
-            ),
+            binding::uniform(2, stages, super::shadow::SAMPLE_BYTES as u64),
             binding::texture(
                 3,
-                wgpu::ShaderStages::FRAGMENT,
+                stages,
                 wgpu::TextureSampleType::Depth,
                 wgpu::TextureViewDimension::D2Array,
             ),

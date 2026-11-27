@@ -19,7 +19,7 @@ mod sampling_tests;
 mod surf;
 mod underwater;
 pub mod wet_ground;
-pub use caustics::CausticTap;
+pub use caustics::{CausticTap, shafts::ShaftTap};
 pub use optics::{BodyBounds, Optics, OpticsBodies};
 use std::sync::{Arc, Mutex};
 pub use surf::cache::{SurfTap, SurfWitness};
@@ -40,6 +40,10 @@ const VIEW_RECORDS: &str = include_str!("view.wgsl");
 
 /// Physical and mesh settings. Named sea states belong to the game.
 #[derive(Clone, Copy, Debug, Default)]
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "individual water capabilities are independently admitted"
+)]
 pub struct Profile {
     /// Ambient wave field configuration.
     pub waves: thrum_sea::Profile,
@@ -52,6 +56,8 @@ pub struct Profile {
     pub underwater: bool,
     /// Draw underwater Sun focusing when the scene prepares this capability.
     pub caustics: bool,
+    /// March the modulated Sun beam through submerged camera paths. Requires the Sun-path provider.
+    pub shafts: bool,
     /// Optional body query capacity and age limits.
     pub query: Option<query::QueryLimits>,
     /// Optional interaction waves and their capacity.
@@ -158,11 +164,13 @@ pub struct Water {
     foam_tap: Option<foam::Tap>,
     surf_tap: Option<SurfTap>,
     caustic_tap: Option<CausticTap>,
+    shaft_tap: Option<ShaftTap>,
     foam_pattern: thrum_asset_gpu::ProductLease,
     opaque: OpticsBodies,
     underwater: Option<underwater::Underwater>,
     prepared: Option<prepare::Prepared>,
     rain_quality: Option<QualitySettings>,
+    light_quality: Option<QualitySettings>,
     flow: Option<flow::Flow>,
     flow_query_pending: Option<f64>,
     previous: Option<(f64, u64, f64)>,
@@ -346,10 +354,14 @@ impl Water {
             foam_tap: None,
             surf_tap: None,
             caustic_tap: None,
+            shaft_tap: None,
             foam_pattern: thrum_asset_gpu::ProductLease::default(),
             opaque: OpticsBodies::default(),
             prepared: None,
             rain_quality,
+            light_quality: profile
+                .caustics
+                .then(|| caustics::quality::settings(profile.shafts)),
             flow,
             flow_query_pending: None,
             previous: None,
@@ -357,6 +369,12 @@ impl Water {
             invalid: true,
         })
     }
+    /// The direct-Sun provider to register on the scene with this contribution.
+    #[must_use]
+    pub fn sun_path_provider(&self) -> Option<thrum_render::sun_path::SunPathProvider> {
+        self.profile.caustics.then(caustics::provider)
+    }
+
     /// Read-only preparation report handle; no per-frame polling is required by the water.
     pub fn report(&self) -> Arc<Mutex<WaterReport>> {
         Arc::clone(&self.report)
@@ -405,6 +423,11 @@ impl Water {
     pub fn tap_surf(&mut self) -> SurfTap {
         self.surf_tap.get_or_insert_with(Default::default).clone()
     }
+    /// Request access to the shaft march's signed result for a submitted-output proof.
+    pub fn tap_shafts(&mut self) -> ShaftTap {
+        self.shaft_tap.get_or_insert_with(Default::default).clone()
+    }
+
     /// Request access to the drawn caustic ladder for a submitted-output proof.
     pub fn tap_caustics(&mut self) -> CausticTap {
         self.caustic_tap
@@ -452,6 +475,9 @@ impl Water {
             }
             if let Some(caustics) = &p.caustics {
                 resources.push(("water caustic field".into(), caustics.bytes()));
+            }
+            if let Some(shafts) = &p.shafts {
+                resources.push(("underwater Sun shafts".into(), shafts.bytes()));
             }
             if let Some(map) = &p.map {
                 let size = map.texture.size();
@@ -678,11 +704,19 @@ impl SceneContribution for Water {
                 .and_then(|prepared| prepared.caustics.as_ref())
                 .map(|caustics| caustics.texture().clone());
         }
+        if let Some(tap) = &self.shaft_tap {
+            *tap.0.lock().expect("shaft tap") = self
+                .prepared
+                .as_ref()
+                .and_then(|prepared| prepared.shafts.as_ref())
+                .map(|shafts| shafts.texture().clone());
+        }
         Ok(())
     }
     fn quality_knobs(&self) -> Vec<QualityKnob> {
         self.rain_quality
             .iter()
+            .chain(self.light_quality.iter())
             .chain(self.flow.iter().map(|flow| &flow.quality))
             .flat_map(|settings| settings.knobs().iter().cloned())
             .collect()
@@ -692,6 +726,11 @@ impl SceneContribution for Water {
             && let Some(flow) = &mut self.flow
         {
             return flow.quality.set(name, value);
+        }
+        if let Some(settings) = self.light_quality.as_mut()
+            && settings.knobs().iter().any(|knob| knob.name == name)
+        {
+            return settings.set(name, value);
         }
         self.rain_quality
             .as_mut()
@@ -711,7 +750,11 @@ impl SceneContribution for Water {
         {
             rain.invalidate();
         }
-        invalidation.max(
+        let light = self
+            .light_quality
+            .as_mut()
+            .map_or(QualityInvalidation::None, QualitySettings::commit);
+        invalidation.max(light).max(
             self.flow
                 .as_mut()
                 .map_or(QualityInvalidation::None, |flow| flow.quality.commit()),
@@ -749,12 +792,18 @@ impl SceneContribution for Water {
             }
             None => &map,
         };
-        if let Some(caustics) = &p.caustics {
+        if let Some((caustics, settings)) = p.caustics.as_mut().zip(self.light_quality.as_ref()) {
             let column = [f64::from(frame.camera[0]), f64::from(frame.camera[2])];
             let level = displayed_map
                 .sample(column)
                 .map_or(row.level, |sample| sample.row.level);
-            caustics.record(&p.queue, frame, level, self.spectrum.tail_slope_variance);
+            caustics.record(
+                &p.queue,
+                frame,
+                level,
+                self.spectrum.tail_slope_variance,
+                caustics::quality::Values::read(settings),
+            );
         }
         if let Some(rain) = &mut p.rain {
             let cadence = self
@@ -911,11 +960,12 @@ impl SceneContribution for Water {
     }
     fn effect_runs(&self, index: usize, frame: &ContributionFrame) -> bool {
         self.prepared.as_ref().is_some_and(|p| {
-            if p.caustics
+            if let Some(caustics) = p
+                .caustics
                 .as_ref()
-                .is_some_and(|caustics| caustics.contains(index))
+                .filter(|caustics| caustics.contains(index))
             {
-                !frame.time.capture
+                !frame.time.capture && caustics.runs(index)
             } else if index < p.ambient_passes {
                 p.ambient
                     .flow_pass_start()
@@ -1119,6 +1169,8 @@ impl SceneContribution for Water {
         self.prepared.as_ref().is_some_and(|p| {
             if index == 0 {
                 p.gather.as_ref().is_some_and(optics::Gather::runs)
+            } else if p.shaft_index() == Some(index) {
+                p.gather.as_ref().is_some_and(|gather| gather.under)
             } else {
                 p.lens_cut
                     .as_ref()
@@ -1143,12 +1195,32 @@ impl SceneContribution for Water {
                             .expect("exposure side"),
                     );
                 }
+            } else if p.shaft_index() == Some(index) {
+                let quality = caustics::quality::Values::read(
+                    self.light_quality.as_ref().expect("shaft quality"),
+                );
+                p.shafts.as_ref().expect("shaft pass").encode(
+                    pass,
+                    frame,
+                    p.environment
+                        .group(frame.exposure_side)
+                        .expect("exposure side"),
+                    quality.shaft_divisor,
+                );
             } else if let Some(cut) = &p.lens_cut {
                 cut.encode(pass);
             }
         }
     }
     fn submitted(&mut self, history_advanced: bool) {
+        if history_advanced
+            && let Some(caustics) = self
+                .prepared
+                .as_mut()
+                .and_then(|prepared| prepared.caustics.as_mut())
+        {
+            caustics.submitted();
+        }
         if let Some(flow) = &mut self.flow {
             flow.submit(history_advanced);
             self.report.lock().expect("water report").flow_bands_ran = Some(flow.runs());

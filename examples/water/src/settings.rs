@@ -142,6 +142,7 @@ impl Settings {
                 Some("sea") => DiveSite::Sea,
                 Some("deep-sea") => DiveSite::DeepSea,
                 Some("swash") => DiveSite::Swash,
+                Some("pond") => DiveSite::Pond,
                 Some("lake-high-stage") => DiveSite::HighLake,
                 _ => DiveSite::Lake,
             };

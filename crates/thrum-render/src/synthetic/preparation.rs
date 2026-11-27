@@ -136,12 +136,18 @@ impl PreparedSynthetic {
                         + u32::from(scene.sun_optical_depth.is_some())
                         + u32::from(has_ground_band)
                         + u32::from(scene.wetness.is_some())
+                        + 2 * u32::from(scene.sun_path.is_some())
                         + 2 * u32::from(soft_sun_enabled)
                         + u32::from(ambient_selection.radius.is_some())
-                    || limits.max_samplers_per_shader_stage < 3 + u32::from(shadow_enabled))
+                    || limits.max_samplers_per_shader_stage
+                        < 3 + u32::from(shadow_enabled) + u32::from(scene.sun_path.is_some()))
         {
             return Err(AbiError::DeviceLimits.into());
         }
+        let sun_path = scene
+            .sun_path
+            .map(|provider| crate::sun_path::SunPathTarget::new(device, provider))
+            .transpose()?;
         let wetness = scene
             .wetness
             .as_ref()
@@ -271,7 +277,11 @@ impl PreparedSynthetic {
         let view_entries = forward::view_entries(
             meshes.is_some(),
             camera_mode,
-            shadow_enabled,
+            shadow_enabled.then_some(if sun_path.is_some() {
+                wgpu::ShaderStages::FRAGMENT | wgpu::ShaderStages::COMPUTE
+            } else {
+                wgpu::ShaderStages::FRAGMENT
+            }),
             !view_volume && matches!(lighting, FrameLighting::Atmosphere(_)),
         );
         let view_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -368,6 +378,9 @@ impl PreparedSynthetic {
             light_entries.extend(ground_band::GroundBandPrepared::layout(
                 wgpu::ShaderStages::FRAGMENT,
             ));
+        }
+        if sun_path.is_some() {
+            light_entries.extend(crate::sun_path::SunPathTarget::layouts());
         }
         if wetness.is_some() {
             light_entries.push(crate::wetness::PreparedWetness::forward_layout());
@@ -507,6 +520,7 @@ impl PreparedSynthetic {
             atmosphere: atmosphere.as_ref(),
             cloud: cloud.as_ref(),
             wetness: wetness.as_ref(),
+            sun_path: sun_path.as_ref(),
             aerial: None,
         }
         .bind(
@@ -736,6 +750,9 @@ impl PreparedSynthetic {
                 },
                 scene.sun_optical_depth.as_ref(),
                 wetness,
+                sun_path
+                    .as_ref()
+                    .map(crate::sun_path::SunPathTarget::source),
                 scene_source::SunShadows::from(shadow.is_some()),
                 shadow_selection,
                 (soft_sun.is_some(), ambient.is_some()),
@@ -1107,6 +1124,7 @@ impl PreparedSynthetic {
             frame_revision: 0,
             cloud,
             wetness,
+            sun_path,
             directional_buffer: directional,
             environment_light,
             local_light_buffer: local_lights,

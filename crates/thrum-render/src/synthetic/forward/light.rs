@@ -16,6 +16,7 @@ pub(in crate::synthetic) struct LightBindings<'a> {
     pub(in crate::synthetic) atmosphere: Option<&'a crate::atmosphere::AtmospherePrepared>,
     pub(in crate::synthetic) cloud: Option<&'a crate::atmosphere::CloudPrepared>,
     pub(in crate::synthetic) wetness: Option<&'a crate::wetness::PreparedWetness>,
+    pub(in crate::synthetic) sun_path: Option<&'a crate::sun_path::SunPathTarget>,
     pub(in crate::synthetic) aerial: Option<AerialBindings<'a>>,
 }
 
@@ -106,6 +107,9 @@ impl LightBindings<'_> {
         }
         if let Some(band) = self.cloud.and_then(|cloud| cloud.band.as_ref()) {
             entries.extend(band.entries());
+        }
+        if let Some(sun_path) = self.sun_path {
+            entries.extend(sun_path.entries());
         }
         if let Some(wetness) = self.wetness {
             entries.push(wetness.forward_entry());

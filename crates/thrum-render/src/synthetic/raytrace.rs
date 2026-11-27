@@ -404,6 +404,7 @@ impl PreparedSynthetic {
                 atmosphere: self.atmosphere.as_ref(),
                 cloud: self.cloud.as_ref(),
                 wetness: self.wetness.as_ref(),
+                sun_path: self.sun_path.as_ref(),
                 aerial: None,
             }
             .bind(

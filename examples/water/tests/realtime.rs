@@ -131,6 +131,17 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         _ => r#"{"rain.stone_left":1}"#,
     };
     let held_dive = dive_view(&route);
+    let dive_travel = std::env::var("THRUM_WATER_DIVE_TRAVEL")
+        .ok()
+        .and_then(|travel| travel.parse::<f64>().ok());
+    let dive_light = std::env::var("THRUM_WATER_DIVE_SUN")
+        .ok()
+        .and_then(|sun| sun.parse::<f64>().ok())
+        .unwrap_or(60.0);
+    let dive_bearing = std::env::var("THRUM_WATER_DIVE_BEARING")
+        .ok()
+        .and_then(|value| value.parse::<f64>().ok())
+        .unwrap_or(90.0);
     let optics_height = std::env::var("THRUM_WATER_OPTICS_HEIGHT").unwrap_or_else(|_| "2".into());
     let river_sequence = river && route == "flow-inspection";
     let river_start = river_inspection.as_ref().map(|shot| shot.start);
@@ -246,7 +257,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         let (depth, pitch) = held_dive.unwrap_or((-site.crossing_depth(), 0.0));
         runtime
             .parameters(&format!(
-                r#"{{"camera.depth":{depth},"camera.pitch":{pitch}}}"#
+                r#"{{"camera.depth":{depth},"camera.pitch":{pitch},"camera.bearing":{dive_bearing},"sun.elevation":{dive_light}}}"#
             ))
             .expect("initial dive view");
     }
@@ -506,7 +517,10 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         if let Some((_, site)) = dive_site
             && held_dive.is_none()
         {
-            let depth = -site.crossing_depth() * (elapsed * std::f64::consts::TAU / interval).cos();
+            let crest = -site.crossing_depth();
+            let trough = dive_travel.unwrap_or_else(|| site.crossing_depth());
+            let phase = (elapsed * std::f64::consts::TAU / interval).cos();
+            let depth = (trough - crest).mul_add(0.5 * (1.0 - phase), crest);
             runtime
                 .parameters(&format!(r#"{{"camera.depth":{depth:.4}}}"#))
                 .expect("lower and raise the lens");

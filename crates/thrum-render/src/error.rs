@@ -48,6 +48,8 @@ pub enum RenderError {
     CloudFieldLayout,
     /// The scene changed the prepared wetness provider.
     WetnessFieldLayout,
+    /// A frame changed the prepared Sun-path field.
+    SunPathLayout,
     /// Cloud optical depth exceeds the device texture extent.
     CloudTextureExtent,
     /// Instance count does not match the prepared scene.
@@ -172,6 +174,7 @@ impl fmt::Display for RenderError {
             Self::GridInstanceCount => {
                 f.write_str("Synthetic grid requires between 1 and 1,000,000 instances")
             }
+            Self::SunPathLayout => write!(f, "Sun-path field changed after preparation"),
             Self::WetnessFieldLayout => {
                 f.write_str("wetness field changed without scene preparation")
             }

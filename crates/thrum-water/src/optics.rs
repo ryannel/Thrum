@@ -228,6 +228,10 @@ pub(super) fn entry(buffer: &wgpu::Buffer) -> wgpu::BindGroupEntry<'_> {
 }
 
 impl Gather {
+    pub(super) fn buffer(&self) -> &wgpu::Buffer {
+        &self.buffer
+    }
+
     pub(super) fn new(
         surface: &SceneSurface<'_>,
         environment: &EnvironmentProducts,

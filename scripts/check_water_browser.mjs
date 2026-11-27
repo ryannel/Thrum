@@ -8,7 +8,7 @@ import zlib from 'node:zlib';
 import {installWasmReceipt,readWasmReceipt} from './wasm_receipt.mjs';
 
 const mode = process.argv[process.argv.indexOf('--case') + 1];
-if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf','channel','river','river-calm','rain-puddles','rain-rings','rain-footfall','rain-ground','under','clouds'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf|channel|river|river-calm|rain-puddles|rain-rings|rain-footfall|rain-ground|under|clouds');
+if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf','channel','river','river-calm','rain-puddles','rain-rings','rain-footfall','rain-ground','under','under-light','clouds'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf|channel|river|river-calm|rain-puddles|rain-rings|rain-footfall|rain-ground|under|under-light|clouds');
 const opticsRoute = mode === 'fixed' ? process.env.THRUM_WATER_BROWSER_OPTICS : undefined;
 const diveRoute = ['fixed','realtime'].includes(mode) ? process.env.THRUM_WATER_BROWSER_DIVE : undefined;
 const surfInspection = process.env.THRUM_WATER_INSPECT_SURF === '1' && ['fixed','realtime'].includes(mode);
@@ -31,7 +31,7 @@ const cloudRoute = cloudSelection === 'matrix' ? cloudMatrix[0][1]
   : cloudControls ? '?clouds=dawn-mist&weather-speed=8'
   : cloudReflection ? '?clouds=fair&cloud-height=40' : cloudSelection;
 const cloudMotion = mode === 'realtime' && Boolean(cloudRoute);
-const [width,height] = mode === 'under' ? [48,27]
+const [width,height] = mode === 'under-light' ? [320,180] : mode === 'under' ? [48,27]
   : cloudMotion || (mode === 'realtime' && diveRoute) ? [1280,720]
   : mode === 'clouds' && (!cloudRoute || cloudControls || cloudReflection) ? [640,360]
   : ['rain-rings','rain-footfall','rain-ground'].includes(mode) ? [960,540]
@@ -184,6 +184,53 @@ function waterChroma(bytes, start, end){
   }
   return sum/count;
 }
+
+const underLightObserver = `
+  const lightTextures=new Map();
+  const createTexture=GPUDevice.prototype.createTexture;
+  GPUDevice.prototype.createTexture=function(desc){
+    const texture=createTexture.call(this,desc);
+    if(['Sun-path irradiance field','underwater Sun shafts'].includes(desc.label)){
+      lightTextures.set(desc.label,texture);
+    }
+    return texture;
+  };
+  function half(bits){
+    const sign=bits&32768?-1:1, exponent=(bits>>10)&31, significand=bits&1023;
+    return exponent===0?sign*significand*2**-24:sign*(1+significand/1024)*2**(exponent-15);
+  }
+  globalThis.__readUnderLight=async(label,width,height,layers)=>{
+    const texture=lightTextures.get(label);
+    if(!texture)throw Error('missing submitted '+label);
+    const device=__devices.at(-1), encoder=device.createCommandEncoder();
+    const stride=Math.ceil(width*8/256)*256;
+    const buffer=device.createBuffer({size:stride*height*layers,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+    encoder.copyTextureToBuffer({texture},{buffer,bytesPerRow:stride,rowsPerImage:height},{width,height,depthOrArrayLayers:layers});
+    device.queue.submit([encoder.finish()]);
+    await buffer.mapAsync(GPUMapMode.READ);
+    const words=new Uint16Array(buffer.getMappedRange());
+    const values=Array.from({length:layers},(_,layer)=>{
+      const field=new Float32Array(width*height);
+      for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+        field[y*width+x]=half(words[(layer*height+y)*stride/2+x*4]);
+      }
+      return field;
+    });
+    buffer.unmap();buffer.destroy();
+    if(label==='underwater Sun shafts'){
+      const field=values[0];
+      return {negative:field.filter(x=>x<0).length,positive:field.filter(x=>x>0).length,
+        peak:field.reduce((a,b)=>Math.max(a,Math.abs(b)),0)};
+    }
+    const difference=(a,b)=>a.reduce((n,x,i)=>n+Math.abs(x-b[i]),0)/a.length;
+    let temporal=null;
+    if(globalThis.__lastCaustics)temporal=values.map((field,i)=>difference(field,__lastCaustics[i]));
+    globalThis.__lastCaustics=values;
+    return {rungs:values.map(field=>({mean:field.reduce((n,x)=>n+x,0)/field.length,
+      deviation:field.reduce((n,x)=>n+Math.abs(x-1),0)/field.length})),
+      depthDifference:difference(values[2],values[10]),temporal};
+  };
+`;
 function riverLook(rgba, station) {
   // Windows stay within the submitted water for the three fixed river lenses.
   const windows={
@@ -746,8 +793,8 @@ try {
   await cdp.call('Page.enable',{},sid);await cdp.call('Runtime.enable',{},sid);
   await installWasmReceipt(cdp,sid);
   const surfRoute=mode==='surf'||surfInspection;
-  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(cloudControls?cloudObserver:'')+(cloudReflection?reflectionObserver:'')+(mode==='under'?lensObserver:'')+(['island','surf','channel','river','river-calm','rain-puddles','rain-rings','rain-footfall','rain-ground'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
-  const route=cloudRoute??diveRoute??opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='river-calm'?'?river=calm':mode==='river'?'?river=trade':['rain-puddles','rain-rings','rain-footfall','rain-ground'].includes(mode)?'?rain=calm':mode==='under'?lensRoute('sea','baseline'):mode==='clouds'?'?clouds=fair':'');
+  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(cloudControls?cloudObserver:'')+(cloudReflection?reflectionObserver:'')+(mode==='under'?lensObserver:'')+(mode==='under-light'?underLightObserver:'')+(['island','surf','channel','river','river-calm','rain-puddles','rain-rings','rain-footfall','rain-ground'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
+  const route=cloudRoute??diveRoute??opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='river-calm'?'?river=calm':mode==='river'?'?river=trade':['rain-puddles','rain-rings','rain-footfall','rain-ground'].includes(mode)?'?rain=calm':mode==='under'?lensRoute('sea','baseline'):mode==='under-light'?'?dive=calm&location=sea':mode==='clouds'?'?clouds=fair':'');
   result.route=route;
   const navigate=async search=>{
     await cdp.call('Page.navigate',{url:url+search},sid);
@@ -912,6 +959,47 @@ try {
         JSON.stringify(reflected));
       result.reflection_only=reflected;
     }
+    result.extent=[width,height];
+  }else if(mode==='under-light'){
+    const sample=async(name,search,parameters)=>{
+      if(search!==locationRoute){
+        result.instantiated_wasm=await navigate(search);
+        now=0;
+        locationRoute=search;
+      }
+      await evaluate(`game.apply_params(${JSON.stringify(JSON.stringify(parameters))})`);
+      await until(async()=>{
+        if(!await evaluate('game.frame_ready()'))return false;
+        await drive(1000/60);
+        const state=await evaluate('game.report()');
+        if(state.startsWith('Asset load failed:'))throw Error(state);
+        return /^Cooked generation [0-9]+ drawn/.test(state);
+      },'under-light scene content drawn');
+      return capture(name,1000/60);
+    };
+    let locationRoute=route;
+    const field=()=>evaluate("__readUnderLight('Sun-path irradiance field',512,512,13)");
+    const shafts=()=>evaluate("__readUnderLight('underwater Sun shafts',160,90,1)");
+    const lookingDown={'camera.depth':3,'camera.pitch':-45,'sun.elevation':60};
+    await sample('calm-bed',route,lookingDown);
+    const flat=await field();
+    assert(flat.rungs.every(row=>row.deviation===0),'a flat field must be exactly one on each rung');
+    const calmMarch=await shafts();
+    const trade='?dive=trade&location=sea';
+    await sample('trade-bed',trade,lookingDown);
+    const initial=await field();
+    const tradeMarch=await shafts();
+    for(let step=0;step<6;step++){
+      await until(()=>evaluate('game.frame_ready()'),'free trade frame',30000);
+      await drive(1000/30);
+    }
+    await capture('trade-bed-later',1000/60);
+    const moved=await field();
+    assert(moved.rungs.every(row=>Math.abs(row.mean-1)<0.08),'caustics must conserve light on each trade rung');
+    assert(initial.depthDifference>0.01&&moved.temporal.some(d=>d>0.01),'trade ladder must change over depth and time');
+    assert(tradeMarch.positive>0&&tradeMarch.negative>0,'a rippled view must retain both signs of scattered light');
+    await sample('lake-low-sun','?dive=breeze&location=lake',{'camera.depth':1,'camera.pitch':65,'sun.elevation':15});
+    result.under_light={flat,calmMarch,initial,moved,tradeMarch,lakeMarch:await shafts()};
     result.extent=[width,height];
   }else if(mode==='under'){
     const rustc=execFileSync('rustup',['which','--toolchain','stable','rustc'],{encoding:'utf8'}).trim();

@@ -27,6 +27,7 @@ RECORDS = {'first-frame': ROOT / 'tests/fixtures/waters/first-frame-cost.json',
            'rain-ground': ROOT / '.orchestrate/evidence/PUDDLES/WP5/rain-ground-cost.json',
            'rain-footfall': ROOT / '.orchestrate/evidence/PUDDLES/WP8/rain-footfall-cost.json',
            'under': ROOT / 'tests/fixtures/waters/dive-cost-prior.json',
+           'under-light': ROOT / 'tests/fixtures/waters/dive-cost-prior.json',
            'optics': ROOT / 'tests/fixtures/waters/optics-cost-prior.json'}
 WORKING = ROOT / '.orchestrate/evidence/WATERS'
 # The island record taken before the records moved to fixtures names the first-frame record by its old path,
@@ -1106,6 +1107,77 @@ def measure_dive(action):
     print(f'PASS paired 1440p Metal dive cost record: {path.relative_to(ROOT)}')
 
 
+
+def under_light_summary(record, enabled):
+    assert record['target'] == 'mac-metal' and record['extent'] == [2560, 1440]
+    assert record['capture'] is False and record['under_light'] is enabled
+    assert record['wind'] == 'Trade' and len(record['frames']) == 12
+    passes = {}
+    for frame in record['frames']:
+        assert frame['gpu_ms'] > 0.0
+        for label, elapsed in frame['passes_ms'].items():
+            passes.setdefault(comparable_pass(label), []).append(elapsed)
+    assert ('water caustic rung 1' in passes) is enabled
+    if record['location'] != 'swash' or not enabled:
+        assert ('underwater Sun shafts' in passes) is enabled, (record['location'], enabled, passes.keys())
+    return dict(gpu_ms=statistics.median(frame['gpu_ms'] for frame in record['frames']),
+                passes_ms={name: statistics.median(samples) for name, samples in passes.items()},
+                samples_by_pass={name: len(samples) for name, samples in passes.items()})
+
+
+def under_light_investigations(on, off):
+    rows = []
+    if on['gpu_ms'] > 1000 / 120:
+        slow = sorted(on['passes_ms'].items(), key=lambda pair: -pair[1])[:5]
+        rows.append(dict(wire='GPU pass sum exceeds one refresh interval',
+                         with_light_ms=on['gpu_ms'], wp15_ms=off['gpu_ms'], longest_passes=slow))
+    for name, current in on['passes_ms'].items():
+        previous = off['passes_ms'].get(name)
+        if previous is not None and current > previous * 1.25:
+            rows.append(dict(wire='Matched pass costs at least 25% more', pass_name=name,
+                             with_light_ms=current, wp15_ms=previous,
+                             added_gpu_ms=on['gpu_ms'] - off['gpu_ms'],
+                             diagnosis=('Forward shades the same receivers and additionally reads the Sun-path '
+                                        'provider.' if 'forward' in name else
+                                        'This shared pass is timed beside the other work. The paired total and '
+                                        'the additional caustic and shaft pass durations locate the extra cost.')))
+    return rows
+
+
+def measure_under_light():
+    commit = run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
+    prior = json.loads(RECORDS['under-light'].read_text())
+    scratch = ROOT / 'tmp/waters-wp16'
+    scratch.mkdir(parents=True, exist_ok=True)
+    sites = {}
+    with tempfile.TemporaryDirectory(prefix='under-light-cost-', dir=scratch) as staging:
+        store = Path(staging) / 'store'
+        run(['cargo', 'run', '--release', '--locked', '--offline', '-p', 'thrum-cook', '--',
+             'cook', 'examples/water/assets', str(store)])
+        proof = ['cargo', 'test', '--release', '--locked', '--offline', '-p', 'water-scene',
+                 '--test', 'proof_gpu']
+        env = dict(os.environ, THRUM_WATER_PROOF='under-light-cost', THRUM_WATER_COMMIT=commit,
+                   THRUM_WATER_OUTPUT=staging, THRUM_ASSET_STORE=str(store), THRUM_REQUIRE_GPU='1',
+                   THRUM_WATER_DIVE='trade')
+        for site in ('sea', 'lake', 'swash'):
+            arms = {}
+            for name, enabled in (('wp15', False), ('wp16', True)):
+                run(proof, env=dict(env, THRUM_WATER_LOCATION=site,
+                                    THRUM_WATER_UNDER_LIGHT_ARM='on' if enabled else 'off'))
+                record = json.loads((Path(staging) / f'{site}-{str(enabled).lower()}.json').read_text())
+                arms[name] = dict(record=record, summary=under_light_summary(record, enabled))
+            sites[site] = dict(arms=arms, prior_wp15=prior['locations'].get(site),
+                               investigations=under_light_investigations(arms['wp16']['summary'],
+                                                                         arms['wp15']['summary']))
+    destination = WORKING / 'WP16'
+    destination.mkdir(parents=True, exist_ok=True)
+    path = destination / f'under-light-cost-{commit[:12]}.json'
+    path.write_text(json.dumps(dict(commit=commit, target='mac-metal', extent=[2560, 1440],
+                                    host=platform.platform(),
+                                    load=run(['uptime'], capture_output=True, text=True).stdout.strip(),
+                                    locations=sites), indent=2) + '\n')
+    print(f'PASS paired 1440p Metal under-light cost record: {path.relative_to(ROOT)}')
+
 def rain_yard_cost(action):
     output = ROOT / 'tmp/puddles-wp3/cost-current'
     store = output / 'store'
@@ -1540,6 +1612,9 @@ def main():
         return
     if args.scene == 'optics':
         measure_optics(args.action)
+        return
+    if args.scene == 'under-light':
+        measure_under_light()
         return
     if args.scene == 'under':
         measure_dive(args.action)

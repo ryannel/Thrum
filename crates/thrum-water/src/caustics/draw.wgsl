@@ -7,7 +7,8 @@ struct CausticVertex {
     @builtin(vertex_index) vertex: u32,
     @builtin(instance_index) rung: u32,
 ) -> CausticVertex {
-    let side = select(select(128u, 256u, rung < 8u), 512u, rung < 4u);
+    let cell_scale = min(max(rung / 4u, caustic_draw.quality.x), 2u);
+    let side = 512u >> cell_scale;
     let draw_side = side + 32u;
     let node = vec2(vertex % (draw_side + 1u), vertex / (draw_side + 1u));
     let extent = caustic_draw.window.z;
@@ -25,10 +26,8 @@ struct CausticVertex {
     let dv = vec3(z.x, slope.y, z.y);
     let normal = normalize(cross(dv, du));
     let sun = caustic_draw.sun.xyz;
-    let mean = refract(-sun, vec3(0.0, 1.0, 0.0), 1.0 / 1.333);
-    let beam = refract(-sun, normal, 1.0 / 1.333);
-    let offset = beam.xz / max(-beam.y, 0.05);
-    let mean_offset = mean.xz / max(-mean.y, 0.05);
+    let offset = water_sun_slope(water_sun_beam(sun, normal));
+    let mean_offset = water_mean_sun_slope(sun);
     let shift = field.displacement.xz + (offset - mean_offset) * depth
         + offset * (field.displacement.y + wake.x);
     let displacement = select(vec2(0.0), shift, caustic_draw.window.w > 0.0 && row.owned);

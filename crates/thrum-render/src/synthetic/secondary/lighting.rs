@@ -78,6 +78,7 @@ impl Lighting {
             atmosphere: prepared.atmosphere.as_ref(),
             cloud: prepared.cloud.as_ref(),
             wetness: prepared.wetness.as_ref(),
+            sun_path: prepared.sun_path.as_ref(),
             aerial,
         }
         .bind(

@@ -288,6 +288,8 @@ pub struct SceneSurface<'a> {
     pub sun_optical_depth: bool,
     /// Optional ground wetness field shared with the forward material.
     pub wetness: Option<&'a crate::wetness::PreparedWetness>,
+    /// The field filled by the scene's Sun-path provider.
+    pub sun_path: Option<&'a crate::sun_path::SunPathTarget>,
     pub(crate) cloud: Option<&'a crate::atmosphere::CloudPrepared>,
     pub(crate) environment: Option<&'a crate::atmosphere::AtmospherePrepared>,
     pub(crate) directional: &'a wgpu::Buffer,
@@ -387,6 +389,26 @@ impl SceneSurface<'_> {
         &self,
     ) -> Option<crate::atmosphere::EnvironmentProducts> {
         self.environment_products_impl(self.cloud, true, true)
+    }
+
+    /// Sun visibility at a world point from the Sun-path scene's cascades and
+    /// height layer. Append this operation to a late pipeline's shader. Its
+    /// resources are in the executor's bound view group. Without scene shadows
+    /// the operation returns one.
+    #[must_use]
+    pub fn sun_path_visibility_shader(&self) -> &'static str {
+        if self.sun_path.is_some() && self.shadow.is_some() {
+            concat!(
+                crate::shaders::wgsl!("records/shadow_cascades.wgsl"),
+                "@group(0) @binding(2) var<uniform> shadows: ShadowCascades;
+",
+                "@group(0) @binding(3) var shadow_maps: texture_depth_2d_array;
+",
+                crate::shaders::wgsl!("synthetic/forward/point_sun.wgsl"),
+            )
+        } else {
+            "fn point_sun_visibility(_point: vec3<f32>) -> f32 { return 1.0; }"
+        }
     }
 
     /// Borrow Sun, sky, diffuse and aerial products for a volume pipeline.

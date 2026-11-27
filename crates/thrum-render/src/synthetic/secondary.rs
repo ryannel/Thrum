@@ -350,7 +350,10 @@ impl SecondaryPrepared {
         let mut entries = super::forward::view_entries(
             prepared.bucket_route.is_some(),
             prepared.camera_culling(),
-            prepared.shadow.is_some(),
+            prepared
+                .shadow
+                .is_some()
+                .then_some(wgpu::ShaderStages::FRAGMENT),
             prepared.air_shadow.is_some(),
         );
         entries.push(binding::uniform(
@@ -398,6 +401,10 @@ impl SecondaryPrepared {
                 .wetness
                 .as_ref()
                 .map(crate::wetness::PreparedWetness::source),
+            sun_path: prepared
+                .sun_path
+                .as_ref()
+                .map(crate::sun_path::SunPathTarget::source),
             shadows: prepared.shadow.is_some().into(),
             sun: crate::capabilities::SunShadowMethod::Maps,
             traced_lamps: false,
@@ -1011,6 +1018,11 @@ pub(crate) fn composed_source(variant: crate::shaders::SceneVariant) -> String {
     };
     let source = super::scene_source::cloud_variant(shader_source(&scene), variant.cloud);
     let source = crate::wetness::compose(source, variant.wetness);
+    let source = crate::sun_path::compose(
+        source,
+        variant.sun_path,
+        variant.shadows == super::scene_source::SunShadows::Enabled,
+    );
     if variant.lighting == crate::atmosphere::overlay::Lighting::Clear {
         source
     } else {

@@ -24,18 +24,21 @@ impl Filter {
         device: &DeviceSite,
         drawn: &wgpu::Texture,
         frame: &wgpu::BindGroupLayout,
+        output: Option<&wgpu::Texture>,
     ) -> Self {
-        let texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("filtered water caustics"),
-            size: drawn.size(),
-            mip_level_count: MIPS,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: FORMAT,
-            usage: wgpu::TextureUsages::STORAGE_BINDING
-                | wgpu::TextureUsages::TEXTURE_BINDING
-                | wgpu::TextureUsages::COPY_SRC,
-            view_formats: &[],
+        let texture = output.cloned().unwrap_or_else(|| {
+            device.create_texture(&wgpu::TextureDescriptor {
+                label: Some("filtered water caustics"),
+                size: drawn.size(),
+                mip_level_count: MIPS,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: FORMAT,
+                usage: wgpu::TextureUsages::STORAGE_BINDING
+                    | wgpu::TextureUsages::TEXTURE_BINDING
+                    | wgpu::TextureUsages::COPY_SRC,
+                view_formats: &[],
+            })
         });
         let stages = wgpu::ShaderStages::COMPUTE;
         let dimension = wgpu::TextureViewDimension::D2Array;
@@ -134,7 +137,7 @@ impl Filter {
         }
     }
 
-    pub(super) fn declare(&self, graph: &mut EffectGraph, drawn: usize) {
+    pub(super) fn declare(&self, graph: &mut EffectGraph, drawn: usize) -> EffectAccess {
         let resource = graph.resources.len();
         graph.resources.push((
             ResourceDescriptor::of_texture(&self.texture),
@@ -171,6 +174,13 @@ impl Filter {
                 ],
             });
         }
+        EffectAccess {
+            resource,
+            range: 0..u64::from(MIPS * RUNGS),
+            kind: AccessKind::SampledRead,
+            view: Some(wgpu::TextureViewDimension::D2Array),
+            history: None,
+        }
     }
 
     pub(super) fn encode(
@@ -178,12 +188,13 @@ impl Filter {
         mip: u32,
         pass: &mut wgpu::ComputePass<'_>,
         frame: &wgpu::BindGroup,
+        rungs: u32,
     ) {
         pass.set_pipeline(if mip == 0 { &self.blur } else { &self.reduce });
         pass.set_bind_group(0, &self.bindings[mip as usize], &[]);
         pass.set_bind_group(1, frame, &[]);
         let groups = (SIDE >> mip).div_ceil(WORKGROUP);
-        pass.dispatch_workgroups(groups, groups, RUNGS);
+        pass.dispatch_workgroups(groups, groups, rungs);
     }
 
     pub(super) fn bytes() -> u64 {

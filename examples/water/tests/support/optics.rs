@@ -134,11 +134,32 @@ impl Rig {
         cloud: Option<SunOpticalDepth>,
         extent: [u32; 2],
     ) -> Self {
+        Self::with_scene(
+            (device, queue, caps),
+            view,
+            light,
+            panels,
+            cloud,
+            extent,
+            |_| {},
+        )
+    }
+
+    pub(crate) fn with_scene(
+        (device, queue, caps): (wgpu::Device, wgpu::Queue, DeviceCapabilities),
+        view: &SyntheticView,
+        light: FrameLighting,
+        panels: &[Panel],
+        cloud: Option<SunOpticalDepth>,
+        extent: [u32; 2],
+        configure: impl FnOnce(&mut SyntheticScene),
+    ) -> Self {
         let mut scene =
             SyntheticScene::grid(u32::try_from(panels.len().max(1)).expect("small fixture"))
                 .expect("optical fixture");
         scene.view = *view;
         scene.sun_optical_depth = cloud;
+        configure(&mut scene);
         scene.materials = vec![
             MaterialRecord {
                 base_rgba: [0.09, 0.09, 0.09, 1.0],

@@ -329,6 +329,10 @@ fn driver(gpu: &thrum_test_support::Gpu) {
         .expect("retain lake dive cost");
         return;
     }
+    if mode == "under-light-cost" {
+        under_light_cost(gpu, &directory);
+        return;
+    }
     if mode == "dive-wake-cost" {
         dive_wake_cost(gpu, &directory);
         return;
@@ -587,6 +591,10 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                 && (floating().is_some() || island_wind().is_some())
             {
                 optics_checkpoints()
+            } else if let Some((_, site)) = settings().dive()
+                && std::env::var("THRUM_WATER_ROUTE").as_deref() == Ok("under-light")
+            {
+                under_light_checkpoints(site)
             } else if let Some((_, site @ (DiveSite::Sea | DiveSite::DeepSea | DiveSite::Lake))) =
                 settings().dive()
                 && std::env::var("THRUM_WATER_ROUTE").as_deref() == Ok("dive-depths")
@@ -937,4 +945,78 @@ fn sample_json(sample: &FrameSample) -> serde_json::Value {
         passes.insert(thrum_render::present::PASS_NAME.into(), present / 1e6);
     }
     json!({"tick":sample.tick,"alpha":sample.presentation_alpha,"tick_frame":sample.completed_ticks>0,"submission":sample.submission_order,"gpu_ms":(gpu.sum()+sample.gpu_present_ns.unwrap_or(0.0))/1e6,"scene_gpu_ms":gpu.sum()/1e6,"present_gpu_ms":sample.gpu_present_ns.map(|v|v/1e6),"gpu_scope":"timed scene and surface-present pass sum; untimed copies and query readback are not imputed as zero","cpu_wall_ms":sample.wall.as_secs_f64()*1000.0,"passes_ms":passes})
+}
+
+#[cfg(target_os = "macos")]
+fn under_light_checkpoints(site: DiveSite) -> Vec<(String, String, f64)> {
+    let views: &[(&str, f32, f32, f32)] = match site {
+        DiveSite::Pond | DiveSite::Swash => &[("through-shallows", -2.0, -73.0, 90.0)],
+        DiveSite::Lake | DiveSite::HighLake => &[
+            ("bed-0.5m", 0.5, -45.0, 90.0),
+            ("bed-3m", 3.0, -45.0, 90.0),
+            ("level-0.5m", 0.5, 0.0, 90.0),
+            ("level-3m", 3.0, 0.0, 90.0),
+            ("shaft-1m", 1.0, 67.0, 228.0),
+            ("away-1m", 1.0, 67.0, 273.0),
+        ],
+        _ => &[
+            ("bed-0.5m", 0.5, -45.0, 90.0),
+            ("bed-3m", 3.0, -45.0, 90.0),
+            ("level-0.5m", 0.5, 0.0, 90.0),
+            ("level-3m", 3.0, 0.0, 90.0),
+            ("shaft-1m", 1.0, 67.0, 228.0),
+            ("shaft-3m", 3.0, 67.0, 228.0),
+            ("shaft-10m", 10.0, 67.0, 228.0),
+            ("away-1m", 1.0, 67.0, 273.0),
+            ("away-3m", 3.0, 67.0, 273.0),
+            ("away-10m", 10.0, 67.0, 273.0),
+        ],
+    };
+    [("noon", 60), ("low", 15), ("night", -17)].into_iter()
+        .flat_map(|(light, sun)| views.iter().map(move |&(view, depth, pitch, bearing)| {
+            let pitch = if sun == 15 && (view.starts_with("shaft-") || view.starts_with("away-")) { 43.0 } else { pitch };
+            (format!("{light}-{view}"), format!(
+                r#"{{"camera.depth":{depth},"camera.pitch":{pitch},"camera.bearing":{bearing},"sun.elevation":{sun}}}"#,
+            ), 10.0)
+        })).collect()
+}
+
+#[cfg(target_os = "macos")]
+fn under_light_cost(gpu: &thrum_test_support::Gpu, directory: &std::path::Path) {
+    let (wind, site) = settings()
+        .dive()
+        .expect("under-light cost requires a dive site");
+    assert_eq!(wind, Wind::Trade);
+    let on = std::env::var("THRUM_WATER_UNDER_LIGHT_ARM").as_deref() == Ok("on");
+    let (game, report) =
+        water_scene::island::build_dive_light_cost(wind, site, on).expect("under-light cost scene");
+    let mut fixture = support::Fixture::from_game(gpu, [2560, 1440], game, report);
+    fixture.warm_cooked();
+    let (depth, pitch) = if site == DiveSite::Swash {
+        (-2.0, 55.0)
+    } else {
+        (3.0, 0.0)
+    };
+    fixture.parameters(&format!(
+        r#"{{"camera.depth":{depth},"camera.pitch":{pitch},"sun.elevation":60}}"#
+    ));
+    let mut frames = Vec::new();
+    for index in 0..16 {
+        let frame = fixture.frame(1.0 + f64::from(index) / 120.0);
+        if index >= 4 {
+            frames.push(sample_json(&frame));
+        }
+    }
+    let record = json!({
+        "target": "mac-metal", "extent": [2560, 1440], "capture": false,
+        "commit": std::env::var("THRUM_WATER_COMMIT").expect("cost revision"),
+        "wind": format!("{wind:?}"), "location": site.name(), "depth_m": depth,
+        "pitch_degrees": pitch, "under_light": on, "frames": frames,
+        "resources": fixture.report.lock().expect("water report").resources.clone(),
+    });
+    std::fs::write(
+        directory.join(format!("{}-{on}.json", site.name())),
+        serde_json::to_vec_pretty(&record).expect("json"),
+    )
+    .expect("under-light cost record");
 }

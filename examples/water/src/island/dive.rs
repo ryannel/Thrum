@@ -17,6 +17,7 @@ use thrum_water_model::Field;
 const SEA_LEVEL: f32 = 16.0;
 const DEEP_SEA_LEVEL: f32 = 26.0;
 const LAKE_LEVEL: f32 = 12.0;
+const POND_LEVEL: f32 = 10.6;
 const HIGH_LAKE_STAGE: f32 = 2.75;
 const STEP_SECONDS: f64 = 1.0 / 60.0;
 const ADAPTATION_SHARE: f64 = 0.75;
@@ -29,6 +30,8 @@ pub enum DiveSite {
     Lake,
     /// The sheltered lake at a stage deep enough for the 5 m view.
     HighLake,
+    /// The sheltered pond, viewed through its shallow surface.
+    Pond,
     /// The exposed sea over the offshore shelf.
     Sea,
     /// Deep water off the southwest side of the island.
@@ -44,6 +47,7 @@ impl DiveSite {
         match self {
             Self::Lake => "lake",
             Self::HighLake => "lake-high-stage",
+            Self::Pond => "pond",
             Self::Sea => "sea",
             Self::DeepSea => "deep-sea",
             Self::Swash => "swash",
@@ -55,15 +59,24 @@ impl DiveSite {
     pub const fn crossing_depth(self) -> f64 {
         match self {
             Self::Lake | Self::HighLake | Self::Sea | Self::DeepSea => 0.6,
-            Self::Swash => 0.35,
+            Self::Swash | Self::Pond => 0.35,
         }
     }
 }
 
-fn camera([x, level, z]: [f32; 3], depth: f32, pitch: f32) -> Camera {
+fn camera([x, level, z]: [f32; 3], depth: f32, pitch: f32, bearing: f32) -> Camera {
     let y = level - depth;
     let (rise, forward) = pitch.to_radians().sin_cos();
-    Camera::look_at([x, y, z], [x + 10.0 * forward, y + 10.0 * rise, z], 105.0)
+    let (east, south) = bearing.to_radians().sin_cos();
+    Camera::look_at(
+        [x, y, z],
+        [
+            x + 10.0 * forward * east,
+            y + 10.0 * rise,
+            z - 10.0 * forward * south,
+        ],
+        105.0,
+    )
 }
 
 // Strengthen a short group of travelling wind modes in the exposed lake
@@ -111,7 +124,7 @@ pub fn build_dive(
     site: DiveSite,
     draw_water: bool,
 ) -> Result<(SkyGame, SharedReport), Box<dyn Error>> {
-    build(wind, site, draw_water, true)
+    build(wind, site, draw_water, true, true)
 }
 
 /// The unchanged opaque scene used by the paired above-water cost record.
@@ -121,7 +134,18 @@ pub fn build_dive_cost(
     wind: Wind,
     site: DiveSite,
 ) -> Result<(SkyGame, SharedReport), Box<dyn Error>> {
-    build(wind, site, true, false)
+    build(wind, site, true, false, false)
+}
+
+/// Paired cost arm with the ordinary craft, optics and identical camera route.
+/// # Errors
+/// Returns invalid scene inputs and unavailable cooked assets.
+pub fn build_dive_light_cost(
+    wind: Wind,
+    site: DiveSite,
+    under_light: bool,
+) -> Result<(SkyGame, SharedReport), Box<dyn Error>> {
+    build(wind, site, true, true, under_light)
 }
 
 fn build(
@@ -129,10 +153,12 @@ fn build(
     site: DiveSite,
     draw_water: bool,
     draw_craft: bool,
+    under_light: bool,
 ) -> Result<(SkyGame, SharedReport), Box<dyn Error>> {
     let (eye_at_surface, vertical_offset, initial_depth, max_depth) = match site {
         DiveSite::Lake => ([183.0, LAKE_LEVEL, 5.0], 0.0, 1.0, 3.4),
         DiveSite::HighLake => ([190.0, LAKE_LEVEL + HIGH_LAKE_STAGE, 0.0], 0.0, 1.0, 5.3),
+        DiveSite::Pond => ([104.0, POND_LEVEL, 93.0], 0.0, -2.0, 0.4),
         DiveSite::Sea => ([-293.0, SEA_LEVEL, 20.0], SEA_LEVEL, 1.0, 10.0),
         DiveSite::DeepSea => ([-300.0, DEEP_SEA_LEVEL, 190.0], DEEP_SEA_LEVEL, 1.0, 20.0),
         DiveSite::Swash => ([-112.0, SEA_LEVEL, 0.0], SEA_LEVEL, 0.1, 0.4),
@@ -208,7 +234,9 @@ fn build(
     }
     profile.optics = Some(optics);
     profile.underwater = true;
-    let meter_field = if draw_water && draw_craft {
+    profile.caustics = under_light;
+    profile.shafts = under_light;
+    let meter_field = if draw_water && under_light {
         let [outer, middle, inner] = &spectrum.cascades;
         Some(Field {
             layers: [
@@ -236,16 +264,25 @@ fn build(
         .slider("camera.pitch", "Pitch (degrees)", -80.0..=89.99)
         .default(45.0)
         .add()?;
+    let bearing = controls
+        .slider("camera.bearing", "Camera bearing", 0.0..=360.0)
+        .default(90.0)
+        .add()?;
     let sun = controls
-        .slider("sun.elevation", "Sun elevation", -8.0..=80.0)
+        .slider("sun.elevation", "Sun elevation", -18.0..=80.0)
         .default(60.0)
         .add()?;
     let step = Duration::from_secs_f64(STEP_SECONDS);
     let game = SkyGame::new(
         controls,
-        camera(eye_at_surface, initial_depth, 45.0),
+        camera(eye_at_surface, initial_depth, 45.0, 90.0),
         move |controls, sky| {
-            sky.camera = camera(eye_at_surface, controls.get(depth), controls.get(pitch));
+            sky.camera = camera(
+                eye_at_surface,
+                controls.get(depth),
+                controls.get(pitch),
+                controls.get(bearing),
+            );
             sky.sun_elevation_degrees = controls.get(sun);
             sky.sun_azimuth_degrees = 228.0;
             sky.temporal_inputs = true;
@@ -280,7 +317,7 @@ fn build(
     };
     let mut meshes = placements(&map, lake, vertical_offset);
     let [x, level, z] = eye_at_surface;
-    if !surf {
+    if !surf && site != DiveSite::Pond {
         meshes.push(
             MeshPlacement::new("meshes/float", "textures/white")
                 .at([x + 2.5, level - 1.8, z])
@@ -304,7 +341,7 @@ fn build(
         Some(("water island", &island_material(vertical_offset))),
         &[],
     )?;
-    let game = if draw_craft && !surf {
+    let game = if draw_craft && !surf && site != DiveSite::Pond {
         crate::floating::install_moored_craft(
             game,
             &water,
@@ -316,7 +353,8 @@ fn build(
         game
     };
     let game = if draw_water {
-        game.with_contribution(Box::new(water), || ContentStatus::Drawn(1))
+        game.with_sun_path(water.sun_path_provider())
+            .with_contribution(Box::new(water), || ContentStatus::Drawn(1))
     } else {
         game
     };
