@@ -1560,3 +1560,6 @@
   regular and refined draws. Metal's tidal join returned within its original
   depth tolerance and all 26 lens tests passed.
   [Join and lens checks](../../../.orchestrate/evidence/WATERS/WP15/river-join-invariant-final.log).
+
+- 2026-11-27 Restored the real bank in the ordinary lake's overhead window for WP15.3 and WP15.8. The 1 m camera uses the raised-stage route's widening above 45°, which keeps the bank in the opaque gather. The matching capped-terrain shots remove the terrain strip on both targets. All five configured item checks passed, and the paired 1440p cost record includes the shared-load tripwire investigations.
+  [Target stills, elapsed captures and checks](../../../.orchestrate/evidence/WATERS/WP15/bank-repair/README.md).

@@ -3402,13 +3402,13 @@
       },
       "waters_underwater": {
         "implementation": "partial",
-        "functional_validation": "partial",
-        "experienced_quality": "unqualified",
-        "scope": "WATERS WP15 checkpoint for the optional underwater lens and surface composition. The shared sky camera currently limits the inspection route.",
-        "correctness": "Metal fixtures compare a near-plane lens split to the model, isolate one water path and one exposure scale with paired panel radiance, and read submitted depth, motion and reactive coverage. Short-wave admission and capture-resolution folds still need qualification.",
-        "visuals": "Calm lake diagnostics show a refracted sky window and a darkening bed. The full sea and lake inspection is open.",
-        "device": "Apple M3 Max Metal correctness fixtures and calm lake stills. The work package's complete Chrome proof and paired 1440p cost record remain open.",
-        "evidence": "../../.orchestrate/evidence/WATERS/WP15/README.md"
+        "functional_validation": "passed",
+        "experienced_quality": "builder_inspected_review_owed",
+        "scope": "WATERS WP15 provides the optional underwater lens cut, meniscus, underside optics and water-path composition.",
+        "correctness": "Metal fixtures compare the submitted near-plane split against the summed surface and check conservative admission, one water path and exposure scale, and submitted depth, motion and reactive coverage. Hardware Chrome checks the submitted lens masks and pass admission without validation faults.",
+        "visuals": "Fixed and elapsed sea and lake views cover the refracted window and its surrounding reflection, surface crossings and the effect of depth. On the ordinary lake at 1 m the real bank is visible inside the overhead window on Metal and Chrome and disappears when the control lowers the terrain. Independent review of the repair is pending.",
+        "device": "Apple M3 Max native and portable Metal and hardware Chrome WebGPU. The paired 1440p Metal record is a shared-load tripwire with above-water, crossing, submerged and live-wake cases.",
+        "evidence": "../../.orchestrate/evidence/WATERS/WP15/bank-repair/README.md"
       },
       "waters_chart_optics": {
         "implementation": "partial",
