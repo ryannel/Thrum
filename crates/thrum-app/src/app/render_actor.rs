@@ -1044,6 +1044,9 @@ impl<G: Game> Actor<G> {
                     std::fs::write(path, format!("{:#?}", self.host.creation_report()))
                         .map_err(|error| error.to_string())?;
                 }
+                if let Some(proof) = &self.transition_proof {
+                    proof.finish(&samples, self.host.last_submission())?;
+                }
                 if let Some(proof) = &mut self.display_proof {
                     proof.finish(&mut self.host)?;
                 }

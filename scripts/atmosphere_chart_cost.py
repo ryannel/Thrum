@@ -28,9 +28,12 @@ def jsonl(path):
 
 def stage_rows(directory, cadence):
     frames = jsonl(directory / "frames.jsonl")
-    samples = sorted((sample for frame in frames for sample in frame["governor"]["samples"]),
-                     key=lambda sample: sample["submission"])
-    if not samples or len({sample["submission"] for sample in samples}) != len(samples):
+    closing = json.loads((directory / "final-samples.json").read_text())
+    samples = [sample for frame in frames for sample in frame["governor"]["samples"]]
+    samples.extend(closing["samples"])
+    samples.sort(key=lambda sample: sample["submission"])
+    if not samples or closing["last_submission"] is None or [
+            sample["submission"] for sample in samples] != list(range(closing["last_submission"] + 1)):
         raise ValueError("missing or duplicated submitted-frame timing")
     rows = []
     for sample in samples:

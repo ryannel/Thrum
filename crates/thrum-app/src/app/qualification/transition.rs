@@ -170,6 +170,7 @@ impl TransitionTicks {
 pub(in crate::app) struct TransitionProof {
     output: BufWriter<File>,
     configure_log: BufWriter<File>,
+    final_samples: Option<PathBuf>,
     configure_error: Option<io::Error>,
     sequence: Option<u64>,
     work: Vec<(&'static str, f64, f64)>,
@@ -210,6 +211,9 @@ impl TransitionProof {
             chart_cadence: options.chart_cadence,
             output: BufWriter::new(file),
             configure_log: BufWriter::new(configure),
+            final_samples: options
+                .governor
+                .map(|_| options.output.join("final-samples.json")),
             configure_error: None,
             sequence: None,
             work: Vec::new(),
@@ -223,6 +227,19 @@ impl TransitionProof {
             switch: None,
             build: None,
         })
+    }
+
+    pub(in crate::app) fn finish(
+        &self,
+        samples: &[thrum_render::runtime::FrameSample],
+        last_submission: Option<u64>,
+    ) -> Result<(), String> {
+        if let Some(path) = &self.final_samples {
+            let records = samples.iter().map(sample_record).collect::<Vec<_>>();
+            let receipt = json!({"last_submission": last_submission, "samples": records});
+            std::fs::write(path, receipt.to_string()).map_err(|error| error.to_string())?;
+        }
+        Ok(())
     }
 
     pub(in crate::app) fn begin_frame(&mut self, sequence: u64) {
@@ -380,34 +397,23 @@ impl TransitionProof {
         let presented =
             matches!(&reply.outcome, RenderOutcome::Frame(Ok(report)) if report.surface_presented);
         let governor = self.governor.map(|_| {
-            let samples = reply.samples.iter().flatten().map(|sample| json!({
-                "submission": sample.submission_order,
-                "tick": sample.tick, "alpha": sample.presentation_alpha,
-                "observation_ns": sample.observation.as_nanos(),
-                "render_extent": sample.render_extent,
-                "gpu_ns": sample.gpu_pass_ns.as_ref().map(|gpu| gpu.sum() + sample.gpu_present_ns.unwrap_or_default()),
-                "gpu_pass_ns": sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::values),
-                "gpu_pass_order": sample.gpu_pass_ns.as_ref().map(|timing|
-                    timing.passes().iter().map(|pass| pass.name.as_ref()).collect::<Vec<_>>()),
-                "gpu_present_ns": sample.gpu_present_ns,
-                "native_segment": sample.native_segment.as_ref().map(|segment| json!({
-                    "pass": segment.pass_name(),
-                    "outcome": format!("{:?}", segment.outcome()),
-                })),
-                "gpu_span_ns": sample.gpu_pass_ns.as_ref().and_then(thrum_render::timing::SceneGpuTimings::timed_pass_span_nanoseconds),
-                "tick_cpu_ns": sample.tick_cpu.as_nanos(),
-                "extract_cpu_ns": sample.extract_cpu.as_nanos(),
-                "upload_cpu_ns": sample.upload_cpu.as_nanos(),
-                "encode_cpu_ns": sample.encode_cpu.as_nanos(),
-                "render_cpu_ns": sample.render_cpu.as_nanos(),
-                "culling": format!("{:?}", sample.culling_mode),
-                "debug_load_ns": sample.gpu_pass_ns.as_ref().and_then(|gpu| gpu.passes().iter().find(|pass| pass.name.ends_with("debug load")).map(|pass| pass.nanoseconds)),
-                "quality": sample.governor.as_ref().map(governor_record),
-            })).collect::<Vec<_>>();
+            let samples = reply
+                .samples
+                .iter()
+                .flatten()
+                .map(sample_record)
+                .collect::<Vec<_>>();
             #[cfg(feature = "creation-counters")]
             let pipelines = {
                 let report = host.creation_report();
-                Some((report.pipelines.iter().map(|row| row.render + row.compute + row.mesh).sum::<u64>(), report.violations))
+                Some((
+                    report
+                        .pipelines
+                        .iter()
+                        .map(|row| row.render + row.compute + row.mesh)
+                        .sum::<u64>(),
+                    report.violations,
+                ))
             };
             #[cfg(not(feature = "creation-counters"))]
             let pipelines: Option<(u64, u64)> = None;
@@ -462,6 +468,33 @@ impl TransitionProof {
         )?;
         self.output.flush()
     }
+}
+
+fn sample_record(sample: &thrum_render::runtime::FrameSample) -> Value {
+    json!({
+        "submission": sample.submission_order,
+        "tick": sample.tick, "alpha": sample.presentation_alpha,
+        "observation_ns": sample.observation.as_nanos(),
+        "render_extent": sample.render_extent,
+        "gpu_ns": sample.gpu_pass_ns.as_ref().map(|gpu| gpu.sum() + sample.gpu_present_ns.unwrap_or_default()),
+        "gpu_pass_ns": sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::values),
+        "gpu_pass_order": sample.gpu_pass_ns.as_ref().map(|timing|
+            timing.passes().iter().map(|pass| pass.name.as_ref()).collect::<Vec<_>>()),
+        "gpu_present_ns": sample.gpu_present_ns,
+        "native_segment": sample.native_segment.as_ref().map(|segment| json!({
+            "pass": segment.pass_name(),
+            "outcome": format!("{:?}", segment.outcome()),
+        })),
+        "gpu_span_ns": sample.gpu_pass_ns.as_ref().and_then(thrum_render::timing::SceneGpuTimings::timed_pass_span_nanoseconds),
+        "tick_cpu_ns": sample.tick_cpu.as_nanos(),
+        "extract_cpu_ns": sample.extract_cpu.as_nanos(),
+        "upload_cpu_ns": sample.upload_cpu.as_nanos(),
+        "encode_cpu_ns": sample.encode_cpu.as_nanos(),
+        "render_cpu_ns": sample.render_cpu.as_nanos(),
+        "culling": format!("{:?}", sample.culling_mode),
+        "debug_load_ns": sample.gpu_pass_ns.as_ref().and_then(|gpu| gpu.passes().iter().find(|pass| pass.name.ends_with("debug load")).map(|pass| pass.nanoseconds)),
+        "quality": sample.governor.as_ref().map(governor_record),
+    })
 }
 
 fn governor_record(frame: &thrum_render::runtime::GovernorFrame) -> Value {
