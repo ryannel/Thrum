@@ -45,7 +45,7 @@ fn standing_film_is_an_optical_residual() {
             assert_eq!(changed_depth, 0, "standing film writes no depth");
             arms.push((dry, image));
         }
-        let changed = |a: &[u8], b: &[u8]| a.chunks_exact(4).zip(b.chunks_exact(4))
+        let changed = |a: &[u8], b: &[u8]| a.as_chunks::<4>().0.iter().zip(b.as_chunks::<4>().0.iter())
             .filter(|(a,b)| a != b).count();
         let wet_delta = changed(&arms[0].1, &arms[1].1);
         let dry_delta = changed(&arms[0].0, &arms[1].0);

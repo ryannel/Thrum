@@ -34,7 +34,7 @@ fn wet_shore_follows_the_tide() {
         }
         let dry = control.image();
         let damp = ebb.image();
-        let darker = damp.chunks_exact(4).zip(dry.chunks_exact(4))
+        let darker = damp.as_chunks::<4>().0.iter().zip(dry.as_chunks::<4>().0.iter())
             .filter(|(a,b)| a[0] < b[0] && a[1] < b[1] && a[2] < b[2]).count();
         assert!(darker >= 100, "falling tide left {darker} darker sand pixels");
         assert!(ebb.host.scene_shader_source().expect("forward source").contains("fn wet_shore("));

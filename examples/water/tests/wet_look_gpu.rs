@@ -110,8 +110,10 @@ fn check(gpu: &thrum_test_support::Gpu) {
                 "the cooked surface should respond to reduced roughness independently of albedo"
             );
             assert!(
-                wet.chunks_exact(4)
-                    .zip(varnish_disabled.chunks_exact(4))
+                wet.as_chunks::<4>()
+                    .0
+                    .iter()
+                    .zip(varnish_disabled.as_chunks::<4>().0.iter())
                     .enumerate()
                     .filter(|(i, _)| i / 112 >= 77)
                     .any(|(_, (a, b))| a != b),
