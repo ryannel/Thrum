@@ -22,21 +22,51 @@ fn sheet_fold(lip: f32, birth: f32, across: vec2<f32>) -> vec3<f32> {
     return fold * vec3(-across.y, 0.0, across.x);
 }
 
+fn splash_vertex(world_time: vec4<f32>, velocity_along: vec4<f32>, discharge: vec4<f32>,
+    across_fraction: vec4<f32>) -> SheetVertex {
+    let seed = vec2(velocity_along.w * 23.71, discharge.z);
+    let cycles = floor(FALL_LOOP * mix(2.1, 4.4, noise_hash(seed + vec2(7.0))));
+    let frequency = cycles / FALL_LOOP;
+    let clock = (sheet_clock.x - world_time.w) * frequency + noise_hash(seed + vec2(3.0));
+    let cycle = floor(clock) - floor(clock / cycles) * cycles;
+    let phase = fract(clock);
+    let random = noise_hash(seed + vec2(17.0, cycle));
+    let kick = noise_hash(seed + vec2(cycle, 32.0));
+    let strength = smoothstep(0.007, 0.065, discharge.w);
+    let axis = across_fraction.xz;
+    let across = vec3(axis.x, 0.0, axis.y);
+    let face = vec3(-axis.y, 0.0, axis.x);
+    let flow = velocity_along.xyz * vec3(1.0, 0.0, 1.0);
+    let outward = select(-face, face, dot(face, flow) >= 0.0);
+    let drift = outward * mix(0.09, 0.48, kick) + across * (random - 0.5) * 0.45;
+    let loft = mix(0.028, 0.26, kick * kick) * mix(0.30, 1.0, strength);
+    let centre = world_time.xyz + drift * phase + vec3(0.0, 4.0 * loft * phase * (1.0 - phase), 0.0);
+    let eye = normalize(view.camera_xyz_time.xyz - centre);
+    let climb = drift + vec3(0.0, 4.0 * loft * (1.0 - 2.0 * phase), 0.0);
+    let right = normalize(cross(eye, climb) + vec3(1e-6, 0.0, 0.0));
+    let up = cross(right, eye);
+    let index = u32(across_fraction.w);
+    let corner = vec2(f32(index & 1u), f32(index >> 1u)) * 2.0 - 1.0;
+    let radius = mix(0.014, 0.055, random * random) * mix(0.45, 1.0, strength);
+    let point = centre + radius * (right * corner.x + up * corner.y * (1.0 + 1.3 * kick));
+    let world = vec4(point, phase);
+    return SheetVertex(view.view_proj * vec4(point, 1.0), world, velocity_along,
+        vec4(random, kick, strength, discharge.w), vec4(corner.x, -1.0, corner.y, phase));
+}
+
 @vertex fn sheet_vertex(
     @location(0) world_time: vec4<f32>,
     @location(1) velocity_along: vec4<f32>,
     @location(2) discharge: vec4<f32>,
     @location(3) across_fraction: vec4<f32>,
 ) -> SheetVertex {
-    let birth = sheet_age(sheet_clock.x - world_time.w);
     let is_splash = across_fraction.y < 0.0 && across_fraction.y > -1.5;
+    if is_splash { return splash_vertex(world_time, velocity_along, discharge, across_fraction); }
+    let birth = sheet_age(sheet_clock.x - world_time.w);
     let is_filament = across_fraction.y <= -2.0;
     let weight = fold_weight(across_fraction.w) * select(1.0, 0.18, is_filament);
     let fold = sheet_fold(velocity_along.w, birth, across_fraction.xz) * weight;
-    let churning = sheet_noise(vec2(velocity_along.w * 1.7, birth), FALL_LOOP,
-        vec2(1.8, 3.0), vec2(3.6, 0.0));
-    let crown = vec3(0.0, 0.22 * churning * churning * (1.0 - across_fraction.w), 0.0);
-    let world = vec4(world_time.xyz + select(fold, crown, is_splash), world_time.w);
+    let world = vec4(world_time.xyz + fold, world_time.w);
     return SheetVertex(view.view_proj * vec4(world.xyz, 1.0), world, velocity_along, discharge, across_fraction);
 }
 
@@ -46,18 +76,13 @@ struct FallOutput {
     @location(2) reactive: f32,
 }
 
-fn splash_shade(input: SheetVertex, birth: f32, solid: bool) -> FallOutput {
-    let distance = input.across_fraction.w;
-    let lip = input.velocity_along.w;
-    let motion = sheet_noise(vec2(lip, birth - distance * 0.23), FALL_LOOP,
-        vec2(2.9, 4.4), vec2(32.0, 0.0));
-    let pockets = sheet_noise(vec2(lip + distance * 0.55, birth), FALL_LOOP,
-        vec2(5.9, 3.4), vec2(5.0, 0.0));
-    let froth = smoothstep(0.22, 0.78, 0.66 * motion + 0.34 * pockets);
-    let support = smoothstep(0.0, 0.10, distance) * (1.0 - smoothstep(0.25, 1.0, distance));
-    let strength = smoothstep(0.008, 0.055, input.discharge.w);
-    let alpha = strength * support * (0.12 + 0.78 * froth);
-    if solid || alpha < 0.012 { discard; }
+fn splash_shade(input: SheetVertex) -> FallOutput {
+    let phase = input.across_fraction.w;
+    let corner = input.across_fraction.xz;
+    let support = 1.0 - smoothstep(0.1, 1.0, dot(corner, corner));
+    let alive = smoothstep(0.0, 0.15, phase) * (1.0 - smoothstep(0.69, 1.0, phase));
+    let alpha = input.discharge.z * support * alive * mix(0.32, 0.92, input.discharge.x);
+    if alpha < 0.012 { discard; }
     let up = vec3(0.0, 1.0, 0.0);
     let point = input.world_time.xyz;
     let direct = sun_irradiance(point) * fall_cloud(point) * max(0.0, environment_sun_direction().y);
@@ -84,7 +109,8 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let pixel = max(length(dpdx(xy)), length(dpdy(xy)));
     let geometry_normal = normalize(cross(dpdx(point), dpdy(point)));
     if input.across_fraction.y < 0.0 && input.across_fraction.y > -1.5 {
-        return splash_shade(input, birth, solid);
+        if solid { discard; }
+        return splash_shade(input);
     }
     let width = max(0.025, min(0.27, 0.10 * pixel));
     let tangent = normalize(input.velocity_along.xyz + vec3(1e-8, -1e-8, 0.0));
@@ -95,7 +121,9 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     var face = select(-contour, contour, dot(contour, look) >= 0.0);
     let breakout = input.discharge.y;
     let broken = smoothstep(rank - 0.24 - width, rank + 0.09 + width, breakout);
-    let white = mix(pow(breakout, 1.18), broken, 0.74);
+    let filament_white = smoothstep(0.06, 0.48, input.across_fraction.w)
+        * smoothstep(0.18, 0.72, 0.72 * coarse + 0.28 * fine);
+    let white = select(mix(pow(breakout, 1.18), broken, 0.74), filament_white, is_filament);
     let clear = 1.0 - white;
     // Preserve the long strands of a small discharge when the trail widens
     // in time. The lower-frequency mask follows each parcel from the lip.
@@ -107,13 +135,16 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let taper = smoothstep(tip - 0.25, tip, input.across_fraction.w);
     let sheet_presence = smoothstep(threshold - width, threshold + width,
         input.discharge.z * (1.0 - 0.88 * thinness * taper));
+    let pulses = mix(0.42, 1.0, smoothstep(0.26, 0.70, 0.7 * coarse + 0.3 * fine));
     let strand_presence = smoothstep(-0.12, 0.07, input.across_fraction.w)
-        * (1.0 - smoothstep(0.73, 1.0, input.across_fraction.w));
+        * (1.0 - smoothstep(0.73, 1.0, input.across_fraction.w))
+        * mix(1.0, pulses, smoothstep(0.16, 0.77, input.across_fraction.w));
     let presence = select(sheet_presence, strand_presence, is_filament);
     let spread = mix(0.63 * coarse + 0.37 * grouped, 0.5, smoothstep(0.9, 3.0, pixel));
     let contact = 0.56 + 0.24 * spread;
     let foot = 1.0 - smoothstep(contact, 0.91 + 0.09 * spread, input.across_fraction.w);
-    let contact_cover = mix(0.47 * (1.0 - thinness), 1.0, foot);
+    let contact_cover = foot * mix(1.0, smoothstep(0.27, 0.73, tear + 0.44 * fine),
+        smoothstep(0.51, 0.90, input.across_fraction.w));
     if (presence > 0.5 && foot > 0.35) != solid || presence * contact_cover < 0.015 {
         discard;
     }
@@ -138,7 +169,7 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let uv = input.clip.xy * view_aux.viewport_inv_viewport.zw;
     let aerial = environment_aerial(point, uv);
     let mixing = smoothstep(0.63, 1.0, input.across_fraction.w);
-    let aerated = diffuse * vec3(0.17, 0.47, 0.48) + direct * vec3(0.14, 0.32, 0.33);
+    let aerated = (diffuse + 0.46 * direct) * vec3(0.29, 0.36, 0.36);
     let sheet_colour = mix(glass, churn, white);
     let spray_light = mix(sheet_colour, aerated, mixing * white * (0.55 + 0.38 * fine));
     let colour = (spray_light * aerial.transmission + aerial.scatter) * environment_storage_scale();
