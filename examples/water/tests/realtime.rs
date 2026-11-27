@@ -194,7 +194,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         let extent = if walking { [960, 540] } else { [1280, 720] };
         (extent, if walking { 5.5 } else { 5.0 }, 120.0, 750)
     } else if wet_yard && route == "wet-dry" {
-        ([1280, 720], 23.0, 16.0, 380)
+        ([1280, 720], 26.0, 16.0, 432)
     } else if wet_yard || shore_ebb {
         ([1280, 720], 9.0, 16.0, CHANNEL_SUBMISSIONS)
     } else if yard {
