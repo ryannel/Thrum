@@ -2148,9 +2148,9 @@
         "at": "2026-11-27T02:50:44Z"
       },
       "ready_for_review": {
-        "commit": "3d7aa9097c132b3a1a9edbd2d1041d33901b9a38",
-        "checked": "3d7aa9097c132b3a1a9edbd2d1041d33901b9a38",
-        "at": "2026-11-27T04:00:35Z",
+        "commit": "22dc395517203a6cb5eb1b703d4128f375bb4efd",
+        "checked": "42240d34fb6e9f307030a0d464077e417693def0",
+        "at": "2026-11-27T04:55:53Z",
         "reused": [
           "WP15.15",
           "WP15.7",
@@ -2166,17 +2166,16 @@
         "cli": "codex-cli 0.171.0-alpha.13.2",
         "path": "headless",
         "usage": {
-          "input": 472120,
-          "cached": 56114432,
-          "output": 78304,
-          "turns": 1,
-          "incomplete_turns": 1
+          "input": 328303,
+          "cached": 26108160,
+          "output": 45482,
+          "turns": 1
         },
         "session_usage": {
-          "input": 839568,
-          "cached": 111350784,
-          "output": 142659,
-          "turns": 2,
+          "input": 1167871,
+          "cached": 137458944,
+          "output": 188141,
+          "turns": 3,
           "incomplete_turns": 1
         }
       }
