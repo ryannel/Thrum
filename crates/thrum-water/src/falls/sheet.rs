@@ -421,7 +421,12 @@ fn mesh(
                     physical.presence as f32,
                     physical.thickness as f32,
                 ],
-                across_fraction: [across.x as f32, 0.0, across.y as f32, fraction as f32],
+                across_fraction: [
+                    across.x as f32,
+                    segment.bottom.distance as f32,
+                    across.y as f32,
+                    fraction as f32,
+                ],
             }
         };
         let strip = |t| [at(t, 0), at(t, 1), at(t, 2)];
