@@ -2824,6 +2824,7 @@ No work package on the road to the exit waits on this module: none of `APPLE-PRE
 | WP3 | Nothing still open | It uses `RENDER-2D`, `CONTENT-LOOP`, `CREATOR` and `HOST` as built |
 | WP4 | For its change to the 3D scene's instance passes (ruling 8), the V1 work packages that hold those passes, their motion vectors or their compiled shaders: today `APPLE-PRESENTATION` WP8 to WP12, `RAY-TRACING` WP6 and `MESH-SHADING` WP3 | It uses `CONTENT-LOOP`, `ATMOSPHERE`, `CREATOR` and `HOST` as built, and a model that turns between ticks needs the passes changed |
 | WP5 | `SESSION:WP7` | A game in a match is stepped by a driven world |
+| WP14 | Its own WP4 and WP5 | A 3D match on screen needs the 3D starter and the match |
 | WP6 | `GAME-UI:WP4` | Menus and a modal choice |
 | WP13 | Its own WP6 | A save is resumed from a title screen |
 | WP7 | `GAME-UI:WP6` | The one iPhone shell for every game |
@@ -2942,22 +2943,27 @@ baseline stays exact. Once built, each belongs to its owner.
 
 | Interface | Provider → consumers | Defined in |
 |---|---|---|
-| **The `thrum` crate**: what a game is written against. With its default features off, everything a game writes builds with no renderer, window, GPU, network or platform crate | `GAME-SDK` → `SWARM`, the showcase after WP9, every game, the kit games and templates | [GAME-SDK](GAME-SDK/DESIGN.md#mechanisms) |
-| **The game commands**: `cargo play` for the Mac, Chrome and the iPhone simulator, a picture with no screen, a recorded run, the rules check; `./dev new` | `GAME-SDK` → every game | [GAME-SDK](GAME-SDK/DESIGN.md#19-running-a-game) |
-| **The SDK guides and the one-file reference** | `GAME-SDK` → game makers and their agents | [GAME-SDK](GAME-SDK/DESIGN.md#18-documentation-guides-and-templates) |
+| **The `thrum` crate**: what a game is written against. With its default features off, everything a game writes builds with no renderer, window, GPU, network or platform crate | `GAME-SDK` → `SWARM`, the showcase after WP9, every game, the kit games and templates | [GAME-SDK](GAME-SDK/DESIGN.md#the-core) |
+| **The game commands**: `cargo play` for the Mac, Chrome and the iPhone simulator, a picture with no screen, a recorded run, the rules check; `./dev new` | `GAME-SDK` → every game | [GAME-SDK](GAME-SDK/DESIGN.md#14-running-a-game-documentation-and-templates) |
+| **The SDK guides and the one-file reference** | `GAME-SDK` → game makers and their agents | [GAME-SDK](GAME-SDK/DESIGN.md#14-running-a-game-documentation-and-templates) |
 | The game contract, the typed controls, the interface tree, the session, sprite rows, cooked rows, the rules profile | Their owners → `GAME-SDK`, which is now the consumer a game was | Unchanged, as their rows above define them |
 
 ### Module planning input (track 7)
 
-Planned on 25 November 2026 and rewritten on 26 November 2026: [design](GAME-SDK/DESIGN.md),
-[plan](GAME-SDK/PLAN.md). Thirteen work packages, the first three with items. The owner agreed on 26 November
+Planned on 25 November 2026, rewritten on 26 November 2026 and revised on 27 November 2026 so its core shape
+can be locked: [design](GAME-SDK/DESIGN.md), [plan](GAME-SDK/PLAN.md). Fourteen work packages, the first three
+with items. The owner agreed on 26 November
 to an industry review's ten recommendations and four decisions, three agents then wrote whole games against the
 amended design, and the owner asked for "the best possible design" with no weight on rework. The design's
 decisions D1 to D4 and R1 to R10 are the owner's. Its planner settled the rest: plain-data components and rule
 functions, kept apart from frame functions by type; one written order for a scene; a scene as a type; prefabs,
 phases and action maps; portable numbers in rules and floats on the screen; and one package whose `rules`
-module is checked. The owner's first-release scope of 25 November stands ("Planner's default"), and the design
-puts ten scope questions to the owner without deciding them. Three findings bind later planners: what a rule
+module is checked. The owner's first-release scope of 25 November stands ("Planner's default"), with one
+change: on 27 November the owner asked to "bring multiplayer back into scope" and to "lock in the shape of the
+SDK, not design every feature", so multiplayer is in the first release for 3D games as well as 2D, proved
+with no window in WP5 and on screen in the new WP14, and the design states its core once and gives every
+feature it does not build an entry in [an extension map](GAME-SDK/DESIGN.md#the-extension-map). The design
+puts ten open scope questions to the owner without deciding them. Three findings bind later planners: what a rule
 did is what the next rule sees, which rests on ruling 2's barrier; a game's rules live in its `rules` module,
 which is built on its own to be checked; and a work package's surface arrives with its reference
 documentation, because WP1's guard holds every later one to an example on each public item.
@@ -3082,10 +3088,12 @@ For [track 7](#track-7-the-game-sdk), each recorded as an assumption in
     WP10, and `SWARM` is re-planned onto the SDK.
 43. **The vision and scope document** says game makers come "later" and does not carry the SDK request.
     Adding it is the owner's page.
-44. **The SDK's first-release scope.** [Ten questions](GAME-SDK/DESIGN.md#scope-questions-for-the-owner), each
-    with the planner's recommendation: 3D collision queries with a character move, gamepads, audio, predicted
-    projectiles, hits rewound for the shooter, 3D multiplayer, a host with no window, skeletal animation, text
-    fields, and levels from an editor's file. Decision 38's scope stands until the owner answers.
+44. **The SDK's first-release scope.** [Eleven questions](GAME-SDK/DESIGN.md#scope-questions-for-the-owner), each
+    with the planner's recommendation. One is answered: on 27 November 2026 the owner put multiplayer back in
+    scope, so 3D games are played online in the first release (question 6). Ten are open: 3D collision queries
+    with a character move, gamepads, audio, predicted projectiles and contact, hits judged as the shooter saw
+    them, a host with no window, skeletal animation, text fields, levels from an editor's file, and saved
+    progress for every player. Decision 38's scope stands for each until the owner answers.
 
 For [track 3](#track-3-the-swarm-survival-game-after-v1):
 
@@ -3673,6 +3681,12 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   and a resize in which no contribution needs more is as it was. The `CLOUDS` builder had added the hook without
   a ruling, and three reviews each found a regression in another resize
   ([the log](CLOUDS/LOG.md#wp15-diagnosis)). No other module's item changed.
+- 2026-11-27 Track 7 revised for `GAME-SDK`'s design of 27 November, in track 7's section and its owner
+  decisions only. The owner asked to "lock in the shape of the SDK, not design every feature" and to "bring
+  multiplayer back into scope". `GAME-SDK` gains WP14 (a 3D match on screen), which waits for its own WP4 and
+  WP5; the work packages `SWARM` waits on keep their numbers and outcomes. Owner decision 44 records question
+  6 as answered and names the ten still open. The interface rows' links follow the design's new sections. No
+  ruling, no other module's section, item, dependency or interface row changed.
 - 2026-11-27 The owner answered `APPLE-PRESENTATION` WP17's question on full screen: "So the 120 upscale for
   full screen." `APPLE-PRESENTATION` gained WP18 (the output scale) before WP17, and WP17 its items;
   `ATMOSPHERE` gained WP12 (the chart cadence), which WP17 waits for, with `SHOWCASE:WP7`; `SHOWCASE` WP8.6,

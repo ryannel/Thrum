@@ -216,3 +216,44 @@
 - 2026-11-26 Planner's choices in this revision, each for the owner to overturn, are three new assumptions in
   the plan: what counts as a press during a pause, how a small match is kept to its seats, and the bound on
   `keep_world`.
+- 2026-11-27 Four agents each wrote a whole game against the rewritten design, with scope questions 1 to 3
+  taken as yes: a 2D platformer (would choose Godot, 7 out of 10), a 3D exploration game (no, 5), an online 2D
+  swarm survivor (yes, 7) and an online 3D arena game (Unreal, 2, because the first release could not put a
+  3D game online). Reports and source are in the main checkout under `tmp/sdk-dogfood-2/`.
+- 2026-11-27 Owner, on those reports: "Let's just be clear on the dog fooding. It seems like it's complaining
+  about missing features, that's fine. But what we should be very confident in is our approach and shape of
+  our core SDK design. If we're missing features, that's fine, as long as we know how we would add them in a
+  delightful way. So let's flesh the plan out enough so that's clear. And let's bring multiplayer back into
+  scope. Out goal is to lock in the shape of the SDK, not design every feature."
+- 2026-11-27 That is a scope decision, the design's O5 and O6: the shape is what is locked, and multiplayer is
+  in the first release for 3D games as well as 2D. Scope question 6 is answered yes. Questions 1 to 3 (3D
+  queries and a kinematic move, gamepads, audio) stay the owner's, and so do 4 and 5 (predicted projectiles
+  and contact; hits judged as the shooter saw them), each with a recommendation of no for the first release.
+- 2026-11-27 Design revised for that. The nineteen mechanisms became a core of fourteen sections, each with
+  what always holds and the names a game touches. The reserved shapes became an extension map: eight
+  extension points, thirteen entries with game code and eleven smaller ones in a table, each adding names and
+  changing none. Example C was cut to a slice, and the design went from 3,518 lines to about 3,250 with the
+  map and the names added.
+- 2026-11-27 Core changes, each from a round-2 report that showed the core fighting a genre, and each for the
+  owner to overturn: a pause is one thing alone and in a match, with ticks committing while the game's clock
+  stands, commands, answers, requests and saves admitted, and `.even_when_paused()` on a rule (the
+  exploration game's talk box could never close); `PhaseMut::resume` for a save; rays, sweeps and moves asked
+  of a space meet the level, with one `Hit` and one `move_shape` given the character's own collider; a
+  `Player` names one stay in a seat; `spawn` returns its `Entity`; a frame function takes `Tick` and the
+  level; `#[derive(Params)]`; a player's offers queue and the interface takes no direction input outside a
+  modal; `Camera2d::exactly`; the lobby is the scene `Lobby`.
+- 2026-11-27 3D matches: nothing in a match knew 2D from 3D, so the change is to what is proved. WP5
+  carries a rehearsed 3D match with no window and the new WP14 hosts the 3D starter on the Mac and joins it
+  from Chrome. Predicting more than the character is a declaration on a control line (`.predicts`,
+  `.against`) and judging a hit as the shooter saw it is one method on a space over a remembered layer; both
+  use `SESSION` as built and are in the extension map.
+- 2026-11-27 New scope question 11, from the swarm survivor's one gap it could not work round: saved progress
+  for every player, on each player's own machine. Recommended yes. Sheets, clips and tiles cooked from source
+  images are planned into WP3, because sprites are in the owner's scope and nothing said how art got in.
+- 2026-11-27 Items changed to match: WP1.1 (the handle `spawn` returns, `Params`, `game.run`), WP1.2
+  (`resume`, `lasts` from a function), WP1.4 (a conflict through a `Params` field), WP1.7 and WP2.3 (the
+  design's section numbers), WP11.2 (attaching what a rule just spawned, `.under`, `detach(..).at`), WP2.1 (a
+  `Player` as one stay, a bot's button) and WP2.4 (an action set that must fit the input frame). No check
+  command changed. No other module's file changed; the module list's track 7 names WP14 and the decision.
+- 2026-11-27 The vision and scope document does not yet carry the owner's words of 27 November. Adding them is
+  the lead's.

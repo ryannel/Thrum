@@ -185,6 +185,17 @@ reads it.
 
 Proposed: the planner chose it for the game SDK.
 
+### Extension map
+
+The part of [the game SDK's design](GAME-SDK/DESIGN.md#the-extension-map) that says how each feature the SDK
+does not build yet would be added: where it plugs in, the names it adds and the game code it allows. An
+**extension point** is one of the eight kinds of place a feature may plug in, such as a parameter a rule may
+take or a line of a scene. An entry adds names and changes none of the design's core.
+
+- **Source** — coined for the game SDK; "extension point" is the field's term.
+
+Proposed: the planner chose the names, in place of "reserved shapes".
+
 ### Output scale
 
 At full screen on a fast display, the share of the display's pixel size, on each axis, at which the engine
