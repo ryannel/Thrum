@@ -37,6 +37,10 @@ pub(super) fn origin_parts(grid: &CanopyGrid) -> ([f32; 2], [f32; 2]) {
 }
 
 impl SparseColumns {
+    #[expect(
+        clippy::float_cmp,
+        reason = "only an exactly open second layer can be omitted"
+    )]
     pub(super) fn pack(grid: &CanopyGrid) -> Option<Self> {
         if grid.sparse_cells.len() != grid.columns.len() {
             return None;
