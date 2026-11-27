@@ -8,11 +8,8 @@ impl records::Kind for super::HullRecord {
 
 #[test]
 fn foam_settings_match_the_shader_layout() {
-    let source = concat!(
-        include_str!("../../field.wgsl"),
-        crate::flow::UNIFORM_CARRIAGE
-    )
-    .to_owned()
+    let source = include_str!("../../field.wgsl").to_owned()
+        + crate::flow::UNIFORM_CARRIAGE
         + &Foam::source(true);
     records::named(
         "foam sampling shader",
