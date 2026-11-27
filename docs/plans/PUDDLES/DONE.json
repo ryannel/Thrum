@@ -724,8 +724,8 @@
           "statement": "The workspace type-checks for Linux and Windows again: `scripts/check_cross_target.sh`, unchanged, passes on this work package's checkout for `x86_64-unknown-linux-gnu` and `x86_64-pc-windows-msvc`. In `examples/water/tests/lens_review/` the helper the rain lens tests share is compiled only where the macOS-only helpers it calls are. Record: one run of the type-check; the scheduled `cross-target` main-branch check guards it from then on.",
           "check": "git diff --quiet \"$(git merge-base HEAD origin/main)\" -- scripts/check_cross_target.sh && bash scripts/check_cross_target.sh",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP6/review-2/validated/README.md#wp66-linux-and-windows-type-check",
           "verdict": "",
           "review": ""
         },

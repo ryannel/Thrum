@@ -362,3 +362,8 @@
   The capture-off Metal cost record reads both gather textures from the compiled graph and records
   their nominal bytes and transient slots. Each missing texture is rejected by the checker.
   [Repair evidence](../../../.orchestrate/evidence/PUDDLES/WP6/review-2/validated/README.md)
+
+- 2026-11-27 WP6.6. The shared rain lens helper is gated with its macOS-only rig and imports.
+  The unchanged cross-target script type-checks the workspace for x86_64 Linux and Windows.
+  Both still-water lens controls pass on Metal.
+  [Type-check and Metal proofs](../../../.orchestrate/evidence/PUDDLES/WP6/review-2/validated/README.md#wp66-linux-and-windows-type-check)
