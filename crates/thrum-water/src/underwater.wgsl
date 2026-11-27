@@ -119,15 +119,15 @@ fn underside_light(world: vec3<f32>, n: vec3<f32>, v: vec3<f32>, variance: f32,
     let incident = under_incident(world);
     let reach = optics.reach_slope_scene.x;
     let scenery = OpticsBody(vec4(0.0), vec4(0.0));
+    // The receiving mask was built for rays from above. Rays from below
+    // can meet any visible body, including one enclosing their origin.
+    let bodies = (1u << u32(optics.reach_slope_scene.w)) - 1u;
     var transmitted = vec3(0.0);
     var transmission = 0.0;
     if window > 0.0 {
         let c = max(cosine, critical + 0.0001);
         let out_cos = sqrt(max(0.0, 1.0 - WATER_INDEX * WATER_INDEX * (1.0 - c * c)));
         let ray = normalize(-v * WATER_INDEX + (WATER_INDEX * cosine - out_cos) * normal);
-        // The receiving mask was built for rays from above. A ray leaving the
-        // water can meet any visible body, including one enclosing its origin.
-        let bodies = (1u << u32(optics.reach_slope_scene.w)) - 1u;
         let body = trace_bodies(world, ray, reach, bodies, 1.0);
         let scene_reach = select(reach, dot(body.point - world, ray), body.edge >= 1.0);
         let hit = trace(world, ray, vec2(0.03, scene_reach), scenery, false, vec2(0.0), 1.0);
@@ -149,24 +149,25 @@ fn underside_light(world: vec3<f32>, n: vec3<f32>, v: vec3<f32>, variance: f32,
     let reflected = reflect(-v, normal);
     let reflection_reach = min(reach, optics.extinction_sight.w);
     let bank = bank_crossing(world, reflected, reflection_reach);
-    let hit = trace(world, reflected, vec2(0.03, bank + 0.06), scenery, false, vec2(0.0), -1.0);
+    let body = trace_bodies(world, reflected, bank + 0.06, bodies, -1.0);
+    let body_along = dot(body.point - world, reflected);
+    let scene_reach = select(bank + 0.06, body_along, body.edge >= 1.0);
+    let hit = trace(world, reflected, vec2(0.03, scene_reach), scenery, false, vec2(0.0), -1.0);
     let depth = max(0.0, -reflected.y * bank);
     var reflected_light = water_path(vec3(0.0), incident, bank, 0.0, depth);
-    if hit.distance > 0.0 {
-        let distance = length(hit.point - world);
-        let end_depth = max(0.0, world.y - hit.point.y);
-        let body = hit_light(hit) * exp(-optics.downwelling_mirror.xyz * end_depth);
-        // A grazing reflected ray can cross the unresolved surface. Grade the
-        // copied hit by its clearance from that rough interface.
-        let angular_width = clamp(4.0 * sqrt(variance), 0.01, 0.28);
-        let clearance = smoothstep(0.0, angular_width, -reflected.y);
-        // A single copied texel resolves only a coherent part of the reflected
-        // footprint. Keep the water light where wave spread or the projected
-        // pixel covers too much of the source for one sample.
-        let spread = (footprint + distance * angular_width) / max(1.0, 0.5 * distance);
-        let coherence = 1.0 - smoothstep(0.018, 0.065, spread);
-        reflected_light = mix(reflected_light,
-            water_path(body, incident, distance, 0.0, end_depth), hit.edge * clearance * coherence);
+    // A body trace brackets its near face inside the box. For scenery, also
+    // fade single-texel hits whose reflected footprint the texel cannot resolve.
+    let angular_width = clamp(4.0 * sqrt(variance), 0.01, 0.28);
+    let clearance = smoothstep(0.0, angular_width, -reflected.y);
+    let scene_distance = length(hit.point - world);
+    let spread = (footprint + scene_distance * angular_width) / max(1.0, 0.5 * scene_distance);
+    let coherence = 1.0 - smoothstep(0.018, 0.065, spread);
+    if hit.distance > 0.0 && dot(hit.point - world, reflected) < body_along {
+        reflected_light = reflected_water_hit(reflected_light, body, world, incident, clearance);
+        reflected_light = reflected_water_hit(reflected_light, hit, world, incident, clearance * coherence);
+    } else {
+        reflected_light = reflected_water_hit(reflected_light, hit, world, incident, clearance * coherence);
+        reflected_light = reflected_water_hit(reflected_light, body, world, incident, clearance);
     }
     let light = mix(reflected_light, transmitted, transmission);
     let ceiling = incident * vec3(0.72, 0.83, 0.85) / 3.14159265;
@@ -180,6 +181,16 @@ fn underside_light(world: vec3<f32>, n: vec3<f32>, v: vec3<f32>, variance: f32,
 fn refracted_air_hit(background: vec3<f32>, hit: GatherHit, world: vec3<f32>) -> vec3<f32> {
     if hit.distance <= 0.0 { return background; }
     return mix(background, air_path_to(hit_light(hit), world, hit.point, optics_uv(hit.pixel)), hit.edge);
+}
+
+fn reflected_water_hit(
+    background: vec3<f32>, hit: GatherHit, world: vec3<f32>, incident: vec3<f32>, weight: f32,
+) -> vec3<f32> {
+    if hit.distance <= 0.0 { return background; }
+    let distance = length(hit.point - world);
+    let depth = max(0.0, world.y - hit.point.y);
+    let source = hit_light(hit) * exp(-optics.downwelling_mirror.xyz * depth);
+    return mix(background, water_path(source, incident, distance, 0.0, depth), hit.edge * weight);
 }
 
 fn water_underside(input: VertexOut, n: vec3<f32>, v: vec3<f32>, variance: f32, foam: f32) -> vec4<f32> {

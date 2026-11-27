@@ -87,7 +87,7 @@ fn trace_source(
         return in_box(hit.point, body) && (side == 0.0 || side * (hit.point.y - origin.y) > 0.0);
     }
     if side > 0.0 { return hit.point.y > origin.y && !registered_source(hit); }
-    if side != 0.0 { return side * (hit.point.y - origin.y) > 0.01; }
+    if side < 0.0 { return hit.point.y < origin.y - 0.01 && !registered_source(hit); }
     return hit.point.y > origin.y - 0.04 && !registered_source(hit);
 }
 
