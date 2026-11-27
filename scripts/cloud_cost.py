@@ -1005,9 +1005,19 @@ def mist_day_tripwires(row, same_scene, wp15, off):
 
 
 def day_pair(row, off):
-    clear = {sample['sample_tick']: sample for sample in off['day_samples']}
-    return [(sample, clear[sample['sample_tick']]) for sample in row['day_samples']
-            if sample['sample_tick'] in clear]
+    # The hosts can omit different submissions under load. Pair only actual
+    # solar phases in the same timing window, each used once.
+    pairs = []
+    right = iter(off['day_samples'])
+    clear = next(right, None)
+    for sample in row['day_samples']:
+        phase = (sample['solar_hours'] - 16.0) % 24.0
+        while clear is not None and (clear['solar_hours'] - 16.0) % 24.0 < phase - 0.01:
+            clear = next(right, None)
+        if clear is not None and abs((clear['solar_hours'] - 16.0) % 24.0 - phase) <= 0.01:
+            pairs.append((sample, clear))
+            clear = next(right, None)
+    return pairs
 
 
 def validate_mist_day(record):
@@ -1042,8 +1052,8 @@ def validate_mist_day(record):
             if any(not positive(size) for _, size in arm['resources']):
                 raise ValueError('mist-day resources must have measured sizes')
         pairs = day_pair(row, off)
-        if any(abs(a['solar_hours'] - b['solar_hours']) > 0.01 for a, b in pairs):
-            raise ValueError('mist-day clouds-off solar phase does not match')
+        if len(pairs) < 36:
+            raise ValueError('mist-day has fewer than 36 matching clouds-on and clouds-off solar phases')
         for low, high in windows:
             if sum(low <= sample['solar_hours'] < high for sample, _ in pairs) < 2:
                 raise ValueError(f'mist-day lacks paired timings at solar hours {low} to {high}')
@@ -1169,6 +1179,11 @@ def refuse_incomplete_mist_day(record):
         dict(record, clouds_absent=[row, *record['clouds_absent'][1:]]),
         dict(record, runs=[off, *record['runs'][1:]]),
         dict(record, runs=[dict(row, investigations={}), *record['runs'][1:]]),
+        dict(record, clouds_absent=[
+            dict(off, day_samples=[dict(sample, solar_hours=(sample['solar_hours'] + 2) % 24)
+                                   for sample in off['day_samples']]),
+            *record['clouds_absent'][1:],
+        ]),
     ]
     for alteration in alterations:
         try:
@@ -1201,7 +1216,7 @@ def main():
             validate_mist_day(retained)
             refuse_incomplete_mist_day(retained)
         if args.command == 'refuse':
-            print('Refused missing, substituted and unexplained mist-day arms')
+            print('Refused missing, substituted, misphased and unexplained mist-day arms')
             return
         record = mist_day_cost()
         validate_mist_day(record)
