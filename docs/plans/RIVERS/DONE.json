@@ -669,8 +669,8 @@
         },
         {
           "id": "WP6.5",
-          "statement": "The pool answers the fall: a white boil at the foot, pale water spreading from it, foam drawn off downstream in streaks, and rings that cross the pool and die at its banks. The fall on screen shows in the pool's calmer water. There is no hard line where the sheet meets the pool.",
-          "inspect": "`realtime` sequences of the plunge pool from its bank at 2 m and from 15 m above, with the interaction windows on the pool, at the gauge's middle and highest; one as the gauge falls to a dry lip and the pool calms.",
+          "statement": "The pool answers the fall: a white boil at the foot, pale water spreading from it, foam drawn off downstream in streaks, and rings that cross the pool and die at its banks. The fall on screen shows in the pool's calmer water. The pool lies against the rock at the foot of the cliff, behind the falling water and to each side of it, with a waterline like any bank's, whether the fall runs or the lip is dry. There is no hard line where the sheet meets the pool.",
+          "inspect": "`realtime` sequences of the plunge pool from its bank at 2 m, looking along the foot of the cliff, and from 15 m above, with the interaction windows on the pool, at the gauge's middle and highest; one as the gauge falls to a dry lip and the pool calms.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -726,6 +726,17 @@
           "id": "WP6.11",
           "statement": "The current ladder stays inside the step's count of solves and changes nothing where one current serves. Where a level's solves would pass the profile's count the step drops carriage currents before it rests a region, and reports what it dropped. On still water and on a uniform current the step's output is what it was, to the bit, and every existing interaction test of `WATERS` passes unchanged.",
           "check": "cargo test --locked --offline -p water-scene --test current_ladder_gpu && cargo test --locked --offline -p thrum-water --test interaction_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP6.12",
+          "statement": "The water below a fall stands to the rock. The test prepares four maps, each with a fall whose receiving water stands above the foot of the rock: the receiver is a basin in two and the reach below in two, under a face one bed cell wide and under a face four cells wide. At points a quarter of a cell apart down the face from the lip to the foot, at each end of the receiving water's range of level in that map, `thrum-water-model` answers the upper reach on the lip, with its own row and no mix; no body where the bed stands above the receiving level; and the receiving body wherever the bed lies below it, at the level that body has at the foot, so its depth runs from nothing at the waterline to the foot's with no step. The GPU's map gives the same body and depth at those points, at the tolerance `WATERS` WP4.1's test states. A basin whose highest stage reaches the lip is refused by name.",
+          "check": "cargo nextest run --locked --offline -p thrum-river-model --test it -E 'test(/^brink_receiver::/)' --no-tests=fail && cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test falls_gpu",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",

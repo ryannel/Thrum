@@ -359,3 +359,19 @@
   minute-old lee keeps its lace while separate pieces thin at different times. The
   early pool shows foam entering from the upstream side. Same-age Metal checks keep
   local births at zero in the pool and glide. [Target evidence](../../../.orchestrate/evidence/RIVERS/WP5/renewal/README.md)
+
+- 2026-11-27 Planner, WP6 unblocked. The builder asked whether the receiving basin may wet the bed below the
+  brink. Decided from first principles: yes, for a sea, a basin or the reach below. A fall cuts the flow and not
+  the still water under it, so the receiving water stands to its waterline on the rock and the face is in no
+  body only above it; the upper reach keeps its brink. A dry shelf authored under the fall was refused: it
+  leaves the edge in every other plunge pool and takes the plunge away. Added WP6.12 for the map on the CPU and
+  the GPU, a clause to WP6.5 for the pool against the rock, and words to ruling 1 in the module list, which
+  change nothing of `WATERS`' own.
+- 2026-11-27 Planner, WP6. The sheet's whitening length and tear thickness are the game's, tuned by eye against
+  WP6.4: Horeni's length drew the island's flood 0.61 to 0.71 white at the pool and its middle gauge 0.79 to 1.
+  The first builder's failed looks of the flood's lower sheet all ran at the first profile's lengths.
+- 2026-11-27 Planner, WP6. WP6 stopped on the seam at its plunge with eight items at target results. The hard
+  line in WP6.5's views was the lower reach's first row of cells. The evidence folder holds more than three
+  trial looks of the flood's lower sheet, all at the first profile's lengths and with no water at its foot.
+- 2026-11-27 Planner. The plan file's notes for WP8, WP9, WP10, WP4 and WP5, which are Done, shrank to their
+  review links. Their builder notes are in git at `5dac7ba91`.

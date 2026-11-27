@@ -16,6 +16,8 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 - Assumption: rivers are not fed by rain. Their sources are springs and lakes the game declares, and a spring's flow is a control.
 - Assumption: rapids have no spray and no standing waves that overturn, and nothing in a river surges by itself: the flow is steady, and what moves is its ripples, its foam and what it carries.
 - Assumption: a fall is one shape, a sheet that follows the water's free path or the rock's face, from 0.75 m to 12 m high. A lower drop is a chute in the stream. Only the island's fall, about 4 m, is judged by eye.
+- Assumption: the water a fall lands in stands right up to the rock under it, as a plunge pool does, and a fall whose pool could rise over its lip is refused, since a drowned fall is not built.
+- Assumption: how soon a fall turns white is set by eye for each game's water, and not by the laboratory figure for when a falling sheet breaks up, which draws the island's flood clearer than its middling flow.
 - Assumption: the island shows the solved rivers and the waterfall only when a selection is turned on, until `WATERS` closes, so that `WATERS`' own reviews see the island they were written for.
 - Assumption: this module builds inside `WATERS`' crates under seven rulings, and three of them replace what `WATERS`' design expected: a stream's ripples are made by its flow and not by the wind, a reach follows its source's level, and rings are carried at each water's own current where a pool meets a riffle.
 - Assumption: the module closes without waiting for the governor and MetalFX, which `WATERS`' last work package waits for; its two quality controls are declared for the governor to use.
@@ -37,42 +39,31 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 
 ## WP8 Small river fixtures keep the solver checks fast
 
-Build this repair first. It can land independently of the island work in WP4, which waits for WATERS WP9.
-
-Use the [fixture design](DESIGN.md#compact-river-solver-fixtures-wp8) for the cases in the
-[workspace case list and baseline times](LOG.md#m8-workspace-timing-baseline).
-
-Record each case’s disposition, any replacement coverage and its before-and-after time in the workspace
-check’s default Nextest build on the Mac, excluding compilation. Measure the fast cases alone and in a
-focused batch under normal builder load. The batch passes the existing ten-second limit on its first run.
+[Review](../../../.orchestrate/evidence/RIVERS/WP8-review.md)
 
 ## WP9 Chart gauges and solver determinism run within the fast-suite limit
 
-Land this repair before WP4. Use the [compact fixtures](DESIGN.md#compact-chart-gauge-and-determinism-fixtures-wp9)
-for the two tests that timed out on their isolated retry. Record the work each fixture does and the test
-times with the default Nextest profile, excluding compilation, alone and together under normal builder load.
-Both pass on the first attempt under the existing ten-second limit.
+[Review](../../../.orchestrate/evidence/RIVERS/WP9-review.md)
 
 ## WP10 The check that a river file keeps each sample's own gains runs on a small reach
 
-Build this repair first. It lands independently of WP4. Use the
-[fixture design](DESIGN.md#compact-river-file-gains-fixture-wp10). Record the test's CPU time and its time
-alone, before and after, in the workspace check's default Nextest build on the Mac, excluding compilation;
-`/usr/bin/time -p` on the test binary with `--exact` gives both. Change no other test.
+[Review](../../../.orchestrate/evidence/RIVERS/WP10-review.md)
 
 ## WP4 On the island a stream runs from a spring through a pool and a narrows to the lake, and a river runs from the lake to the sea; raise the lake and the river swells, and a float rides from the spring to the sea
 
-The island's ground, its channel's cut and `scripts/water_cost.py` and `scripts/check_water_browser.mjs` are `WATERS`'; add the valley, cases and scenes behind the selection and change none of theirs. River files are generated beside the example's cooked content and are not committed. The fall is in the map from here and is drawn in WP6.
-
-WP4.3 was re-planned after its fifth review. What is new to build is the bank camera's readings, the two 7 s series and the views of the floats from above; [the design](DESIGN.md#proof-and-builder-handoff) says why. Nothing asks for a change to the surface's oblique search unless the bank bound or the inspection fails. If the longer series take `river_gpu` past the merge tier's limit, they run in the main tier, because only a whole swell period shows what one frame cannot.
+[Review](../../../.orchestrate/evidence/RIVERS/WP4-review.md)
 
 ## WP5 On a windless day the stream still reads as running water: its riffles are rough and glitter, its pools lie glassy, and foam forms below its ledges and behind its rocks and trails away downstream
 
-The flow bands' passes join the cascades' in `thrum-sea`, which is `WATERS`' to extend by now. `c` and the birth constant are the two values to tune against WP5.4 and WP5.5; record both. WP5.10's expected answer comes from the band evaluator WP3 left in `thrum-water-model` (`flow.rs`), and its tolerance from the query test `WATERS` WP5 wrote. The query dispatch and the cascades' cadence are `WATERS`'; [a query's demand](DESIGN.md#the-flows-own-waves) adds only when the flow bands' own producer runs, and WP5.6 tests it.
+[Review](../../../.orchestrate/evidence/RIVERS/WP5-review.md)
 
 ## WP6 A waterfall pours over its lip in a smooth tongue, breaks into white strands as it gathers speed and plunges into its pool, which boils, foams and sends out rings
 
 WP6.10's figures are parts 9 and 12's: build the ladder in `thrum-water`'s interaction step. No f64 reference of it is required. The wave share is tuned by eye against WP6.5 and recorded, and nothing asserts the fall's power as its ceiling. The game names a body in the plunge pool for the views that judge rings, because interaction windows follow the named body.
+
+WP6 resumes from `380a78fc7` on `build/rivers` ([handoff](../../../.orchestrate/evidence/RIVERS/WP6-handoff.md)). [The water below a fall stands to the rock](DESIGN.md#falls-inside-the-solve), whichever body receives it, and the upper reach keeps its brink and its unmixed row. Build WP6.12 before returning to the looks. The island's plunge pool stays a reach, because a basin has no current to carry the foam off, which WP6.3 and WP6.5 need. A case in `brink_end` or `falls` that pins ground under the receiving level as no body changes to the new rule; say which in the log.
+
+[The sheet's lengths are the game's](DESIGN.md#the-falls-sheet): tune them and the tear thickness against WP6.4 and record them. If the flood still reads as a curtain once they are tuned and the pool meets the sheet, stop on that cue and say so in the log ([risk 4](DESIGN.md#risks)), so the lead can decide. What stands behind the sheet is the selection's scenery and may change with it.
 
 ## WP7 A visitor raises the lake, sets the stream's flow and takes the day from dawn to night, and the rivers and the waterfall hold up in motion, in shade and from under water, on the Mac and in Chrome
 

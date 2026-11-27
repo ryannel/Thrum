@@ -223,7 +223,38 @@ horizontal momentum.
 The path is the free path of the water from the lip, launched at the lip's speed along the chart's current
 there, wherever that clears the rock; where the rock stands in its way the path follows the rock's face. It lands on a declared body,
 or on ground gentler than the steepest chart slope, where a new reach begins. So discharge is the same above and
-below a fall, a river is cut into reaches at its falls, and the face of the cliff is in no body.
+below a fall, a river is cut into reaches at its falls, and the **face**, the rock the water falls past from the
+brink down to the water below, is in no body.
+
+**The water below stands to the rock.** Planner's decision, 27 November 2026, on WP6's question. A fall cuts the
+flow, and not the still water under it. A plunge pool is deepest at the foot of its cliff, so the receiving
+water's level stands above the bottom of the rock, and that ground is the receiving body's, as any ground under
+its level is. The body's water lies there at the level it has at the foot, with its joins and backwater, and
+its waterline is where that level meets the rock, as on a bank. The face ends at that line: this is the ground
+[ruling 1](../ARCHITECTURE.md#seam-rulings-for-rivers) leaves in no body. It holds whichever body receives the
+fall:
+
+- *A sea or a basin* takes the foot by its own fill. A brink is an end of its chart, so the fill may reach it
+  from below, and preparation's refusal of a basin that reaches a chart away from an end does not apply there.
+- *A reach*, whether the one the fall starts or a chart the river declares. To the reach below, the ground
+  under a brink is bed like any other: its still water backs onto the foot, and those cells are in its
+  footprint with the rest of its water. Its bank there is the face above its level. Where the face is too narrow
+  to hold that bank, as on the island, where it is one bed cell wide, the brink's own cells bank it: they hold
+  the upper reach's water and none of the lower's.
+
+The upper reach is as it was. Its footprint ends at the brink, its row there is its own with no mix, and no
+water passes a brink's faces except down the path. The record's path still runs to the ground, and where it
+meets the receiving level is found as the game runs ([the plunge](#the-plunge)). That meeting is now always on
+the receiving body's water: out in the pool where the water is thrown clear, and on the rock's waterline where
+it runs down the face. A receiving body whose water could reach the lip at the top of its stage's range is a
+drowned fall, which is not built, and preparation refuses it by name.
+
+The rule this replaces left all the ground below a brink in no body. On the island the pool then began at the
+lower reach's first row of cells, 1.6 m to 2.1 m deep, with rock under its own level drawn dry behind it: a
+straight waterline a cell out from the cliff, and at the middle gauge every path passed 0.02 m to 0.56 m under
+the pool's level before it met water ([WP6's handoff](../../../.orchestrate/evidence/RIVERS/WP6-handoff.md)). A dry
+shelf authored under the fall was the other remedy, and is refused: it would hide the edge on the island and
+leave it in every other game's plunge pool, and a fall onto a shelf has no plunge, so no boil and no rings.
 
 ### What a solve writes
 
@@ -243,8 +274,9 @@ For each reach, a chart as [the map defines one](../WATERS/DESIGN.md#the-water-m
 
 And once for the reach: its **footprint**, the cells any sample wets, grown by a margin of cells whose bed
 stands above the level beside them, so a dry cell whose bed is below that level is in the footprint only if
-some sample wets it; its **ends**, each a source end, a mouth or a **brink end**; its join lengths; and
-the **gauge level** of each sample.
+some sample wets it, and below a brink that margin is the face, or the brink's own cells where the face is
+narrower ([above](#falls-inside-the-solve)); its **ends**, each a source end, a mouth or a **brink end**; its
+join lengths; and the **gauge level** of each sample.
 
 For each fall, a **fall record**: along its lip, for each sample, the path as a line of points with the time the
 water takes to reach each, the discharge for each metre of lip, and the launch depth and speed; the reach above and the
@@ -427,11 +459,20 @@ below, where it is cut. Its points are the record's, mixed by the gauge.
 |---|---|---|
 | Speed | `v = √(v₀² + 2 g z)` | Energy; on a face the rock holds it is the same speed, a declared approximation |
 | Thickness | `δ = q / v` | Discharge for each metre of lip is kept |
-| White share | Rises smoothly from 0 at the lip to 1 at the breakup length `L = 6 q^0.32` m of path | Horeni's length; a profile value |
+| White share | Rises smoothly from 0 at the lip to 1 at the whitening length `L = k q^m` m of path, `6 q^0.32` in the first profile | Horeni's breakup length; `k` and `m` are profile values |
 | Presence | `min(1, δ / δ_tear)`, with `δ_tear` 5 mm in the first profile | A sheet thinner than this is strands with gaps |
 
 Part 4: a trickle of 0.005 m²/s is past its breakup length after 1.1 m and is 1 mm thick, so it is a few
 strands; 1 m²/s holds a whole sheet for 6 m and is still 64 mm thick after 12 m.
+
+**The lengths are a game's, set by eye.** Planner's decision, 27 November 2026. Horeni's length is where a
+nappe's core has broken up. A sheet looks white sooner than that, from the froth on its two faces, which begins
+near the lip. And because Horeni's length grows with the discharge, on a short fall the first profile draws a
+flood clearer than a middling flow: on the island's 2.5 m drop the flood is 0.61 to 0.71 white where it meets
+the pool and the middle gauge 0.79 to 1 (WP6's contact audit), against the cue of a heavy sheet that is white
+below. So `k`, `m` and `δ_tear` are values of the game's profile. The island's are tuned by eye against WP6.4
+and recorded with the reason, as `c` and the wave share are. The first profile keeps Horeni's, which WP2.4's
+closed forms were tested with, and the closed forms hold for any values.
 
 **Pattern.** Each part of the sheet left the lip at a known time, `a = t − τ`, at a known place along it. The
 sheet reads `WATERS`' foam pattern at (the place along the lip, `a` times the launch speed), on the cascades'
@@ -618,7 +659,9 @@ any body does.
 ([ruling 6](../ARCHITECTURE.md#seam-rulings-for-rivers)). With it on, the island has a valley in the hills above
 the lake with a spring, a riffle, a pool behind a sill, a narrows with rocks and a fall of about 4 m into a
 plunge pool that runs on to the lake; and the river from the lake to the sea is solved, in the channel's cut,
-in place of the hand-made chart. With it off the island is what `WATERS` built, to the byte.
+in place of the hand-made chart. The plunge pool is a reach and not an arm of the lake's basin, so it has a
+current, which draws the fall's foam off toward the lake. With it off the island is what `WATERS` built, to the
+byte.
 
 ## What RIVERS asks of other modules
 
@@ -626,7 +669,7 @@ Settled in [the module list](../ARCHITECTURE.md#seam-rulings-for-rivers), each b
 `WATERS`' crates, with no item, test, bound or reference of `WATERS` or `SEA` changed and all kept passing. A
 scene with no river and neither capability compiles to the shader text, passes and storage it has today.
 
-1. A chart's end may be a brink (WP2).
+1. A chart's end may be a brink (WP2), and the water below a fall stands to the rock under it (WP6).
 2. A chart may hold several flow samples that a gauge reads between, with a wetting gauge for each cell (WP3 on
    the CPU, WP4 on the GPU).
 3. Flow bands: wave layers the wind does not fill, at gains a chart holds (WP3 on the CPU, WP5 on the GPU).
@@ -671,10 +714,13 @@ module adds, and `scripts/river_cost.py` for the solve. No timing figure decides
    test valley's stations. The designed remedy is a constant of the water type for flow, recorded with its
    reason. The wrong fix is foam where the surface is steep.
 4. **The sheet reads as a card**: flat, evenly lit, hard at its foot. Early sign: WP6's captures. The designed
-   remedies are the pattern's relief as displacement, the white share and presence, and the plunge's foam and
-   air at the foot. Three failed looks on one cue go to the log. Mist is the remedy this plan does not have.
+   remedies are the pattern's relief as displacement, the white share and presence with
+   [the profile's lengths](#the-falls-sheet), and the plunge's foam and air at the foot. Three failed looks on
+   one cue go to the log. Mist is the remedy this plan does not have.
 5. **A seam where a river meets a lake, a fall's foot or the sea.** Early sign: WP4's joins. The map's joins are
-   `WATERS`'; the solve gives a level at each end that already matches the body there.
+   `WATERS`'; the solve gives a level at each end that already matches the body there. WP6 found one at the
+   fall's foot, where the pool began a cell out from the cliff, and
+   [the water below now stands to the rock](#falls-inside-the-solve).
 6. **`WATERS` moves under this module's changes**, since both builders edit its crates. Early sign: a rebase
    that fails `WATERS`' tests. Each ruling keeps its change behind a declaration that existing scenes do not
    make, and each work package here runs `WATERS`' tests.
@@ -781,6 +827,12 @@ dependencies. In addition:
     however small, and [risk 5](#risks) is this. The step is what the two sides differ by beyond what the
     model's surface differs by between the same two places, so a wave both sides share cancels and the
     tight bound is one a frame can meet: WP4 measured 4.8 µm at the worst.
+- **The foot of a fall (WP6.12).** [The water below a fall stands to the rock](#falls-inside-the-solve) is a
+  rule of the map, so it is proved where the map is read: `thrum-water-model`'s answers down the face, and the
+  GPU map's against them at the tolerance `WATERS` WP4.1's test states. A patch drawn over the gap by the sheet
+  or the surface would pass the look and leave a float, a ring and the foam with no water there. The look is
+  WP6.5's. `brink_end` and `falls` were written to the rule this replaces: a case of theirs that pins ground
+  under the receiving level as no body changes to this rule, and nothing else in them does.
 - **Maturity.** A ledger row for `E1.rivers` is added in WP4 and kept current.
 
 ## Open questions
@@ -792,6 +844,7 @@ dependencies. In addition:
 | Does the shallows' birth constant serve a river? | WP5 records the cover; [risk 3](#risks) |
 | What wave share makes rings that read? | WP6.5's look, tuned by eye from 0.1 and recorded. The fall's power is a diagnostic ([the plunge](#the-plunge)), and no item asserts it |
 | How many reaches does a winding river need? | WP4's bytes; [risk 7](#risks) |
+| What whitening length and tear thickness read right on the island's fall? | WP6.4's look, tuned by eye from the first profile's and recorded ([the fall's sheet](#the-falls-sheet)) |
 | Does a fall need mist to meet its bar? | WP6's review; the owner ([plan](PLAN.md#open-for-the-human)) |
 
 ## Compact river solver fixtures (WP8)
