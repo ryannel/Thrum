@@ -2124,7 +2124,64 @@
     },
     "WP18": {
       "definitions": "56a93f73d43cedc41216f498c8ae3a9f3f242eb513588e83ec7c178cb6156c9e",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "cf3612502770390b5d079c9c13eb0e74f2db023b",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP18-review.md",
+          "items": {
+            "D18.1": "pass",
+            "D18.2": "pass",
+            "D18.3": "pass",
+            "D18.4": "fail",
+            "D18.5": "pass",
+            "D18.6": "fail"
+          },
+          "findings": [
+            {
+              "name": "Window input targets the pending generation",
+              "item": "D18.4",
+              "repeat": false
+            },
+            {
+              "name": "Resized capture waits for backing pixels",
+              "item": "D18.4",
+              "repeat": false
+            },
+            {
+              "name": "Presented frame records report the pending scale",
+              "item": "D18.4",
+              "repeat": false
+            },
+            {
+              "name": "Game-facing records omit the resolved output policy",
+              "repeat": false
+            },
+            {
+              "name": "A cancelled full-screen change publishes no request at the timeout",
+              "item": "D18.6",
+              "repeat": false
+            }
+          ],
+          "summary": "WP18 fails D18.4 and D18.6. The release game allocates and presents at the requested output size on both Mac recipes, but resized capture, window input and frame reporting can select the wrong grid, and a failed full-screen change can end without publishing its required request. The game-facing frame and display records also lack the output policy promised to downstream consumers.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 138830,
+            "cached": 7445632,
+            "output": 21171,
+            "turns": 1
+          },
+          "at": "2026-11-27T08:07:34Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, ",

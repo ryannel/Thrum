@@ -1241,7 +1241,7 @@
     {
       "id": "WP18",
       "name": "A launch setting draws the valley below the window's pixel size and the display scales it to fill, with no hitch at the change",
-      "status": "ready_for_review",
+      "status": "in_progress",
       "depends_on": [],
       "quality_bar": "A shipped high-end Mac game set to an output resolution below the panel's own at full screen, such as Resident Evil Village with MetalFX: the picture fills the display edge to edge with no band and no stretch, and changing the output resolution never hitches or compiles. This work package builds the mechanism and holds it to that; the look of the scaled picture is judged in WP17, at the scale that is chosen there.",
       "items": [
@@ -1252,8 +1252,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP18/resolver.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP18-review.md"
         },
         {
           "id": "D18.2",
@@ -1264,8 +1264,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP18/generation.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP18-review.md"
         },
         {
           "id": "D18.3",
@@ -1275,18 +1275,18 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP18/launch/output-scale.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP18-review.md"
         },
         {
           "id": "D18.4",
           "statement": "The request is the one authority for a generation's extent, on every path the output scale reaches, and nothing changes where it resolves 100%.",
           "ask": "Read the change, and answer each. 1. Does anything size a target, a viewport, a scissor or a capture from the window's backing size, other than the request's own resolution of the output extent? 2. Does anything that maps a position in the window to the picture divide by the drawable's size? 3. Is the launch setting read by the game and passed in the app's configuration, with no engine library reading the environment? 4. Do the iPhone shell and Chrome resolve 100% with no setting read? 5. When the output scale is below 100%, does any pass, upscaler or sharpening step run at the backing size?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP18/code-review.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP18-review.md"
         },
         {
           "id": "D18.5",
@@ -1297,22 +1297,48 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP18/mode/output-scale-mode.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP18-review.md"
         },
         {
           "id": "D18.6",
           "statement": "Across a full-screen change that AppKit animates, the Mac platform publishes one request, at the change's completion, whatever the window reports meanwhile. A test drives the platform's own mode-change state on a clock it sets, with 75% given as the registry's full-screen value and a 120 Hz display, through these five sequences. 1. Entering with the flag early: after the start, the window reports its windowed backing extent with winit's full-screen flag already set for 500 ms, then two intermediate extents, then the completion at the full-screen extent. One request is published, at the completion, naming the full-screen extent and 75%. 2. Leaving with the flag late: after the start, the window reports its windowed backing extent while winit's flag still says full screen for 500 ms, then the completion. One request is published, at the completion, naming the windowed extent and 100%. 3. No completion: 3 s after a start with no completion, one request is published, naming the backing extent and the mode the window itself then reports, and the record names the limit. 4. A recovered device during the hold is published at once, with the extent and scale held from before the start. 5. A drag of the window's edge with no mode change publishes each extent as it arrives, as before this work package. A control with the hold switched off publishes the windowed extent with 75% in sequence 1, for longer than the debounce. Guard: tests on the CPU, with no device and no window.",
           "check": "cargo nextest run --locked --offline -p thrum-app -E 'test(/mode_change/)' --no-tests=fail",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP18/mode-state.log",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP18-review.md"
         }
       ],
-      "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      "failed_reviews": 1,
+      "failed_reviews_with_repeat": 0,
+      "findings": [
+        {
+          "name": "Window input targets the pending generation",
+          "item": "D18.4",
+          "repeat": false
+        },
+        {
+          "name": "Resized capture waits for backing pixels",
+          "item": "D18.4",
+          "repeat": false
+        },
+        {
+          "name": "Presented frame records report the pending scale",
+          "item": "D18.4",
+          "repeat": false
+        },
+        {
+          "name": "Game-facing records omit the resolved output policy",
+          "repeat": false
+        },
+        {
+          "name": "A cancelled full-screen change publishes no request at the timeout",
+          "item": "D18.6",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "WP17",
