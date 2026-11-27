@@ -136,6 +136,7 @@ impl SceneContributions {
                 draw_targets.extend(
                     targets
                         .into_iter()
+                        .filter(|(index, _)| *index < graph.passes.len())
                         .map(|(index, target)| (first_pass + index, target)),
                 );
                 first_pass += graph.passes.len();
@@ -189,6 +190,7 @@ impl SceneContributions {
             draw_targets.extend(
                 std::mem::take(&mut candidate.draw_targets)
                     .into_iter()
+                    .filter(|(index, _)| *index < candidate.graph.passes.len())
                     .map(|(index, target)| (first_pass + index, target)),
             );
             first_pass += candidate.graph.passes.len();

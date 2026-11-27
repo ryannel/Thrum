@@ -494,6 +494,31 @@ fn simulate_draw_rules_validate_attachment_ranges_and_ownership() {
         );
     }
 
+    let mut transient = graph.clone();
+    transient.resources[0].1 = ResourceScope::Transient;
+    transient.passes[1].cadence = C::EveryFrame;
+    let mut frame = FrameGraph::default();
+    let mut keys = BTreeSet::new();
+    transient
+        .append(
+            &mut frame,
+            PipelineKey {
+                device_generation: 1,
+                revision: 1,
+                role: 0,
+            },
+            &mut keys,
+            &[],
+        )
+        .expect("declare transient effect-owned draw target");
+    let compiled = frame
+        .compile(1, &keys)
+        .expect("both draw producers initialize the sampled layers");
+    assert_eq!(
+        compiled.transient_slots, 0,
+        "the prepared view already has physical storage"
+    );
+
     let features = wgpu::Features::empty();
     for (format, blend, reason) in [
         (

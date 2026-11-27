@@ -519,12 +519,23 @@ impl EffectGraph {
         {
             return Err(crate::error::RenderError::GraphPassMismatch);
         }
+        // Effect-owned attachment views already have backing textures from rebuild.
+        // A declared transient still enters each execution uninitialized.
+        let draw_textures: BTreeSet<_> = self
+            .passes
+            .iter()
+            .filter_map(|pass| pass.attachments().next().map(|access| access.resource))
+            .collect();
         let mut owners = std::collections::BTreeMap::new();
         let pairs = self
             .resources
             .iter()
-            .map(|(descriptor, scope)| {
+            .enumerate()
+            .map(|(index, (descriptor, scope))| {
                 let mut scope = *scope;
+                if scope == ResourceScope::Transient && draw_textures.contains(&index) {
+                    scope = ResourceScope::Imported { initialized: false };
+                }
                 if let ResourceScope::Persistent { owner, .. }
                 | ResourceScope::History { owner, .. } = &mut scope
                 {
@@ -561,6 +572,7 @@ impl EffectGraph {
             for access in &mut accesses {
                 if access.kind == AccessKind::AttachmentClear {
                     access.view = Some(wgpu::TextureViewDimension::D2);
+                    access.store = false;
                 }
             }
             if pass.accesses.iter().any(|access| {

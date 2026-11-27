@@ -191,6 +191,7 @@ impl EffectGraph {
         Ok(())
     }
 
+    // The graph has structurally validated attachments before capability admission.
     pub(crate) fn validate_draw_formats(
         &self,
         capabilities: &crate::capabilities::DeviceCapabilities,
@@ -211,6 +212,7 @@ impl EffectGraph {
         Ok(())
     }
 
+    // Called only after structural validation of the graph.
     pub(crate) fn validate_draw_targets<'a>(
         &self,
         capabilities: &crate::capabilities::DeviceCapabilities,
