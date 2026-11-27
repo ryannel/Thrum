@@ -95,16 +95,18 @@ Read [the output scale](DESIGN.md#the-output-scale-wp18) and
 [the surface across a transition](DESIGN.md#the-surface-across-a-transition-wp4) first. The registry's
 full-screen value stays 100% here and the 60 Hz rule for full screen stays: WP17 changes both, after its
 sitting. `ATMOSPHERE` WP12 is built beside this work package and changes the knob registry in the governor's
-files, so merge one after the other.
+files, so merge one after the other. D18.5's 75% comes through the game's proof options, never the launch
+setting.
 
 ## WP17 The valley holds the display's full 120 Hz at full screen on the built-in display
 
 Read [reaching the full refresh at full screen](DESIGN.md#reaching-the-full-refresh-at-full-screen-wp17) first.
 The order is part of this work package. Remove the 60 Hz rule and build D17.1, then try steps under whatever
-load the host has, to learn where the route stands: those takes are witnesses. Then end `BLOCKED` asking the
-lead for the full-refresh sitting with the other builders paused. In it, choose the step, set the registry's
-value, make the four closing takes on that build, and capture D17.3's cue windows. The ledger, the evidence
-page and D17.5's record come last.
+load the host has: those takes are witnesses. Keep one on each route at every step from 67% to 100%, because
+D17.5's record is the pair at the step promoted. Then end `BLOCKED` asking the lead for the full-refresh
+sitting with the other builders paused. In it, try the steps from 100% down, set the registry's value, make
+the four closing takes on that build, and capture D17.3's cue windows. The ledger and the evidence page come
+last.
 
 [The planner's record](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP17-plan/README.md) has four takes at
 100% and the scripts that made them, which are a place to start and no part of the proof. Its exit take

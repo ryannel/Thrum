@@ -768,3 +768,10 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
   that holds 120 Hz and removes the 60 Hz rule, and now waits for `ATMOSPHERE` WP12 and `SHOWCASE` WP7. Three
   assumptions are new in the plan.
   [What changed, in full](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP17-plan/PLANNED-2026-11-27.md)
+- 2026-11-27 Planner, design review of the output scale, five Must Fix, all settled in the design and items.
+  D18.2 keeps the attachments' size, the drawn subrectangle and the present viewport apart. New D18.5 changes
+  the running game's window mode both ways. D17.2 rules out every step larger than the one chosen. D17.3's cue
+  windows are captured with the governor on and neither scale nor rate forced. D17.5's record is kept from the trials before
+  the sitting. The suggestion on D18.1 was taken. No assumption was added and no other module's file changed.
+  [Review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md) ·
+  [what changed for each finding](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP17-plan/REVISED-2026-11-27.md)

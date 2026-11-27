@@ -25,7 +25,8 @@ the full-screen route misses the display's 120 Hz at the governor's floor, and a
 asked that 60 Hz at full screen not be taken for the bar. Revised 27 November for
 [the output scale](#the-output-scale-wp18) and [the full refresh at full screen](#reaching-the-full-refresh-at-full-screen-wp17),
 after the owner answered the question
-[the WP17 planner's record](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP17-plan/README.md) put. It answers the three independent reviews of revision 1
+[the WP17 planner's record](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP17-plan/README.md) put, and again that
+day after [that revision's design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md). It answers the three independent reviews of revision 1
 (`86ec3b6b`) and the re-reviews of revision 2 (`c507ad3d`) recorded in [the log](LOG.md). Interface and path names below are
 proposals.
 
@@ -473,8 +474,8 @@ the device generation, and from WP18 [the output scale](#the-output-scale-wp18).
 | State | Entered when | What the render thread does |
 |---|---|---|
 | Steady | A generation is current and matches the request | Draws it |
-| Debouncing | The request's extent changed during a live resize | Draws the current generation at its own extent. The surface stays as configured, and the layer scales the picture to the window |
-| Building | The extent has been stable for 100 ms, or the request changed for any other reason (backing scale, display mode, a recovered device), which starts at once | The same. The preparation thread creates the new generation's targets, frame buffers, bind groups and providers from the shared, immutable prepared part. The governor holds |
+| Debouncing | The request's extent changed during a live resize, or from WP18 its output scale changed | Draws the current generation at its own extent. The surface stays as configured, and the layer scales the picture to the window |
+| Building | The extent, and from WP18 the output scale, have been stable for 100 ms, or the request changed for any other reason (backing scale, display mode, a recovered device), which starts at once | The same. The preparation thread creates the new generation's targets, frame buffers, bind groups and providers from the shared, immutable prepared part. The governor holds |
 | Ready | The build finished and its request is still the latest for the current device generation | Draws the current generation until a frame boundary where the switch may be entered: no surface texture held, and no job on the preparation thread. There it reconfigures the surface for the new generation, swaps the generation in and resets history and reconstruction |
 | Unmet | The build for the latest request failed, or its switch ended in a configure error, and the request has not changed | Draws the current generation at its own extent; the surface stays as configured and the layer scales the picture. No build runs, and the governor runs |
 | Retiring | The swap happened | Keeps the old generation, providers included, until its frames in flight complete, as retirement works today |
@@ -1113,11 +1114,23 @@ returns toward 100% as the performance phase after V1 takes work out of the fram
 output scale, the display mode and the device generation, and its **output extent** is the backing extent times
 the output scale.
 
-- **Everything a generation owns is sized from the output extent.** The reconstruction output, the history
-  key, the EDR and SDR targets and the drawable have the output extent, and the forward targets have the output
-  extent times the governor's render scale, as now. The present pass stays one pixel to one drawable pixel.
-  Below 100% no pass of the frame runs at the backing size, and that is the whole saving. The request is the
-  one authority for the extent: nothing reads the window's backing size to size a target or a viewport.
+- **Everything a generation owns is sized from the output extent.** Three sizes are kept apart:
+  - *What is allocated.* The reconstruction output, the history key, the EDR and SDR targets and the drawable
+    have the output extent. So do the forward attachments, which WP5 allocates once for a generation at a render
+    scale of 1.0 ([dynamic resolution without reallocation](#techniques-and-evidence)). No texture is sized by
+    the render scale.
+  - *What is drawn.* The governor's render scale sets the forward viewport and scissor inside those
+    attachments, with the view's auxiliary viewport and the reconstruction's input extent, as WP5 built them.
+    That drawn subrectangle is the output extent times the render scale, by the render scale's rounding. A
+    step of the render scale resizes it and creates nothing, at any output scale.
+  - *What is presented.* The present pass's viewport is the whole output extent, one pixel to one drawable
+    pixel.
+
+  With a 3456×2234 backing, a 75% output scale and a 50% render scale, the forward attachments, the
+  reconstruction output and the drawable are 2592×1676, the forward viewport and scissor are 1296×838, and the
+  present viewport is 2592×1676. Below 100% no pass of the frame runs at the backing size, and that is the
+  whole saving. The request is the one authority for the extent: nothing reads the window's backing size to
+  size a target or a viewport.
 - **The surface is configured at the output extent, in the switch.** Core Animation scales the drawable to the
   layer's bounds with linear filtering, which is the behaviour
   [the surface across a transition](#the-surface-across-a-transition-wp4) already relies on while a window is
@@ -1125,11 +1138,21 @@ the output scale.
   picture nor leaves a band. The host adds no scaled present path, no second upscaler and no sharpening pass:
   each would run at the backing size and bring the cost back.
 - **A change of output scale is a change of request**, so it is an ordinary generation transition. It is built
-  off the render thread and starts at once, the surface is reconfigured once in the switch, history and
-  reconstruction reset there, and nothing is created on the render thread. Entering or leaving full screen
-  changes the backing extent and may change the output scale, and both arrive as one request and one build. The
-  governor holds through the build as through any other, and afterwards its render scale applies inside the new
-  output extent.
+  off the render thread, the surface is reconfigured once in the switch, history and reconstruction reset
+  there, and nothing is created on the render thread. The governor holds through the build as through any
+  other, and afterwards its render scale applies inside the new output extent.
+- **Entering or leaving full screen during play is one change of request.** The launch setting is fixed for the
+  process, so a window changing mode is the only thing that changes the output scale during play, and it
+  changes the backing extent with it.
+  - The platform resolves the scale each time it reads the window, from the window's mode at that read, with
+    the backing extent it reads beside it. It keeps no scale resolved at launch.
+  - The lifecycle debounces the request as a whole: a build starts when the backing extent and the output
+    scale have both been stable for the debounce. A window still animating between modes starts no build, and
+    neither does a read that sees one of the two changed before the other.
+  - So the host takes one generation for each mode change, from one request that names the new backing extent
+    and the new scale together. A window that enters full screen is never presented by a generation at the
+    full-screen backing extent and the window's 100%, and one that leaves is never presented by a generation at
+    the window's backing extent and the full-screen step.
 - **What resolves it.** The platform resolves the output scale with the request, on the main thread, where it
   reads the window and the display record, as it does the requested frame rate:
   - a window that is not full screen resolves 100%;
@@ -1139,10 +1162,17 @@ the output scale.
     lower step by measurement, under [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md);
   - a host whose scene is 2D resolves 100% in every case. It has no reconstruction, and
     [the same decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md) draws it at its output's own pixel size;
-  - a launch setting forces any of the five steps, in a window or at full screen. A value that is not one of
-    the five is refused by name at launch.
+  - for a 3D scene on the Mac, a launch setting forces any of the five steps, in a window or at full screen.
+    A value that is not one of the five is refused by name at launch. With a 2D scene the setting forces
+    nothing: the host resolves 100% and the record says not forced.
 
   The iPhone shell and Chrome resolve 100% and read no setting.
+- **The registry's value in a proof.** WP18 lands with the registry's value at 100%, so its proofs of the
+  full-screen case are given 75% another way. D18.1 gives it to the resolver. D18.5's run gives it to the game
+  through its proof options, as the display proofs give a forced headroom
+  ([display overrides](#evidence-conventions)). That input stands in for the registry's row and for nothing
+  else: it applies only where the registry's value would, the record names it as given for a proof, and it is
+  not the launch setting, so the record says not forced. Nothing a player launches sets it.
 - **One value for the device.** The registry holds one full-screen output scale for this Mac. WP17 measures it
   on the Apple recipe, which is the row the claim is made for. The portable recipe on the same Mac resolves the
   same value, so that `SHOWCASE`'s rows compare at one extent, and what it holds there is recorded and not
@@ -1204,10 +1234,13 @@ So the takes that decide are made in one sitting with the other builders paused,
   frame slots occupied, no drawable acquired, or a present call that came late or shared its interval. A take
   that misses only because the display link sent a callback late or not at all is the host's. It is kept,
   listed and made again.
-- **The step chosen is the largest that holds.** While steps are tried, the launch setting forces the step and
-  the record says so. The record also holds, for the next larger step, a take that missed for a cause in the
-  frame, so the choice is shown to be the largest that holds and not merely one that does. No such take is
-  owed when 100% is chosen.
+- **The step chosen is the largest that holds, and every larger step is ruled out.** While steps are tried,
+  the launch setting forces the step and the record says so. One take that misses an interval for a cause in
+  the frame, on either route, rules its step out, by the definition above. For every step larger than the one
+  chosen, the sitting's record holds such a take: 100%, 85% and 75% when 67% is chosen, and none when 100% is.
+  A miss at one larger step says nothing of the others, because the governor chooses its own render scale and
+  tier at each output scale, and the planner's fit, made at the governor's floor, puts those runs in no order.
+  A larger step whose takes miss only for the host is tried again until it holds or misses for the frame.
 - **The closing takes.** With the registry's value set to the chosen step and no launch setting at all, two
   takes on each route serve every interval. These four are what D17.2 judges, and they are made in the sitting
   on the build that merges.
@@ -1221,10 +1254,19 @@ So the takes that decide are made in one sitting with the other builders paused,
 What the sitting proves is that the engine made one present call in every 120 Hz refresh interval. When a frame
 reached the panel is `SHOWCASE` WP8.6's to witness, from OS-reported presented intervals.
 
-**The picture at the chosen scale.** D11.6's four cue windows are captured again, complete, at the chosen
-step's output extent and 120 Hz, and read as [the evidence conventions](#evidence-conventions) say. The same
-frames are also read resampled to the panel's size with a linear filter, labelled a stand-in for the layer's
-scaling. Capture costs frames, so these takes decide nothing about pacing.
+**The picture at the chosen scale.** D11.6's four cue windows are captured again, complete, and read as
+[the evidence conventions](#evidence-conventions) say. The frames judged are the ones the closing takes'
+configuration draws: the Apple recipe, MetalFX, EDR and the governor on, at the output scale the registry
+resolves and a requested 120 Hz, with no launch setting forcing either. Each window's record names that
+configuration, and gives every captured frame the render scale the governor held and the drawn extent it
+gave, so a reader can tell how many pixels were drawn before reconstruction. A window captured with the
+governor off, or at a forced scale, is not judged: it can draw every pixel of the output extent where the
+governed game draws a quarter of them, and the two have the same size on the page. The scrub's comparison
+capture is the one exception. It keeps the reference configuration D11.6 gave it, with reconstruction off, and
+is read only for brightness at the same captured time. The same frames are also read resampled to the panel's
+size with a linear filter, labelled a stand-in for the layer's scaling. Capture costs frames, so the governor
+may hold a lower render scale in a window than in the closing takes, and these takes decide nothing about
+pacing.
 
 **The ledger and the milestone.** The maturity ledger's owed row is answered with what was held: one present
 call in every 120 Hz refresh interval at full screen, at the output scale and output extent named, on the two
@@ -1236,9 +1278,16 @@ when WP17 is Done.
 observation, as the look of EDR is ([below](#what-closes-g4-and-what-the-owner-observes-wp11)). WP17's evidence
 page asks for it and says how to see the chosen step beside 100% with the launch setting. It gates nothing.
 
-**The cost on record.** The pass table of the planner's record is taken again at the chosen step, on both
-routes, as a tripwire: each pass's GPU time, the timed span against 8.33 ms, the governor's render scale and
-tier, and the host's load. It sets no budget.
+**The cost on record.** The pass table of the planner's record is taken again, on both routes, as a tripwire:
+each pass's GPU time, the timed span against 8.33 ms, the governor's render scale and tier, and the host's
+load. It sets no budget. A timing is taken while other builders work
+([the settings](../../../ORCHESTRATE.md#targets)), and from the sitting until WP17 is Ready for Review they
+are paused, so the record is made before the sitting, from the witness takes. For each step the sitting may
+promote, 67% to 100%, the builder keeps one take on each route made while builders worked, with its pass
+table. D17.5's record is the kept pair at the step the sitting then promotes. Its check reads those takes and
+makes none, so it gives the same answer whenever it runs, the sitting included. The launch setting forced the
+step in those takes, since the registry still held 100%, and the record says so. If the owner allows 50%, the
+pair at 50% is taken when building resumes.
 
 **The V1 exit.** The exit is reached through its milestones, and this one is reached at WP17, so the exit rests
 on WP17 as it rests on WP11. `SHOWCASE` judges the exit's motion at the same bar, "smooth at the display's full
@@ -1368,6 +1417,9 @@ pixels of the window, which is why the governor exists before the paired proof.
   the resampled stand-in beside the captured frames (D17.3). The owner's look at the panel is an observation.
 - **Something still sizes itself from the backing extent.** Early sign: a pass whose time does not fall with
   the output scale, or a picture drawn into a corner of the drawable. Guard: D18.3's extents and D18.4.
+- **The output scale is resolved once and kept.** Early sign: a game launched in a window and taken to full
+  screen keeps 100% and misses 120 Hz, or a window left from full screen stays soft. Guard: D18.5's mode
+  change in the running game.
 - **The promoted step holds the bare valley and not the showcase.** Guard: the sitting's second route.
 - **The governor oscillates or hides regressions.** Guard: hysteresis plus a minimum period. Tripwires compare at a
   replayed scale trace.
