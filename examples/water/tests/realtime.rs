@@ -106,10 +106,12 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let whitewater = super::whitewater();
     let surf = super::surf_route();
     let route = std::env::var("THRUM_WATER_ROUTE").unwrap_or_default();
-    let walking = matches!(
-        route.as_str(),
-        "yard-walk" | "yard-walk-low-sun" | "yard-walk-high-sun"
-    );
+    let yard_camera_cut = yard && route == "yard-walk-low-sun-cut";
+    let walking = yard_camera_cut
+        || matches!(
+            route.as_str(),
+            "yard-walk" | "yard-walk-low-sun" | "yard-walk-high-sun"
+        );
     let footfall = yard
         && (walking
             || matches!(
@@ -202,7 +204,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     }
     let footfall_sun = match route.as_str() {
         "yard-walk-high-sun" => Some([60, 12]),
-        "yard-walk-low-sun" => Some([8, 0]),
+        "yard-walk-low-sun" | "yard-walk-low-sun-cut" => Some([8, 0]),
         _ => None,
     };
     if yard {
@@ -305,6 +307,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let yard_tick = Duration::from_secs_f64(1.0 / 60.0);
     let mut deadline = interval;
     let mut footfall_edit_time = None;
+    let mut yard_view = 11;
     while begin.elapsed() < Duration::from_secs_f64(deadline) && submitted < max_submissions {
         let elapsed = begin.elapsed().as_secs_f64();
         if let Some(start) = footfall_start {
@@ -345,6 +348,21 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
                 runtime.parameters(change).expect("yard weather controls");
                 weather_edits.push(json!({"elapsed":elapsed, "parameters":serde_json::from_str::<Value>(change).expect("weather")}));
                 applied = change;
+            }
+        }
+        if yard_camera_cut && let Some(start) = footfall_edit_time {
+            let walk_elapsed = elapsed - start;
+            let next = if (1.4..2.0).contains(&walk_elapsed) {
+                3
+            } else {
+                11
+            };
+            if next != yard_view {
+                runtime
+                    .parameters(&format!(r#"{{"camera.island":{next}}}"#))
+                    .expect("yard camera change");
+                weather_edits.push(json!({"elapsed":elapsed,"parameters":{"camera.island":next}}));
+                yard_view = next;
             }
         }
         if let Some((_, site)) = dive_site
