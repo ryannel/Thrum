@@ -126,7 +126,7 @@ mod map_probe;
 
 thrum_test_support::macos_gpu_test! {
 fn metal_map_agrees_with_the_model_down_the_rock_below_a_brink() {
-    use brink_receiver::{CENTRE, LEVEL, RISE, fixture, points, rock};
+    use brink_receiver::{CENTRE, LEVEL, RISE, fixture, flanks, points, rock};
     let Some(gpu) = thrum_test_support::open(
         "brink receiver map", Some(wgpu::Backend::Metal), thrum_test_support::Profile::Portable,
         &thrum_test_support::Restriction::default(),
@@ -134,9 +134,12 @@ fn metal_map_agrees_with_the_model_down_the_rock_below_a_brink() {
         return;
     };
     for width in [1, 4] {
-        let locations: Vec<_> = points(width).collect();
+        let mut locations: Vec<_> = points(width).collect();
+        if width == 1 {
+            locations.extend(flanks());
+        }
         #[expect(clippy::cast_possible_truncation, reason = "quarter-cell positions are exact in shader metres")]
-        let input: Vec<_> = locations.iter().map(|[x, _]| [*x as f32, CENTRE as f32, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]).collect();
+        let input: Vec<_> = locations.iter().map(|[x, z]| [*x as f32, *z as f32, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]).collect();
         for basin in [false, true] {
             let (mut map, receiver) = fixture(width, basin);
             for stage in [0.0, RISE] {
@@ -144,7 +147,11 @@ fn metal_map_agrees_with_the_model_down_the_rock_below_a_brink() {
                 let answers = map_probe::probe(&gpu, &map, &input);
                 for (&place, [answer, _, _]) in locations.iter().zip(answers) {
                     let want = map.sample(place);
-                    let bed = rock(width, place[0]);
+                    let bed = if place[1] == CENTRE {
+                        rock(width, place[0])
+                    } else {
+                        map.bed().height(place).expect("cliff flank")
+                    };
                     let got = answer.map(f64::from);
                     assert!((got[2] - bed).abs() < map_probe::EPS_METRES);
                     let owner = match want.map(|water| water.body) {

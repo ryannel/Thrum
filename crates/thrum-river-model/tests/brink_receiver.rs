@@ -40,6 +40,16 @@ fn basin_and_reach_wet_and_support_the_rock_below_narrow_and_wide_brinks() {
                 }
                 if width == 4 {
                     assert_eq!(seen, [true; 3], "{stage}, basin={basin}");
+                } else {
+                    for place in setup::flanks() {
+                        let wet = map
+                            .sample(place)
+                            .expect("pool wraps around the brink's end");
+                        assert_eq!(wet.body, receiver);
+                        let bed = map.bed().height(place).expect("cliff flank");
+                        assert!(bed < level);
+                        close(wet.depth, level - bed);
+                    }
                 }
             }
         }

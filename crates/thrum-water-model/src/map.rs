@@ -741,15 +741,16 @@ impl Map {
     }
 
     fn below_brink(&self, id: usize, chart: &Chart, weights: [(usize, f64); 4]) -> bool {
-        // The supported lower corners supply the water. The upper brink
-        // corners describe the rock but contribute none of their chart's row.
+        // A cell can straddle the end of the shared brink edge. The
+        // connected wet corner and the bed still decide the lateral bank.
         !self.brink_banks[id].is_empty()
-            && weights.iter().all(|&(i, w)| {
-                w <= 1e-12 || chart.footprint[i] || self.brink_banks[id].binary_search(&i).is_ok()
+            && [(0, 1), (0, 2), (1, 3), (2, 3)].into_iter().any(|(a, b)| {
+                let ((i, u), (j, v)) = (weights[a], weights[b]);
+                u > 1e-12
+                    && v > 1e-12
+                    && ((chart.footprint[i] && self.brink_banks[id].binary_search(&j).is_ok())
+                        || (chart.footprint[j] && self.brink_banks[id].binary_search(&i).is_ok()))
             })
-            && weights
-                .iter()
-                .any(|&(i, w)| w > 1e-12 && chart.footprint[i])
     }
 
     fn flood(&self, id: usize) -> Vec<bool> {

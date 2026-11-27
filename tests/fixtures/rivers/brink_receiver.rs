@@ -34,6 +34,10 @@ pub(super) fn points(width: u32) -> impl Iterator<Item = [f64; 2]> {
     (0..=4 * width).map(|quarter| [f64::from(LIP) + f64::from(quarter) * 0.25, CENTRE])
 }
 
+pub(super) fn flanks() -> [[f64; 2]; 2] {
+    [[2.953125, 1.953125], [2.953125, 4.046875]]
+}
+
 pub(super) fn rock(width: u32, x: f64) -> f64 {
     let heights = ramp(width, 4.0);
     let offset = x - f64::from(LIP);
