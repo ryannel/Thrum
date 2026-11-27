@@ -528,7 +528,7 @@
     {
       "id": "WP8",
       "name": "A footfall or a dropped stone in a puddle sends rings across it at the speed its depth gives, and they die at its edge and stop at a dry sill",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
@@ -546,7 +546,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP8/round3.md#metal-interaction-state",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP8-review.md"
         },
         {
@@ -568,7 +568,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP8/round3.md#realtime-metal",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP8-review.md"
         },
         {
@@ -592,20 +592,6 @@
           "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP8-review.md",
           "builder_result": "pass"
-        }
-      ],
-      "findings": [
-        {
-          "name": "A wet impact beside a narrow dry sill can produce no wave on any level",
-          "item": "WP8.3",
-          "different": "The previous defect sent a wave into the receiving puddle. Here the source cell is wet, but its own puddle stays at exact rest after impact.",
-          "repeat": false
-        },
-        {
-          "name": "The walking marker loses its ring train in the shallow puddle at low Sun",
-          "item": "WP8.4",
-          "different": "The current default Sun shows overlapping rings in both puddles. The failure occurs on the low-Sun target condition with the camera, path, azimuth and rain held fixed.",
-          "repeat": false
         }
       ]
     },
