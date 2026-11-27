@@ -151,8 +151,12 @@ fn trace(
                 near_error = error;
             }
         }
+        // At the waterline the first depth sample behind the ray can have
+        // crossed into the submerged part of the same hull. Keep that depth
+        // bracket, then require the resolved source to be on the air side.
+        let brackets = eligible || (air_body && in_box(hit.point, body));
         let projected_step = max(step, t - previous);
-        if delta >= 0.0 && eligible && (clear || delta < 0.75 * projected_step + 0.04) {
+        if delta >= 0.0 && brackets && (clear || delta < 0.75 * projected_step + 0.04) {
             var left = previous;
             var right = t;
             var best = hit;
@@ -162,11 +166,20 @@ fn trace(
                 let q = origin + ray * middle;
                 let candidate = gather_at(optics_project(q).xy + offset);
                 if candidate.distance > 0.0 && length(q - view.camera_xyz_time.xyz) >= candidate.distance
-                    && ((registered && side == 0.0) || trace_source(candidate, origin, body, registered, side)) {
+                    && ((registered && (side == 0.0 || in_box(candidate.point, body)))
+                        || (!registered && trace_source(candidate, origin, body, false, side))) {
                     right = middle;
                     best = candidate;
                 } else {
                     left = middle;
+                }
+            }
+            if air_body && !trace_source(best, origin, body, true, side) {
+                best = gather_at(optics_project(origin + ray * left).xy);
+                if best.distance == 0.0 || !trace_source(best, origin, body, true, side) {
+                    previous = t;
+                    clear = false;
+                    continue;
                 }
             }
             let along = dot(best.point - origin, ray);
