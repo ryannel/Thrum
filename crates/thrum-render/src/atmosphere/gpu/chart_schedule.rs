@@ -80,8 +80,16 @@ struct Tuning {
     sun: f32,
     altitude: f32,
     light: f32,
-    /// Sine of the elevation and tolerance below it, in radians.
-    twilight: Option<(f32, f32)>,
+    twilight: Option<Twilight>,
+}
+
+#[derive(Clone, Copy)]
+struct Twilight {
+    /// Sine of the lowest and highest elevations using the tight tolerance.
+    tight_band: [f32; 2],
+    /// Sine of the elevations where each side returns to the widest tolerance.
+    widest_at: [f32; 2],
+    sun: f32,
 }
 
 impl Default for Tuning {
@@ -90,16 +98,30 @@ impl Default for Tuning {
             sun: 0.2_f32.to_radians(),
             altitude: 10.0,
             light: 0.01,
-            twilight: None,
+            twilight: Some(Twilight {
+                tight_band: [-2.9_f32, 6.0].map(|degrees| degrees.to_radians().sin()),
+                widest_at: [-4.2_f32, 10.0].map(|degrees| degrees.to_radians().sin()),
+                sun: 0.009_f32.to_radians(),
+            }),
         }
     }
 }
 
 impl Tuning {
     fn sun_tolerance(self, sun_y: f32) -> f32 {
-        self.twilight
-            .filter(|(elevation, _)| sun_y < *elevation)
-            .map_or(self.sun, |(_, tolerance)| tolerance)
+        let Some(twilight) = self.twilight else {
+            return self.sun;
+        };
+        let [low, high] = twilight.tight_band;
+        let [night, day] = twilight.widest_at;
+        let weight = if sun_y < low {
+            (low - sun_y) / (low - night)
+        } else if sun_y > high {
+            (sun_y - high) / (day - high)
+        } else {
+            0.0
+        };
+        (self.sun - twilight.sun).mul_add(weight.clamp(0.0, 1.0), twilight.sun)
     }
 }
 

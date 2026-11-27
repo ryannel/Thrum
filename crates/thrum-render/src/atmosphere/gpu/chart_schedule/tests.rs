@@ -420,7 +420,11 @@ fn tighter_sun_tolerance_shortens_a_new_refresh_or_cuts_a_running_one() {
         let elevation = 8.0_f32;
         let mut schedule = ChartSchedule {
             tuning: Tuning {
-                twilight: Some((elevation.to_radians().sin(), widest.sun / 4.0)),
+                twilight: Some(Twilight {
+                    tight_band: [-1.0, elevation.to_radians().sin()],
+                    widest_at: [-1.0, elevation.to_radians().sin()],
+                    sun: widest.sun / 4.0,
+                }),
                 ..widest
             },
             ..ChartSchedule::default()
