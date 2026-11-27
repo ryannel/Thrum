@@ -6,7 +6,9 @@
 
 - Assumption: WP3 ends with a CPU diagnosis. The authored-spur replay and an in-game correction remain open under G3s. A later proposal needs the original inputs and the fixed and realtime captures specified in the design.
 - Assumption: WP4 compares the reconstructed geometry cases in one bounded CPU trial. The original ray inputs and exact finite-disk match remain open under G3s.
-- Assumption: the governor spreads the chart refresh over four submissions at its first tier. During continuous motion the oldest chart inputs can trail by six submissions there, ten at cadence 6 and fourteen at cadence 8. WP12 judges the first tier on both targets and the fastest twilight scrub at cadence 8 in Chrome.
+- Assumption: the governor's chart knob (4, 6 and 8 by tier) is the longest a chart refresh may be spread, and the atmosphere chooses each refresh's spread from how fast the Sun, the camera's altitude and the Sun's light are changing. The governor's registry and policy are unchanged. On the game's clock the charts take the knob's full value. A scrub shortens the spread, to every frame at 1.5° of Sun a frame, and costs what the charts cost with the governor off while it lasts.
+- Assumption: a refresh may let the sky's inputs move 0.2° of Sun, 10 m of altitude or 1% of light. These are the planner's starting values, and the builder tunes them by eye against WP12.4 and WP12.5.
+- Assumption: WP12 judges the knob at 4 in the Mac window and at 8 in Chrome, the longest spread at the slower display. Chrome at 4 is not captured.
 
 ## WP5 Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once
 
@@ -41,3 +43,13 @@ build the ungoverned value in the governor's files under
 tests of `APPLE-PRESENTATION` D7.5 as they are, and merge one after the other with `APPLE-PRESENTATION` WP18,
 which is built beside this in the frame host. Capture WP12.4 in a window: full screen is not this work
 package's.
+
+Start from the first build's verified checkpoint, `286a34491` on `build/atmosphere`, and keep its scheduler,
+device probes, trace, route timing and compatibility fixes. What changes is
+[how a refresh's spread is chosen](DESIGN.md#the-spread-follows-the-motion): the knob becomes the ceiling,
+with nothing new in the governor's files. That checkpoint's schedule tests and probes step the Sun by 0.5° or
+more, which now shortens the spread, so restate their steps as fractions of a tolerance. Its WP12.4 and WP12.5
+takes are not reused: the game's clock, not the scrub, is now where the charts are spread. Its Chrome frames
+150 to 165 at 8 stay as the example of the fault, and its
+[handoff](../../../.orchestrate/evidence/ATMOSPHERE/WP12-handoff.md) lists what else is owed, a clean run of
+the workspace's tests among it.

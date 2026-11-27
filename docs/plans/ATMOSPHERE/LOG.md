@@ -807,3 +807,14 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   preserves the per-submission fallback for an allocated overlay with no registered graph producer.
   WP12.1 checks that diffuse and reflection levels 0–6 run both after a direct upload with no further
   change and when solar illuminance is halved on the following submission.
+- 2026-11-27 WP12 blocked on WP12.5. The first build (`286a34491` on `build/atmosphere`, not merged) held 4 on
+  Metal and cut the charts' GPU time at the median from 1.18 to 0.31 ms. In Chrome at 8, scrubbing the Sun
+  1.5° per submission, the sky caught up visibly at each refresh: 27.0 SDR codes in one frame against 11.3
+  with the governor off. [Handoff](../../../.orchestrate/evidence/ATMOSPHERE/WP12-handoff.md)
+- 2026-11-27 Lead, on the block: that take is a time-of-day scrub, not play, and shipped games rebuild sky
+  lighting at a cadence set by how fast the lighting changes, so make the cadence adaptive in preference to
+  fading between two sets of charts. Planned as [the spread follows the motion](DESIGN.md#the-spread-follows-the-motion):
+  the knob is the longest spread, the atmosphere's scheduler chooses each refresh's spread from the change in
+  the Sun, altitude and light, and cuts a refresh short when the motion quickens. WP12.1, WP12.4 and WP12.5
+  were rewritten for it. The Mac is judged at 4 and Chrome at 8, each on the game's clock through twilight and
+  through a scrub entered from that clock. No file of `APPLE-PRESENTATION` and no interface changed.
