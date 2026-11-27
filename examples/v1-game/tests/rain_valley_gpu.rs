@@ -12,6 +12,8 @@ use wgpu::util::DeviceExt;
 const FILL: f64 = 0.0005; // PUDDLES WP5.2
 const SURFACE: f64 = 0.000_001; // PUDDLES WP5.2
 const DEPTH: f64 = 0.000_04; // WATERS WP4.1
+// Row 3801, face 37, where a hard shelter boundary used to disagree with Metal.
+const BOULDER_FACE: [f32; 4] = [-20.673_788, 129.929_69, -125.482_59, 0.0];
 
 fn read(
     gpu: &Opened,
@@ -172,6 +174,8 @@ fn compare_model(selection: RainSelection) {
             .map(|sample| sample.point)
             .collect::<Vec<_>>();
         let output = read(&gpu, &field, &map, &points);
+        assert_eq!(output.len(), expected.len());
+        let mut boulder_face_checked = false;
         let mut wet = 0;
         for ([actual, water], sample) in output.into_iter().zip(&expected) {
             let position = sample.point[0];
@@ -191,6 +195,21 @@ fn compare_model(selection: RainSelection) {
                 (f64::from(actual[1]) - model.surface).abs() < SURFACE,
                 "{selection:?} {position:?} {actual:?} {model:?}"
             );
+            if position
+                .iter()
+                .zip(BOULDER_FACE)
+                .all(|(&a, b)| (a - b).abs() < 0.000_1)
+            {
+                boulder_face_checked = true;
+                assert!(
+                    (0.49..0.51).contains(&sample.exposure),
+                    "the steep face uses the canopy's material transition"
+                );
+                println!(
+                    "{selection:?} boulder {position:?} | CPU exposure {:.8}, pores {:.8}, surface {:.8} m | Metal exposure {:.8}, pores {:.8}, surface {:.8} m",
+                    sample.exposure, model.pores, model.surface, actual[3], actual[0], actual[1]
+                );
+            }
             if let Some([level, depth]) = sample.puddle {
                 wet += usize::from(depth > 0.0);
                 assert!(water[0].abs() < f32::EPSILON, "{position:?} {water:?}");
@@ -206,6 +225,7 @@ fn compare_model(selection: RainSelection) {
                 assert!(water[0] < 0.0, "{position:?} {water:?}");
             }
         }
+        assert!(boulder_face_checked, "reviewed boulder face is sampled");
         if selection == RainSelection::Soaked {
             assert!(wet > 60, "visible filled hollows");
             assert!(

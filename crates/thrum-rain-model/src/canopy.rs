@@ -36,6 +36,7 @@ pub struct Canopy {
     size: [usize; 2],
     layers: Columns,
     edge_width: f64,
+    material_half_width: f32,
 }
 
 #[derive(Clone, Debug)]
@@ -53,6 +54,7 @@ impl Canopy {
             size: [0, 0],
             layers: Columns::Dense(Vec::new()),
             edge_width: 0.0,
+            material_half_width: 0.0,
         }
     }
 
@@ -116,6 +118,7 @@ impl Canopy {
                 Columns::Dense(vec![[NO_LAYER; 2]; count])
             },
             edge_width: profile.edge_width,
+            material_half_width: 0.0,
         };
         for shelter in shelters {
             canopy.add(shelter)?;
@@ -349,13 +352,31 @@ impl Canopy {
     /// over a square of the profile's edge width centred on the point, so it passes from
     /// one shelter's share to the next over that width. The same function on any device.
     pub fn exposure(&self, point: [f64; 3]) -> f64 {
-        self.surface_exposure(point, 0.0)
+        self.exposure_at(point, 0.0)
     }
 
-    /// Exposure averaged horizontally, with a smooth vertical transition over
-    /// each sampled roof. The half-width is in metres. A zero width uses the
-    /// exact transmission boundary used by rainfall and catchment queries.
-    pub fn surface_exposure(&self, point: [f64; 3], half_width: f64) -> f64 {
+    /// Set the vertical material exposure half-width in metres for a sparse grid.
+    /// Rain and catchment keep using the exact transmission boundary.
+    ///
+    /// # Errors
+    /// Refuses negative and nonfinite widths and a positive width on a dense grid.
+    pub fn with_material_half_width(mut self, half_width: f32) -> Result<Self, RainError> {
+        if !half_width.is_finite()
+            || half_width < 0.0
+            || (half_width > 0.0 && matches!(self.layers, Columns::Dense(_)))
+        {
+            return Err(RainError::Profile("invalid canopy material half-width"));
+        }
+        self.material_half_width = half_width;
+        Ok(self)
+    }
+
+    /// Material exposure at a world point, with the prepared vertical transition.
+    pub fn surface_exposure(&self, point: [f64; 3]) -> f64 {
+        self.exposure_at(point, f64::from(self.material_half_width))
+    }
+
+    fn exposure_at(&self, point: [f64; 3], half_width: f64) -> f64 {
         if self.size.contains(&0) {
             return 1.0;
         }
@@ -425,6 +446,7 @@ impl thrum_water_model::Exposure for Canopy {
             cell: self.cell,
             size: self.size,
             edge_width: self.edge_width,
+            material_half_width: self.material_half_width,
             sparse_cells,
             columns,
         })

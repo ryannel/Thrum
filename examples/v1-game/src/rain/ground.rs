@@ -132,7 +132,10 @@ fn prepare_canopy(profile: &Profile) -> Result<Canopy, RainError> {
             share: 0.07,
         }],
         profile,
-    )
+    )?
+    // A steep rock can cross several roof heights within a canopy cell.
+    // Filter that sampling uncertainty in the material wetness queries.
+    .with_material_half_width(0.25)
 }
 
 fn rock_triangles(bytes: &[u8], vertices: usize) -> impl Iterator<Item = [[f64; 3]; 3]> + '_ {

@@ -56,9 +56,6 @@ impl RainSelection {
 const SHOWER_START: u64 = 60;
 const SHOWER_END: u64 = 420;
 const PATCH_DATUM: f32 = 240.0;
-// A steep rock can cross several roof heights within a canopy cell.
-// Filter that sampling uncertainty on the material without moving runoff.
-const CANOPY_HALF_WIDTH: f32 = 0.25;
 const STEP: f64 = 1.0 / 60.0;
 const RAIN: f64 = 60.0 / 3600.0;
 const DRYING: f64 = 60.0 / 3600.0;
@@ -157,7 +154,6 @@ impl ValleyRain {
                 &[wet_class()],
                 world.tree.hollow_count(),
                 PATCH_DATUM,
-                CANOPY_HALF_WIDTH,
             )
             .ok_or("valley wetness field exceeds its render projection")?,
             map: Arc::new(Mutex::new(map)),

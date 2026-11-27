@@ -141,13 +141,12 @@ impl WetGround {
         classes: &[GroundClass],
         hollow_count: usize,
     ) -> Option<Self> {
-        Self::prepare(canopy, ground, classes, hollow_count, None, 0.0, 0.0)
+        Self::prepare(canopy, ground, classes, hollow_count, None, 0.0)
     }
 
     /// Prepare high ground whose thin film uses the forward material lobe.
     /// Dynamic hollow levels and marks are relative to the vertical datum.
-    /// The static bed, pits and canopy stay in world metres. A positive
-    /// canopy half-width smooths the sparse canopy vertically for material shading.
+    /// The static bed, pits and canopy stay in world metres.
     #[must_use]
     pub fn new_forward_at_datum(
         canopy: Option<CanopyGrid>,
@@ -155,17 +154,8 @@ impl WetGround {
         classes: &[GroundClass],
         hollow_count: usize,
         datum: f32,
-        canopy_half_width: f32,
     ) -> Option<Self> {
-        let mut field = Self::prepare(
-            canopy,
-            Some(ground),
-            classes,
-            hollow_count,
-            None,
-            datum,
-            canopy_half_width,
-        )?;
+        let mut field = Self::prepare(canopy, Some(ground), classes, hollow_count, None, datum)?;
         field.ground_classes = 0;
         Some(field)
     }
@@ -181,7 +171,6 @@ impl WetGround {
         hollow_count: usize,
         shore: Option<(&Map, [f32; 4])>,
         datum: f32,
-        canopy_half_width: f32,
     ) -> Option<Self> {
         let row_width = if canopy
             .as_ref()
@@ -233,7 +222,7 @@ impl WetGround {
         let mut ground_classes = 0;
         let mut hollow_pits = vec![f32::INFINITY; hollow_count];
         if let Some(canopy) = canopy {
-            append_canopy(canopy, &mut rows, &mut static_rows, canopy_half_width)?;
+            append_canopy(canopy, &mut rows, &mut static_rows)?;
         }
         if let Some(ground) = ground {
             if ground.cells.len()
@@ -435,10 +424,10 @@ fn append_canopy(
     canopy: CanopyGrid,
     rows: &mut [[f32; 4]],
     atlas: &mut Vec<[f32; 4]>,
-    half_width: f32,
 ) -> Option<()> {
     let [width, height] = canopy.size;
     let sparse = !canopy.sparse_cells.is_empty();
+    let half_width = canopy.material_half_width;
     if (!sparse && canopy.columns.len() != width.checked_mul(height)?)
         || !canopy.cell.is_finite()
         || canopy.cell <= 0.0

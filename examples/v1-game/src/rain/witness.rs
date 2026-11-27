@@ -1,8 +1,8 @@
 //! Model samples for the native comparison on the actual valley projection.
 
-use thrum_rain_model::{WetPoint, Wetness, wetness};
+use thrum_rain_model::{Wetness, wetness_at};
 
-use super::{CANOPY_HALF_WIDTH, RainSelection, RainValleyError, ValleyRain, ground};
+use super::{RainSelection, RainValleyError, ValleyRain, ground};
 
 /// Samples on the cooked floor, a rock's exposed side and shaded overhang,
 /// and cell centres in the actual valley patch.
@@ -36,22 +36,14 @@ pub fn rain_witness_points(selection: RainSelection) -> Result<Vec<RainWitness>,
     let make = |position: [f32; 3], normal: [f32; 3], patch: bool| {
         let p = position.map(f64::from);
         let n = normal.map(f64::from);
-        let exposure = canopy.surface_exposure(p, f64::from(CANOPY_HALF_WIDTH));
+        let exposure = canopy.surface_exposure(p);
         let wetness = if patch {
             world
                 .state
                 .wetness(&world.tree, &world.stores, 0, &canopy, p, n, None)
                 .expect("patch proof uses its own ground lattice")
         } else {
-            wetness(
-                &world.stores,
-                0,
-                WetPoint {
-                    exposure,
-                    normal: n,
-                    pattern: None,
-                },
-            )
+            wetness_at(&world.stores, 0, &canopy, p, n, None)
         };
         RainWitness {
             point: [

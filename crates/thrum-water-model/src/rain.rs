@@ -82,6 +82,9 @@ pub struct CanopyGrid {
     pub size: [usize; 2],
     /// Width of the square over which exposure is averaged, in metres.
     pub edge_width: f64,
+    /// Vertical smoothing half-width in metres for sparse material wetness.
+    /// Physical rain exposure uses the layer boundaries.
+    pub material_half_width: f32,
     /// Cell coordinates of sparse columns, in the same order as their layers.
     /// Empty for a dense row-major lattice.
     pub sparse_cells: Vec<[u32; 2]>,

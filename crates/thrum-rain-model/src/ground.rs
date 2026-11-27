@@ -385,8 +385,8 @@ pub fn wetness(stores: &GroundStores, class: usize, at: WetPoint) -> Wetness {
     }
 }
 
-/// The wetness function at a world point (x, y, z): exposure read from the canopy grid,
-/// the other fields as [`wetness`] takes them.
+/// The wetness function at a world point (x, y, z), using the canopy grid's material
+/// exposure. The other fields are as [`wetness`] takes them.
 pub fn wetness_at(
     stores: &GroundStores,
     class: usize,
@@ -399,7 +399,7 @@ pub fn wetness_at(
         stores,
         class,
         WetPoint {
-            exposure: canopy.exposure(point),
+            exposure: canopy.surface_exposure(point),
             normal,
             pattern,
         },

@@ -161,8 +161,13 @@ fn shelter_walls_undersides_slopes_and_patterns() {
         ],
         share: 0.0,
     };
-    let canopy = Canopy::prepare([-1.0, -1.0], [40, 40], &[roof], &Profile::default())
-        .expect("valid test case");
+    let canopy = Canopy::prepare(
+        [-1.0, -1.0],
+        [40, 40],
+        std::slice::from_ref(&roof),
+        &Profile::default(),
+    )
+    .expect("valid test case");
     assert_eq!(
         wetness_at(&g, 0, &canopy, [1.0, 0.0, 1.0], UP, None),
         Wetness::default()
@@ -172,6 +177,19 @@ fn shelter_walls_undersides_slopes_and_patterns() {
         open,
         "the roof's own top is wet"
     );
+    let soft_canopy = Canopy::prepare_sparse([-1.0, -1.0], [40, 40], &[roof], &Profile::default())
+        .expect("valid test case")
+        .with_material_half_width(0.25)
+        .expect("material transition");
+    let point = [1.0, 2.5, 1.0];
+    assert_eq!(soft_canopy.exposure(point), canopy.exposure(point));
+    assert_eq!(
+        soft_canopy.exposure([1.0, 2.49, 1.0]),
+        canopy.exposure([1.0, 2.49, 1.0])
+    );
+    let blended = wetness_at(&g, 0, &soft_canopy, point, UP, None);
+    assert!((blended.pores - half.pores).abs() < 1e-12);
+    assert!((blended.surface - half.surface).abs() < 1e-12);
     // A wall takes a quarter of the ground's rain and holds no standing water; an
     // underside takes none.
     let wall = wetness(
