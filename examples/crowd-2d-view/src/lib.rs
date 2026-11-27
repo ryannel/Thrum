@@ -134,6 +134,11 @@ impl Edits for NoEdits {
 }
 
 impl Game for CrowdView {
+    #[cfg(target_os = "macos")]
+    fn mac_scene_kind(&self) -> thrum_render::runtime::SceneKind {
+        thrum_render::runtime::SceneKind::TwoD
+    }
+
     type World = CrowdWorld;
     type Scene = CrowdScene;
     type Edits = NoEdits;

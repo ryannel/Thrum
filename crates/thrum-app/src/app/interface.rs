@@ -72,8 +72,26 @@ impl<G: WindowGame + 'static> App<G> {
         ))
     }
 
+    fn picture_point(&self, point: [f64; 2]) -> [f64; 2] {
+        let (Some(window), Some(request)) = (&self.window, self.output_mode.current()) else {
+            return point;
+        };
+        if request.scale.step == thrum_render::synthetic::RenderScale::Native {
+            return point;
+        }
+        // Both the pointer and the window bounds are in backing pixels.
+        // Map the resulting position in the layer into the scaled picture.
+        let bounds = window.inner_size();
+        let [width, height] = request.extent();
+        [
+            point[0] / f64::from(bounds.width.max(1)) * f64::from(width),
+            point[1] / f64::from(bounds.height.max(1)) * f64::from(height),
+        ]
+    }
+
     pub(super) fn interface_cursor(&mut self, point: [f64; 2]) -> Result<(), String> {
         self.interface_input.cursor = Some(point);
+        let point = self.picture_point(point);
         if self.interface_input.buttons.is_empty() {
             return self.interface_event(Event::Hover(point));
         }
@@ -106,7 +124,10 @@ impl<G: WindowGame + 'static> App<G> {
             MouseButton::Other(number) => number.saturating_add(5),
         };
         let contact = Contact::Pointer(button);
-        let position = self.interface_input.cursor;
+        let position = self
+            .interface_input
+            .cursor
+            .map(|point| self.picture_point(point));
         let event = if state == ElementState::Pressed {
             self.interface_input.buttons.insert(button);
             Event::Press {
@@ -123,7 +144,7 @@ impl<G: WindowGame + 'static> App<G> {
 
     pub(super) fn interface_touch(&mut self, touch: Touch) -> Result<(), String> {
         let contact = Contact::Touch(touch.id);
-        let point = [touch.location.x, touch.location.y];
+        let point = self.picture_point([touch.location.x, touch.location.y]);
         self.interface_event(match touch.phase {
             TouchPhase::Started => Event::Press {
                 contact,

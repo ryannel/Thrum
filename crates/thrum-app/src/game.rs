@@ -157,6 +157,12 @@ pub trait Game {
         &[]
     }
 
+    /// Scene kind selected before the Mac window prepares its surface.
+    #[cfg(target_os = "macos")]
+    fn mac_scene_kind(&self) -> thrum_render::runtime::SceneKind {
+        thrum_render::runtime::SceneKind::ThreeD
+    }
+
     /// Declare EDR support to receive a float surface on an eligible display.
     /// A 2D game makes the same declaration as a 3D game. Return `true` to opt in.
     fn supports_edr(&self) -> bool {

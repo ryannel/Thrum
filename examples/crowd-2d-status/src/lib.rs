@@ -234,6 +234,11 @@ impl CrowdStatus {
 }
 
 impl Game for CrowdStatus {
+    #[cfg(target_os = "macos")]
+    fn mac_scene_kind(&self) -> thrum_render::runtime::SceneKind {
+        thrum_render::runtime::SceneKind::TwoD
+    }
+
     type World = CrowdWorld;
     type Scene = StatusScene;
     type Edits = Update;

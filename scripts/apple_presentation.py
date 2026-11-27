@@ -714,7 +714,7 @@ def ios_reset(output):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("check", choices=["wgpu-pin", "metallib", "archive-harvest", "archive-witness", "archive-faults", "launch", "no-compile", "extent", "transition", "configure-fault", "transition-capture", "scale", "scale-costs", "paired", "fullscreen-motion", "g4", "edr", "edr-identity", "edr-modes", "edr-headroom", "edr-route", "governor", "governor-identity", "governor-thermal", "reset", "metalfx", "metalfx-quality", "metalfx-exposure", "metalfx-motion"])
+    parser.add_argument("check", choices=["output-scale", "output-scale-mode", "wgpu-pin", "metallib", "archive-harvest", "archive-witness", "archive-faults", "launch", "no-compile", "extent", "transition", "configure-fault", "transition-capture", "scale", "scale-costs", "paired", "fullscreen-motion", "g4", "edr", "edr-identity", "edr-modes", "edr-headroom", "edr-route", "governor", "governor-identity", "governor-thermal", "reset", "metalfx", "metalfx-quality", "metalfx-exposure", "metalfx-motion"])
     parser.add_argument("--crate", action="append", help="registry patch to verify with wgpu-pin")
     parser.add_argument("--target", choices=["mac-metal", "ios-sim"])
     parser.add_argument("--output", type=Path)
@@ -756,11 +756,14 @@ def main():
     from apple_archive_proof import archive_faults, archive_harvest, archive_witness, launch_final
     from apple_paired_proof import mac_paired
     from apple_fullscreen_proof import mac_fullscreen_motion
+    from apple_output_scale_proof import mac_output_scale, mac_output_scale_mode
 
     if (args.steady or args.realtime_capture) and args.check != "governor":
         parser.error("governor options require the governor check")
     launch = launch_final if args.final else launch_paths if args.paths else mac_launch
     checks = {("launch", "mac-metal"): launch,
+              ("output-scale", "mac-metal"): mac_output_scale,
+              ("output-scale-mode", "mac-metal"): mac_output_scale_mode,
               ("paired", "mac-metal"): mac_paired,
               ("fullscreen-motion", "mac-metal"): mac_fullscreen_motion,
               ("archive-harvest", "mac-metal"): archive_harvest,

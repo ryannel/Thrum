@@ -1,6 +1,7 @@
 //! Debounce and single-owner preparation for a native surface generation.
 
 use super::{FrameError, PreparedExtent, SurfaceSwitch};
+use crate::synthetic::RenderScale;
 use std::{
     sync::{
         Arc,
@@ -17,12 +18,32 @@ const DEBOUNCE: Duration = Duration::from_millis(100);
 pub struct ExtentRequest {
     /// Window backing grid.
     pub extent: [u32; 2],
+    /// Prepared output scale applied to the backing grid.
+    pub output_scale: RenderScale,
     /// Backing scale, expressed as the platform's f64 bits.
     pub backing_scale: u64,
     /// Display output format.
     pub format: wgpu::TextureFormat,
     /// Device generation on which to allocate.
     pub device: u64,
+}
+
+impl ExtentRequest {
+    /// The drawable and scene allocation grid. A hidden window stays empty.
+    #[must_use]
+    pub fn output_extent(self) -> [u32; 2] {
+        Self::scaled_extent(self.extent, self.output_scale)
+    }
+
+    /// Apply the prepared output step to a backing grid before a format is known.
+    #[must_use]
+    pub fn scaled_extent(backing: [u32; 2], scale: RenderScale) -> [u32; 2] {
+        if backing.contains(&0) {
+            backing
+        } else {
+            scale.extent(backing)
+        }
+    }
 }
 
 struct Build {

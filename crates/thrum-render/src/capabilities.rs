@@ -153,6 +153,13 @@ impl DeviceCapabilities {
     pub fn reconstructor(&self) -> Reconstructor {
         self.reconstructor
     }
+    /// Registry default for fullscreen output on fast Mac displays, shared by both recipes.
+    #[cfg(target_os = "macos")]
+    #[must_use]
+    pub const fn mac_fullscreen_output_scale() -> crate::synthetic::RenderScale {
+        crate::synthetic::RenderScale::Native
+    }
+
     /// Optional timestamp feature to request while the platform creates its
     /// device. The enabled result is captured in this record afterward.
     #[must_use]

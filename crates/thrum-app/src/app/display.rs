@@ -14,6 +14,20 @@ use winit::{
     window::Window,
 };
 
+#[expect(
+    unsafe_code,
+    reason = "the winit AppKit handle is a main-thread NSView pointer"
+)]
+pub(super) fn window_view(window: &Window) -> Result<Retained<NSView>, String> {
+    let _main = MainThreadMarker::new().ok_or("view requires the AppKit main thread")?;
+    let handle = window.window_handle().map_err(|error| error.to_string())?;
+    let RawWindowHandle::AppKit(handle) = handle.as_raw() else {
+        return Err("macOS window did not provide an NSView".into());
+    };
+    // SAFETY: The handle is valid while the winit window is borrowed and names an NSView.
+    Ok(unsafe { handle.ns_view.cast::<NSView>().as_ref() }.retain())
+}
+
 /// Current and potential headroom published atomically as one display sample.
 #[derive(Default)]
 pub(super) struct Headroom(AtomicU64);
@@ -125,6 +139,8 @@ pub struct WindowDisplayOptions {
     pub capture: bool,
     /// Retain the first presented capture's raw pixels beside the capture record.
     pub capture_first_pixels: bool,
+    /// Capacity for the optional engine drawable tap.
+    pub capture_limits: thrum_render::runtime::CaptureLimits,
 }
 
 impl DisplayOverride {
@@ -147,19 +163,13 @@ impl DisplayOverride {
 impl MacDisplay {
     #[expect(
         unsafe_code,
-        reason = "the winit AppKit handle is a main-thread NSView pointer"
+        reason = "the main-thread AppKit backing layer exposes its retained sublayers"
     )]
     pub(super) fn attach(
         window: &Window,
         options: Option<&WindowDisplayOptions>,
     ) -> Result<Self, String> {
-        let _main = MainThreadMarker::new().ok_or("display must be read on AppKit main thread")?;
-        let handle = window.window_handle().map_err(|error| error.to_string())?;
-        let RawWindowHandle::AppKit(handle) = handle.as_raw() else {
-            return Err("macOS window did not provide an NSView".into());
-        };
-        // SAFETY: The handle is valid while the winit window is borrowed and names an NSView.
-        let view = unsafe { handle.ns_view.cast::<NSView>().as_ref() }.retain();
+        let view = window_view(window)?;
         let backing = view.layer().ok_or("Metal view has no backing layer")?;
         let layer = match backing.downcast::<CAMetalLayer>() {
             Ok(layer) => layer,
@@ -266,6 +276,18 @@ impl MacDisplay {
             });
             drop(writeln!(record, "{receipt}"));
         }
+    }
+
+    pub(super) fn layer_record(&self) -> serde_json::Value {
+        let bounds = self.layer.bounds().size;
+        let scale = self.layer.contentsScale();
+        serde_json::json!({
+            "bounds": [bounds.width, bounds.height],
+            "contents_scale": scale,
+            "backing": [bounds.width * scale, bounds.height * scale],
+            "gravity": self.layer.contentsGravity().to_string(),
+            "magnification_filter": self.layer.magnificationFilter().to_string(),
+        })
     }
 
     fn legacy_wants_edr(layer: &CAMetalLayer) -> bool {

@@ -40,6 +40,10 @@ pub(crate) trait RuntimeSetup {
     #[cfg(target_os = "macos")]
     fn world(&self) -> Option<&dyn thrum_app::WorldLink>;
     #[cfg(target_os = "macos")]
+    #[cfg(target_os = "macos")]
+    fn mac_scene_kind(&self) -> thrum_render::runtime::SceneKind {
+        thrum_render::runtime::SceneKind::ThreeD
+    }
     fn supports_edr(&self) -> bool;
 
     fn readback(host: &Runtime) -> f32;
@@ -95,6 +99,11 @@ impl<T: RuntimeSetup> Game for HostedGame<T> {
     }
 
     #[cfg(target_os = "macos")]
+    #[cfg(target_os = "macos")]
+    fn mac_scene_kind(&self) -> thrum_render::runtime::SceneKind {
+        self.0.mac_scene_kind()
+    }
+
     fn supports_edr(&self) -> bool {
         self.0.supports_edr()
     }

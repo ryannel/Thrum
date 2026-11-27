@@ -23,7 +23,7 @@ impl DisplayProof {
         };
         let tap = options.capture;
         if tap {
-            host.enable_submitted_capture(1)?;
+            host.enable_submitted_capture_with_limits(1, options.capture_limits)?;
         }
         Ok(Some(Self {
             log: File::create(path.join("frames.jsonl")).map_err(|error| error.to_string())?,

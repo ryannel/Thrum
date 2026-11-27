@@ -148,6 +148,8 @@ pub struct WindowGovernor {
     pub enabled: bool,
     /// Typed override for the display-link request.
     pub frame_rate: Option<thrum_app::MacFrameRate>,
+    /// Typed launch setting for the Mac output grid.
+    pub output_scale: Option<thrum_render::synthetic::RenderScale>,
     /// A validated route is prepared from this authored route text before the window starts.
     #[cfg(feature = "proving")]
     pub route: Option<String>,
@@ -253,6 +255,7 @@ pub fn run_window(
         window_always_on_top: false,
         frame_budget: None,
         mac_frame_rate: governor.frame_rate,
+        mac_output_scale: governor.output_scale,
         metal_preparation,
         #[cfg(feature = "proving")]
         window_size: if transition.is_none()
@@ -590,6 +593,15 @@ impl RuntimeSetup for WindowGame {
 
     fn demo_mut(&mut self) -> &mut GameControls {
         &mut self.demo
+    }
+
+    fn mac_scene_kind(&self) -> thrum_render::runtime::SceneKind {
+        use thrum_render::runtime::SceneKind;
+        #[cfg(feature = "proving")]
+        if crate::selected_setup().is_ok_and(|setup| setup.sprite_scale.is_some()) {
+            return SceneKind::TwoD;
+        }
+        SceneKind::ThreeD
     }
 
     fn supports_edr(&self) -> bool {

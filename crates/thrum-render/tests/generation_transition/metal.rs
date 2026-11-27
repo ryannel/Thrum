@@ -42,6 +42,7 @@ static METAL: Mutex<()> = Mutex::new(());
 fn request(extent: [u32; 2], device: u64) -> ExtentRequest {
     ExtentRequest {
         extent,
+        output_scale: Default::default(),
         backing_scale: 2_f64.to_bits(),
         format: FORMAT,
         device,
@@ -644,5 +645,196 @@ fn failed_and_lost_builds_never_take_the_surface() {
     let new_output = view(&device, NEW);
     submit(&mut host, &new_output, NEW);
     assert_eq!(complete(&mut host, &device).render_extent, NEW);
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+#[expect(unsafe_code, reason = "the retained CAMetalLayer outlives the test surface")]
+fn output_scale_switches_the_scene_and_metal_surface_together() {
+    use objc2::rc::Retained;
+    use objc2_quartz_core::CAMetalLayer;
+    use thrum_render::{
+        capabilities::{configure_surface_once, drawable_extent},
+        runtime::FrameExtent,
+        synthetic::RenderScale::{Half, Native, Percent67, Percent75},
+    };
+
+    let Some(thrum_test_support::Opened { gpu, device, queue, .. }) = thrum_test_support::open(
+        "output scale on Metal",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    ) else {
+        return;
+    };
+    let cap = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
+    let layer = CAMetalLayer::new();
+    // SAFETY: The CAMetalLayer remains retained until the surface drops.
+    let surface = unsafe {
+        gpu.instance.create_surface_unsafe(wgpu::SurfaceTargetUnsafe::CoreAnimationLayer(
+            Retained::as_ptr(&layer).cast_mut().cast(),
+        ))
+    }
+    .expect("Metal surface");
+    let format = wgpu::TextureFormat::Bgra8Unorm;
+    let old = ExtentRequest { format, ..request(OLD, 1) };
+    let scaled = ExtentRequest { output_scale: Percent75, ..old };
+    let config = |extent: [u32; 2]| wgpu::SurfaceConfiguration {
+        format,
+        color_space: wgpu::SurfaceColorSpace::Auto,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        width: extent[0],
+        height: extent[1],
+        desired_maximum_frame_latency: 2,
+        present_mode: wgpu::PresentMode::Fifo,
+        alpha_mode: wgpu::CompositeAlphaMode::Opaque,
+        view_formats: vec![],
+    };
+    configure_surface_once(&surface, &device, &config(old.output_extent()))
+        .expect("initial Metal configure");
+
+    let mut scene = SyntheticScene::grid(1).expect("small scene");
+    scene.sun_shadows = false;
+    scene.view = scene.view.with_reconstruction(true);
+    let mut host = pollster::block_on(support::host_with_config_exact(
+        &cap,
+        &queue,
+        scene,
+        FrameLighting::Diagnostic(SyntheticLight::default()),
+        FrameConfig {
+            render_extent: old.output_extent(),
+            surface: Some(SurfaceProfile { format, extent: old.output_extent() }),
+        },
+    ));
+    host.set_timing_requested(false);
+    let creations = Creations::default();
+    let dispatch = creations.dispatch();
+    let render_thread = std::thread::current().id();
+    let _trace = tracing::dispatcher::set_default(&dispatch);
+    let control_view = device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("output scale creation control"),
+        size: wgpu::Extent3d { width: 1, height: 1, depth_or_array_layers: 1 },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format,
+        usage: wgpu::TextureUsages::TEXTURE_BINDING,
+        view_formats: &[],
+    });
+    drop(control_view.create_view(&wgpu::TextureViewDescriptor::default()));
+    let platform_control = creations.on(render_thread);
+    assert_eq!(platform_control, ["Device::create_texture", "Texture::create_view"]);
+
+    let draw = |host: &mut support::Host, scale, output| {
+        let encoded = host.advance(Duration::ZERO).expect("admit frame")
+            .encode_scene_with_scale(|_| scale).expect("encode frame");
+        let details = encoded.frame_extent().expect("encoded size witnesses");
+        let history = encoded.history_identity().expect("encoded history");
+        let frame = match surface.get_current_texture() {
+            wgpu::CurrentSurfaceTexture::Success(frame) => frame,
+            other => panic!("expected a Metal drawable, got {other:?}"),
+        };
+        assert_eq!(drawable_extent(&frame.texture), Some(output));
+        assert_eq!([frame.texture.width(), frame.texture.height()], output);
+        // The platform lends the host its drawable view. Count everything in
+        // the host, switch and configure, excluding this per-acquisition view.
+        let view = std::thread::scope(|platform| {
+            platform.spawn(|| frame.texture.create_view(&wgpu::TextureViewDescriptor::default()))
+                .join().expect("platform acquired a drawable view")
+        });
+        let report = encoded.submit(Some(&SurfaceOutput { view: &view, extent: output }))
+            .expect("submit to Metal");
+        assert!(report.submitted && report.surface_presented);
+        queue.present(frame);
+        complete(host, &device);
+        (details, history)
+    };
+    let verify = |frame: FrameExtent, output, drawn: [u32; 2]| {
+        assert_eq!(frame.attachments, [output; 4]);
+        assert_eq!(frame.reconstruction, Some(output));
+        assert_eq!(frame.history, Some(output));
+        assert_eq!(frame.forward_rect, [0, 0, drawn[0], drawn[1]]);
+        assert_eq!(frame.destination, output);
+        assert_eq!(frame.viewport, [0, 0, output[0], output[1]]);
+    };
+    assert_eq!(old.output_scale, Native);
+    let (native, initial_history) = draw(&mut host, Half, OLD);
+    verify(native, OLD, [32, 32]);
+    let mut transition = ExtentTransition::new(old);
+    for (index, (current, next, expected)) in
+        [(old, scaled, [48, 48]), (scaled, old, OLD)].into_iter().enumerate()
+    {
+        let start = Duration::from_secs(u64::try_from(index).unwrap());
+        assert_ne!(current, next);
+        assert_eq!(current.extent, next.extent);
+        assert_eq!(next.output_extent(), expected);
+        transition.observe(next, current, start);
+        transition.advance(next, current, start + Duration::from_millis(99), unexpected_build)
+            .expect("debounce output scale");
+        let now = start + Duration::from_millis(100);
+        let (started, worker) = mpsc::channel();
+        let (release, wait) = mpsc::channel();
+        transition.advance(next, current, now, || {
+            let inputs = host.extent_prepare_request(next)?;
+            let dispatch = dispatch.clone();
+            Ok(move |cancel: &AtomicBool| {
+                started.send(std::thread::current().id()).expect("announce worker");
+                let result = tracing::dispatcher::with_default(&dispatch, || inputs.build(cancel));
+                wait.recv_timeout(Duration::from_secs(5)).expect("release worker");
+                result
+            })
+        })
+        .expect("start detached output build");
+        let worker = worker.recv_timeout(Duration::from_secs(5)).expect("worker started");
+        assert_ne!(worker, render_thread);
+
+        let previous = current.output_extent();
+        let (held, held_history) = draw(&mut host, Half, previous);
+        verify(held, previous, Half.extent(previous));
+        assert_ne!(held_history[1], 0, "old history remains live during the build");
+        if index == 0 {
+            assert_eq!(held_history[1], initial_history[0]);
+        }
+        assert_eq!(transition.surface.record().configure_calls, 0);
+        release.send(()).expect("release extent build");
+        let ready = thrum_test_support::wait::until("output-scale generation", Duration::from_secs(5), || {
+            transition.advance(next, current, now, unexpected_build).expect("poll detached build");
+            transition.ready()
+        });
+        let worker_events = creations.on(worker);
+        for kind in ["Device::create_texture", "Texture::create_view", "Device::create_bind_group"] {
+            assert!(worker_events.contains(&kind), "{worker_events:?}");
+        }
+        assert!(host.admits_extent(&ready));
+        assert_eq!(
+            transition.surface.take(false, transition.busy(), &config(expected), &config(previous), |config| {
+                assert_eq!([config.width, config.height], next.output_extent());
+                configure_surface_once(&surface, &device, config)
+            }),
+            SurfaceSwitchOutcome::Taken,
+        );
+        assert!(host.publish_extent(ready));
+        let receipt = transition.surface.record();
+        assert_eq!((receipt.configure_calls, receipt.restore_calls, receipt.generations_taken), (1, 0, 1));
+
+        let (first, history) = draw(&mut host, Half, expected);
+        verify(first, expected, Half.extent(expected));
+        assert_eq!(first.revision, held.revision + 1);
+        assert_eq!(history[1], 0, "history resets on the first reconstructed frame");
+        if index == 0 {
+            // A single forward attachment at backing size would still pass
+            // the viewport, presenter, drawable and history checks.
+            let wrong = FrameExtent { attachments: [native.attachments[0], first.attachments[1],
+                                                      first.attachments[2], first.attachments[3]], ..first };
+            assert!(std::panic::catch_unwind(|| verify(wrong, expected, Half.extent(expected))).is_err());
+            let (stepped, next_history) = draw(&mut host, Percent67, expected);
+            verify(stepped, expected, [32, 32]);
+            assert_eq!(stepped.revision, first.revision);
+            assert_eq!(next_history[1], history[0]);
+        }
+        assert_eq!(creations.on(render_thread), platform_control);
+        eprintln!("Metal output scale {}% -> {}%: {previous:?} -> {expected:?}; one configure, no restore, history reset, {} worker creations, zero host-thread creations",
+            current.output_scale.percent(), next.output_scale.percent(), worker_events.len());
+    }
 }
 }

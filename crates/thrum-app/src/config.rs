@@ -31,6 +31,9 @@ pub struct Config {
     /// Override the Mac display-link request for this launch.
     #[cfg(target_os = "macos")]
     pub mac_frame_rate: Option<MacFrameRate>,
+    /// Force a prepared output scale for a 3D Mac scene.
+    #[cfg(target_os = "macos")]
+    pub mac_output_scale: Option<thrum_render::synthetic::RenderScale>,
 }
 
 impl Config {
@@ -54,6 +57,8 @@ impl Config {
             metal_preparation: None,
             #[cfg(target_os = "macos")]
             mac_frame_rate: None,
+            #[cfg(target_os = "macos")]
+            mac_output_scale: None,
         }
     }
 }

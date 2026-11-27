@@ -2,6 +2,7 @@
 use super::{
     UserEvent,
     device::{PlatformGpu, WindowDevice},
+    output_scale::OutputRequest,
     qualification::TransitionProof,
     refresh_account::{Account, Place},
 };
@@ -34,6 +35,8 @@ pub(super) struct FrameEdits<E> {
     pub(super) profile_revision: u64,
     pub(super) timing_requested: bool,
     pub(super) backing_scale: u64,
+    pub(super) output: OutputRequest,
+    pub(super) mode_held: bool,
     pub(super) governor_display: thrum_render::governor::DisplayRecord,
     pub(super) display_tick: u64,
     pub(super) edits: E,
@@ -45,7 +48,8 @@ pub(super) enum RenderJob<E> {
     Recover {
         from_generation: u64,
         generation: u64,
-        extent: [u32; 2],
+        output: OutputRequest,
+        backing_scale: u64,
         surface_generation: u64,
     },
     Finish,
@@ -193,7 +197,7 @@ pub(super) fn start<G: Game<World: Send, Scene: Send> + 'static>(
     origin: Instant,
     wake: &EventLoopProxy<UserEvent>,
     extent_output: Option<super::WindowExtentCapture>,
-    backing_scale: u64,
+    current_extent: ExtentRequest,
     proof: Option<&super::WindowTransitionProof>,
     qualification: Option<&super::WindowQualification>,
     display: Option<&super::WindowDisplayOptions>,
@@ -215,16 +219,10 @@ pub(super) fn start<G: Game<World: Send, Scene: Send> + 'static>(
             super::qualification::ExtentCapture::start(
                 &mut host,
                 output,
-                f64::from_bits(backing_scale),
+                f64::from_bits(current_extent.backing_scale),
             )
         })
         .transpose()?;
-    let current_extent = ExtentRequest {
-        extent: [gpu.config.width, gpu.config.height],
-        backing_scale,
-        format: gpu.config.format,
-        device: gpu.watch.generation,
-    };
     let transition_proof = proof.map(TransitionProof::start).transpose()?;
     let display_proof = super::display::proof::DisplayProof::start(&mut host, display)?;
     let mut actor = Actor::<G> {
@@ -294,7 +292,7 @@ impl<G: Game> Actor<G> {
                     proof.begin_frame(request.sequence);
                 }
                 backing = Some((
-                    request.extent,
+                    request.platform.output,
                     request.platform.backing_scale,
                     request.platform.governor_display,
                 ));
@@ -368,11 +366,18 @@ impl<G: Game> Actor<G> {
             RenderJob::Recover {
                 from_generation,
                 generation,
-                extent,
+                output,
+                backing_scale,
                 surface_generation,
             } => RenderOutcome::Recovered {
                 attempted: generation,
-                result: self.recover(from_generation, generation, extent, surface_generation),
+                result: self.recover(
+                    from_generation,
+                    generation,
+                    output,
+                    backing_scale,
+                    surface_generation,
+                ),
             },
             RenderJob::Finish => RenderOutcome::Finish(self.finish()),
         };
@@ -708,16 +713,22 @@ impl<G: Game> Actor<G> {
         potential: f32,
     ) -> Result<(), FrameError> {
         let promote = self.gpu.edr.is_some() && potential > 1.0;
-        let request = ExtentRequest {
-            extent: frame.extent,
-            backing_scale: frame.platform.backing_scale,
-            format: if promote {
+        let request = frame.platform.output.generation(
+            frame.platform.backing_scale,
+            if promote {
                 wgpu::TextureFormat::Rgba16Float
             } else {
                 self.gpu.config.format
             },
-            device: self.gpu.watch.generation,
-        };
+            self.gpu.watch.generation,
+        );
+        if frame.platform.mode_held
+            && request.format == self.current_extent.format
+            && request.device == self.current_extent.device
+            && request.backing_scale == self.current_extent.backing_scale
+        {
+            return Ok(());
+        }
         if request.extent.contains(&0) {
             self.transition
                 .observe(request, self.current_extent, self.origin.elapsed());
@@ -729,14 +740,16 @@ impl<G: Game> Actor<G> {
             .as_ref()
             .is_some_and(TransitionProof::synchronous)
         {
-            return self.synchronous_extent(frame, request);
+            return self.synchronous_extent(request);
         }
         if let Err(error) =
             self.transition
                 .advance(request, self.current_extent, self.origin.elapsed(), || {
-                    let inputs = self
-                        .host
-                        .extent_prepare_inputs_for_format(request.extent, request.format)?;
+                    if let Some(proof) = &mut self.transition_proof {
+                        proof.stage("starting detached extent build");
+                        proof.build(request);
+                    }
+                    let inputs = self.host.extent_prepare_request(request)?;
                     Ok(move |cancel: &AtomicBool| inputs.build(cancel))
                 })
         {
@@ -749,7 +762,7 @@ impl<G: Game> Actor<G> {
                 self.transition.refresh();
                 return Ok(());
             }
-            let config = self.gpu.config_for(request.extent, request.format);
+            let config = self.gpu.config_for(request.output_extent(), request.format);
             let mut calls = 0;
             let configure_started = CACurrentMediaTime();
             let outcome = self.transition.surface.take(
@@ -834,11 +847,7 @@ impl<G: Game> Actor<G> {
         Ok(())
     }
 
-    fn synchronous_extent(
-        &mut self,
-        frame: &FrameRequest<G::Edits>,
-        request: ExtentRequest,
-    ) -> Result<(), FrameError> {
+    fn synchronous_extent(&mut self, request: ExtentRequest) -> Result<(), FrameError> {
         if self.current_extent == request && !self.surface_lease.pending() {
             return Ok(());
         }
@@ -847,7 +856,7 @@ impl<G: Game> Actor<G> {
         }
         let candidate = self
             .host
-            .extent_prepare_inputs(frame.extent)?
+            .extent_prepare_request(request)?
             .build(&AtomicBool::new(false))?
             .ok_or(FrameError::InvalidState(
                 "synchronous extent control cancelled",
@@ -856,7 +865,7 @@ impl<G: Game> Actor<G> {
             proof.stage("switching the synchronous extent");
         }
         let mut config = self.gpu.config.clone();
-        [config.width, config.height] = frame.extent;
+        [config.width, config.height] = request.output_extent();
         self.transition.surface.begin();
         let configure_started = CACurrentMediaTime();
         let outcome =
@@ -887,7 +896,8 @@ impl<G: Game> Actor<G> {
         &mut self,
         from: u64,
         generation: u64,
-        extent: [u32; 2],
+        output: OutputRequest,
+        backing_scale: u64,
         surface_generation: u64,
     ) -> Result<RecoveryInfo, RecoveryFailure> {
         if from != self.gpu.watch.generation || generation <= from {
@@ -901,9 +911,10 @@ impl<G: Game> Actor<G> {
             .host
             .device_prepare_inputs()
             .map_err(RecoveryFailure::frame)?;
+        let request = output.generation(backing_scale, self.gpu.config.format, generation);
         let replacement = pollster::block_on(self.recipe.create(
             generation,
-            extent,
+            output,
             &self.wake,
             self.host.is_edr(),
         ))
@@ -924,7 +935,7 @@ impl<G: Game> Actor<G> {
             .map_err(RecoveryFailure::frame)?;
         // The previous job has dropped its drawable, but the lost device
         // may have prevented wgpu from clearing that surface acquisition.
-        let needs_reconfigure = extent.contains(&0)
+        let needs_reconfigure = request.extent.contains(&0)
             || self.surface_generation.load(Ordering::Acquire) != surface_generation;
         ensure_device(&replacement.watch).map_err(RecoveryFailure::frame)?;
         ensure_running(&self.stopped).map_err(RecoveryFailure::frame)?;
@@ -963,10 +974,8 @@ impl<G: Game> Actor<G> {
                 || self.surface_generation.load(Ordering::Acquire) != surface_generation,
         );
         self.current_extent = ExtentRequest {
-            extent: profile.extent,
             format: profile.format,
-            device: generation,
-            ..self.current_extent
+            ..request
         };
         self.transition
             .recovered(self.current_extent, !self.surface_lease.pending());

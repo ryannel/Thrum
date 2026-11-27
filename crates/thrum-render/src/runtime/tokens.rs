@@ -277,17 +277,20 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
                 viewport,
                 submission: host.next_submission_order,
                 revision: host.presenter_generation,
+                forward_rect: [0, 0, target.extent[0], target.extent[1]],
+                reconstruction: None,
+                history: None,
             });
         }
-        let (target_textures, target_bytes) = host.slots[ready.recorded.slot_index]
-            .target
-            .texture_allocation();
+        let target = &host.slots[ready.recorded.slot_index].target;
+        let (target_textures, target_bytes) = target.texture_allocation();
         Some(super::FrameExtent {
             target_textures,
             target_bytes,
-            attachments: host.slots[ready.recorded.slot_index]
-                .target
-                .attachment_extents(),
+            attachments: target.attachment_extents(),
+            forward_rect: target.forward_rect(),
+            reconstruction: target.reconstruction_extent(),
+            history: host.prepared.temporal_history_key().map(|key| key.extent),
             view_projection: host.scene.view.view_proj_columns(),
             previous_view_projection: host.prepared.submitted_view_projection(),
             source,

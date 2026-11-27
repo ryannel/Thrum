@@ -2395,11 +2395,25 @@ impl OffscreenTarget {
     }
 
     fn set_drawn_viewport(&self, pass: &mut wgpu::RenderPass<'_>) {
-        let [width, height] = self.drawn;
+        let [_, _, width, height] = self.forward_rect();
         if self.drawn != self.extent() {
             pass.set_viewport(0.0, 0.0, width as f32, height as f32, 0.0, 1.0);
             pass.set_scissor_rect(0, 0, width, height);
         }
+    }
+
+    pub(crate) fn forward_rect(&self) -> [u32; 4] {
+        [0, 0, self.drawn[0], self.drawn[1]]
+    }
+
+    pub(crate) fn reconstruction_extent(&self) -> Option<[u32; 2]> {
+        let output = if let Some(native) = &self.native {
+            native.output_view()
+        } else {
+            &self.taau.as_ref()?.output
+        };
+        let texture = output.texture();
+        Some([texture.width(), texture.height()])
     }
 
     /// Target extent in pixels.

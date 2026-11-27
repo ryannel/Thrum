@@ -1,6 +1,9 @@
 //! Opt-in observations of the ordinary Mac render owner's surface changes.
 
-use super::super::render_actor::{RenderOutcome, RenderReply};
+use super::super::{
+    output_scale::OutputRequest,
+    render_actor::{RenderOutcome, RenderReply},
+};
 use objc2_quartz_core::CACurrentMediaTime;
 use serde_json::{Value, json};
 use std::{
@@ -20,6 +23,10 @@ pub enum TransitionArm {
     Baseline,
     /// Keep the window at its monitor's fullscreen extent.
     Fullscreen,
+    /// Launch in simple fullscreen and record the scaled drawable and layer.
+    OutputScaleFullscreen,
+    /// Toggle native AppKit fullscreen in both directions during play.
+    OutputScaleMode,
     /// Keep the window at its initial size during the presentation comparison.
     Route,
     /// Capture a status display across a series of real window sizes.
@@ -41,7 +48,15 @@ impl TransitionArm {
             (Self::Status, 48) => Some([320, 568]),
             (Self::Status, 72) => Some([568, 320]),
             (Self::Status, 96) => Some([1280, 720]),
-            (Self::Status | Self::Baseline | Self::Fullscreen | Self::Route, _) => None,
+            (
+                Self::Status
+                | Self::Baseline
+                | Self::Fullscreen
+                | Self::Route
+                | Self::OutputScaleFullscreen
+                | Self::OutputScaleMode,
+                _,
+            ) => None,
             (_, 24..48) => {
                 let step = u32::try_from(frame - 24).expect("resize sweep step fits u32");
                 Some([960 - step * 8, 540 - step * 4])
@@ -74,6 +89,8 @@ pub struct WindowTransitionProof {
     pub governor: Option<GovernorProof>,
     /// Authored scale replay for a comparison, indexed by the published world tick.
     pub scale_replay: Option<ScaleReplay>,
+    /// Substitute this value for the registry default in the fullscreen output policy.
+    pub fullscreen_output_scale: Option<thrum_render::synthetic::RenderScale>,
 }
 
 /// Scale trace used in place of the live governor for a paired comparison.
@@ -162,6 +179,7 @@ pub(in crate::app) struct TransitionProof {
     drawable: Option<([u32; 2], [u32; 2])>,
     frame_extent: Option<FrameExtent>,
     switch: Option<Value>,
+    build: Option<Value>,
     identity: Option<PathBuf>,
     #[cfg(feature = "creation-counters")]
     pub(in crate::app) creation_record: Option<PathBuf>,
@@ -176,7 +194,10 @@ impl TransitionProof {
             .map_err(|error| error.to_string())?;
         let closing_route = matches!(
             options.arm,
-            TransitionArm::Fullscreen | TransitionArm::Route
+            TransitionArm::Fullscreen
+                | TransitionArm::Route
+                | TransitionArm::OutputScaleFullscreen
+                | TransitionArm::OutputScaleMode
         );
         Ok(Self {
             identity: closing_route.then(|| options.output.join("prepared.json")),
@@ -196,6 +217,7 @@ impl TransitionProof {
             drawable: None,
             frame_extent: None,
             switch: None,
+            build: None,
         })
     }
 
@@ -266,6 +288,15 @@ impl TransitionProof {
         false
     }
 
+    pub(in crate::app) fn build(&mut self, request: ExtentRequest) {
+        self.build = Some(json!({
+            "media": CACurrentMediaTime(),
+            "backing": request.extent,
+            "output_scale": request.output_scale.percent(),
+            "extent": request.output_extent(),
+        }));
+    }
+
     pub(in crate::app) fn switch(
         &mut self,
         request: ExtentRequest,
@@ -273,7 +304,9 @@ impl TransitionProof {
         media_started: f64,
     ) {
         self.switch = Some(json!({
-            "extent": request.extent,
+            "extent": request.output_extent(),
+            "backing": request.extent,
+            "output_scale": request.output_scale.percent(),
             "scale": f64::from_bits(request.backing_scale),
             "deferrals": record.deferrals,
             "configure_calls": record.configure_calls,
@@ -316,7 +349,7 @@ impl TransitionProof {
     >(
         &mut self,
         reply: &RenderReply<R>,
-        extent: [u32; 2],
+        request: OutputRequest,
         scale: u64,
         display: thrum_render::governor::DisplayRecord,
         host: &thrum_render::runtime::FrameHost<W, V>,
@@ -385,7 +418,10 @@ impl TransitionProof {
             "{}",
             json!({
                 "sequence": reply.sequence,
-                "window": extent,
+                "window": request.backing,
+                "output_extent": request.extent(),
+                "output_scale": request.scale.step.percent(),
+                "output_scale_forced": request.scale.forced,
                 "scale": f64::from_bits(scale),
                 "surface": reply.surface_extent,
                 "presented": presented,
@@ -403,9 +439,12 @@ impl TransitionProof {
                     "source": frame.source,
                     "destination": frame.destination,
                     "viewport": frame.viewport,
+                    "reconstruction": frame.reconstruction,
+                    "revision": frame.revision,
                     "attachment_extents": frame.attachments,
                 })),
                 "switch": self.switch.take(),
+                "build": self.build.take(),
             })
         )?;
         self.output.flush()

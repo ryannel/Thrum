@@ -141,6 +141,12 @@ pub struct FrameExtent {
     pub destination: [u32; 2],
     /// Viewport actually selected by the presentation recorder.
     pub viewport: [u32; 4],
+    /// Forward-pass viewport and scissor, which share the same pixel rectangle.
+    pub forward_rect: [u32; 4],
+    /// The reconstruction provider's actual output texture, if enabled.
+    pub reconstruction: Option<[u32; 2]>,
+    /// Output grid in the prepared history validity key.
+    pub history: Option<[u32; 2]>,
     /// Submission that this encoded token will receive on success.
     pub submission: u64,
     /// Presenter/target transition identity, stable between resizes.
@@ -161,6 +167,17 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .as_ref()
             .ok_or(FrameError::InvalidState("host has no surface presenter"))?;
         self.extent_prepare_inputs_for_format(extent, presenter.profile().format)
+    }
+
+    /// Retain detached preparation inputs for a platform generation request.
+    /// # Errors
+    /// Refuses a host without a compatible presenter.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn extent_prepare_request(
+        &self,
+        request: super::ExtentRequest,
+    ) -> Result<ExtentPrepareInputs, FrameError> {
+        self.extent_prepare_inputs_for_format(request.output_extent(), request.format)
     }
 
     /// Retain detached preparation inputs for an extent and an optional EDR upgrade.

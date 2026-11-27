@@ -102,11 +102,13 @@ fn main() {
     let qualification =
         window_qualification().unwrap_or_else(|error| report_capture_failure(&error));
     #[cfg(feature = "proving")]
-    let display =
-        window_display_options().unwrap_or_else(|error| report_capture_failure(&error.to_string()));
+    let display = window_display_options(transition.as_ref())
+        .unwrap_or_else(|error| report_capture_failure(&error.to_string()));
     let governor = v1_game::WindowGovernor {
         enabled: governor_enabled().unwrap_or_else(|error| report_capture_failure(&error)),
         frame_rate: window_frame_rate().unwrap_or_else(|error| report_capture_failure(&error)),
+        output_scale: output_scale_setting("THRUM_MAC_OUTPUT_SCALE")
+            .unwrap_or_else(|error| report_capture_failure(&error)),
         #[cfg(feature = "proving")]
         solar_sweep: window_solar_sweep().unwrap_or_else(|error| report_capture_failure(&error)),
         #[cfg(feature = "proving")]
@@ -134,6 +136,23 @@ fn main() {
         governor,
         metal_preparation,
     );
+}
+
+#[cfg(target_os = "macos")]
+fn output_scale_setting(
+    name: &str,
+) -> Result<Option<thrum_render::synthetic::RenderScale>, String> {
+    use thrum_render::synthetic::RenderScale;
+    let value = match std::env::var(name) {
+        Ok(value) => value,
+        Err(std::env::VarError::NotPresent) => return Ok(None),
+        Err(error) => return Err(format!("{name}: {error}")),
+    };
+    RenderScale::STEPS
+        .into_iter()
+        .find(|step| value == step.percent().to_string())
+        .map(Some)
+        .ok_or_else(|| format!("{name} must be 100, 85, 75, 67 or 50"))
 }
 
 #[cfg(target_os = "macos")]
@@ -187,8 +206,9 @@ fn window_menu() -> Result<v1_game::WindowMenu, String> {
 }
 
 #[cfg(all(target_os = "macos", feature = "proving"))]
-fn window_display_options()
--> Result<Option<thrum_app::WindowDisplayOptions>, thrum_app::DisplayOverrideError> {
+fn window_display_options(
+    transition: Option<&thrum_app::WindowTransitionProof>,
+) -> Result<Option<thrum_app::WindowDisplayOptions>, thrum_app::DisplayOverrideError> {
     let Ok(forced) = std::env::var("THRUM_MAC_EDR") else {
         return Ok(None);
     };
@@ -197,6 +217,17 @@ fn window_display_options()
         output: std::env::var_os("THRUM_MAC_EDR_PROOF").map(Into::into),
         capture: std::env::var_os("THRUM_MAC_EDR_TAP").is_some(),
         capture_first_pixels: std::env::var_os("THRUM_MAC_EDR_PIXELS").is_some(),
+        capture_limits: if transition
+            .is_some_and(|proof| proof.arm == thrum_app::TransitionArm::OutputScaleFullscreen)
+        {
+            thrum_render::runtime::CaptureLimits {
+                staging_slots: 2,
+                cpu_buffers: 2,
+                ..Default::default()
+            }
+        } else {
+            Default::default()
+        },
     }))
 }
 
@@ -324,6 +355,8 @@ fn window_transition_proof() -> Result<Option<thrum_app::WindowTransitionProof>,
     let arm = match std::env::var("THRUM_MAC_TRANSITION_ARM").as_deref() {
         Ok("baseline") => TransitionArm::Baseline,
         Ok("fullscreen") => TransitionArm::Fullscreen,
+        Ok("output-scale-fullscreen") => TransitionArm::OutputScaleFullscreen,
+        Ok("output-scale-mode") => TransitionArm::OutputScaleMode,
         Ok("route") => TransitionArm::Route,
         Ok("sweep") => TransitionArm::Sweep,
         Ok("status") => TransitionArm::Status,
@@ -351,6 +384,7 @@ fn window_transition_proof() -> Result<Option<thrum_app::WindowTransitionProof>,
         tap: std::env::var_os("THRUM_MAC_TRANSITION_TAP").is_some(),
         capture_cue: fullscreen_capture_cue(arm)?,
         scale_replay,
+        fullscreen_output_scale: output_scale_setting("THRUM_MAC_OUTPUT_SCALE_PROOF_REGISTRY")?,
         governor: match record.as_deref() {
             Ok("thermal") => Some(thrum_app::GovernorProof::Thermal {
                 from: 90,

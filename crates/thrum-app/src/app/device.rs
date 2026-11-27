@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use super::display::Headroom;
+use super::{display::Headroom, output_scale::OutputRequest};
 
 use thrum_render::capabilities::{
     DeviceCapabilities, DeviceRecipe, DeviceWatch, HardwareRequest, OpenedDevice,
@@ -51,7 +51,7 @@ impl WindowDevice {
     pub(super) async fn create(
         &self,
         generation: u64,
-        extent: [u32; 2],
+        output: OutputRequest,
         wake: &EventLoopProxy<UserEvent>,
         keep_edr: bool,
     ) -> Result<PlatformGpu, String> {
@@ -73,7 +73,7 @@ impl WindowDevice {
         .await
         .map_err(|error| error.to_string())?;
         capabilities.set_metal_preparation(self.metal_preparation.clone());
-        let config = sdr_surface_config(&self.surface, &adapter, extent)
+        let config = sdr_surface_config(&self.surface, &adapter, output.extent())
             .ok_or("no compatible SDR surface configuration")?;
         let edr = self.headroom.as_ref().and_then(|_| {
             // Metal keeps render-only drawables framebuffer-only. Request copy

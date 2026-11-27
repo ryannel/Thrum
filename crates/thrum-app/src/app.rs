@@ -12,12 +12,14 @@ mod interface;
 mod interface_script;
 #[cfg(feature = "interface")]
 pub use interface_script::InterfaceScript;
+mod output_scale;
 mod profile_recording;
 mod qualification;
 mod qualification_signpost;
 mod recovery;
 mod refresh_account;
 mod render_actor;
+mod window_mode;
 
 pub use display::{DisplayOverride, DisplayOverrideError, WindowDisplayOptions};
 pub use qualification::{
@@ -36,6 +38,7 @@ use std::{
 use device::WindowDevice;
 use display_link::{FrameRateRequest, ViewDisplayLink};
 use edit_flow::EditFlow;
+use output_scale::{ModeChange, ModeEvent, OutputRequest};
 use recovery::Recovery;
 use render_actor::{
     FrameCounters, FrameEdits, FrameRequest, RecoveryFailure, RenderJob, RenderOutcome,
@@ -47,7 +50,7 @@ use thrum_render::{
     capabilities::{FIRST_DEVICE_GENERATION, configure_surface},
     frame::TargetLeadStatus,
     present::SurfaceProfile,
-    runtime::FrameSample,
+    runtime::{FrameSample, SceneKind},
 };
 use winit::{
     application::ApplicationHandler,
@@ -133,7 +136,11 @@ struct App<G: Game> {
     pending_display_target: bool,
     surface_format: Option<wgpu::TextureFormat>,
     surface_extent: [u32; 2],
-    observed_extent: [u32; 2],
+    output_mode: ModeChange,
+    scene_kind: SceneKind,
+    window_mode: Option<window_mode::WindowMode>,
+    output_log: Option<std::fs::File>,
+    proof_toggles: u8,
     #[cfg(feature = "interface")]
     interface_output: Option<crate::OutputMetrics>,
     #[cfg(feature = "interface")]
@@ -141,6 +148,7 @@ struct App<G: Game> {
     #[cfg(feature = "interface")]
     interface_script: Option<interface_script::Script>,
     window_visibility: WindowVisibility,
+    mode_occlusion: bool,
     surface_generation: Arc<AtomicU64>,
     render_stopped: Arc<AtomicBool>,
     render: Option<RenderWorker<G>>,
@@ -237,8 +245,19 @@ impl<G: WindowGame + 'static> App<G> {
         Ok(())
     }
 
+    fn panel_hz(&self) -> f32 {
+        self.refresh_period
+            .map_or(display_link::PREFERRED_REFRESH_HZ, |period| {
+                #[expect(
+                    clippy::cast_possible_truncation,
+                    reason = "AppKit's requested rate is f32"
+                )]
+                let rate = (1.0 / period) as f32;
+                rate
+            })
+    }
+
     fn refresh_monitor_period(&mut self) {
-        use winit::platform::macos::WindowExtMacOS as _;
         self.refresh_period = self
             .window
             .as_ref()
@@ -246,26 +265,155 @@ impl<G: WindowGame + 'static> App<G> {
             .and_then(|monitor| monitor.refresh_rate_millihertz())
             .filter(|&rate| rate > 0)
             .map(|rate| 1000.0 / f64::from(rate));
-        if let Some(window) = &self.window {
-            let panel_hz =
-                self.refresh_period
-                    .map_or(display_link::PREFERRED_REFRESH_HZ, |period| {
-                        #[expect(
-                            clippy::cast_possible_truncation,
-                            reason = "AppKit's requested rate is f32"
-                        )]
-                        let rate = (1.0 / period) as f32;
-                        rate
-                    });
-            let rate = FrameRateRequest::resolve(
-                panel_hz,
-                window.fullscreen().is_some() || window.simple_fullscreen(),
-                self.config.mac_frame_rate,
-            );
-            if let Some(link) = &self.display_link {
-                link.set_rate(rate);
+        let rate = FrameRateRequest::resolve(
+            self.panel_hz(),
+            self.output_mode.fullscreen(),
+            self.config.mac_frame_rate,
+        );
+        if let Some(link) = &self.display_link {
+            link.set_rate(rate);
+        }
+        self.frame_rate = Some(rate);
+    }
+
+    fn output_record(&mut self, row: serde_json::Value) -> Result<(), String> {
+        use std::io::Write as _;
+        if let Some(file) = &mut self.output_log {
+            writeln!(file, "{row}").map_err(|error| error.to_string())?;
+        }
+        Ok(())
+    }
+
+    fn sample_output(&mut self) -> Result<OutputRequest, String> {
+        use objc2_quartz_core::CACurrentMediaTime;
+        use thrum_render::capabilities::DeviceCapabilities;
+
+        let window = self.window.as_ref().ok_or("window missing")?;
+        let native = self.window_mode.as_ref().ok_or("window mode missing")?;
+        let size = window.inner_size();
+        let backing = [size.width, size.height];
+        let monitor_extent = self.output_log.as_ref().and_then(|_| {
+            window.current_monitor().map(|monitor| {
+                let size = monitor.size();
+                [size.width, size.height]
+            })
+        });
+        let now = self.origin.elapsed();
+        let events = native.take();
+        let fallback = if events.is_empty() {
+            self.output_mode.expire(now, || native.fullscreen())
+        } else {
+            None
+        };
+        for (event, media) in events {
+            self.output_mode.event(event, now);
+            let (phase, fullscreen) = match event {
+                ModeEvent::Start(fullscreen) => ("start", fullscreen),
+                ModeEvent::Complete(fullscreen) => ("complete", fullscreen),
+            };
+            if self.output_log.is_some() {
+                self.output_record(serde_json::json!({
+                    "event": phase, "media": media, "fullscreen": fullscreen, "backing": backing,
+                }))?;
             }
-            self.frame_rate = Some(rate);
+            if matches!(event, ModeEvent::Complete(_)) {
+                self.refresh_monitor_period();
+            }
+        }
+        if let Some(fullscreen) = fallback {
+            self.refresh_monitor_period();
+            if self.output_log.is_some() {
+                self.output_record(serde_json::json!({
+                    "event": "limit", "media": CACurrentMediaTime(),
+                    "fullscreen": fullscreen, "backing": backing,
+                }))?;
+            }
+        }
+        if self.output_mode.held() && self.output_log.is_some() {
+            self.record_held_backing(backing)?;
+        }
+
+        let hz = self.panel_hz();
+        let kind = self.scene_kind;
+        let forced = self.config.mac_output_scale;
+        let proof = self
+            .transition_proof
+            .as_ref()
+            .and_then(|proof| proof.fullscreen_output_scale);
+        let registry = proof.unwrap_or_else(DeviceCapabilities::mac_fullscreen_output_scale);
+        if let Some(request) = self.output_mode.observe(backing, |fullscreen| {
+            output_scale::resolve(kind, fullscreen, hz, registry, forced)
+        }) && self.output_log.is_some()
+        {
+            let output = request.extent();
+            self.output_record(serde_json::json!({
+                "event": "request", "media": CACurrentMediaTime(),
+                "fullscreen": self.output_mode.fullscreen(), "panel_hz": hz,
+                "backing": request.backing, "output": output, "monitor_extent": monitor_extent,
+                "output_scale": request.scale.step.percent(), "forced": request.scale.forced,
+                "registry_proof_input": proof.map(thrum_render::synthetic::RenderScale::percent),
+                "layer": self.display.as_ref().map(display::MacDisplay::layer_record),
+            }))?;
+        }
+        self.output_mode
+            .current()
+            .ok_or("no initial output request".into())
+    }
+
+    fn record_held_backing(&mut self, backing: [u32; 2]) -> Result<(), String> {
+        if self.output_mode.held() && self.output_log.is_some() {
+            self.output_record(serde_json::json!({
+                "event": "held_backing", "media": objc2_quartz_core::CACurrentMediaTime(),
+                "backing": backing,
+            }))?;
+        }
+        Ok(())
+    }
+
+    fn observe_occlusion(&mut self, occluded: bool) -> Result<(), String> {
+        self.sample_output()?;
+        let visibility = if occluded {
+            WindowVisibility::Occluded
+        } else {
+            WindowVisibility::Visible
+        };
+        if std::mem::replace(&mut self.window_visibility, visibility) == visibility {
+            return Ok(());
+        }
+        self.window_occlusions += u64::from(occluded);
+        // AppKit briefly moves the window between Spaces. Its drawable can
+        // become unavailable without invalidating the configured surface.
+        let mode_occlusion = if occluded {
+            self.mode_occlusion = self.output_mode.held();
+            self.mode_occlusion
+        } else {
+            std::mem::take(&mut self.mode_occlusion) || self.output_mode.held()
+        };
+        if mode_occlusion {
+            Ok(())
+        } else {
+            self.invalidate_surface()
+        }
+    }
+
+    fn toggle_for_proof(&mut self, request: OutputRequest) {
+        if !self
+            .transition_proof
+            .as_ref()
+            .is_some_and(|proof| proof.arm == TransitionArm::OutputScaleMode)
+            || self.output_mode.held()
+            || self.surface_extent != request.extent()
+        {
+            return;
+        }
+        let should_toggle = match self.proof_toggles {
+            0 => self.presented >= 12,
+            1 => self.output_mode.fullscreen(),
+            _ => false,
+        };
+        if should_toggle && let Some(native) = &self.window_mode {
+            self.proof_toggles += 1;
+            native.toggle();
         }
     }
 
@@ -327,7 +475,11 @@ impl<G: WindowGame + 'static> App<G> {
             pending_display_target: false,
             surface_format: None,
             surface_extent: [0, 0],
-            observed_extent: [0, 0],
+            output_mode: ModeChange::default(),
+            scene_kind: SceneKind::default(),
+            window_mode: None,
+            output_log: None,
+            proof_toggles: 0,
             #[cfg(feature = "interface")]
             interface_output: None,
             #[cfg(feature = "interface")]
@@ -335,6 +487,7 @@ impl<G: WindowGame + 'static> App<G> {
             #[cfg(feature = "interface")]
             interface_script: None,
             window_visibility: WindowVisibility::Visible,
+            mode_occlusion: false,
             surface_generation: Arc::new(AtomicU64::new(1)),
             render_stopped: Arc::new(AtomicBool::new(false)),
             render: None,
@@ -586,11 +739,18 @@ impl<G: WindowGame + 'static> App<G> {
         let Some(generation) = self.recovery.queued() else {
             return Ok(());
         };
-        let size = self.window.as_ref().ok_or("window missing")?.inner_size();
+        let output = self.sample_output()?;
+        let backing_scale = self
+            .window
+            .as_ref()
+            .ok_or("window missing")?
+            .scale_factor()
+            .to_bits();
         let job = RenderJob::Recover {
             from_generation: self.recovery.active,
             generation,
-            extent: [size.width, size.height],
+            output,
+            backing_scale,
             surface_generation: self.surface_generation.load(Ordering::Acquire),
         };
         match self
@@ -678,7 +838,10 @@ impl<G: WindowGame + 'static> App<G> {
             capture.prepare_window(&window)?;
         }
         if let Some(proof) = &self.transition_proof {
-            if proof.arm == TransitionArm::Fullscreen {
+            if matches!(
+                proof.arm,
+                TransitionArm::Fullscreen | TransitionArm::OutputScaleFullscreen
+            ) {
                 use winit::platform::macos::WindowExtMacOS;
                 window.set_borderless_game(true);
                 if !window.set_simple_fullscreen(true) {
@@ -686,6 +849,15 @@ impl<G: WindowGame + 'static> App<G> {
                 }
             }
             self.transition_ticks = Some(qualification::TransitionTicks::start(proof)?);
+            if matches!(
+                proof.arm,
+                TransitionArm::OutputScaleFullscreen | TransitionArm::OutputScaleMode
+            ) {
+                self.output_log = Some(
+                    std::fs::File::create(proof.output.join("output-requests.jsonl"))
+                        .map_err(|error| error.to_string())?,
+                );
+            }
             let id = display_link::window_number(&window)?;
             std::fs::write(proof.output.join("window-id"), id.to_string())
                 .map_err(|error| error.to_string())?;
@@ -711,7 +883,17 @@ impl<G: WindowGame + 'static> App<G> {
             display.sample(0, window.scale_factor());
             self.display = Some(display);
         }
-        let size = window.inner_size();
+        use winit::platform::macos::WindowExtMacOS as _;
+        self.output_mode.event(
+            ModeEvent::Complete(window.fullscreen().is_some() || window.simple_fullscreen()),
+            Duration::ZERO,
+        );
+        self.window_mode = Some(window_mode::WindowMode::attach(&window)?);
+        self.window = Some(Arc::clone(&window));
+        self.scene_kind = self.game.mac_scene_kind();
+        self.refresh_monitor_period();
+        let output = self.sample_output()?;
+        let backing_scale = window.scale_factor().to_bits();
         let recipe = WindowDevice {
             instance,
             surface,
@@ -726,12 +908,7 @@ impl<G: WindowGame + 'static> App<G> {
                 .as_ref()
                 .is_some_and(|options| options.capture && options.output.is_some()),
         };
-        let gpu = pollster::block_on(recipe.create(
-            FIRST_DEVICE_GENERATION,
-            [size.width, size.height],
-            wake,
-            false,
-        ))?;
+        let gpu = pollster::block_on(recipe.create(FIRST_DEVICE_GENERATION, output, wake, false))?;
         if gpu.watch.is_lost() {
             return Err("initial device lost before preparation".to_owned());
         }
@@ -764,6 +941,10 @@ impl<G: WindowGame + 'static> App<G> {
         }
         self.origin = prepared.origin.unwrap_or_else(Instant::now);
         let host = prepared.host;
+        if host.scene_kind() != self.scene_kind && output.backing != output.extent() {
+            return Err("prepared scene kind differs from the Mac launch scene kind".into());
+        }
+        self.scene_kind = host.scene_kind();
         self.counters = FrameCounters::read(&host);
         if let Some(observer) = &self.qualification {
             let number = display_link::window_number(&window)?;
@@ -774,9 +955,6 @@ impl<G: WindowGame + 'static> App<G> {
                 monitor.as_ref().map(|m| (m.name(), m.size(), m.refresh_rate_millihertz())), window.outer_position(), window.scale_factor()
             )).map_err(|e| e.to_string())?;
         }
-        let backing_scale = window.scale_factor().to_bits();
-        self.window = Some(window);
-        self.refresh_monitor_period();
         let panel_wake = wake.clone();
         let panel = MacPanel::new(
             self.game.controls(),
@@ -795,7 +973,6 @@ impl<G: WindowGame + 'static> App<G> {
         self.adapter_name.clone_from(&gpu.adapter_name);
         self.surface_format = Some(gpu.config.format);
         self.surface_extent = [gpu.config.width, gpu.config.height];
-        self.observed_extent = self.surface_extent;
         self.render = Some(render_actor::start::<G>(
             &self.config,
             host,
@@ -806,7 +983,11 @@ impl<G: WindowGame + 'static> App<G> {
             self.origin,
             wake,
             self.extent_capture.take(),
-            backing_scale,
+            output.generation(
+                backing_scale,
+                self.surface_format.expect("configured format"),
+                FIRST_DEVICE_GENERATION,
+            ),
             self.transition_proof.as_ref(),
             self.qualification
                 .as_ref()
@@ -1106,8 +1287,6 @@ impl<G: WindowGame + 'static> App<G> {
         {
             let _ = window.request_inner_size(winit::dpi::LogicalSize::new(width, height));
         }
-        let size = window.inner_size();
-        let extent = [size.width, size.height];
         let actual_scale = window.scale_factor();
         let backing_scale = self
             .transition_proof
@@ -1116,12 +1295,14 @@ impl<G: WindowGame + 'static> App<G> {
                 proof.arm.backing_scale(actual_scale, self.callbacks)
             })
             .to_bits();
-        self.observed_extent = extent;
+        let output = self.sample_output()?;
+        self.toggle_for_proof(output);
         #[cfg(feature = "interface")]
         if self.game.wants_interface_output() {
+            let window = self.window.as_ref().ok_or("window missing")?;
             let metrics = crate::OutputMetrics {
-                extent,
-                density: actual_scale,
+                extent: output.extent(),
+                density: actual_scale * (f64::from(output.scale.step.percent()) / 100.0),
                 insets: display::safe_area(window),
             };
             if self.interface_output != Some(metrics) {
@@ -1142,12 +1323,14 @@ impl<G: WindowGame + 'static> App<G> {
             sequence: self.target_sequence,
             device_generation: self.recovery.active,
             target_media_seconds: target,
-            extent,
+            extent: output.backing,
             surface_generation: self.surface_generation.load(Ordering::Acquire),
             platform: FrameEdits {
                 profile_revision: crate::profile::revision(self.game.controls()),
                 timing_requested: self.timing_requested(),
                 backing_scale,
+                output,
+                mode_held: self.output_mode.held(),
                 governor_display: self.governor_display,
                 display_tick: self.display_tick,
                 edits: self.edits.pending(),
@@ -1747,23 +1930,11 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
                 Ok(())
             }
             WindowEvent::Resized(size) => {
-                self.observed_extent = [size.width, size.height];
                 self.refresh_monitor_period();
-                Ok(())
+                self.sample_output()
+                    .and_then(|_| self.record_held_backing([size.width, size.height]))
             }
-            WindowEvent::Occluded(occluded) => {
-                let visibility = if occluded {
-                    WindowVisibility::Occluded
-                } else {
-                    WindowVisibility::Visible
-                };
-                if std::mem::replace(&mut self.window_visibility, visibility) == visibility {
-                    Ok(())
-                } else {
-                    self.window_occlusions += u64::from(occluded);
-                    self.invalidate_surface()
-                }
-            }
+            WindowEvent::Occluded(occluded) => self.observe_occlusion(occluded),
             WindowEvent::RedrawRequested => {
                 let result = self.draw();
                 if self.presented >= self.target_frames {
@@ -1886,8 +2057,23 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
             self.error = Some(error);
             event_loop.exit();
         }
+        let mode_changed = self
+            .window_mode
+            .as_ref()
+            .is_some_and(window_mode::WindowMode::has_pending)
+            || self
+                .output_mode
+                .deadline()
+                .is_some_and(|deadline| now >= deadline);
+        if mode_changed && let Err(error) = self.sample_output() {
+            self.error = Some(error);
+            event_loop.exit();
+        }
         let refresh = (self.profile.is_enabled() || self.profile_recording.is_some())
-            .then_some(now + Duration::from_millis(250));
+            .then_some(now + Duration::from_millis(250))
+            .into_iter()
+            .chain(self.output_mode.deadline())
+            .min();
         event_loop.set_control_flow(refresh.map_or(ControlFlow::Wait, |at| {
             ControlFlow::WaitUntil(self.origin + at)
         }));

@@ -95,6 +95,7 @@ fn prove(
     let old = ExtentRequest {
         extent: OLD,
         format: FORMAT,
+        output_scale: Default::default(),
         backing_scale: 2_f64.to_bits(),
         device: 1,
     };
