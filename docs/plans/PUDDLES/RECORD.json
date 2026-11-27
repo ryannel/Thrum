@@ -971,7 +971,7 @@
       }
     },
     "WP6": {
-      "definitions": "420d850600d8bb5ea9ddb9ec972c9523fb457777e480df2c860a7f17f98ba551",
+      "definitions": "639cc9c7a484f1809e795c61d3c4c18f9fcc42c90f9204e224bcc5765a78b5fa",
       "reviews": [
         {
           "verdict": "fail",
@@ -1092,34 +1092,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
-        "at": "2026-11-24T22:06:49Z"
-      },
-      "ready_for_review": {
-        "commit": "f70d1ccabecfbab37bb2f000d88c1aa1e7867843",
-        "checked": "f70d1ccabecfbab37bb2f000d88c1aa1e7867843",
-        "at": "2026-11-27T16:39:41Z",
-        "host": "codex",
-        "model": "gpt-6.2-sol",
-        "effort": "medium",
-        "observed": {
-          "model": "gpt-6.2-sol",
-          "effort": "medium"
-        },
-        "cli": "codex-cli 0.171.0-alpha.13.2",
-        "path": "headless",
-        "usage": {
-          "input": 587514,
-          "cached": 87874048,
-          "output": 113381,
-          "turns": 2
-        },
-        "session_usage": {
-          "input": 1239183,
-          "cached": 156962432,
-          "output": 242424,
-          "turns": 3
-        }
+        "task": "Main-branch check cross-target fails on 9b0fa426f for x86_64-pc-windows-msvc and x86_64-unknown-linux-gnu: examples/wate",
+        "at": "2026-11-27T17:51:11Z"
       }
     },
     "WP7": {
@@ -1345,11 +1319,15 @@
     {
       "task": "The design review of PUDDLES at .orchestrate/evidence/PUDDLES/design-review.md asked for changes, with its 2 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
       "at": "2026-11-26T20:12:49Z"
+    },
+    {
+      "task": "Main-branch check cross-target fails on 9b0fa426f for x86_64-pc-windows-msvc and x86_64-unknown-linux-gnu: examples/water/tests/lens_review/mod.rs:127-148 uses super::metal, depth_view, SyntheticView, Rig, sun, rain_sea and attach, which exist only on macOS. Introduced by PUDDLES WP6 commits 8af60352a and f70d1ccab (rain lens controls as separate Metal tests). Plan the fix as the first item of PUDDLES WP6, which a builder is working on now: gate lens_review (or its Metal parts) the same way its Metal helpers are gated, and require the cross-target check to pass before WP6 merges again. This is the second cross-target break today from a GPU test helper (CLOUDS WP11.11 was the first); if the design or thrum-engineering skill should say how Metal-only test helpers are gated, add that.",
+      "at": "2026-11-27T17:51:11Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T20:12:49Z"
+    "at": "2026-11-27T17:51:11Z"
   },
   "design_history": [
     {
