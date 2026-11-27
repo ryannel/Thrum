@@ -373,7 +373,7 @@ fn build_selection(
             records,
             thrum_water::FallsProfile {
                 plunge: thrum_water_model::PlungeProfile {
-                    wave_share: 0.50,
+                    wave_share: 0.75,
                     ..Default::default()
                 },
                 ..Default::default()
