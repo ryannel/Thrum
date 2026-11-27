@@ -1431,7 +1431,7 @@
     {
       "id": "U2",
       "name": "The two local wgpu cache patches pass independent code review and cache tests on Metal",
-      "status": "in_progress",
+      "status": "not_started",
       "quality_bar": "The independent reviewer can defend the two local diffs against wgpu 30.0.1's own Metal backend, cache-header code and tests. The Metal test results identify the exact reviewed code.",
       "items": [
         {
@@ -1447,7 +1447,7 @@
         },
         {
           "id": "U2.4",
-          "statement": "On the M3 Max the patched release passes wgpu's core cache-header tests and focused tests using wgpu’s own GPU harness on Metal. Render and compute cache data survive public save and fresh-process load, a wrong adapter header is rejected, a strict lookup hits a harvested pipeline and fails on a known omission. A repaired partial archive yields all hits in the next process. The WP12 game witness may supply the repair case.",
+          "statement": "On the M3 Max the patched release passes wgpu's core cache-header tests and focused tests using wgpu\u2019s own GPU harness on Metal. Render and compute cache data survive public save and fresh-process load, a wrong adapter header is rejected, a strict lookup hits a harvested pipeline and fails on a known omission. A repaired partial archive yields all hits in the next process. The WP12 game witness may supply the repair case.",
           "ask": "Replay the recorded focused wgpu test command against the final patch revisions. Do the executed cases name the Metal adapter and cover the public round trip, mismatch, strict hit and miss without skips or a fallback compile? Does the repair witness use the same patches and exercise the omitted pipeline after recovery?",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1477,7 +1477,7 @@
         },
         {
           "id": "U3.2",
-          "statement": "The tracked Apple presentation provenance gives the release prerequisite, files and commands to remove both cache patches, retire the core override, retain the WP10 HAL stage records, and verify the replacement with WP10 and WP12’s Metal cases. It explains how to discard incompatible on-disk archives and handle a release without strict hit reporting or partial repair.",
+          "statement": "The tracked Apple presentation provenance gives the release prerequisite, files and commands to remove both cache patches, retire the core override, retain the WP10 HAL stage records, and verify the replacement with WP10 and WP12\u2019s Metal cases. It explains how to discard incompatible on-disk archives and handle a release without strict hit reporting or partial repair.",
           "ask": "Follow the instructions against the manifests, registry entries, lockfile, patch directories, private implementation and rehearsal diff. Do they identify what to remove, what to rebase, when old archive bytes are safe to import, and which executable checks qualify public caching, strict warm hits, miss recovery and metallib loading on the replacement?",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1496,7 +1496,9 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
     }
   ]
 }
