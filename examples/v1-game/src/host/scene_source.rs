@@ -468,6 +468,15 @@ impl GameScene {
         let offset = self
             .solar_sweep
             .map_or(offset, |([first, last], [from, to])| {
+                #[cfg(target_os = "macos")]
+                if self.chart_jump.is_some() {
+                    if tick < first {
+                        return offset;
+                    }
+                    if tick > last {
+                        return DayCycle::offset_for_time(last, to / 24.0).unwrap_or(offset);
+                    }
+                }
                 #[expect(
                     clippy::cast_precision_loss,
                     reason = "a proof sweep fits within the route's bounded tick range"

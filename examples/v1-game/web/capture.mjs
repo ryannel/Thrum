@@ -20,6 +20,7 @@ const atmosphere = query.get('atmosphere') ?? 'off';
 const chartTake = query.get('chart-take') ?? 'off';
 const chartCadence = Number(query.get('chart-cadence'));
 const chartProof = chartTake !== 'off';
+const chartScrubAfter = Number(query.get('chart-scrub-after') ?? 21);
 const heldSetup = witness !== 'off' || atmosphere !== 'off' || chartProof;
 const atmosphereMotion = atmosphere === 'scrub' || atmosphere === 'ground-pan';
 const clouds = query.get('clouds') ?? 'off';
@@ -117,7 +118,8 @@ async function runCapture() {
   const effect = query.get('effect') ?? 'off';
   if (!['off','slab','depth-only'].includes(effect)) fail('Unknown effect diagnostic');
   record.effect = effect;
-  game.attach_cooked_valley(await fetch_cooked_valley(query.get('assets')), effect === 'off' ? undefined : effect === 'slab');
+  game.attach_cooked_valley(await fetch_cooked_valley(query.get('assets')),
+    effect === 'off' ? undefined : effect === 'slab', undefined, chartProof);
   game.set_visible(true, 0);
   if (view && !atmosphereMotion) {
     await captureCloudView(view, route.render_extent);
@@ -180,6 +182,11 @@ async function runCapture() {
     const parameters = await (await fetch('/capture-params.json')).text();
     record.parameters = JSON.parse(parameters);
     applyCaptureParameters(parameters, base);
+  }
+  if (chartProof) {
+    if (chartTake === 'fast') game.set_time_of_day((16.8 - chartScrubAfter / 750) / 24);
+    if (chartTake === 'clock') game.set_time_of_day(16.9 / 24);
+    if (governed) game.set_capture_chart_cadence(chartCadence);
   }
   if (query.has('haze-take')) {
     hazeTake = await (await fetch('/haze-take.json')).text();
@@ -285,7 +292,8 @@ async function runCapture() {
   const longGroundTake = ['climb', 'approach'].includes(record.haze_take?.motion);
   const throughHandover = atmosphereMotion && record.haze_take?.motion === 'throughhandover';
   const groundDuration = throughHandover ? 32000 : bankMover ? 13000 : longGroundTake ? 12000 : 7000;
-  const duration = chartProof ? (chartTake === 'fast' ? 1600 : 6800) : atmosphereMotion ? (atmosphere === 'scrub' ? 10000 : groundDuration) :
+  const chartDuration = { fast: 1800, clock: 15500, scrub: 6800 }[chartTake];
+  const duration = chartProof ? chartDuration : atmosphereMotion ? (atmosphere === 'scrub' ? 10000 : groundDuration) :
     (route.keys.at(-1).tick + 121) * 1000 / 60;
   const fixedExitPhaseMs = scene === 'exit' && mode === 'fixed'
     ? (route.phase[0] / route.phase[1]) * 1000 / 60 : 0;
@@ -343,17 +351,30 @@ async function runCapture() {
     if (chartProof) {
       const seconds = (timestamp - base) / 1000;
       const submitted = Number(game.presented()) - record.initial_report.presented;
-      const climb = Math.max(0, Math.min(1, (seconds - 2.8) / 2));
+      const climb = chartTake === 'scrub' ? Math.max(0, Math.min(1, (submitted - 84) / 180)) : 0;
       const eye = [0, 244.92267 + 108 * climb, 16 - 100 * climb];
-      const hours = chartTake === 'fast'
-        ? 16.0 + Math.max(0, submitted - 12) * 0.1
-        : seconds >= 5.6 ? 12 : 16 + Math.min(6, Math.max(0, seconds - 0.35) * 2.45);
       if (lastPresented !== submitted) {
         game.set_chart_capture_eye(...eye);
-        game.set_time_of_day(Math.min(23.9, hours) / 24);
         if (governed) game.set_capture_chart_cadence(chartCadence);
+        let hours;
+        let phase = 'clock';
+        const scrubFrame = submitted - chartScrubAfter;
+        if (lastPresented === undefined && chartTake !== 'scrub') {
+          game.set_paused(false, timestamp);
+        }
+        if (chartTake === 'fast' && scrubFrame >= 0 && scrubFrame < 16) {
+          if (scrubFrame === 0) game.set_paused(true, timestamp);
+          hours = 16.9 + scrubFrame * 0.1;
+          phase = 'scrub';
+        } else if (chartTake === 'fast' && scrubFrame === 16) {
+          game.set_paused(false, timestamp - 1000 / 60);
+        } else if (chartTake === 'scrub') {
+          hours = seconds >= 5.6 ? 12 : 17.7;
+          phase = seconds >= 5.6 ? 'jump' : 'climb';
+        }
+        if (hours !== undefined) game.set_time_of_day(hours / 24);
         record.actions.push({kind: 'chart pose', submission_after: Number(game.presented()), frame_ms: timestamp,
-          solar_hours: Math.min(23.9, hours), eye, jump: chartTake !== 'fast' && seconds >= 5.6});
+          solar_hours: hours ?? game.time_of_day() * 24, eye, phase, jump: phase === 'jump'});
         lastPresented = submitted;
       }
     }
@@ -367,6 +388,10 @@ async function runCapture() {
     if (performance.now() - start > (mode === 'fixed' ? 120000 : Math.max(20000, duration + 6000))) fail('scenario deadline');
     game.frame(timestamp);
     const opportunity = { ordinal, requested_ms: requested, frame_ms: timestamp, returned_ms: performance.now(), tick: game.committed_tick() };
+    if (chartProof) {
+      opportunity.presented = Number(game.presented());
+      opportunity.committed_solar_hours = game.time_of_day() * 24;
+    }
     if ((exitRecord || chartProof || governed || clouds !== 'off') && useAnimationFrame) opportunity.raf_ms = rafMs;
     if (control === 'off' && scene === 'exit') opportunity.presented = Number(game.presented());
     record.opportunities.push(opportunity);

@@ -1004,6 +1004,7 @@ impl BrowserGame {
         for sample in shell.samples() {
             rows.push(serde_json::json!({
                 "submission": sample.submission_order, "tick": sample.tick,
+                "alpha": sample.presentation_alpha,
                 "presented": sample.surface_presented, "observation_ns": sample.observation.as_nanos(),
                 "callback_cpu_ns": sample.wall.as_nanos(),
                 "gpu_pass_ns": sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::values),
@@ -1013,6 +1014,7 @@ impl BrowserGame {
                     .find(|knob| knob.name == "atmosphere.chart cadence").map(|knob| knob.value)).unwrap_or(1),
                 "chart_update": sample.governor.as_ref().and_then(|quality| quality.chart_update),
                 "chart_position": sample.governor.as_ref().and_then(|quality| quality.chart_position),
+                "chart_change": sample.governor.as_ref().and_then(|quality| quality.chart_change),
                 "gpu_present_ns": sample.gpu_present_ns,
                 "timing_requested": sample.timing_requested, "timing_fault": sample.timing_fault,
             }));
@@ -1066,10 +1068,11 @@ impl BrowserGame {
         valley: &CookedValley,
         effect_slab: Option<bool>,
         content_preview: Option<bool>,
+        chart_level_six: Option<bool>,
     ) -> Result<(), JsValue> {
         let source = CookedSource::Remote(valley.feed.clone());
         #[cfg(not(feature = "proving"))]
-        if effect_slab.is_some() || content_preview == Some(true) {
+        if effect_slab.is_some() || content_preview == Some(true) || chart_level_six == Some(true) {
             return Err(js_error(
                 "qualification contributions require the proving build",
             ));
@@ -1085,6 +1088,8 @@ impl BrowserGame {
         #[cfg(feature = "proving")]
         let (camera, assets) = if preview {
             crate::showcase::prepare_content_preview(source)
+        } else if chart_level_six == Some(true) {
+            crate::showcase::prepare_chart_showcase(source)
         } else if self.temporal_inputs {
             crate::showcase::prepare_temporal_showcase(source)
         } else {

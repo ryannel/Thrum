@@ -147,6 +147,22 @@ pub(crate) fn prepare_temporal_showcase(
     )
 }
 
+/// The chart proof uses the ordinary valley and a sphere that samples level 6 alone.
+#[cfg(all(target_arch = "wasm32", feature = "proving"))]
+pub(crate) fn prepare_chart_showcase(
+    source: CookedSource,
+) -> Result<(SceneCamera, CookedAssets), String> {
+    let (camera, mut config) = valley_config(source).map_err(|error| error.to_string())?;
+    let sphere = config
+        .meshes
+        .iter_mut()
+        .find(|placement| placement.mesh == "sphere")
+        .ok_or("the chart proof needs the authored valley sphere")?;
+    sphere.material.roughness = 1.0;
+    let assets = CookedAssets::new(config).map_err(|error| format!("showcase: {error}"))?;
+    Ok((camera, assets))
+}
+
 fn prepare_showcase_with_volume(
     source: CookedSource,
     volume: Option<VolumePlacement>,

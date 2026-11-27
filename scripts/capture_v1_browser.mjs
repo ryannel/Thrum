@@ -25,6 +25,7 @@ args['retain-raw'] = 'off';
 args.atmosphere = 'off';
 args['chart-cadence'] = 'off';
 args['chart-take'] = 'off';
+args['chart-scrub-after'] = '21';
 args.haze = '';
 args['haze-take'] = '';
 args['renderer-signature'] = 'off';
@@ -47,7 +48,8 @@ if (!['off', 'on'].includes(args['wasm-receipt'])) throw new Error('Invalid Wasm
 const governed = args.governor === 'on';
 const chartTake = args['chart-take'];
 const chartCadence = args['chart-cadence'];
-if (!['off', 'scrub', 'fast'].includes(chartTake) ||
+if (!['off', 'scrub', 'clock', 'fast'].includes(chartTake) ||
+    !/^(1[6-9]|[2-4][0-9])$/.test(args['chart-scrub-after']) ||
     (chartTake === 'off' && chartCadence !== 'off') ||
     (chartTake !== 'off' && (args.mode !== 'realtime' || args.reconstruction !== 'taau' ||
       args.atmosphere !== 'off' || !args.params || !['off', 'ordinary'].includes(args.control) ||
@@ -303,7 +305,7 @@ try {
   manifest.load_before = loadavg();
   const exitQuery = exitRecord === 'off' ? '' : `&exit-record=${exitRecord}`;
   const cullingQuery = args.culling === 'default' ? '' : `&culling=${args.culling}`;
-  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&reconstruction=${args.reconstruction}&governor=${args.governor}&witness=${args.witness}&atmosphere=${args.atmosphere}&chart-take=${chartTake}&chart-cadence=${chartCadence}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&effect=${args.effect}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(cookedOrigin ?? '')}${manifest.export_slots ? `&export-slots=${manifest.export_slots}` : ''}&clouds=${args.clouds}${args.haze ? `&haze=${encodeURIComponent(args.haze)}` : ''}${args['haze-take'] ? '&haze-take' : ''}${args['renderer-signature'] === 'on' ? '&renderer-signature' : ''}${cloudView ? '&cloud-view' : ''}${cloudOrigin ? '&cloud-store=' + encodeURIComponent(cloudOrigin) : ''}${spriteQuery}${exitQuery}${cullingQuery}` }, sessionId);
+  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&reconstruction=${args.reconstruction}&governor=${args.governor}&witness=${args.witness}&atmosphere=${args.atmosphere}&chart-take=${chartTake}&chart-cadence=${chartCadence}&chart-scrub-after=${args['chart-scrub-after']}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&effect=${args.effect}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(cookedOrigin ?? '')}${manifest.export_slots ? `&export-slots=${manifest.export_slots}` : ''}&clouds=${args.clouds}${args.haze ? `&haze=${encodeURIComponent(args.haze)}` : ''}${args['haze-take'] ? '&haze-take' : ''}${args['renderer-signature'] === 'on' ? '&renderer-signature' : ''}${cloudView ? '&cloud-view' : ''}${cloudOrigin ? '&cloud-store=' + encodeURIComponent(cloudOrigin) : ''}${spriteQuery}${exitQuery}${cullingQuery}` }, sessionId);
   let destroyed = false;
   const record = await waitFor(async () => {
     if (completionSignal && !captureDone) return undefined;
