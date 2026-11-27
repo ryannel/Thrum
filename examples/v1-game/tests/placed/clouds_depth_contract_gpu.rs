@@ -66,9 +66,14 @@ fn submitted_linear(
     })
 }
 
-fn composed_transmittance(image: &thrum_render::runtime::SubmittedImage, x: u32, y: u32) -> f32 {
+fn composed_channel(
+    image: &thrum_render::runtime::SubmittedImage,
+    x: u32,
+    y: u32,
+    channel: u32,
+) -> f32 {
     assert_eq!(image.pixel_source, CaptureSource::SceneLinear);
-    let offset = ((y * image.extent[0] + x) * 8 + 6) as usize;
+    let offset = ((y * image.extent[0] + x) * 8 + channel * 2) as usize;
     half::f16::from_le_bytes([image.rgba[offset], image.rgba[offset + 1]]).to_f32()
 }
 
@@ -223,7 +228,7 @@ fn prove_surface_stops(worker: bool) {
                 "carried or borrowed stop at {x},{y}"
             );
             assert!(
-                (composed_transmittance(&image, x, y) - half(&fresh_transport, pixel, 3)).abs()
+                (composed_channel(&image, x, y, 3) - half(&fresh_transport, pixel, 3)).abs()
                     < 0.002,
                 "uncovered pixel {x},{y} must compose its own fresh stop"
             );
@@ -509,10 +514,8 @@ fn metal_directed_cloud_keeps_its_far_stop_with_clear_ground_rows() {
         let slot = u32::try_from(slot).unwrap();
         let x = fixture::EXTENT[0] / 2 + slot % 2;
         let y = fixture::EXTENT[1] / 2 + slot / 2;
-        assert!((composed_transmittance(&mixed_image, x, y) - transmission).abs() < 0.002);
-        assert!(
-            (composed_transmittance(&level_image, x, y) - level[slot as usize].0).abs() < 0.002
-        );
+        assert!((composed_channel(&mixed_image, x, y, 3) - transmission).abs() < 0.002);
+        assert!((composed_channel(&level_image, x, y, 3) - level[slot as usize].0).abs() < 0.002);
         assert!(
             (distance - expected).abs() < 0.003,
             "mixed stop depths: {mixed:?}"
@@ -555,7 +558,14 @@ impl SceneContribution for Occluder {
                     let points = array(vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));
                     return Varying(vec4(points[i], 0.0, 1.0), mover);
                 }
-                @fragment fn fragment(v: Varying) -> @builtin(frag_depth) f32 {
+                struct OccluderOutput {
+                    @builtin(frag_depth) depth: f32,
+                    @location(0) colour: vec4<f32>,
+                };
+                @fragment fn fragment(v: Varying) -> OccluderOutput {
+                    // A known scene colour lets the tests recover both components of
+                    // blended cloud transport independently of the sky behind the layer.
+                    let colour = vec4(0.125, 0.25, 0.5, 1.0);
                     let left = 8u + 8u * v.mover;
                     let x = u32(v.position.x);
                     var distance = select(920.0, 340.0, x >= left && x < left + 8u);
@@ -565,10 +575,11 @@ impl SceneContribution for Occluder {
                         distance = select(2000.0, mixed[slot], v.mover == 3u);
                     }
                     if v.mover >= 16u {
-                        if x < v.mover { return 0.0; }
+                        if x < v.mover { return OccluderOutput(0.0, colour); }
                         distance = 3.0;
                     }
-                    return (1.0 / distance - 1.0 / 4000.0) / (1.0 / 0.1 - 1.0 / 4000.0);
+                    let z = (1.0 / distance - 1.0 / 4000.0) / (1.0 / 0.1 - 1.0 / 4000.0);
+                    return OccluderOutput(z, colour);
                 }".into()),
         });
         self.pipeline = Some(device.render(&wgpu::RenderPipelineDescriptor {
@@ -593,11 +604,15 @@ impl SceneContribution for Occluder {
                 module: &shader,
                 entry_point: Some("fragment"),
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
-                targets: &surface.color_formats.map(|format| {
+                targets: &[0, 1, 2].map(|i| {
                     Some(wgpu::ColorTargetState {
-                        format,
+                        format: surface.color_formats[i],
                         blend: None,
-                        write_mask: wgpu::ColorWrites::empty(),
+                        write_mask: if i == 0 {
+                            wgpu::ColorWrites::ALL
+                        } else {
+                            wgpu::ColorWrites::empty()
+                        },
                     })
                 }),
             }),

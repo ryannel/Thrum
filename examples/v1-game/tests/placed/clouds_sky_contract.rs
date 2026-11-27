@@ -1,7 +1,7 @@
 //! Inspect the Ground layer where its result enters colour composition and reconstruction.
 
 use super::{
-    EXTENT, Occluder, composed_transmittance, fixture::Host, output_texture, stop_channel,
+    EXTENT, Occluder, composed_channel, fixture::Host, output_texture, stop_channel,
     submitted_linear,
 };
 use std::{
@@ -170,39 +170,45 @@ fn inside_upper_cloud_compose_interpolates_only_sky_stops() {
             let y = 8;
             let base_x = (x - 1) / 2;
             let blend_x = if x % 2 == 0 { 0.75 } else { 0.25 };
-            let mut total = 0.0;
+            let mut total = [0.0; 4];
             let mut weights = 0.0;
             let mut invalid = 0.0;
             for (ty, wy) in [(3u32, 0.25), (4, 0.75)] {
                 for (tx, wx) in [(base_x, 1.0 - blend_x), (base_x + 1, blend_x)] {
                     let weight = wx * wy;
-                    let channel = |bytes, slot: u32| {
-                        stop_channel(bytes, EXTENT, 2 * tx + slot % 2, 2 * ty + slot / 2, 3)
+                    let channel = |bytes, slot: u32, lane| {
+                        stop_channel(bytes, EXTENT, 2 * tx + slot % 2, 2 * ty + slot / 2, lane)
                     };
                     // The fixture writes zero depth to the left of the edge. Derive
                     // tap eligibility from that geometry, independent of the shader.
                     if tx * 2 < edge {
-                        assert!(channel(&metadata, 0).abs() < f32::EPSILON);
-                        total += weight * channel(&transport, 0);
+                        assert!(channel(&metadata, 0, 3).abs() < f32::EPSILON);
+                        for (lane, value) in (0..4).zip(&mut total) {
+                            *value += weight * channel(&transport, 0, lane);
+                        }
                         weights += weight;
                     } else {
-                        assert!(channel(&metadata, 0) > 0.0);
+                        assert!(channel(&metadata, 0, 3) > 0.0);
                     }
-                    invalid += weight * channel(&transport, 3);
+                    invalid += weight * channel(&transport, 3, 3);
                 }
             }
-            let expected = total / weights;
-            let actual = composed_transmittance(&image, x, y);
-            assert!(expected < 0.8, "the sky ray must contain cloud");
-            assert!(
-                (actual - expected).abs() < 0.002,
-                "edge {edge}, {x},{y}: composed {actual}, expected {expected} ({weights} eligible weight), unmasked {invalid}"
-            );
-            if x + 1 == edge {
+            let expected = total.map(|value| value / weights);
+            let t = expected[3];
+            assert!(t < 0.8, "the sky ray must contain cloud");
+            let background = [0.125_f32, 0.25, 0.5, 0.0];
+            for (lane, (scatter, behind)) in (0..4).zip(expected.into_iter().zip(background)) {
+                let prediction = behind.mul_add(t, scatter);
+                let actual = composed_channel(&image, x, y, lane);
+                // Blending and capture each round to the scene's half-float storage.
+                let tolerance = 0.002_f32.max(0.001 * prediction.abs());
                 assert!(
-                    (invalid - expected).abs() > 0.1,
-                    "fixture detects a surface tap"
+                    (actual - prediction).abs() < tolerance,
+                    "edge {edge}, {x},{y} channel {lane}: composed {actual}, expected {prediction} ({weights} eligible weight)"
                 );
+            }
+            if x + 1 == edge {
+                assert!((invalid - t).abs() > 0.1, "fixture detects a surface tap");
             }
         }
     }
