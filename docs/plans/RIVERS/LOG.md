@@ -445,3 +445,22 @@
   is written again: the direct Sun's look ends at the shadow's edge, and what is left is the sky's light, with
   no order of brightness between fall and foam. The design's *Light* line says ruling 7 takes only the direct
   Sun and the environment's reflection stays. The check and the views are unchanged.
+
+- 2026-11-27 Owner, asked whether to park the heavy fall's look: "keep trying, pass it to a planner and see if
+  they can help."
+- 2026-11-27 Planner, research for the heavy fall
+  ([record](../../../.orchestrate/evidence/RIVERS/WP11/research.md)). WP6's captures show three causes of the
+  curtain that no attempt changed: one surface, folds lit with a sheen, and a hem of strand ends above the
+  pool. No footage was studied, and Horizon Forbidden West publishes no technique for its falls. Every account
+  that says how a fall is drawn uses several surfaces, flat-lit white water and something in front of the foot.
+- 2026-11-27 Planner, selection: **a layered fall with spray at its foot**
+  ([design](DESIGN.md#the-heavy-fall-at-the-highest-gauge)): outer layers about the sheet, white water lit as
+  foam, no end above the pool, and spray along the plunge line, each a function of the fall record and the
+  time, in ruling 7's pass. Not selected: simulated particles, a baked simulation, mist as a medium. A heavy
+  fall now has spray at its foot; mist is still not built.
+- 2026-11-27 Planner, WP11 moved ahead of WP7 and written for the selection; WP6 is untouched. WP11.8, the
+  heavy fall's light under ruling 7, became WP7.12, because WP7 builds the lent Sun visibility.
+  [Each item's change and why](../../../.orchestrate/evidence/RIVERS/WP11/plan-changes.md).
+- 2026-11-27 Planner, stop rule for WP11: one build of the selection, then two rounds of tuning for each of
+  the two cues. If either still fails the builder merges nothing that changes the island's fall, logs which
+  point failed in which take and ends `BLOCKED`, and the owner is asked again whether to park the look.

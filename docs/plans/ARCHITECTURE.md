@@ -3109,7 +3109,9 @@ For `SCENE-VIEWS`, each recorded as an assumption in [its plan](SCENE-VIEWS/PLAN
 
 For `RIVERS`, each recorded as an assumption in [its plan](RIVERS/PLAN.md#open-for-the-human):
 
-24. **No mist at a waterfall.** A fall has its sheet, its plunge, its foam and its rings, and no cloud of spray.
+24. **No mist at a waterfall.** A fall has its sheet, its plunge, its foam and its rings, and nothing that
+    drifts off it or hangs in the air. From 27 November 2026 a heavy fall also has spray at its foot, thrown up
+    where the water lands and falling back within half the fall's height, which the fall draws itself.
     Mist is a medium in the air, which is the weather's through `ATMOSPHERE`'s view volume, so it needs a seam
     with `CLOUDS` after its WP14. The owner can ask for it; the fall record already carries what it needs.
 25. **A river that answers its lake.** Raising a lake swells its outlet, by the outlet's own sill, at once along
@@ -3799,6 +3801,10 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   its effect's own textures, under [a seam ruling](#seam-ruling-for-effect-graph-wp7), and `WATERS` WP16 now
   waits for it. The effect-passes interface row and the module table's row 15 follow. `WATERS`' design and
   items, every contract's words, every Done item and every exact baseline stand.
+- 2026-11-27 `RIVERS` WP11, the heavy fall, moved ahead of its WP7 with a technique chosen in
+  [its design](RIVERS/DESIGN.md#the-heavy-fall-at-the-highest-gauge): layers about the sheet and spray at the
+  foot, drawn by ruling 7's pass with that pass's outputs. Owner decision 24 says so: a heavy fall has spray at
+  its foot and still no mist. No ruling, no interface row and no other module's item changed.
 - 2026-11-27 Track 7 changed for the owner's approval of `GAME-SDK`'s design: "I approve the sdk plan", in
   answer to "Approve the core and take the recommended scope answers?". In track 7's section, its owner
   decisions and the module table only. Decisions 37, 38 and 44 record the approval and the eleven answers.

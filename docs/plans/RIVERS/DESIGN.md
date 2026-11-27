@@ -33,15 +33,18 @@ pool below.
 
 **Commissioned:** the flow solver and its stored charts; a river that answers its source's level; the flow's own
 roughness; foam from the flow; waterfalls. Cues R1 to R8 below, on `mac-metal` and `chrome-webgpu`, on the water
-example's island behind a selection. One part of R5 is built last, by a mechanism not yet chosen:
+example's island behind a selection. One part of R5 has a mechanism of its own, built straight after the sheet:
 [the heavy fall at the highest gauge](#the-heavy-fall-at-the-highest-gauge) (WP11).
 
 **Not built**, with the reason:
 
-- **Mist and spray at a fall, and spray from rapids.** Water that leaves the surface as drops is a medium in the
-  air, and the engine's one owner of that is the weather (`CLOUDS`) through `ATMOSPHERE`'s view volume, which
+- **Mist at a fall, and spray from rapids.** Water that drifts off as drops and hangs in the air is a medium,
+  and the engine's one owner of that is the weather (`CLOUDS`) through `ATMOSPHERE`'s view volume, which
   comes late in the build order. A fall record publishes its power so a mist can be added without a change here.
   It is the largest thing a shipped waterfall has that this plan does not ([plan](PLAN.md#open-for-the-human)).
+  What a heavy fall does have is spray at its foot: white water thrown up where it lands, which falls back
+  within a set reach of the plunge line. The fall draws it as part of itself, as it draws its sheet, and it is
+  no medium ([the heavy fall](#the-heavy-fall-at-the-highest-gauge)).
 - **Bulk water that moves while the game runs:** a flood wave, a dam break, a rise that travels downstream. A
   river answers its source at once along its whole length ([below](#a-river-answers-its-source)).
 - **Rain as a source, and runoff.** Sources are declared springs and bodies.
@@ -117,6 +120,35 @@ What each source was read for, and how far.
   Ghost of Tsushima's falls, Peytavie et al. 2019 beyond its abstract, and measurements of a fall's breakup.
   A search for river or waterfall talks at GDC and SIGGRAPH in 2023 to 2026 found none beyond those above.
 
+**For the heavy fall**, read on 27 November 2026 after three attempts at it failed
+([record](../../../.orchestrate/evidence/RIVERS/WP11/research.md), which sets apart for each source what it
+identifies and what is inferred). No footage was studied. Each source is an account or a frame study, read as a
+fetched summary unless it says otherwise.
+
+- **Horizon Forbidden West** (Malan's notes again, extracted in full and searched for every mention of a fall,
+  mist, spray and particles). Page 1 says the talk does not cover "the spectacular waterfalls". Slides 31 to 33
+  say a library of baked local water effects "provide all the waterfall impacts". How its falling water and its
+  mist are drawn is not published. It sets the bar and gives no technique.
+- **Season: A Letter to the Future**, 2023 ([its VFX artist's account](https://realtimevfx.com/t/how-we-made-waterfall-in-season-a-letter-to-the-future/23420)).
+  A fall is several meshes: a water body, a foam layer over it with displaced vertices, "to hide edges", and a
+  highlight layer, all masked and none blended. Its foot is many overlapping masked particles and splashes that
+  erode. A stylised game, taken for its mechanism and not for the bar.
+- **Star Wars Jedi: Fallen Order**, 2019 ([Schreibt's frame study](https://simonschreibt.de/gat/jedi-fallen-order-splishy-splashy/),
+  May 2023). A large fall is several textures scrolled over an opaque mesh, a translucent layer over that, and
+  vapour on large planes at the foot. A middling one is crossed planes, so that it holds up from the side. Its
+  update on **Death Stranding**, which runs on Horizon's engine, finds one texture masked by vertex colours.
+- **Read for one fact each:** HAWKED, 2024 (falls are meshes built along a curve, with masks in vertex colours);
+  Unity's Glacier sample, 2023 (scrolled foam at a fall's foot); Unreal's stateless emitters, 2024 (a shipped
+  tool draws simple particles from a formula of their age, with no state stepped each frame); Ghost of Yōtei,
+  2025 (GPU particles that read the water's flow, with nothing on falls).
+- **Looked for and not found:** an account of the falls in God of War Ragnarök, Ghost of Tsushima, Avatar:
+  Frontiers of Pandora or Tears of the Kingdom, and any shipped game that hides a fall's foot with a marched
+  volume.
+
+What the identified accounts share: the falling water is more than one surface; white water is textured and
+lit flat, never glossy; something is always drawn in front of the foot, so no account shows where the falling
+water ends; and speed is shown by stretching the pattern down the fall.
+
 ### Judged from first principles
 
 | Inherited choice | Verdict | Why |
@@ -144,6 +176,11 @@ What each source was read for, and how far.
 | R5 | A card with a scrolling texture | Fails: one speed from lip to foot |
 | R5 | Particles | The engine has no particle owner; a sheet of a thousand strands is a surface |
 | R5 | **A sheet along the water's own path, patterned by the time each part of it left the lip** | **Selected** |
+| R5, a heavy fall | A fourth tuning of the one sheet | Fails: three passes left the curtain and the hard ends ([the heavy fall](#the-heavy-fall-at-the-highest-gauge)) |
+| R5, a heavy fall | A simulated particle system for the falling water (Jedi's small streams) | Needs state stepped each frame and an owner the engine does not have, and a pause and a capture's time would need rules of their own. Not selected |
+| R5, a heavy fall | A baked simulation played back (Horizon's impacts) | Needs a fluid pipeline and an asset for each fall and each discharge, and does not answer the gauge. Not selected |
+| R5, a heavy fall | Mist as a medium in the air | The weather's, and late. No account read hides a foot with one: they use planes and particles at the foot. Not selected, and still the owner's |
+| R5, a heavy fall | **Layers about the sheet, white water lit as foam, no end above the pool, and spray at the foot, each a function of the fall record and the time (Season's layers and particles, Jedi's body, layer and vapour)** | **Selected** |
 | R6 | One flow, its level raised by the chart's stage | Fails part 3 |
 | R6 | A live solve of the reach | Not selected, as above |
 | R6 | **Flow samples a gauge reads between** | **Selected** |
@@ -536,7 +573,7 @@ Rings exist where the interaction windows are, which is round the body the game 
 
 ### The heavy fall at the highest gauge
 
-**Parked, and built last.** Lead's ruling, 27 November 2026. At the island's highest gauge the sheet reads from
+**Built next, as a layered fall with spray at its foot.** At the island's highest gauge the sheet reads from
 beside it and from the bank as a curtain, and its strands end hard at the pool. Three bounded attempts left both
 as they were: the sheet's optics and light; the island profile's lengths and tear thickness, which draw the
 flood 0.97 to 0.99 white at its foot; and strands parted by the time they left the lip, each with its own
@@ -545,62 +582,144 @@ path and was taken out
 ([handoff](../../../.orchestrate/evidence/RIVERS/WP6-handoff.md),
 [the trial](../../../.orchestrate/evidence/RIVERS/WP6/strand-pass/README.md)). All three tuned one mechanism, a
 single surface along the water's path with a pattern thresholded on it and a cut at the pool's level, so a
-fourth pass of that kind is not the remedy. WP6 closes on the lowest and middle gauges, where the sheet passes.
-At the highest gauge the sheet draws as it does. Its lip is judged there as at every gauge, a smooth tongue
-that shows the rock behind it (WP6.4), and no item judges its look below the lip there until WP11.
+fourth pass of that kind is not the remedy. The lead parked the look on 27 November 2026. The owner, asked
+whether to leave it parked, said: "keep trying, pass it to a planner and see if they can help." So the research
+and the selection are made here ([research and selection](#research-and-selection)), and WP11 builds what is
+selected, straight after WP6. WP6 closes on the lowest and middle gauges, where the sheet passes. Until WP11 is
+Done the sheet draws the highest gauge as it does: its lip is judged there as at every gauge, a smooth tongue
+that shows the rock behind it (WP6.4), and no item judges its look below the lip.
 
-**What WP11 decides.** Which mechanism draws a fall too heavy for the sheet to carry. Its first item is research
-into how high-end games shipped in 2020 or later draw a heavy waterfall, from published accounts and from the
-games' own frames, and a selection made from it before anything is built. A technique is taken because a
-current game ships it and it answers the two failures, never because code or an older talk for it exists.
-[The candidates above](#the-candidates-decided-against-the-cues) were judged for R5's whole range before any
-fall was drawn, and they do not bind the selection: particles, and mist, were set aside there for want of an
-owner, which is a fact about the build order and not about the look. The research judges them on the look and
-says what each would need. Footage shows that a fall's foot is lost in white water and not which technique
-drew it, so for each game the record sets apart what was seen, what identifies the game's technique, and what
-the builder inferred. It also answers the question this design left open, whether a fall needs mist to
-meet its bar. The selection and its reasons go in the log, with the research record linked from it.
+**What makes the curtain.** Three things, read from the builder's captures
+([record](../../../.orchestrate/evidence/RIVERS/WP11/research.md)). No attempt changed any of them.
 
-**What holds whatever is selected.**
+1. *One surface.* All the water lies on one surface. From beside, nothing passes in front of anything else, and
+   the strands hang from it in a row. Parting the strands made the row a comb.
+2. *Cloth's light.* The sheet's folds are broad and smooth and are lit as a smooth surface, with a sheen down
+   each. White falling water is air and drops: it has grain and no sheen.
+3. *A hem.* The strands end in rounded or pointed tips above the pool, or are cut at its level, with clear air
+   or dark water under them, and nothing stands in front of the ends.
+
+**What draws a heavy fall.** Four changes, each the answer to one of those three, and each a function of
+[the fall record](#what-a-solve-writes) and the time.
+
+- **Layers.** The sheet stays, as the fall's core. About it stand outer layers: on both faces where the water
+  falls free, and on the outer face alone where the rock holds it. An outer layer follows the record's paths as
+  the sheet does, moved off the core along the sheet's normal by a stand-off that is nothing at the lip and
+  grows with the length of path fallen. So the lip stays one smooth tongue, and the fall deepens as it drops.
+  Each layer reads [the pattern](#the-falls-sheet) as the sheet does, by the time its water left the lip, at
+  its own place along the lip, its own scale and a launch speed a little off the core's. Every layer's streaks
+  still fall with the water and stretch as it gathers speed, and no two layers line up. An outer layer is all
+  white, has more gaps than the core, and is pushed in and out along its normal by the pattern's coarsest
+  band. From beside, nearer layers pass over farther ones, the outline is the union of several uneven edges,
+  and a gap in one layer has water behind it. That is the depth one surface could not have.
+- **White water's light.** Where the white share is high, on the core and on every outer layer, the water is
+  lit as foam is: diffuse light from the Sun and the sky, with no mirror lobe and no shading from the slope of
+  its own folds. Its detail is the pattern's fine streaks. The slab that mirrors the sky and shows the rock is
+  left where the white share is low, which is the tongue at the lip.
+- **No end above the pool.** Neither the core nor an outer layer is cut at the receiving level, and none is
+  thinned to tips above it. Each runs on below that level, where the pool's surface covers it, with the cover
+  it has just above. Over a short height at the receiving level, no more than the pool's own waves stand
+  there, its cover thins into the boil's foam. The two are lit by the same functions, so white meets white
+  with no line.
+- **Spray at the foot.** Along the plunge line the fall throws up spray: clumps of white water that leave the
+  line upward and outward, rise and fall back, and larger, slower, softer ones that stand over the foot. A
+  clump is a function of its index and the time alone. It is born on the pattern's loop and flies a ballistic
+  arc from a launch its index gives. Nothing is stored and nothing is stepped. Their number and their launch
+  speed follow the fall's power for each metre of lip, the `ρ g q z` that drives [the plunge](#the-plunge)'s
+  births, so a dry lip throws none and the flood the most. Every clump lives and dies within the spray
+  reach of the plunge line, a length the profile gives, on the island no more than half the fall's height.
+  Nothing drifts off or hangs, which would be [mist](#purpose-and-scope). The spray stands on both sides of the
+  layers' feet and higher than the fade at the receiving level, so from the bank, from beside and from above it
+  is in front of where the falling water lands. It has foam's light, and no clump shows as a card or a disc.
+
+  WP6's sheet already throws a few such clumps at each contact, and the third attempt moved them and added
+  none. What changes is their job, from drops at a contact to a mass that covers the foot.
+
+**Whose technique it is.** Layers with a displaced outer foam layer that hides the body's edges, and many
+overlapping particles at the foot, are what Season: A Letter to the Future (2023) ships. An opaque body under a
+translucent layer, with vapour on planes at the foot, is what a frame study finds in Star Wars Jedi: Fallen
+Order (2019). Both are identified, not inferred. Drawing them from a formula, and not from authored meshes and
+a simulated particle system, is this design's own step, taken so that a fall stays a function of time; Unreal's
+stateless emitters are the nearest shipped tool. Horizon Forbidden West sets the bar and publishes no technique
+for its falls.
+
+**How it grows.** All four changes come in from nothing with the fall's discharge for each metre of lip, from
+a threshold the profile gives: the outer layers' stand-off and cover, foam's light in place of the slab's, the
+run below the receiving level, and the spray's amount. Below the threshold a fall is the sheet alone, drawn as
+WP6 built it. So a fall thickens with no jump as its gauge rises (R6), and a trickle stays a few strands. The
+threshold, the stand-off's growth, the spray reach and the spray's amount for the fall's power are values of
+the game's profile. The island's are set by eye against WP11.2 and WP11.3 and recorded with the reason, as
+[the sheet's lengths](#the-falls-sheet) are. A profile that gives no threshold draws every fall as the sheet
+alone and compiles to the shader text, passes and storage it had before WP11. WP6's tests run on such a
+profile and stay as they are, and it is what main keeps if [WP11 stops](#the-heavy-fall-at-the-highest-gauge).
+
+**In the frame.** Every layer and the spray are drawn by the pass that draws the sheet
+([ruling 7](../ARCHITECTURE.md#seam-rulings-for-rivers)), before the water's gather. White water is masked, as
+Season's is, and not blended: the pattern at a layer or a clump says whether a pixel of it is covered, and a
+covered pixel writes what the sheet writes, which is colour, depth, motion from where that part of the pattern
+or that clump was at the last presentation, and reactive coverage. Softness comes from the pattern's fine grain
+along every edge and from many layers and clumps overlapping. A recipe may also vary the threshold from pixel
+to pixel where its reconstructor resolves that with no sparkle. So the depth at a pixel is that of the nearest
+water drawn there, the layers order by the depth test with no sorting, and no stack of thin covers is seen
+without a depth. Blending is left to the clear slab at the lip, as [the sheet](#the-falls-sheet) has it. The
+pool mirrors the layers and the spray and shows them through its surface as it does the sheet. They need no
+new ruling and ask nothing of another module. They use nothing that only Metal has, so one portable recipe
+draws the heavy fall on the Mac and in Chrome.
+
+**What holds, however it is tuned.**
 
 - *One source.* [The fall record](#what-a-solve-writes) still says where the water goes, how fast, how thick and
-  how much. What is drawn is made from it. Nothing drawn is a body or answers a query.
+  how much. What is drawn is made from it and the time, with no state kept from one frame to the next. Nothing
+  drawn is a body or answers a query.
 - *What a game reads does not move.* The plunge's births and impulses stay the fall record's, at the same places
   and amounts whatever the camera sees and whichever recipe draws the fall, on every machine ([the plunge](#the-plunge)).
-  They are the ones the engine gave before the drawing changed.
+  They are the ones the engine gave before the drawing changed. The spray is drawn and gives no birth, no
+  impulse and no ring.
 - *The frame contract.* Whatever is drawn writes depth, motion from unjittered positions and reactive coverage,
   holds on a pause and shows a capture's time ([ruling 7](../ARCHITECTURE.md#seam-rulings-for-rivers)). Depth
   follows what is drawn and not [the sheet](#the-falls-sheet)'s path: it is written where the drawn water hides
   the scene, and an opening in the fall keeps the scene's depth. What is drawn stays within a distance of the
-  fall record's paths that its recipe declares. That distance bounds where water may be drawn and is no
+  fall record's paths that its recipe declares, which is at least the outer layers' greatest stand-off and the
+  spray reach. That distance bounds where water may be drawn and is no
   allowance on the depth: the depth written at a place is that of the water drawn there, so the scene orders
   against the fall as it is seen. A ledge nearer than the written depth shows in front of the water, and water
   seen in front of a ledge has written a depth in front of it, because
   [the water's gather](../WATERS/DESIGN.md#optics) and the reconstructor read that depth.
 - *Light.* Whatever is drawn is lit by the water's own functions and has no light of its own: the direct Sun
-  on it takes the scene's Sun visibility ([ruling 7](../ARCHITECTURE.md#seam-rulings-for-rivers)), as WP7 builds
-  it for the sheet, and its white follows the sky to dusk and night. Ruling 7 takes only the direct Sun. In
-  shade the fall keeps the environment's reflection and foam's diffuse light from the sky, so a glassy tongue
-  that mirrors bright sky can be brighter than the shaded foam beside it and is right.
+  on it takes the scene's Sun visibility ([ruling 7](../ARCHITECTURE.md#seam-rulings-for-rivers)) once WP7 has
+  built that for the sheet and for foam, and its white follows the sky to dusk and night. Ruling 7 takes only
+  the direct Sun. In shade the fall keeps the environment's reflection and foam's diffuse light from the sky, so
+  a glassy tongue that mirrors bright sky can be brighter than the shaded foam beside it and is right. WP7.12
+  proves it on the heavy fall.
 - *The lip.* At the highest gauge the lip is still a smooth tongue that shows the rock behind it, as WP6.4
   passes it on the sheet.
 - *The lower gauges.* The lowest and middle gauges keep the look WP6 passed, and the fall thickens from the
   middle gauge to the highest with no jump (R6).
 - *Both targets.* By [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md) the
-  approach is a recipe the registry selects, with a portable fallback, and Chrome draws the fall at the highest
-  gauge by one or the other. The fallback clears the curtain and the hard strand ends as the selected recipe
-  does, because Chrome is where a visitor to a teaching demo sees the fall. WP6's sheet is therefore no
-  fallback at the highest gauge.
+  heavy fall is a recipe the registry selects, and a faster path for one device comes only by a measured win.
+  Chrome draws the fall at the highest gauge by the same recipe or by a lighter portable fallback that recipe
+  names, with fewer layers or less spray. Whichever it is clears the curtain and the hard strand ends as the
+  Mac's does, because Chrome is where a visitor to a teaching demo sees the fall. WP6's sheet alone is
+  therefore no fallback at the highest gauge.
 - *Cost.* Recorded as a tripwire beside WP6's ([cost account](#cost-account)); no figure decides it.
 
-**What it may not build alone.** Water that leaves the surface as drops is still
-[not this module's](#purpose-and-scope): the air's medium is the weather's (`CLOUDS`, through `ATMOSPHERE`), and
-the engine has no particle owner. The selection is made on the look, and not on what this module may build
-today. If it needs either, or a change no [ruling](../ARCHITECTURE.md#seam-rulings-for-rivers) gives, the builder
-records the selection and stops with what is needed and of whom, and a planner places it. If the selected
-approach is built and the fall still fails either cue, the builder says so in the log and stops for the lead.
+**When to stop.** WP11 builds this once and tunes it a little. The foot comes first, the end above the pool and
+the spray, judged in takes from the bank and from beside at the highest gauge against WP11.3's list. Then the
+layers and white water's light, judged against WP11.2's. With all four changes in, each of the two cues, the
+curtain and the hard ends, has two rounds of tuning. A round is one change to the profile's values or to the
+pattern, then the takes from beside and from the bank at the highest gauge, judged against the lists. If either
+cue still fails after its second round the builder stops. Main keeps WP6's drawing at the highest gauge: the
+island's profile is given no threshold there, the attempt's values stay as a commit on the builder's branch,
+and the log says which point failed in which take. The builder ends `BLOCKED` for the lead, who asks the owner
+whether to park the look. It does not try another mechanism.
 
-WP11 is the last of this module's work packages, after WP7, and nothing outside this module waits for it.
+**What it may not build.** A medium in the air, which is [the weather's](#purpose-and-scope). State stepped
+from frame to frame, which the engine has no owner for. A baked simulation. A change to the fall record or to
+the plunge's sources. A change no [ruling](../ARCHITECTURE.md#seam-rulings-for-rivers) gives. If the builder
+judges that the fall cannot meet its lists without one of these, it says which and why in the log and stops for
+the lead, as above.
+
+WP11 follows WP6 and comes before WP7, and nothing outside this module waits for it.
 
 ### Rings on running water
 
@@ -677,11 +796,12 @@ product: the map needs them on the CPU, and a lease lends views on the GPU.
   | Capability | What it adds | Needs |
   |---|---|---|
   | Flow bands | The two bands and their gains on charts | Waves |
-  | Falls | Sheets, and plunges where the scene has whitewater or interaction waves | A river with a fall record; a foam pattern |
+  | Falls | Sheets, a heavy fall's layers and spray, and plunges where the scene has whitewater or interaction waves | A river with a fall record; a foam pattern |
 
   A solved river needs neither: it is then drawn as `WATERS` WP9 draws a chart.
 - **The physical profile**, never a quality setting (C04): the flow samples and the gauge's mix, the brink rule,
-  the chop's law and bands, the loss, the sheet's laws, the wave share and the segments of a plunge.
+  the chop's law and bands, the loss, the sheet's laws, a heavy fall's threshold, stand-off, spray reach and
+  amount of spray, the wave share and the segments of a plunge.
 - **Limits are inputs.** The flow bands are layers of the cascades' arrays and the samples layers of a chart's,
   counted against the capability record at preparation.
 - **Knobs**, in `EFFECT-GRAPH`'s list with a declared invalidation: the flow bands' cadence, and the sheet's
@@ -706,6 +826,12 @@ product: the map needs them on the CPU, and a lease lends views on the GPU.
   the shallows' constant is unrun; WP5 records it.
 - **R5.** Part 4 is arithmetic, and a section for the depth at a lip. The sheet's look is unrun; WP6 is the
   first ([risk 4](#risks)).
+- **R5, the heavy fall.** Arithmetic only. On the island's drop of about 2.5 m the water lands at about 7 m/s.
+  Spray launched at a quarter to four tenths of that rises 0.16 m to 0.4 m: above the pool's waves at the
+  foot, and well inside a reach of half the fall's height. Outer layers 0.3 m apart at the foot stand 0.06 rad
+  apart from beside at 5 m, about 70 pixels of a frame 1280 wide at a 60° view, so layers passing over one
+  another can be seen. The look is unrun. Nothing of the layered fall was drawn before WP11, whose first takes
+  are the first look, and [a stop rule](#the-heavy-fall-at-the-highest-gauge) bounds it.
 - **R6.** Part 3, in section, for cells both samples wet; parts 8 and 10, in plan, for what is wet between
   two samples: a hollow behind a ridge, and a reach that goes from dry to running. Both work on levels
   written by hand. The solver's own samples of a valley, and its own lip that starts to run, are unrun; WP3
@@ -718,7 +844,7 @@ product: the map needs them on the CPU, and a lease lends views on the GPU.
 - **What the looks cover.** The island's fall is about 4 m. WP6 judges it from 2 m to 200 m at its lowest and
   middle gauges, and WP11 at its highest ([the heavy fall](#the-heavy-fall-at-the-highest-gauge)). Falls of
   other heights in R5's range, 0.75 m to 12 m, are held to the sheet's closed forms (WP2.4) and are not judged
-  by eye: the ledger says so until a game shows one.
+  by eye, as sheets or as layered falls: the ledger says so until a game shows one.
 - **Cost.** Unrun. WP1 records the solve and WP4 the first frame.
 
 ## The system as it runs
@@ -736,7 +862,7 @@ product: the map needs them on the CPU, and a lease lends views on the GPU.
 `upload` takes the gauges with the page's stages. `simulate`, with the cascades and before the query's
 dispatch: the flow bands at `t`, on a frame the display's cadence or
 [a query's demand](#the-flows-own-waves) asks for them. `simulate`, on a frame that advances the tick: births from loss with the foam's births; the plunges'
-births and impulses; the interaction step with each region's current ladder. `after-opaque`: the sheets, then
+births and impulses; the interaction step with each region's current ladder. `after-opaque`: the sheets, with a heavy fall's layers and spray, then
 the water's gather and surface as before.
 
 **Creator journey.** A game declares a river: a rectangle, its sources, the bodies it may reach, Manning's `n`
@@ -767,8 +893,9 @@ scene with no river and neither capability compiles to the shader text, passes a
 4. Births from a chart's loss and at a plunge (WP5 and WP6), which `WATERS`' design already books.
 5. A current ladder in the interaction step (WP6).
 6. A river selection in `examples/water` (WP4).
-7. The sheet is drawn in the water's contribution before its gather (WP6), and water's direct Sun takes the
-   lent Sun visibility (WP7, after `WATERS:WP16` lends it).
+7. The sheet is drawn in the water's contribution before its gather (WP6), a heavy fall's layers and spray
+   are drawn by that same pass with the same outputs (WP11), and water's direct Sun takes the lent Sun
+   visibility (WP7, after `WATERS:WP16` lends it).
 
 Used as built: the chart and its joins, carriage, the foam stocks, impulse records, the query, the foam
 pattern's lease, the typed controls. Nothing is asked of `EFFECT-GRAPH`, `ATMOSPHERE`, `CONTENT-LOOP` or
@@ -786,6 +913,7 @@ Estimates, unmeasured.
 | Flow bands | Frame, at their cadence while a chart with a flow gain is inside a view's reach; and every frame that answers a query point over such a chart, wherever the camera is | Two transforms of 256² and their mips | About half the cascades' cost again; two more layer reads in the surface where a gain is not zero. With a float on a river the cadence saves only repeat frames, half the frames at a 60 Hz tick and 120 Hz |
 | Births from loss | Tick | One read of the chart's loss in the foam's births | Inside the foam's pass |
 | Sheets | Frame, while a fall is in view | A lip's cells × up to 32 points; the sheet's pixels, blended | Small beside the surface; WP6 records it |
+| A heavy fall's layers and spray | Frame, while a fall above the profile's threshold is in view | The sheet's pixels once more for each outer layer, and the spray's cards along the plunge line, masked and depth-tested | Unmeasured. Several times the sheet's cost on the fall's own pixels and nothing elsewhere; WP11.6 records it |
 | Plunges | Tick | A record and a birth for each segment | Negligible |
 | The current ladder | Tick, for each region whose currents differ | One more transform back for each carriage current beyond the first at each ladder depth, inside the profile's 16 solves a level; choosing the currents is CPU work when regions are labelled | Up to four times a still region's step where a pool and a riffle share a window; nothing on still water or a uniform current. WP6.8 records it |
 
@@ -808,9 +936,10 @@ module adds, and `scripts/river_cost.py` for the solve. No timing figure decides
    remedies are the pattern's relief as displacement, the white share and presence with
    [the profile's lengths](#the-falls-sheet), and the plunge's foam and air at the foot. Three failed looks on
    one cue go to the log. Mist is the remedy this plan does not have. It happened at the highest gauge: three
-   attempts left a curtain with hard strand ends, and the lead parked that look to WP11, which chooses a
-   mechanism from research first ([the heavy fall](#the-heavy-fall-at-the-highest-gauge)). The wrong fix is a
-   fourth tuning of the sheet.
+   attempts left a curtain with hard strand ends. The remedy designed for it is
+   [the layered fall with spray at its foot](#the-heavy-fall-at-the-highest-gauge), which WP11 builds under a
+   stop rule. The wrong fix is a fourth tuning of the sheet. If the layered fall fails too, the builder stops
+   and the owner is asked whether to park the look.
 5. **A seam where a river meets a lake, a fall's foot or the sea.** Early sign: WP4's joins. The map's joins are
    `WATERS`'; the solve gives a level at each end that already matches the body there. WP6 found one at the
    fall's foot, where the pool began a cell out from the cliff, and
@@ -938,27 +1067,29 @@ dependencies. In addition:
   the receiving level, or on the receiving body's shore margin, as no body changes to this rule, and nothing
   else in them does. The island's plunge pool stays a reach, because a basin has no current to carry the foam
   off, which WP6.3 and WP6.5 need.
-- **The fall at the highest gauge (WP6, WP7 and WP11).** Until WP11 is Done no item judges how the fall looks
-  at the highest gauge, or how its falling water ends at the pool there
+- **The fall at the highest gauge (WP6, WP11 and WP7).** WP11 follows WP6. Until it is Done no item judges how
+  the fall looks at the highest gauge, or how its falling water ends at the pool there
   ([the heavy fall](#the-heavy-fall-at-the-highest-gauge)). WP6.4 takes its views at the lowest and middle
   gauges. WP6.5 judges the pool at the middle and highest gauges and the sheet's meeting with it at the middle
-  gauge alone. WP7's views of the fall are taken at the middle gauge, and a curtain or a hard strand end seen at
-  the highest gauge is not a finding against WP6 or WP7. The lip is the exception: WP6.4 judges it at the
-  highest gauge too, in one take and a still, since the rock showing through the tongue was never one of the
-  two parked cues, and WP11.2 holds it on whatever replaces the sheet. Until WP11 closes the ledger says the
-  look below the lip is unjudged. WP11's inspections of the fall and its foot are written from what the three
-  attempts left on screen, and they pass any mechanism that removes it: neither names how the fall is drawn.
-  Its other proofs are written so that a recipe unlike the sheet can pass them and the sheet, kept as a
-  fallback, cannot:
+  gauge alone. A curtain or a hard strand end seen at the highest gauge is not a finding against WP6. The lip
+  is the exception: WP6.4 judges it at the highest gauge too, in one take and a still, since the rock showing
+  through the tongue was never one of the two parked cues, and WP11.2 holds it on the layered fall. WP11's
+  inspections of the fall and its foot are written from what the three attempts left on screen, and they pass
+  whatever removes it: neither says how the fall is drawn. WP11.1 asks that separately, and only of what the
+  design rests on: that everything drawn is made from the fall record and the time with nothing stored, that
+  ruling 7's pass draws it, and that it is more than one surface with spray at its foot and not a fourth
+  tuning of the sheet. A count of layers or of clumps is the builder's and no item names one. Its other proofs
+  are written so that the layered fall can pass them and the sheet alone cannot:
   - *In Chrome (WP11.5).* The curtain from beside and the strand ends from the bank are judged in Chrome's own
     `realtime` takes. The script's case alone would pass WP6's sheet, which reaches the pool, speeds up and
     makes foam.
   - *The frame (WP11.4).* WP6's test reads depth at five places fixed on the sheet's ballistic path, which is
-    the sheet's outline and not the contract: a true opening at one of them fails it. The heavy fall's case
-    runs on each recipe that draws the highest gauge, takes its places from that recipe's own coverage in the
+    the sheet's outline and not the contract: an outer layer in front of one of them, or a true opening at
+    one, fails it. The heavy fall's case runs on each recipe that draws the highest gauge, takes its places
+    from that recipe's own coverage in the
     frame, and holds depth where the water hides the scene and the scene's depth at an opening. The sheet's
-    case stays for where the sheet still draws. Depth within the recipe's declared distance of the path is
-    not enough at a covered place: a strand drawn 4.75 m from the camera could write the path's 5 m, pass
+    case stays as it is, on its own profile, which gives no threshold and so draws the sheet alone. Depth within the recipe's declared distance of the
+    path is not enough at a covered place: a layer drawn 4.75 m from the camera could write the path's 5 m, pass
     in front of a ledge at 4.9 m and leave a depth behind it. So the case also stands an opaque test surface
     0.05 m nearer the camera than the depth it read at each covered place, and the frame drawn must show the
     surface there. Water drawn nearer than the depth it wrote covers the surface and fails. The 0.05 m is a
@@ -966,14 +1097,19 @@ dependencies. In addition:
     at these cameras. The surface stands in front and not behind, so a recipe that thins its water against
     the scene behind it passes.
   - *The pool (WP11.4).* One camera and least amounts of foam and rings cannot tell the fall record's sources
-    from sources that follow the camera. The sources the engine submits are compared to the bit across two
-    cameras that both hold the foot in view and one turned away, across the recipes, and with those recorded
-    before the drawing changed.
-  - *Light (WP11.8).* WP7 proves ruling 7 on the sheet at the middle gauge. A recipe of its own could pass at
-    noon and glow in the gorge, so WP7.3's measure and WP7.4's and WP7.6's views are taken again at the highest
-    gauge on each recipe that draws it. The views judge that the direct Sun's look ends at the shadow's edge
-    and that what is left is the sky's light. They set no order of brightness between the shaded fall and the
-    shaded foam, because a tongue that mirrors bright sky is rightly the brighter of the two.
+    from sources that follow the camera, or from sources the spray has added to. The sources the engine
+    submits are compared to the bit across two cameras that both hold the foot in view and one turned away,
+    across the recipes, and with those recorded before the drawing changed.
+  - *The spray (WP11.3).* Spray painted in place would pass a still. One take lowers the gauge from its highest
+    to a dry lip, and the spray must thin and go with the fall, and none may drift off or hang.
+  - *Light (WP7.12).* WP11 comes before the lent Sun visibility is built, so the heavy fall's light under
+    ruling 7 is WP7's to prove. WP7 proves ruling 7 on the sheet at the middle gauge, and layers or spray lit
+    by a path of their own could pass at noon and glow in the gorge. So WP7.3's measure and WP7.4's and
+    WP7.6's views are taken again at the highest gauge on each recipe that draws it. The views judge that the
+    direct Sun's look ends at the shadow's edge and that what is left is the sky's light. They set no order of
+    brightness between the shaded fall and the shaded foam, because a tongue that mirrors bright sky is
+    rightly the brighter of the two. WP7's other views of the fall stay at the middle gauge. Until WP7 closes
+    the ledger says the heavy fall's light in shade is unjudged.
 - **Maturity.** A ledger row for `E1.rivers` is added in WP4 and kept current.
 
 ## Open questions
@@ -986,8 +1122,9 @@ dependencies. In addition:
 | What wave share makes rings that read? | WP6.5's look, tuned by eye from 0.1 and recorded. The fall's power is a diagnostic ([the plunge](#the-plunge)), and no item asserts it |
 | How many reaches does a winding river need? | WP4's bytes; [risk 7](#risks) |
 | What whitening length and tear thickness read right on the island's fall? | WP6.4's look at the lowest and middle gauges, tuned by eye from the first profile's and recorded ([the fall's sheet](#the-falls-sheet)) |
-| Does a fall need mist to meet its bar? | WP11.1's research, for a heavy fall; then the owner ([plan](PLAN.md#open-for-the-human)) |
-| What draws a fall too heavy for the sheet? | WP11.1's research and selection ([the heavy fall](#the-heavy-fall-at-the-highest-gauge)) |
+| Does a fall need mist to meet its bar? | No account read answers it. The heavy fall is built with spray at its foot and no mist; WP11.2's and WP11.3's looks say whether that is enough, and mist stays the owner's ([plan](PLAN.md#open-for-the-human)) |
+| Does the layered fall clear the curtain and the hard ends? | WP11's first takes, under [its stop rule](#the-heavy-fall-at-the-highest-gauge) |
+| What threshold, stand-off, spray reach and amount of spray read right on the island's fall? | WP11.2's and WP11.3's looks, tuned by eye and recorded |
 
 ## Compact river solver fixtures (WP8)
 
