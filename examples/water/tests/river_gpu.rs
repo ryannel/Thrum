@@ -115,3 +115,11 @@ fn unrelated_sampled_river_preserves_the_one_sample_surface() {
     river_proof::surface::compatibility::check(&gpu);
 }
 }
+
+thrum_test_support::macos_gpu_test! {
+fn unrelated_sampled_river_preserves_basin_shoreline() {
+    let Some(gpu) = thrum_test_support::gpu("basin shoreline", Some(wgpu::Backend::Metal))
+    else { return };
+    river_proof::surface::compatibility::check_basin(&gpu);
+}
+}

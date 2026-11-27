@@ -76,7 +76,13 @@ struct TradeDepth {
 
 impl TradeDepth {
     fn new(gpu: &thrum_test_support::Gpu, map: Map, spectrum: thrum_sea_model::Spectrum) -> Self {
-        Self::with_optics(gpu, map, spectrum, Some(thrum_water::Optics::default()))
+        Self::with_optics(
+            gpu,
+            map,
+            spectrum,
+            Some(thrum_water::Optics::default()),
+            EXTENT,
+        )
     }
 
     fn with_optics(
@@ -84,6 +90,7 @@ impl TradeDepth {
         map: Map,
         spectrum: thrum_sea_model::Spectrum,
         optics: Option<thrum_water::Optics>,
+        extent: [u32; 2],
     ) -> Self {
         let mut profile = water_scene::profile(&spectrum);
         profile.optics = optics;
@@ -105,10 +112,10 @@ impl TradeDepth {
             .expect("elapsed surface clock")
             .with_ground(None)
             .with_contribution(Box::new(water), || ContentStatus::Drawn(1))
-            .with_contribution(Box::new(tap.contribution(EXTENT)), || {
+            .with_contribution(Box::new(tap.contribution(extent)), || {
                 ContentStatus::Drawn(1)
             });
-        let mut scene = Fixture::from_game(gpu, EXTENT, game, report);
+        let mut scene = Fixture::from_game(gpu, extent, game, report);
         scene.frame_without_timings(0.0);
         Self {
             scene,

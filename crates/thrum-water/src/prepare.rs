@@ -690,6 +690,12 @@ fn surface_pipelines(
     }
     let has_rivers = map.is_some_and(MapGpu::has_rivers);
     if has_rivers {
+        let sea_receives_river = map.is_some_and(MapGpu::sea_receives_river);
+        writeln!(
+            &mut source,
+            "\nconst SEA_RECEIVES_RIVER: bool = {sea_receives_river};"
+        )
+        .expect("write shader source");
         source.push_str(concat!(
             include_str!("map_gpu/river_carriage.wgsl"),
             include_str!("map_gpu/river_surface_waves.wgsl"),
@@ -1138,19 +1144,7 @@ fn surface_mesh(
         return geometry;
     };
     let surf = map.surf_profile().is_some();
-    let mut river_receivers = [false; map_gpu::BODY_LIMIT];
-    for (body, declaration) in (0..map_gpu::BODY_LIMIT)
-        .map_while(|body| map.body(body).map(|declaration| (body, declaration)))
-    {
-        if let thrum_water_model::BodyKind::Chart(chart) = &declaration.kind
-            && map_gpu::sampled_river(map, body)
-        {
-            for end in chart.ends.iter().filter(|end| !end.is_brink()) {
-                river_receivers[end.body] = true;
-            }
-        }
-    }
-    for (body, receiver) in river_receivers.into_iter().enumerate() {
+    for (body, receiver) in map_gpu::river_receivers(map).into_iter().enumerate() {
         let Some(declaration) = map.body(body) else {
             break;
         };

@@ -234,6 +234,23 @@ pub(super) fn sampled_river(map: &Map, body: usize) -> bool {
     map.river_of(body)
         .is_some_and(|(river, _)| map.river(river).is_some_and(|river| river.gauges.len() > 1))
 }
+
+pub(super) fn river_receivers(map: &Map) -> [bool; BODY_LIMIT] {
+    let mut receivers = [false; BODY_LIMIT];
+    for (body, declaration) in
+        (0..BODY_LIMIT).map_while(|body| map.body(body).map(|declaration| (body, declaration)))
+    {
+        if let BodyKind::Chart(chart) = &declaration.kind
+            && sampled_river(map, body)
+        {
+            for end in chart.ends.iter().filter(|end| !end.is_brink()) {
+                receivers[end.body] = true;
+            }
+        }
+    }
+    receivers
+}
+
 pub(crate) const BODY_LIMIT: usize = 16;
 
 #[repr(C)]
@@ -272,6 +289,7 @@ pub struct MapGpu {
     support: Vec<[f32; 4]>,
     hollows: Option<HollowsGpu>,
     rivers: [Option<rivers::ChartLayers>; BODY_LIMIT],
+    sea_receives_river: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -601,6 +619,10 @@ impl MapGpu {
             support,
             hollows,
             rivers,
+            sea_receives_river: river_receivers(map)
+                .get(record.size_count_sea[3] as usize)
+                .copied()
+                .unwrap_or(false),
         };
         let authored = stages(map);
         gpu.upload(queue, map, &authored, &authored);
@@ -618,6 +640,10 @@ impl MapGpu {
 
     pub(crate) fn has_rivers(&self) -> bool {
         self.rivers.iter().any(Option::is_some)
+    }
+
+    pub(super) fn sea_receives_river(&self) -> bool {
+        self.sea_receives_river
     }
 
     /// The receiving body and the river fraction of its wave-phase transition.
