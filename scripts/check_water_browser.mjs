@@ -1699,14 +1699,14 @@ try {
       const openSea=['sea','deep-sea'].includes(site);
       const views=shallow?[['through-shallows',-2,-73,90]]:[
         ['bed-0.5m',0.5,-45,90],['bed-3m',3,-45,90],['level-0.5m',0.5,0,90],['level-3m',3,0,90],
-        ['shaft-1m',1,67,228],['away-1m',1,67,273],
+        ['shaft-1m',1,67,228],['away-1m',1,67,273],['sunk-float',0.5,-12,127.5],
         ...(openSea?[['shaft-3m',3,67,228],['away-3m',3,67,273],['shaft-10m',10,67,228],['away-10m',10,67,273]]:[]),
         ...(site==='deep-sea'?[['bed-20m',20,-35,90],['level-20m',20,0,90]]:[]),
       ];
       checkpoints=views.map(([name,depth,pitch,bearing])=>[name,{
         'camera.depth':depth,'camera.pitch':name.startsWith('away-')?22:pitch,
         'camera.bearing':name.startsWith('away-')?228:bearing,
-        'camera.fov':/^(shaft|away)-/.test(name)?55:105,'sun.elevation':60,
+        'camera.fov':/^(shaft|away)-/.test(name)?55:name==='sunk-float'?60:105,'sun.elevation':60,
       }]);
     }else if(routeParams.has('dive')){
       checkpoints=[

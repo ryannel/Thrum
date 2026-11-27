@@ -861,6 +861,7 @@ pub(crate) fn install_moored_craft(
     position: [f64; 2],
     waterline: f64,
     heading: f64,
+    draft: f32,
 ) -> SkyGame {
     let initial = Body::new(0, Hull::Craft, position, waterline, heading);
     let fleet = Arc::new(Mutex::new(Fleet {
@@ -874,9 +875,10 @@ pub(crate) fn install_moored_craft(
         #[cfg(target_arch = "wasm32")]
         wake_sample: None,
     }));
-    game.with_contribution(Box::new(Draw::new(fleet, water.optics_bodies(), 1)), || {
-        ContentStatus::Drawn(1)
-    })
+    game.with_contribution(
+        Box::new(Draw::new(fleet, water.optics_bodies(), 1).with_craft_draft(draft)),
+        || ContentStatus::Drawn(1),
+    )
 }
 
 pub(crate) fn install_channel_float(

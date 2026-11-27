@@ -1000,6 +1000,7 @@ fn under_light_checkpoints(site: DiveSite) -> Vec<(String, String, f64)> {
             ("bed-3m", 3.0, -45.0, 90.0),
             ("level-0.5m", 0.5, 0.0, 90.0),
             ("level-3m", 3.0, 0.0, 90.0),
+            ("sunk-float", 0.5, -12.0, 127.5),
             ("shaft-1m", 1.0, 67.0, 228.0),
             ("away-1m", 1.0, 67.0, 273.0),
         ],
@@ -1008,6 +1009,7 @@ fn under_light_checkpoints(site: DiveSite) -> Vec<(String, String, f64)> {
             ("bed-3m", 3.0, -45.0, 90.0),
             ("level-0.5m", 0.5, 0.0, 90.0),
             ("level-3m", 3.0, 0.0, 90.0),
+            ("sunk-float", 0.5, -12.0, 127.5),
             ("shaft-1m", 1.0, 67.0, 228.0),
             ("shaft-3m", 3.0, 67.0, 228.0),
             ("shaft-10m", 10.0, 67.0, 228.0),
@@ -1023,6 +1025,8 @@ fn under_light_checkpoints(site: DiveSite) -> Vec<(String, String, f64)> {
             let beam_pitch = if sun == 15 { 43.0 } else { 67.0 };
             let (pitch, bearing, fov) = if aimed || off_sun {
                 (if aimed { beam_pitch } else { beam_pitch - 45.0 }, 228.0, 55.0)
+            } else if view == "sunk-float" {
+                (pitch, bearing, 60.0)
             } else {
                 (pitch, bearing, 105.0)
             };

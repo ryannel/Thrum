@@ -307,6 +307,7 @@ fn build(
             [f64::from(x) + 1.7, f64::from(z)],
             f64::from(level),
             std::f64::consts::FRAC_PI_2,
+            0.85,
         )
     } else {
         game
@@ -471,7 +472,7 @@ fn dive_meshes(
     if !matches!(site, DiveSite::Swash | DiveSite::Pond) {
         meshes.push(
             MeshPlacement::new("meshes/float", "textures/white")
-                .at([x + 2.5, level - 1.8, z + 0.90])
+                .at([x + 3.2, level - 1.35, z + 2.45])
                 .scale(0.92),
         );
     }

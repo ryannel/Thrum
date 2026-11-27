@@ -48,6 +48,7 @@ pub(super) struct Draw {
     opaque: OpticsBodies,
     visible_count: usize,
     float_scale: f32,
+    craft_draft: f32,
     shadow_bounds: Option<ShadowBounds>,
 }
 
@@ -65,6 +66,7 @@ impl Draw {
             opaque,
             visible_count,
             float_scale: 1.0,
+            craft_draft: 0.46,
             shadow_bounds: None,
         }
     }
@@ -81,6 +83,11 @@ impl Draw {
             };
             pass.draw(vertices.clone(), index..index + 1);
         }
+    }
+
+    pub(super) fn with_craft_draft(mut self, draft: f32) -> Self {
+        self.craft_draft = draft;
+        self
     }
 
     pub(super) fn with_float_scale(mut self, scale: f32) -> Self {
@@ -103,7 +110,7 @@ impl SceneContribution for Draw {
     ) -> Result<(), thrum_render::runtime::FrameError> {
         let device = surface.device;
         let mut vertices = Vec::new();
-        craft(&mut vertices);
+        craft(&mut vertices, self.craft_draft);
         let split = u32::try_from(vertices.len()).map_err(|_| {
             thrum_render::runtime::FrameError::InvalidState(
                 "floating mesh exceeds the vertex index range",
@@ -423,7 +430,7 @@ fn round_strip<const N: usize>(
     }
 }
 
-fn craft(vertices: &mut Vec<Vertex>) {
+fn craft(vertices: &mut Vec<Vertex>, draft: f32) {
     const DECK: f32 = 1.36;
     let outline = [
         [2.9, 0.0],
@@ -435,7 +442,7 @@ fn craft(vertices: &mut Vec<Vertex>) {
         [1.72, -0.74],
     ];
     let ring = |y, scale: f32| outline.map(|[x, z]| vec3(x, y + 0.06 * x.max(0.0), z * scale));
-    let keel = ring(-0.46, 0.54);
+    let keel = ring(-draft, 0.54);
     let planking = [0.25, 0.18, 0.114];
     strip(vertices, keel, ring(0.42, 0.90), planking);
     let mut underside = keel;

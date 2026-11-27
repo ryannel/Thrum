@@ -993,7 +993,7 @@ fn build_island(
         } else {
             [f64::from(eye[0]) + 12.0, f64::from(eye[2]) + 2.0]
         };
-        crate::floating::install_moored_craft(game, &water, craft, 0.0, 1.0)
+        crate::floating::install_moored_craft(game, &water, craft, 0.0, 1.0, 0.46)
     } else {
         game
     };
