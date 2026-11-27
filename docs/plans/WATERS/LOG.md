@@ -1808,3 +1808,35 @@
   frames were exported and wrote no receipt, so try that route before WP26.4's captures. The keel is 1.37 m
   below the mean water, and the example's pose marked for it, at 0.82 m, is above it.
   [The change](../../../.orchestrate/evidence/WATERS/WP16-parked-beds-and-keel.md).
+
+## WP26 beds and keel design review
+
+- 2026-11-28 Planner, for the four Must Fix findings of the design review at `4c9728a1c`. Only WP26.4, WP26.7,
+  WP26.8, WP26.9 and [WP26's section](DESIGN.md#light-under-water-that-wp16-left-wp26) changed. None went
+  against a decision, and nothing was left out as beyond scope.
+- 2026-11-28 Planner, Must Fix 1, the bed's net was judged from 3 m alone and the remedy could raise the bed:
+  WP26.7 judges the bed at WP16.6's own views under water, from 0.5 m and from 3 m under the lake and the sea,
+  looking down (question 7, each depth by its own views) and level (question 8), at each Sun and in each wind,
+  the sea's offshore bed through all the water over it. The design no longer lets the remedy change the bed's
+  depth under the stations: [it keeps the stations](DESIGN.md#the-net-on-the-deeper-beds) and leaves the bed
+  under them no nearer the surface, and a new reviewer question on WP26.7 reads that from the diff. No item
+  measures the bed's height.
+- 2026-11-28 Planner, Must Fix 2, Chrome lost the fine net seen through the surface: WP26.4 judges it again
+  from 2 m above the pond and the beach's shallows at noon (question 8), takes WP16.6's list at all its noon
+  views (question 9), and takes the bed from both depths (question 6, WP26.7's questions 7 to 10).
+- 2026-11-28 Planner, Must Fix 3, the difference of two frames could not name the view or the march: WP26.9
+  names three causes. The example's water and the composition are as before. No darker water in the scattered
+  light alone is the shadow's loss there, open among the view, the march and a shadow too slight in this water
+  to see. The record says which, or rules a remedy out on one, only with evidence of which lines of sight
+  through open water cross shadowed water, and for the march or the shadow's own light a finer sum of the
+  march's own source beside the march's output. The difference picture stays and names no cause. WP26.9 has a
+  reviewer question for those diagnostics, asked only where the record uses them.
+- 2026-11-28 Planner, Must Fix 4, a failed trial read between two rungs said nothing of the waves' light:
+  WP26.8 leaves the field's light at the bed open among five, the depths the rungs are stored at added (11.31 m
+  and 16 m about the sea's bed at 13.44 m). One of the field's four is a cause where the net joins with that
+  one thing changed. The waves' light is a cause only where the generator, run at the bed's own depths and not
+  read from stored rungs, holds no net at two finenesses that agree. Any other picture in which the net stays
+  apart names no cause and rules out no remedy. The fourth picture's line says whether it was read from rungs.
+- 2026-11-28 Planner, the review's suggestion, taken in part: WP26.8 takes its four pictures and four causes
+  from WP26.6 by reference, and its list has seven questions for nine. WP26.6 is unchanged, since the review
+  found it settled and a change would give the next review more to read.
