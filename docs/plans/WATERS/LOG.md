@@ -1548,3 +1548,10 @@
   Chrome and Metal show the bank, moving whitecaps and a coherent hull at the
   crossing. The 1440p cost comparison now tracks a pass across renumbering.
   [Lens](../../../.orchestrate/evidence/WATERS/WP15/review-lens-proof.md) · [Views](../../../.orchestrate/evidence/WATERS/WP15/review-visual-proof.md) · [Cost](../../../.orchestrate/evidence/WATERS/WP15/review-cost-proof.md).
+
+- 2026-11-27 Repaired the WP15 optical source and admission findings.
+  The underside takes opaque light along the optical rays, and the lake
+  window shows the drawn bank. Metal proves independent carried-gain and
+  carried-weight admission. Reviewed the crossings and overhead windows
+  on Metal and hardware Chrome, and refreshed the paired 1440p cost record.
+  [Radiance](../../../.orchestrate/evidence/WATERS/WP15/optical-repair-source-proof.md) · [Admission](../../../.orchestrate/evidence/WATERS/WP15/optical-repair-admission-proof.md) · [Views](../../../.orchestrate/evidence/WATERS/WP15/optical-repair-visual-proof.md).
