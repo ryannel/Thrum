@@ -1087,12 +1087,21 @@
       }
     },
     "WP13": {
-      "definitions": "0e4ec82a93de43176045177f56c241de578610454c0a92fbf5ab58180d0ebbe5",
+      "definitions": "72032fe0195085bf44f7bd159bf32427155d6c12e0c8618878ca0f5091777b0e",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Three owner reports on the V1 showcase Sun shadows, on the Mac. (1) \"I'm seeing some shadow flicker at times, for exampl",
-        "at": "2026-11-27T22:02:16Z"
+        "task": "Owner decision change, 27 Nov 2026. I told the owner the shadow diagnosis (ATMOSPHERE WP13, .orchestrate/evidence/ATMOSP",
+        "at": "2026-11-27T23:02:39Z"
+      }
+    },
+    "WP14": {
+      "definitions": "f14ac1660648f5bfabaa8c8baf2c604da1214f7e2459cdf1894ebaba356954d5",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Owner decision change, 27 Nov 2026. I told the owner the shadow diagnosis (ATMOSPHERE WP13, .orchestrate/evidence/ATMOSP",
+        "at": "2026-11-27T23:02:39Z"
       },
       "ends_stretch": true
     }
@@ -1217,11 +1226,15 @@
     {
       "task": "Three owner reports on the V1 showcase Sun shadows, on the Mac. (1) \"I'm seeing some shadow flicker at times, for example when you fly towards this beige ballon, or the shadows from the rocks flickering in the scene with the squares.\" Screenshot tmp/owner-reports/2026-11-27-shadow-flicker-balloons.webp. (2) \"The shadows are only drawn for objects that are near by which means there is a very clear line where the shadows suddenly appear. It's a bit weird, but maybe it's correct for how games like this need to work\" Screenshot tmp/owner-reports/2026-11-27-shadow-distance-line.webp (rocks in the middle distance cast shadows, rocks beyond a clear line cast none). (3) \"The shadow flicker is very obvious here\" Screenshot tmp/owner-reports/2026-11-27-shadow-flicker-cubes.webp (the scene with the cubes: a large shadow from an object at top left crosses the ground; the lead also notes the cubes show no shadows or contact darkening of their own and read as floating; check whether that is right). ATMOSPHERE owns the Sun cascades and the caster height map that should shadow beyond them (shadow quality WP6, far ground under the balloons WP10, aloft casters). Reproduce all three with realtime Mac sequences on the routes named, and find each cause from the frames (e.g. cascade texel swimming without stable snapping, cascade transitions, no fade at the last cascade, small casters missing from or too coarse in the caster height map, depth bias or peter-panning, casters left out). Then plan the fix in ATMOSPHERE as its next work package, using the best modern technique for each cause, with inspection items on those routes judged against shipped high-end games: no visible shadow shimmer or popping while flying, no visible line where shadows end (distant casters keep plausible shadows or fade out invisibly), and objects on the ground look grounded. Mind the cost on the Mac at 120 Hz full screen (APPLE-PRESENTATION WP17 is fighting for frame time at 67%).",
       "at": "2026-11-27T22:02:16Z"
+    },
+    {
+      "task": "Owner decision change, 27 Nov 2026. I told the owner the shadow diagnosis (ATMOSPHERE WP13, .orchestrate/evidence/ATMOSPHERE/WP13-diagnosis/README.md, cause 7) found that in shade nothing darkens where an object meets the ground, because the default path has no ambient occlusion (ARCHITECTURE owner decision 34: AO only where rays are traced, no screen-space stand-in), and asked whether to revisit decision 34 so the default path gets cheap screen-space ambient occlusion. The owner said: \"Yes, add screen-space ambient occlusion to the default path\".\n\nAmend owner decision 34 with those words: screen-space ambient occlusion is on the default (portable) path, on the Mac and in Chrome; ray-traced AO from RAY-TRACING stays the higher tier where rays run, and replaces SSAO there rather than stacking. Decide which module owns it (ATMOSPHERE's shading of the scene, EFFECT-GRAPH as an effect, or another, with the reason and one authority), choose the modern technique shipped high-end games use (for example GTAO or similar, half resolution with temporal accumulation and a bilateral upsample; say which and why), and plan it as that module's next work package, after ATMOSPHERE WP13 if they touch the same passes. Items: objects on the ground in shade read as grounded on the showcase routes (the cube scene and the exit desert), judged against shipped games; no halos or shimmer while flying; a paired Metal cost record with the frame budget at 120 Hz full screen in mind (APPLE-PRESENTATION WP17 holds 67%); and Chrome. Update the seam and contract rows that decision 34 touches.",
+      "at": "2026-11-27T23:02:39Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T22:02:16Z"
+    "at": "2026-11-27T23:02:39Z"
   },
   "design_history": [
     {
