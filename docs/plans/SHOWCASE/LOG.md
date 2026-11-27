@@ -217,3 +217,9 @@
   and identifies page work that accounts for the delay. The real Chrome control caught both timed holds.
   Timing still unresolved under load is recorded for WP8.13.
   [Timing investigation](../../../.orchestrate/evidence/SHOWCASE/WP7/review-fixes/timing-investigation.md)
+- 2026-11-27 WP7 records Chrome game present gaps alongside long animation callback intervals. Each gap keeps
+  its route span, page-clock bounds, skipped callbacks and nearby frame samples. The reviewer trace recovered
+  all 490 confirmed gaps on timely callbacks. The live Chrome audit found 41 on the flythrough and 228 in the
+  full day cycle. Their longest lower bounds were 64.9 ms and 80.4 ms under recorded load. Attribution for those
+  gaps remains open for WP8.13. All ten item checks passed on their named targets.
+  [WP7 target evidence and timing audit](../../../.orchestrate/evidence/SHOWCASE/WP7/chrome-present-gaps/README.md)
