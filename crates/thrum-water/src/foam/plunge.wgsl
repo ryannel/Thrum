@@ -14,9 +14,13 @@ fn plunge_births(point: vec2<f32>, spacing: f32) -> vec4<f32> {
         let offset = vec2(dot(delta, across), dot(delta, vec2(-across.y, across.x)));
         let extent = max(source.footprint_rate.xy, vec2(spacing)) * 0.5;
         let standard = offset / extent;
+        let clock = water.carriage.w;
+        let phase = 4.35 * standard.x + dot(source.place_axis.xy, vec2(0.42, 0.67));
+        let churn = 1.0 + 0.44 * sin(phase + 6.3 * clock) * cos(2.4 * standard.y - 3.1 * clock);
         let spread = exp(-1.15 * dot(standard, standard));
         let dilution = source.footprint_rate.x * source.footprint_rate.y / (4.0 * extent.x * extent.y);
-        rates += spread * dilution * source.footprint_rate.zw;
+        let swap = min(source.footprint_rate.z, source.footprint_rate.w) * (churn - 1.0);
+        rates += spread * dilution * (source.footprint_rate.zw + vec2(-swap, swap));
     }
     return vec4(rates, 0.0, 0.0);
 }

@@ -3,7 +3,6 @@
 mod support;
 
 thrum_test_support::macos_gpu_test! {
-#[expect(clippy::print_stderr, reason = "record submitted sheet geometry and temporal values")]
 fn sheet_draws_before_the_gather_and_writes_temporal_inputs() {
     use glam::{Mat4, Vec3};
     use support::{Fixture, fall};
@@ -112,7 +111,7 @@ fn sheet_draws_before_the_gather_and_writes_temporal_inputs() {
 )]
 fn pixel(point: glam::Vec3, [width, height]: [u32; 2]) -> [usize; 2] {
     [
-        ((point.x + 1.0) * 0.5 * width as f32).floor() as usize,
+        (point.x.midpoint(1.0) * width as f32).floor() as usize,
         ((1.0 - point.y) * 0.5 * height as f32).floor() as usize,
     ]
 }

@@ -3,7 +3,6 @@
 mod support;
 
 thrum_test_support::macos_gpu_test! {
-#[expect(clippy::print_stderr, reason = "measure birth stocks and ring footprints on Metal")]
 fn running_lip_feeds_the_pool_and_the_dry_sample_feeds_nothing() {
     use support::fall;
     use thrum_app::sky::Camera;
