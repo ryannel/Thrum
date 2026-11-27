@@ -129,13 +129,17 @@ fn wet_shore(point: vec3<f32>) -> vec4<f32> {
     return select(vec4(0.0), shore, all(point.xz >= bounds.xy) && all(point.xz <= bounds.zw));
 }
 
-// The film already has the owning map row. Apply the exposed sea treatment
-// to that row alone, retaining the existing WATERS sheen on inland shores.
-fn wet_sea_film(point: vec3<f32>, sea: bool) -> bool {
-    if !sea { return false; }
+// The film has already resolved ownership through the map. Read the same
+// level and swash as the material without repeating its corner search.
+fn film_wet_shore(point: vec3<f32>, body: u32, sea: bool) -> vec4<f32> {
     let shore = wet_load(5u);
-    if shore.w == 2.0 { return true; }
-    return wet_shore(point).w > 0.0;
+    if shore.w == 2.0 {
+        let start = u32(shore.y);
+        if body < u32(wet_load(start).x) { return wet_load(start + 1u + body); }
+    } else if sea {
+        return wet_shore(point);
+    }
+    return vec4(0.0);
 }
 
 fn wet_shore_edge(shore: vec4<f32>) -> f32 {

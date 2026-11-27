@@ -72,6 +72,7 @@ fn shore_is_wet(point: vec2<f32>, gains: vec4<f32>, depth: f32) -> bool {
     let row = surface_row(ground.xz, map_cell(ground.xz), answer.row, answer.body, true);
     let reach = 0.175 * row.swash;
     let above = row.bed - row.level;
+    let fade_start = 0.0;
     let seaward_fade = -0.46 * row.swash;
     if reach <= 0.0 || above >= reach || above <= seaward_fade { discard; }
     // The depth already on screen must belong to the ground. A hull, a hill
@@ -82,7 +83,7 @@ fn shore_is_wet(point: vec2<f32>, gains: vec4<f32>, depth: f32) -> bool {
     if !SURF_CACHE_ENABLED && shore_is_wet(ground.xz, row.gains, -above) { discard; }
     // The ground's optical weight depends on elevation. Stranded foam is
     // patterned separately so a dense stock cannot paint a solid white sheet.
-    let sheen = (1.0 - smoothstep(0.0, reach, above)) * smoothstep(seaward_fade, -0.10 * row.swash, above);
+    let sheen = (1.0 - smoothstep(fade_start, reach, above)) * smoothstep(seaward_fade, -0.10 * row.swash, above);
     let stocks = foam_at(ground.xz, vec4(0.0)).stocks;
     let openings = foam_noise(ground.xz * vec2(0.87, 1.53));
     let porous = mix(0.10, 0.60, smoothstep(0.22, 0.76, openings));

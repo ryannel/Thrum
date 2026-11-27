@@ -1110,12 +1110,18 @@ const OPTICAL_PATHS: &str = concat!(
 );
 
 fn lend_shore_support(source: &str) -> String {
-    const SUPPORT: &str = "let reach = 0.175 * row.swash;\n    let above = row.bed - row.level;";
+    const SUPPORT: &str = "let reach = 0.175 * row.swash;
+    let above = row.bed - row.level;
+    let fade_start = 0.0;";
     let (before, after) = source.split_once(SUPPORT).expect("shore film support");
     format!(
-        "{before}let exposed = wet_sea_film(ground, answer.body == map.size_count_sea.w);
-    let reach = select(0.175 * row.swash, row.swash, exposed);
-    let above = select(row.bed, ground.y, exposed) - row.level;{after}"
+        "{before}let wet_shore_row = film_wet_shore(ground, answer.body, answer.body == map.size_count_sea.w);
+    let has_wet_shore = wet_shore_row.w > 0.0;
+    let level = select(row.level, wet_shore_row.x, has_wet_shore);
+    let reach = select(0.175 * row.swash, wet_shore_edge(wet_shore_row) - level, has_wet_shore);
+    let above = select(row.bed, ground.y, has_wet_shore) - level;
+    // Keep the basin sheen visible across its support, then feather the rim.
+    let fade_start = select(0.0, 0.85 * reach, wet_shore_row.w == 2.0);{after}"
     )
 }
 
