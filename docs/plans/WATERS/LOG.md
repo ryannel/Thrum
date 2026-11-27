@@ -1901,7 +1901,7 @@
   blocker. Its east-lit box shadow darkened both the bed and the water just
   above it at the same stations. The unit and half-factor meter arms passed
   and the browser reported no validation faults.
-  [Chrome WebGPU proof](../../../.orchestrate/evidence/WATERS/WP16/portable-shaded/under-light.json).
+  [Chrome WebGPU proof](../../../.orchestrate/evidence/WATERS/WP16/shadow-comparison/run.json).
 
 ## WP16 visual inspection checkpoint
 
@@ -1932,7 +1932,7 @@
   surveyed terrain at maximum depth.
   [Matched captures](../../../.orchestrate/evidence/WATERS/WP16/inspection-round-3/)
   · [Metal tests](../../../.orchestrate/evidence/WATERS/WP16/continuous-caustic-rerun.log)
-  · [Hardware Chrome](../../../.orchestrate/evidence/WATERS/WP16/portable-shaded/under-light.json)
+  · [Hardware Chrome](../../../.orchestrate/evidence/WATERS/WP16/shadow-comparison/run.json)
   · [Paired cost](../../../.orchestrate/evidence/WATERS/WP16/under-light-cost-42bdfa59ef17.json).
 
 - Fixed capture in hardware Chrome now checks that each checkpoint has a

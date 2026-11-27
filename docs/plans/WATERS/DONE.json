@@ -1960,7 +1960,7 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP16/portable-shaded/under-light.json",
+          "evidence": ".orchestrate/evidence/WATERS/WP16/shadow-comparison/run.json",
           "verdict": "",
           "review": ""
         },
