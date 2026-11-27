@@ -66,10 +66,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             self.visual_lighting(),
         )?;
         let lighting = frame_scene.lighting;
-        self.history_reset_pending |= self
+        let mesh_reset = self
             .prepared
             .record_mesh_rows(&self.queue)
             .map_err(|error| FrameError::gpu("capture mesh row update", error))?;
+        self.request_history_reset(mesh_reset);
         self.scene.view = self
             .view_with_history_reset(&frame_scene.view)
             .without_jitter();

@@ -123,6 +123,12 @@ pub(crate) fn create(
         }
     }
     // Bindings 7–9 are the filtered reflection pair and its sampler.
+    if atmosphere.has_overlay() {
+        entries.push(buffer(
+            super::overlay::CHART_LIGHTING_BINDING,
+            super::overlay::CHART_LIGHTING_BYTES,
+        ));
+    }
     let selected = |binding: u32| reflection || !(7..=9).contains(&binding);
     entries.retain(|entry| selected(entry.binding));
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -184,6 +190,12 @@ pub(crate) fn create(
         if let Some(band) = &cloud.band {
             bindings.extend(band.entries());
         }
+    }
+    if let Some(lighting) = atmosphere.chart_lighting() {
+        bindings.push(wgpu::BindGroupEntry {
+            binding: super::overlay::CHART_LIGHTING_BINDING,
+            resource: lighting.as_entire_binding(),
+        });
     }
     bindings.retain(|entry| selected(entry.binding));
     let groups = std::array::from_fn(|side| {
@@ -304,9 +316,9 @@ fn library_with_volume(
     if lighting == super::overlay::Lighting::Clear {
         source
     } else {
-        super::overlay::with_reflection_gain(&source)
+        super::overlay::chart_consumer_source(&source, 0)
     }
 }
 
 #[cfg(test)]
-mod tests;
+pub(super) mod tests;

@@ -1283,7 +1283,6 @@ impl Game for SkyGame {
                 host.continuous_source_mut().sky = sky;
             } else {
                 host.source_mut().sky = sky;
-                host.invalidate_history();
             }
         }
         Ok(())

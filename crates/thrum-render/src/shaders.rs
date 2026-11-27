@@ -459,6 +459,7 @@ macro_rules! shader_catalog {
             SecondaryScene(SceneVariant),
             ViewVolume(bool, CloudVariant, bool, u32),
             AtmosphereOverlayDiffuse(bool, CloudVariant),
+            AtmosphereChartOverlay(bool, CloudVariant),
             GroundBandExposure(CloudVariant),
             WorldLightExposure(CloudVariant),
         }
@@ -471,6 +472,7 @@ macro_rules! shader_catalog {
                     Self::WorldLightExposure(variant) => crate::synthetic::exposure::world_light_source(variant).into(),
                     Self::Scene(variant) => crate::synthetic::scene_source::main_source(variant).into(),
                     Self::ViewVolume(cascades, cloud, medium, near) => crate::atmosphere::gpu::view_volume::source(cascades, cloud, medium, near).into(),
+                    Self::AtmosphereChartOverlay(haze, cloud) => crate::atmosphere::overlay::chart_overlay_source(haze, cloud).into(),
                     Self::AtmosphereOverlayDiffuse(haze, cloud) => crate::atmosphere::overlay::diffuse_source(haze, cloud).into(),
                     Self::SecondaryScene(variant) => crate::synthetic::secondary::composed_source(variant).into(),
                 }

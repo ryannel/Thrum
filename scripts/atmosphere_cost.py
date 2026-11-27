@@ -143,14 +143,17 @@ def validate(record):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['record', 'check'])
+    parser.add_argument('command', choices=['record', 'check', 'chart-cadence'])
     parser.add_argument('--scene', choices=['route'], required=True)
     for argument in ('starting', 'final', 'store', 'output'):
         parser.add_argument(f'--{argument}', type=Path)
     parser.add_argument('--starting-revision')
     parser.add_argument('--final-revision')
     args = parser.parse_args()
-    if args.command == 'record':
+    if args.command == 'chart-cadence':
+        from atmosphere_chart_cost import measure as chart_measure
+        chart_measure(args.output)
+    elif args.command == 'record':
         if not all((args.starting, args.final, args.store, args.output,
                     args.starting_revision, args.final_revision)):
             parser.error('record requires both built executables, revisions, cooked store and output')

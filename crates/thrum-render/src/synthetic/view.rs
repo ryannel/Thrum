@@ -38,6 +38,20 @@ pub(super) enum Projection {
     },
 }
 
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd)]
+pub(crate) enum ViewDiscontinuity {
+    #[default]
+    None,
+    HistoryReset,
+    CameraCut,
+}
+
+impl ViewDiscontinuity {
+    pub(crate) fn resets_history(self) -> bool {
+        self != Self::None
+    }
+}
+
 /// One checked, unjittered camera sample with an explicit cut flag. A future
 /// V2 view packet owns the broader identity and history contract.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -52,7 +66,7 @@ pub struct SyntheticView {
     forced_storage_scale: f32,
     sdr_tone_map: SdrToneMap,
     display_overlay: DisplayOverlay,
-    history_reset: bool,
+    discontinuity: ViewDiscontinuity,
     history_epoch: u64,
     celestial: Option<Mat3>,
     celestial_epoch: u64,
@@ -87,7 +101,7 @@ impl Default for SyntheticView {
             forced_storage_scale: 0.0,
             sdr_tone_map: SdrToneMap::default(),
             display_overlay: DisplayOverlay::Off,
-            history_reset: false,
+            discontinuity: ViewDiscontinuity::None,
             history_epoch: 0,
             celestial: None,
             celestial_epoch: 0,
@@ -230,7 +244,7 @@ impl SyntheticView {
             forced_storage_scale: 0.0,
             sdr_tone_map: SdrToneMap::default(),
             display_overlay: DisplayOverlay::Off,
-            history_reset: false,
+            discontinuity: ViewDiscontinuity::None,
             history_epoch: 0,
             celestial: None,
             celestial_epoch: 0,
@@ -389,8 +403,19 @@ impl SyntheticView {
 
     /// Mark a camera cut or another invalid correspondence for this sample.
     #[must_use]
-    pub fn with_history_reset(mut self, reset: bool) -> Self {
-        self.history_reset = reset;
+    pub fn with_history_reset(self, reset: bool) -> Self {
+        self.with_discontinuity(if reset {
+            ViewDiscontinuity::CameraCut
+        } else {
+            ViewDiscontinuity::None
+        })
+    }
+
+    /// Reset temporal correspondence for a lighting phase edit. Chart cadence
+    /// keeps its in-flight refresh unless the Sun actually jumps.
+    #[must_use]
+    pub fn with_phase_history_reset(mut self) -> Self {
+        self.discontinuity = self.discontinuity.max(ViewDiscontinuity::HistoryReset);
         self
     }
 
@@ -519,8 +544,21 @@ impl SyntheticView {
         self.celestial
     }
 
+    pub(crate) fn with_discontinuity(mut self, discontinuity: ViewDiscontinuity) -> Self {
+        self.discontinuity = discontinuity;
+        self
+    }
+
+    pub(crate) fn discontinuity(&self) -> ViewDiscontinuity {
+        self.discontinuity
+    }
+
+    pub(crate) fn camera_cut(&self) -> bool {
+        self.discontinuity == ViewDiscontinuity::CameraCut
+    }
+
     pub(crate) fn history_reset(&self) -> bool {
-        self.history_reset
+        self.discontinuity.resets_history()
     }
 
     pub(super) fn projection(&self) -> Projection {

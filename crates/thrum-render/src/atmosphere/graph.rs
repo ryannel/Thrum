@@ -8,11 +8,13 @@ use crate::pass_key::{AtmosphereStage, PassKey};
 
 use super::{
     gpu::{AERIAL_EXTENT, AtmospherePrepared, SKY_MOTION_BYTES, UNIFORM_BYTES},
+    overlay::CHART_LIGHTING_BYTES,
     reflection::{CUBE_SIZE, DFG_SIZE, MIP_COUNT, SAMPLE_BYTES},
     stage::{Chart, Charts},
 };
 
 const LUT_OWNER_BASE: u64 = 0x4154_4d4f;
+const SNAPSHOT_OWNER: u64 = 0x4154_4d54;
 const AERIAL_OWNER_BASE: u64 = 0x4154_4d60;
 const REFLECTION_OWNER_BASE: u64 = 0x4154_4d70;
 const _: () = assert!(AERIAL_OWNER_BASE >= LUT_OWNER_BASE + 4);
@@ -66,6 +68,17 @@ impl AtmospherePrepared {
             },
             ResourceScope::Imported { initialized: true },
         )?;
+        let snapshot = graph.resource(
+            ResourceDescriptor::Buffer {
+                bytes: UNIFORM_BYTES,
+                usage: wgpu::BufferUsages::UNIFORM,
+            },
+            ResourceScope::Persistent {
+                owner: SNAPSHOT_OWNER,
+                epoch: self.generation,
+                initialized: true,
+            },
+        )?;
         append_motion_read(graph, forward_accesses)?;
         let night_reads = self.night.graph_reads(graph)?;
         let aerosol_read = self
@@ -102,8 +115,13 @@ impl AtmospherePrepared {
             let Some(output) = stage.chart_output() else {
                 continue;
             };
+            let inputs = if stage == AtmosphereStage::SkyView {
+                &snapshot
+            } else {
+                &uniform
+            };
             let mut accesses = vec![Access::new(
-                uniform.clone(),
+                inputs.clone(),
                 0..UNIFORM_BYTES,
                 AccessKind::UniformRead,
             )];
@@ -123,7 +141,7 @@ impl AtmospherePrepared {
             self.append_diffuse(
                 graph,
                 keys,
-                &uniform,
+                &snapshot,
                 &resources,
                 environment_light,
                 None,
@@ -181,7 +199,7 @@ impl AtmospherePrepared {
             self.declare_stage(graph, keys, stage, accesses);
         }
         if self.overlay.is_none() {
-            self.append_reflection(graph, keys, &uniform, &resources, forward_accesses, None)?;
+            self.append_reflection(graph, keys, &snapshot, &resources, forward_accesses, None)?;
         }
         forward_accesses.push(Access::new(
             uniform.clone(),
@@ -233,10 +251,42 @@ impl AtmospherePrepared {
             )?;
             Access::new(resource, 0..6, AccessKind::SampledRead)
         };
+        let snapshot = graph
+            .persistent(SNAPSHOT_OWNER)
+            .ok_or(crate::error::RenderError::GraphPassMismatch)?;
+        let chart_lighting = graph.resource(
+            ResourceDescriptor::Buffer {
+                bytes: CHART_LIGHTING_BYTES,
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::STORAGE,
+            },
+            ResourceScope::Imported { initialized: true },
+        )?;
+        let mut accesses = vec![
+            read.clone(),
+            Access::new(
+                environment_light.clone(),
+                0..crate::light::ENVIRONMENT_BYTES,
+                AccessKind::UniformRead,
+            ),
+            Access::new(
+                chart_lighting.clone(),
+                0..CHART_LIGHTING_BYTES,
+                AccessKind::StorageReadWrite,
+            ),
+        ];
+        if self.uses_haze_scale() {
+            accesses.extend([
+                Access::new(charts.sky_view.clone(), 0..1, AccessKind::SampledRead),
+                Access::new(snapshot.clone(), 0..UNIFORM_BYTES, AccessKind::UniformRead),
+                Access::new(uniform.clone(), 0..UNIFORM_BYTES, AccessKind::UniformRead),
+            ]);
+            accesses.extend(sun_reads.iter().cloned());
+        }
+        self.declare_stage(graph, keys, AtmosphereStage::OverlayLighting, accesses);
         self.append_diffuse(
             graph,
             keys,
-            uniform,
+            &snapshot,
             &charts,
             environment_light.clone(),
             Some(read.clone()),
@@ -245,11 +295,16 @@ impl AtmospherePrepared {
         self.append_reflection(
             graph,
             keys,
-            uniform,
+            &snapshot,
             &charts,
             forward,
-            Some((&read, environment_light)),
+            Some((&read, environment_light, &chart_lighting)),
         )?;
+        forward.push(Access::new(
+            chart_lighting,
+            0..CHART_LIGHTING_BYTES,
+            AccessKind::UniformRead,
+        ));
         Ok(())
     }
 
@@ -376,7 +431,7 @@ impl AtmospherePrepared {
         uniform: &ResourceId,
         charts: &Charts<ResourceId>,
         forward: &mut Vec<Access>,
-        overlay: Option<(&Access, &ResourceId)>,
+        overlay: Option<(&Access, &ResourceId, &ResourceId)>,
     ) -> Result<(), GraphError> {
         let resources = [
             (&self.reflection.dfg, DFG_SIZE, 1, 1, self.generation),
@@ -431,16 +486,25 @@ impl AtmospherePrepared {
             ]
             .into_iter()
             .chain(chart_reads(stage, charts))
-            .chain(overlay.into_iter().flat_map(|(cube, flags)| {
-                [
-                    cube.clone(),
-                    Access::new(
-                        flags.clone(),
-                        0..crate::light::ENVIRONMENT_BYTES,
-                        AccessKind::UniformRead,
-                    ),
-                ]
-            }))
+            .chain(
+                overlay
+                    .into_iter()
+                    .flat_map(|(cube, flags, chart_lighting)| {
+                        [
+                            cube.clone(),
+                            Access::new(
+                                flags.clone(),
+                                0..crate::light::ENVIRONMENT_BYTES,
+                                AccessKind::UniformRead,
+                            ),
+                            Access::new(
+                                chart_lighting.clone(),
+                                0..CHART_LIGHTING_BYTES,
+                                AccessKind::StorageReadWrite,
+                            ),
+                        ]
+                    }),
+            )
             .chain([Access::new(
                 resources[1].clone(),
                 u64::from(mip * 6)..u64::from((mip + 1) * 6),

@@ -22,6 +22,8 @@ pub(crate) enum AtmosphereStage {
     MultipleScattering,
     /// Camera sky-view chart.
     SkyView,
+    /// Classify the overlay and publish the governed camera haze scale.
+    OverlayLighting,
     /// Diffuse irradiance into the environment light.
     Diffuse,
     /// Aerial perspective volumes.
@@ -40,11 +42,12 @@ pub(crate) const REFLECTION_MIPS: u32 = 7;
 impl AtmosphereStage {
     /// Every stage in graph declaration order: the transport charts, ground
     /// before sky view, then diffuse, aerial, DFG and each reflection mip.
-    pub(crate) const ORDER: [Self; 14] = [
+    pub(crate) const ORDER: [Self; 15] = [
         Self::Transmittance,
         Self::MultipleScattering,
         Self::Ground,
         Self::SkyView,
+        Self::OverlayLighting,
         Self::Diffuse,
         Self::Aerial,
         Self::Dfg,
@@ -63,6 +66,7 @@ impl AtmosphereStage {
             Self::Transmittance => "atmosphere transmittance",
             Self::MultipleScattering => "atmosphere multiple scattering",
             Self::SkyView => "atmosphere sky view",
+            Self::OverlayLighting => "atmosphere chart overlay lighting",
             Self::Diffuse => "atmosphere diffuse irradiance",
             Self::Aerial => "atmosphere aerial perspective",
             Self::Ground => "atmosphere ground irradiance",
@@ -77,7 +81,7 @@ impl AtmosphereStage {
             Self::Transmittance => TimingCategory::AtmosphereTransmittance,
             Self::MultipleScattering | Self::Ground => TimingCategory::AtmosphereMultipleGround,
             Self::SkyView | Self::Dfg | Self::Reflection(_) => TimingCategory::AtmosphereSky,
-            Self::Diffuse => TimingCategory::AtmosphereDiffuse,
+            Self::OverlayLighting | Self::Diffuse => TimingCategory::AtmosphereDiffuse,
             Self::Aerial => TimingCategory::AtmosphereAerial,
         }
     }
@@ -282,6 +286,7 @@ const fn atmosphere_slot(stage: AtmosphereStage) -> u32 {
         AtmosphereStage::Ground => 5,
         AtmosphereStage::Dfg => 6,
         AtmosphereStage::Reflection(mip) => 7 + mip,
+        AtmosphereStage::OverlayLighting => 7 + REFLECTION_MIPS,
     }
 }
 

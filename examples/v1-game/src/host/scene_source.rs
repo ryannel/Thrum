@@ -421,6 +421,8 @@ pub struct GameScene {
     ground_aerosol: std::cell::Cell<Option<thrum_render::atmosphere::Aerosol>>,
     #[cfg(all(any(target_os = "macos", target_arch = "wasm32"), feature = "proving"))]
     pub(crate) solar_sweep: Option<SolarSweep>,
+    #[cfg(all(target_os = "macos", feature = "proving"))]
+    pub(crate) chart_jump: Option<(u64, f32)>,
     #[cfg(feature = "proving")]
     pub(super) capture_solar_tick: Option<u64>,
     pub(super) camera_pitch: f32,
@@ -476,6 +478,12 @@ impl GameScene {
                 let solar = from + (to - from) * progress.clamp(0.0, 1.0);
                 DayCycle::offset_for_time(tick, solar / 24.0).unwrap_or(offset)
             });
+        #[cfg(all(target_os = "macos", feature = "proving"))]
+        let offset = self
+            .chart_jump
+            .filter(|(jump, _)| tick >= *jump)
+            .and_then(|(_, hour)| DayCycle::offset_for_time(tick, hour / 24.0))
+            .unwrap_or(offset);
         self.ground_time_of_day(alpha).map_or_else(
             || DayCycle::sample(tick, alpha, offset),
             |time| crate::clouds::ground::sun(time, tick, alpha),
@@ -725,6 +733,8 @@ impl GameScene {
             }),
             #[cfg(all(any(target_os = "macos", target_arch = "wasm32"), feature = "proving"))]
             solar_sweep: None,
+            #[cfg(all(target_os = "macos", feature = "proving"))]
+            chart_jump: None,
             #[cfg(feature = "proving")]
             capture_solar_tick: None,
             camera_pitch: 0.0,
@@ -1061,6 +1071,16 @@ impl SceneSource<PublishedPage> for GameScene {
         .with_display_overlay(self.display_overlay)
         .with_jitter_sequence(0, [640, 360])
         .with_reconstruction(self.reconstruction != GameReconstruction::Off);
+        #[cfg(all(target_os = "macos", feature = "proving"))]
+        let view = if self.chart_jump.is_some()
+            && self
+                .solar_sweep
+                .is_some_and(|([first, last], _)| (first..=last).contains(&source.tick))
+        {
+            view.with_phase_history_reset()
+        } else {
+            view
+        };
         let view = if self.reconstruction == GameReconstruction::MetalFx {
             view.with_metalfx()
         } else {
@@ -1395,6 +1415,8 @@ mod tests {
             ground_aerosol: std::cell::Cell::default(),
             #[cfg(all(any(target_os = "macos", target_arch = "wasm32"), feature = "proving"))]
             solar_sweep: None,
+            #[cfg(all(target_os = "macos", feature = "proving"))]
+            chart_jump: None,
             #[cfg(feature = "proving")]
             capture_solar_tick: None,
             camera_pitch,

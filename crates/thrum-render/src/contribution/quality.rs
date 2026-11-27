@@ -79,6 +79,7 @@ pub struct QualityKnob {
     /// Invalidation when this value changes.
     pub invalidation: QualityInvalidation,
     /// Prepared values for the three governor tiers, if this control participates.
+    /// The first tier can differ from the initial ungoverned value.
     pub governor_steps: Option<[u32; 3]>,
 }
 
@@ -98,8 +99,7 @@ impl QualitySettings {
             if !names.insert(&knob.name)
                 || !knob.range.contains(&knob.value)
                 || knob.governor_steps.is_some_and(|steps| {
-                    steps[0] != knob.value
-                        || steps.iter().any(|value| !knob.range.contains(value))
+                    steps.iter().any(|value| !knob.range.contains(value))
                         || knob.invalidation == QualityInvalidation::ViewHistory
                 })
             {

@@ -1212,7 +1212,6 @@ impl GameWorld {
 pub(crate) fn set_time_of_day(runtime: &mut Runtime, fraction: f32) -> Result<(), String> {
     if let Some(offset) = day_phase_edit(runtime.world().tick(), runtime.source(), fraction)? {
         runtime.source_mut().day_phase_offset = offset;
-        runtime.invalidate_history();
     }
     queue_ground_solar(runtime.source(), fraction);
     Ok(())

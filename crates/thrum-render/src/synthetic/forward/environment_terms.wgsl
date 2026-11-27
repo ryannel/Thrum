@@ -12,5 +12,6 @@
     let ess=f0*dfg.x+vec3(dfg.y);
     // Cube storage is per-unit, disk-free Sky radiance. Use the unattenuated
     // source here, not the directly transmitted directional-light irradiance.
-    let encoded=textureSampleLevel(sky_reflection,sky_reflection_sampler,
-        reflect(-v,n),f32(textureNumLevels(sky_reflection)-1u)*roughness_unit);
+    let ray = reflect(-v,n);
+    let level = f32(textureNumLevels(sky_reflection)-1u)*roughness_unit;
+    let encoded=textureSampleLevel(sky_reflection,sky_reflection_sampler,ray,level);

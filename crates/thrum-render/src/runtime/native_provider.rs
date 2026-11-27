@@ -50,7 +50,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 rejected = true;
             }
         }
-        self.history_reset_pending |= rejected;
+        self.request_history_reset(rejected);
         rejected
     }
 
@@ -75,12 +75,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         native: NativeFrame,
         refused_acquisition: bool,
     ) -> Result<(), FrameError> {
-        self.history_reset_pending |= if refused_acquisition {
+        let history_reset = if refused_acquisition {
             !native.refuse_acquisition()
         } else {
             drop(native);
             true
         };
+        self.request_history_reset(history_reset);
         if let Some(index) = capture_slot
             && let Some(tap) = self.submitted_capture.as_mut()
         {
@@ -106,7 +107,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 });
         }
         if let Some(generation) = self.native_failed_generation {
-            self.history_reset_pending = true;
+            self.request_history_reset(true);
             return Err(FrameError::NativeCommandBuffer { generation });
         }
         Ok(())

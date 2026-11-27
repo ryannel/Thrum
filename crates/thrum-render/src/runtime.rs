@@ -1,5 +1,6 @@
 //! Bounded committed-world presentation using the prepared V1 renderer.
 
+use crate::synthetic::ViewDiscontinuity;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) use std::time::Instant;
 use std::{
@@ -724,7 +725,7 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     display_headroom: f32,
     generation: u64,
     source: V,
-    history_reset_pending: bool,
+    history_reset_pending: ViewDiscontinuity,
     submitted_view_history_epoch: u64,
     upload_reset_pending: bool,
     world: W,
@@ -1083,7 +1084,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }
         self.extractor.invalidate_history();
         self.last_view_source = None;
-        self.history_reset_pending = true;
+        self.request_history_reset(true);
         &mut self.source
     }
     /// Edit a continuous presentation parameter, such as camera orientation,
@@ -1095,7 +1096,15 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     }
     /// Reset correspondence on the next successful scene submission.
     pub fn invalidate_history(&mut self) {
-        self.history_reset_pending = true;
+        self.history_reset_pending = ViewDiscontinuity::CameraCut;
+    }
+
+    fn request_history_reset(&mut self, reset: bool) {
+        if reset {
+            self.history_reset_pending = self
+                .history_reset_pending
+                .max(ViewDiscontinuity::HistoryReset);
+        }
     }
     fn visual_lighting(&self) -> Option<FrameLighting> {
         self.visual_lighting
@@ -1419,7 +1428,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             display_headroom: 1.0,
             generation: capabilities.generation(),
             source,
-            history_reset_pending: false,
+            history_reset_pending: ViewDiscontinuity::None,
             submitted_view_history_epoch: 0,
             upload_reset_pending: false,
             world,
@@ -1693,7 +1702,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     }
 
     fn reset_replacement_history(&mut self) {
-        self.history_reset_pending = true;
+        self.request_history_reset(true);
         self.upload_reset_pending = true;
         self.last_view_source = None;
         self.extractor.invalidate_history();
@@ -2249,22 +2258,24 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.restore_upload_slots()?;
         self.last_extracted = frame.extracted;
         let lighting = frame_scene.lighting;
-        self.history_reset_pending |= self.prepared.commit_lamp_quality(&self.queue);
+        let lamp_reset = self.prepared.commit_lamp_quality(&self.queue);
+        self.request_history_reset(lamp_reset);
         if let Some(scene) = self.prepared.three_d_mut() {
-            scene.commit_aerial_quality();
+            scene.commit_atmosphere_quality();
             scene.commit_sun_penumbra_quality();
             scene.commit_ambient_quality();
         }
         if self.contribution.as_mut().is_some_and(|entry| {
             entry.commit_quality_knobs() == crate::contribution::QualityInvalidation::ViewHistory
         }) {
-            self.history_reset_pending = true;
+            self.request_history_reset(true);
         }
         self.record_committed_governor_knobs();
-        self.history_reset_pending |= self
+        let mesh_reset = self
             .prepared
             .record_mesh_rows(&self.queue)
             .map_err(|error| FrameError::gpu("mesh row update", error))?;
+        self.request_history_reset(mesh_reset);
         let scale = if self
             .prepared
             .three_d()
@@ -2386,12 +2397,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     }
 
     fn view_with_history_reset(&self, view: &SyntheticView) -> SyntheticView {
-        view.with_history_reset(
-            view.history_reset()
-                || self.history_reset_pending
-                || view.history_epoch() != self.submitted_view_history_epoch,
-        )
-        .with_output_extent(
+        let discontinuity = if view.history_epoch() == self.submitted_view_history_epoch {
+            view.discontinuity().max(self.history_reset_pending)
+        } else {
+            ViewDiscontinuity::CameraCut
+        };
+        view.with_discontinuity(discontinuity).with_output_extent(
             self.presenter
                 .as_ref()
                 .map_or(self.render_extent, SurfacePresenter::extent),
@@ -2410,7 +2421,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
 
     fn retry_upload(&mut self) {
         self.upload_reset_pending = true;
-        self.history_reset_pending = true;
+        self.request_history_reset(true);
         self.last_view_source = None;
     }
 
@@ -2559,7 +2570,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             }
             slot.discard_timing(self.generation, &mut self.timing_stats)
                 .map_err(|e| FrameError::gpu("submission discard", e))?;
-            self.history_reset_pending = true;
+            self.request_history_reset(true);
             return Err(error);
         }
 
@@ -2741,7 +2752,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         if let Some(governor) = &mut self.governor {
             governor.submitted();
         }
-        self.history_reset_pending = false;
+        self.history_reset_pending = ViewDiscontinuity::None;
         self.submitted_view_history_epoch = view_history_epoch;
         self.last_view_source = Some(source);
     }

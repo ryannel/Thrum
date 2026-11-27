@@ -473,7 +473,7 @@ fn invalid_lighting_retains_upload_work_after_cpu_scene_mutation() {
             prepared.sample.uploaded_rows, 1,
             "an already updated CPU scene must still repair the GPU delta"
         );
-        assert!(host.history_reset_pending);
+        assert!(host.history_reset_pending.resets_history());
     });
 }
 
@@ -506,6 +506,6 @@ fn changing_mapping_at_a_fixed_world_source_reextracts_and_uploads_the_new_rows(
         assert_eq!(prepared.sample.tick, 0);
         assert_eq!(prepared.sample.uploaded_rows, 1);
         assert_ne!(host.scene.instances[0].current, before);
-        assert!(host.history_reset_pending);
+        assert!(host.history_reset_pending.resets_history());
     });
 }

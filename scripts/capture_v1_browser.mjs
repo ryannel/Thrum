@@ -23,6 +23,8 @@ args['cloud-view'] = '';
 args['cloud-store'] = '';
 args['retain-raw'] = 'off';
 args.atmosphere = 'off';
+args['chart-cadence'] = 'off';
+args['chart-take'] = 'off';
 args.haze = '';
 args['haze-take'] = '';
 args['renderer-signature'] = 'off';
@@ -43,6 +45,15 @@ if (!['sdr', 'scene-linear'].includes(args.source) || (args.source === 'scene-li
 if (!['day', 'night', 'noon', 'exit', 'sprites-field', 'sprites-scroll', 'sprites-sheets', 'sprites-status'].includes(args.scene)) throw new Error('Unknown route scene');
 if (!['off', 'on'].includes(args['wasm-receipt'])) throw new Error('Invalid Wasm receipt option');
 const governed = args.governor === 'on';
+const chartTake = args['chart-take'];
+const chartCadence = args['chart-cadence'];
+if (!['off', 'scrub', 'fast'].includes(chartTake) ||
+    (chartTake === 'off' && chartCadence !== 'off') ||
+    (chartTake !== 'off' && (args.mode !== 'realtime' || args.reconstruction !== 'taau' ||
+      args.atmosphere !== 'off' || !args.params || !['off', 'ordinary'].includes(args.control) ||
+      !(governed ? ['4', '8'] : ['1']).includes(chartCadence)))) {
+  throw new Error('Chart-take requires a realtime TAAU route, parameters and cadence 1, 4 or 8');
+}
 const exitRecord = args['exit-record'];
 if (!['off', 'flythrough', 'day'].includes(exitRecord) ||
     (exitRecord !== 'off' && (args.mode !== 'realtime' || args.scene !== 'exit' || args.control !== 'off'))) {
@@ -79,7 +90,7 @@ if (!['off','checkpoint','scrub','ground-pan','cost'].includes(args.atmosphere) 
        args.control !== (args.atmosphere === 'cost' ? 'off' : 'ordinary') ||
        args.mode !== (['checkpoint','cost'].includes(args.atmosphere) ? 'fixed' : 'realtime')))) throw new Error('Invalid atmosphere capture options');
 if (!['off', 'on'].includes(args['retain-raw']) || (args['retain-raw'] === 'on' &&
-    ((args.scene !== 'exit' && args.atmosphere === 'off') ||
+    ((args.scene !== 'exit' && args.atmosphere === 'off' && chartTake === 'off') ||
       args.mode !== 'realtime' || args.control !== 'ordinary'))) throw new Error('Raw retention requires a realtime exit or atmosphere capture');
 const output = path.resolve(args.output);
 const tmp = await fs.realpath('tmp');
@@ -145,17 +156,17 @@ const route = JSON.parse(captureRoute ?? files.movingRoute);
 const extent = spriteField ? [1920, 1080] : cloudView ? JSON.parse(cloudView).extent : route.render_extent;
 const frameBytes = extent[0] * extent[1] * (args.source === 'scene-linear' ? 8 : 4);
 const spoolRaw = args.mode === 'realtime' && args.control === 'ordinary' &&
-  (governed || args.scene === 'exit' || args.witness !== 'off' || args.clouds !== 'off' || args.atmosphere !== 'off');
+  (governed || args.scene === 'exit' || args.witness !== 'off' || args.clouds !== 'off' || args.atmosphere !== 'off' || chartTake !== 'off');
 const manifest = { complete: false, target: 'chrome-webgpu', source: args.source, scene: args.scene, reconstruction: args.reconstruction, witness: args.witness, diagnostic_clouds: args['diagnostic-clouds'], overlay: args.overlay, mode: args.mode, control: args.control, records: [], export_peak: 0, export_working_byte_cap: 32 * frameBytes, output_allowance: 16 * 1024 ** 3,
   source_revision: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), dirty_diff_sha256: sha(execFileSync('git', ['diff', 'HEAD'])),
   route_file: args['route-file'] || null, route_sha256: sha(captureRoute ?? files.movingRoute),
   source_files: sourceHashes, artifacts: Object.fromEntries([...files].map(([name, value]) => [name, value.sha256])) };
 if (spriteField || args.scene === 'exit' || spoolRaw) {
-  manifest.record_limit = cloudMotion ? 4096 : spriteField || args.scene === 'exit' || args.clouds !== 'off' ? 1800 : governed || args.atmosphere !== 'off' ? 1024 : 270;
+  manifest.record_limit = cloudMotion ? 4096 : spriteField || args.scene === 'exit' || args.clouds !== 'off' ? 1800 : governed || args.atmosphere !== 'off' || chartTake !== 'off' ? 1024 : 270;
   // A suspended request still owns its image. Give the 720p motion take a
   // bounded backlog without increasing the larger or fixed capture profiles.
   manifest.export_slots = spriteField ? 32 : spoolRaw && frameBytes <= 1280 * 720 * 4
-    ? (args.atmosphere !== 'off' || cloudMotion ? 128 : 64) : 24;
+    ? (args.atmosphere !== 'off' || chartTake !== 'off' || cloudMotion ? 128 : 64) : 24;
   if (spriteField) manifest.admission_policy = 'wait';
   manifest.export_working_byte_cap = 4 * manifest.export_slots * frameBytes;
 }
@@ -261,7 +272,7 @@ try {
   await cdp.call('Page.enable', {}, sessionId);
   if (args['wasm-receipt'] === 'on') await installWasmReceipt(cdp, sessionId);
   if (spriteField) await cdp.call('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: output });
-  const completionSignal = (spriteField || args.scene === 'exit' || args.clouds !== 'off' || args.atmosphere !== 'off') && args.mode === 'realtime' &&
+  const completionSignal = (spriteField || args.scene === 'exit' || args.clouds !== 'off' || args.atmosphere !== 'off' || chartTake !== 'off') && args.mode === 'realtime' &&
     (args.control === 'ordinary' || args.control === 'off');
   if (spriteSheets) await cdp.call('Network.enable', {}, sessionId);
   let captureDone = false;
@@ -292,7 +303,7 @@ try {
   manifest.load_before = loadavg();
   const exitQuery = exitRecord === 'off' ? '' : `&exit-record=${exitRecord}`;
   const cullingQuery = args.culling === 'default' ? '' : `&culling=${args.culling}`;
-  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&reconstruction=${args.reconstruction}&governor=${args.governor}&witness=${args.witness}&atmosphere=${args.atmosphere}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&effect=${args.effect}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(cookedOrigin ?? '')}${manifest.export_slots ? `&export-slots=${manifest.export_slots}` : ''}&clouds=${args.clouds}${args.haze ? `&haze=${encodeURIComponent(args.haze)}` : ''}${args['haze-take'] ? '&haze-take' : ''}${args['renderer-signature'] === 'on' ? '&renderer-signature' : ''}${cloudView ? '&cloud-view' : ''}${cloudOrigin ? '&cloud-store=' + encodeURIComponent(cloudOrigin) : ''}${spriteQuery}${exitQuery}${cullingQuery}` }, sessionId);
+  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&reconstruction=${args.reconstruction}&governor=${args.governor}&witness=${args.witness}&atmosphere=${args.atmosphere}&chart-take=${chartTake}&chart-cadence=${chartCadence}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&effect=${args.effect}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(cookedOrigin ?? '')}${manifest.export_slots ? `&export-slots=${manifest.export_slots}` : ''}&clouds=${args.clouds}${args.haze ? `&haze=${encodeURIComponent(args.haze)}` : ''}${args['haze-take'] ? '&haze-take' : ''}${args['renderer-signature'] === 'on' ? '&renderer-signature' : ''}${cloudView ? '&cloud-view' : ''}${cloudOrigin ? '&cloud-store=' + encodeURIComponent(cloudOrigin) : ''}${spriteQuery}${exitQuery}${cullingQuery}` }, sessionId);
   let destroyed = false;
   const record = await waitFor(async () => {
     if (completionSignal && !captureDone) return undefined;
@@ -314,7 +325,9 @@ try {
   }
   await fs.writeFile(path.join(output, 'runtime.json'), JSON.stringify(record, null, 2));
   if (exitRecord !== 'off' && record.error) throw new Error(record.error);
-  const admittedGovernor = exitRecord === 'off'
+  const admittedGovernor = chartTake !== 'off'
+    ? record.chart_frames?.some(sample => sample.chart_cadence === Number(chartCadence))
+    : exitRecord === 'off'
     ? record.final_report?.samples?.some(sample => sample.governor_scale != null)
     : record.exit_selections?.governor;
   if (governed && (!record.governor || record.final_report?.reconstruction !== 'Taau' || !admittedGovernor)) {
@@ -455,7 +468,7 @@ finally {
   cloudServer?.close();
   // Realtime atmosphere takes can keep large readback pools alive until the
   // owned Chrome process exits. Allow it to drain those pools under shared load.
-  const drainLargeCapture = spriteField || Boolean(args.haze) || (spoolRaw && args.atmosphere !== 'off');
+  const drainLargeCapture = spriteField || Boolean(args.haze) || (spoolRaw && (args.atmosphere !== 'off' || chartTake !== 'off'));
   manifest.encoding = { stage: 'final SDR engine output after history/tone/engine overlay, before canvas presentation', channel_order: 'RGBA8', colour: 'sRGB', row_stride: extent[0] * 4, extent };
   manifest.spool_encoding = spriteField ? 'browser File download, raw RGBA8' : retainRaw ? 'raw' : spoolRaw ? 'raw with deferred gzip' : 'live gzip';
   await finalizeBrowserCapture({

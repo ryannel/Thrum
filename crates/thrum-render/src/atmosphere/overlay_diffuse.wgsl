@@ -17,19 +17,7 @@ var<workgroup> moments: array<array<vec4<f32>,9>,64>;
 fn diffuse_main(@builtin(local_invocation_index) index: u32) {
     // Preserve the existing horizontal incident meter, including sample order
     // and reduction. It is not reconstructed from the truncated SH expansion.
-    let extent = textureDimensions(overlay_faces);
-    let face_size = extent.x * extent.y;
-    var cloudy = 0.0;
-    for (var i = index; i < face_size * 6u; i += 64u) {
-        let pixel = i % face_size;
-        let texel = textureLoad(overlay_faces, vec2<i32>(i32(pixel % extent.x), i32(pixel / extent.x)),
-            i32(i / face_size), 0);
-        if any(texel != vec4(0.0, 0.0, 0.0, 1.0)) {
-            cloudy = 1.0;
-            break;
-        }
-    }
-    clear_meter[index] = cloudy;
+    clear_meter[index] = f32(overlay_face_has_cloud(index));
     workgroupBarrier();
     if index == 0u {
         has_cloud = 0u;
@@ -42,11 +30,8 @@ fn diffuse_main(@builtin(local_invocation_index) index: u32) {
     var sum=vec4(0.0);
     var clear_lux = 0.0;
     for(var sample=0u;sample<4u;sample++) {
-        let number=index+sample*64u;
-        let mu=(f32(number/16u)+0.5)/16.0;
-        let phi=2.0*PI*(f32(number%16u)+0.5)/16.0;
-        let radius=sqrt(max(0.0,1.0-mu*mu));
-        let direction=vec3(radius*cos(phi),mu,radius*sin(phi));
+        let direction = overlay_meter_direction(index + sample * 64u);
+        let mu = direction.y;
         let uv=sky_uv(direction,atmosphere.sun_lux.xyz);
         let clear=textureSampleLevel(sky,aerial_sampler,uv,0.0);
         if active_overlay {

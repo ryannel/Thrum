@@ -114,6 +114,7 @@ use shadow::{CasterBox, CasterDraw, CasterDraws, ShadowPrepared, ShadowTarget};
 use stars::{StarPrepared, StarTarget};
 use upload::{InstanceUpload, PackedInstances};
 pub use view::SyntheticView;
+pub(crate) use view::ViewDiscontinuity;
 use view::{AUX_BYTES, Projection};
 
 use crate::error::RenderError;
@@ -1144,6 +1145,20 @@ impl PreparedSynthetic {
         Some((atmosphere.environment(), atmosphere.chart_witnesses()))
     }
 
+    #[cfg(all(test, feature = "creation-counters"))]
+    pub(crate) fn chart_schedule_witness(&self) -> (&wgpu::Texture, &wgpu::Buffer) {
+        let atmosphere = self.atmosphere.as_ref().expect("fixture atmosphere");
+        (atmosphere.reflection_witness(), &self.environment_light)
+    }
+
+    #[cfg(all(test, feature = "creation-counters"))]
+    pub(crate) fn overlay_witness(&self) -> wgpu::Texture {
+        self.atmosphere
+            .as_ref()
+            .and_then(AtmospherePrepared::overlay_target)
+            .expect("fixture sky overlay")
+    }
+
     /// Inspect the two cumulative view-volume textures and the submitted history phase.
     /// The scatter texture's last layer carries the terminal pair for sky rays.
     #[cfg(feature = "creation-counters")]
@@ -1297,24 +1312,28 @@ impl PreparedSynthetic {
         Ok(())
     }
 
-    pub(crate) fn aerial_quality(&self) -> Option<crate::contribution::QualityKnob> {
+    pub(crate) fn atmosphere_quality(&self) -> &[crate::contribution::QualityKnob] {
         self.atmosphere
             .as_ref()
-            .map(|atmosphere| atmosphere.aerial_quality().clone())
+            .map_or(&[], AtmospherePrepared::quality)
     }
 
-    pub(crate) fn set_aerial_quality(
+    pub(crate) fn set_atmosphere_quality(
         &mut self,
         name: &str,
         value: u32,
     ) -> Option<Result<(), crate::contribution::QualityError>> {
-        self.atmosphere.as_mut()?.set_aerial_quality(name, value)
+        self.atmosphere.as_mut()?.set_quality(name, value)
     }
 
-    pub(crate) fn commit_aerial_quality(&mut self) {
+    pub(crate) fn commit_atmosphere_quality(&mut self) {
         if let Some(atmosphere) = &mut self.atmosphere {
-            atmosphere.commit_aerial_quality();
+            atmosphere.commit_quality();
         }
+    }
+
+    pub(crate) fn pending_chart_update(&self) -> Option<&'static str> {
+        self.atmosphere.as_ref()?.pending_chart_update()
     }
 
     pub(crate) fn aerial_age(&self) -> Option<u32> {

@@ -1127,7 +1127,7 @@ fn gpu_device_replacement_abandons_slots_and_isolates_old_candidates_and_callbac
         assert_eq!(host.dropped_reports, dropped + IN_FLIGHT as u64);
         assert_eq!(host.pending_frames(), 0);
         assert!(host.completed.is_empty());
-        assert!(host.history_reset_pending && host.upload_reset_pending);
+        assert!(host.history_reset_pending.resets_history() && host.upload_reset_pending);
         assert!(host.extractor.frame().source().is_none());
         assert!(host.last_view_source.is_none());
         assert!(host.visual_lighting.is_none());
@@ -1210,7 +1210,7 @@ fn gpu_device_replacement_abandons_slots_and_isolates_old_candidates_and_callbac
             .expect("current source");
         assert_eq!(sample.sample.tick, world.tick);
         assert!(
-            host.history_reset_pending,
+            host.history_reset_pending.resets_history(),
             "preparation/capture does not commit submitted history"
         );
         let image = host.capture_pixels().expect("actual replacement rendering");

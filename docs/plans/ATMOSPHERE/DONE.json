@@ -729,7 +729,7 @@
     {
       "id": "WP12",
       "name": "The sky's charts are rebuilt over several frames under the governor, so they cost each frame a fraction of what they did and nothing in the sky is seen to update",
-      "status": "not_started",
+      "status": "in_progress",
       "depends_on": [
         "APPLE-PRESENTATION:WP7"
       ],

@@ -48,7 +48,7 @@ fn verify(host: &mut Host, extent: [u32; 2]) {
     encoded.submit(None).expect("submit");
     assert!(host.scene.view.history_reset());
     retire(host);
-    assert!(!host.history_reset_pending);
+    assert!(!host.history_reset_pending.resets_history());
 }
 
 #[test]
@@ -76,7 +76,7 @@ fn coupled_extent_changes_real_targets_projection_and_history_atomically() {
             .expect("old-grid visual");
         for extent in [[48, 96], [96, 48], [48, 96]] {
             assert!(host.resize_scene_surface(extent).expect("coupled resize"));
-            assert!(host.history_reset_pending);
+            assert!(host.history_reset_pending.resets_history());
             let target = host.slots[0].target.output_view().clone();
             let revision = host.presenter_generation;
             assert!(host.resize_scene_surface(extent).expect("same extent"));
@@ -167,7 +167,7 @@ fn detached_device_refits_scene_and_presenter_and_refreshes_current_camera() {
             .expect("same candidate grid");
         host.publish_device(&mut candidate).expect("publication");
         assert_eq!(host.render_extent, [96, 48]);
-        assert!(host.history_reset_pending);
+        assert!(host.history_reset_pending.resets_history());
         verify(&mut host, [96, 48]);
         assert!(host.publish_device(&mut candidate).is_err());
         assert!(candidate.resize_scene_surface([48, 96]).is_err());

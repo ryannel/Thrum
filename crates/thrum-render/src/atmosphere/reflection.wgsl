@@ -37,6 +37,10 @@ fn reflection_main(
     // actual view dimensions rather than mutable per-pass uniform uploads.
     let mip=countLeadingZeros(size.x)-countLeadingZeros(REFLECTION_SIZE);
     let span=PREFILTER_SPANS[mip];
+    let cloudy = reflection_is_cloudy();
+    if all(group == vec3(0u)) && lane == 0u {
+        publish_reflection_encoding(mip, cloudy);
+    }
 
     var radiance=vec4(0.0);
     var weight=0.0;

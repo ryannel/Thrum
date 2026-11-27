@@ -26,6 +26,8 @@ pub struct GovernorFrame {
     pub mark: SampleMark,
     /// Age in submitted frames of the primary aerial lookup used by this frame.
     pub aerial_age: Option<u32>,
+    /// Cause of a whole chart update scheduled for this encoded frame.
+    pub chart_update: Option<&'static str>,
 }
 
 pub(super) struct GovernorHost {
@@ -63,13 +65,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             knobs.extend_from_slice(scene.sun_penumbra_quality());
             knobs.extend_from_slice(scene.ambient_occlusion_quality());
         }
-        if self.governor.is_some()
-            && let Some(aerial) = self
-                .prepared
-                .three_d()
-                .and_then(PreparedSynthetic::aerial_quality)
-        {
-            knobs.push(aerial);
+        if let Some(scene) = self.prepared.three_d() {
+            knobs.extend_from_slice(scene.atmosphere_quality());
         }
         knobs
     }
@@ -103,7 +100,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }
         if self.governor.is_some()
             && let Some(scene) = self.prepared.three_d_mut()
-            && let Some(result) = scene.set_aerial_quality(name, value)
+            && let Some(result) = scene.set_atmosphere_quality(name, value)
         {
             return result;
         }
@@ -295,6 +292,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 .prepared
                 .three_d()
                 .and_then(PreparedSynthetic::aerial_age),
+            chart_update: self
+                .prepared
+                .three_d()
+                .and_then(PreparedSynthetic::pending_chart_update),
         })
     }
 }

@@ -61,7 +61,7 @@ impl ReflectionPrepared {
         uniform: &wgpu::Buffer,
         charts: &[wgpu::BindGroupEntry<'_>],
         sky_sampler: &wgpu::Sampler,
-        overlay: Option<(&wgpu::TextureView, &wgpu::Buffer)>,
+        overlay: Option<(&wgpu::TextureView, &wgpu::Buffer, &wgpu::Buffer)>,
     ) -> Self {
         let cube = texture(device, "atmosphere specular cube", CUBE_SIZE, 6, MIP_COUNT);
         let dfg = texture(device, "atmosphere DFG", DFG_SIZE, 1, 1);
@@ -130,7 +130,7 @@ impl ReflectionPrepared {
                 ]
                 .into_iter()
                 .chain(charts.iter().cloned())
-                .chain(overlay.into_iter().flat_map(|(view, flags)| {
+                .chain(overlay.into_iter().flat_map(|(view, flags, lighting)| {
                     [
                         wgpu::BindGroupEntry {
                             binding: 5,
@@ -139,6 +139,10 @@ impl ReflectionPrepared {
                         wgpu::BindGroupEntry {
                             binding: 6,
                             resource: flags.as_entire_binding(),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: 7,
+                            resource: lighting.as_entire_binding(),
                         },
                     ]
                 }))
@@ -265,7 +269,13 @@ fn texture(device: &wgpu::Device, label: &str, size: u32, layers: u32, mips: u32
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
         format: wgpu::TextureFormat::Rgba16Float,
-        usage: wgpu::TextureUsages::STORAGE_BINDING | wgpu::TextureUsages::TEXTURE_BINDING,
+        usage: wgpu::TextureUsages::STORAGE_BINDING
+            | wgpu::TextureUsages::TEXTURE_BINDING
+            | if cfg!(all(test, feature = "creation-counters")) {
+                wgpu::TextureUsages::COPY_SRC
+            } else {
+                wgpu::TextureUsages::empty()
+            },
         view_formats: &[],
     })
 }
@@ -291,6 +301,7 @@ fn reflection_bindings(overlay: bool) -> Vec<wgpu::BindGroupLayoutEntry> {
         entries.extend([
             binding::texture(5, compute, sample, wgpu::TextureViewDimension::Cube),
             binding::uniform(6, compute, crate::light::ENVIRONMENT_BYTES),
+            binding::storage(7, compute, false, super::overlay::CHART_LIGHTING_BYTES),
         ]);
     }
     entries
@@ -324,9 +335,11 @@ fn pipeline(
 }
 
 pub(crate) fn cube_source() -> String {
-    cube_source_with(
+    cube_source_with(concat!(
+        "fn reflection_is_cloudy() -> bool { return false; }\n",
+        "fn publish_reflection_encoding(mip: u32, cloudy: bool) {}\n",
         wgsl!(@reflection_integrate "            radiance+=prepared.w*textureSampleLevel(reflection_sky,reflection_sampler,uv,0.0);\n"),
-    )
+    ))
 }
 
 pub(super) fn cube_source_with(integrate: &str) -> String {

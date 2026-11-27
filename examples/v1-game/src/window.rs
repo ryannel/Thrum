@@ -156,6 +156,9 @@ pub struct WindowGovernor {
     /// A continuous solar-time sweep for a fullscreen proof cue.
     #[cfg(feature = "proving")]
     pub solar_sweep: Option<WindowSolarSweep>,
+    /// Jump to the given solar hour at the chart proof's world tick.
+    #[cfg(feature = "proving")]
+    pub chart_jump: Option<(u64, f32)>,
     /// Hold the exit route at its starting pose until the saved controls resume it.
     #[cfg(feature = "proving")]
     pub exit_route_starts_paused: bool,
@@ -237,6 +240,12 @@ pub fn run_window(
         }) => ("Thrum V1 — 10k world / Occlusion culling", "Thrum V1"),
         _ => ("Thrum V1 — 10k world / clustered forward+", "Thrum V1"),
     };
+    #[cfg(feature = "proving")]
+    let chart_extent = governor
+        .chart_jump
+        .and_then(|_| governor.route.as_deref())
+        .and_then(|route| crate::CameraRoute::declared(route).ok())
+        .map(|(extent, _)| extent);
     let config = Config {
         name: "v1-game",
         frames_variable: "THRUM_V1_FRAMES",
@@ -258,7 +267,9 @@ pub fn run_window(
         mac_output_scale: governor.output_scale,
         metal_preparation,
         #[cfg(feature = "proving")]
-        window_size: if transition.is_none()
+        window_size: if let Some(extent) = chart_extent {
+            extent
+        } else if transition.is_none()
             && display
                 .as_ref()
                 .is_some_and(|options| options.output.is_some())
@@ -315,6 +326,7 @@ pub fn run_window(
                 text,
                 start: route_start,
                 solar_sweep: governor.solar_sweep,
+                chart_jump: governor.chart_jump,
             }),
             governor_enabled: governor.enabled,
             #[cfg(feature = "proving")]
@@ -426,6 +438,7 @@ struct RouteInput {
     text: String,
     start: RouteStart,
     solar_sweep: Option<WindowSolarSweep>,
+    chart_jump: Option<(u64, f32)>,
 }
 
 #[cfg(feature = "proving")]
@@ -536,6 +549,7 @@ fn capture_game_with_route_limit(
                 text,
                 start: RouteStart::Immediate,
                 solar_sweep: None,
+                chart_jump: None,
             }),
     }))
 }
@@ -846,7 +860,9 @@ impl RuntimeSetup for WindowGame {
         }
         #[cfg(feature = "proving")]
         if let Some(route) = &self.capture_route {
-            host.continuous_source_mut().solar_sweep = route.solar_sweep;
+            let scene = host.continuous_source_mut();
+            scene.solar_sweep = route.solar_sweep;
+            scene.chart_jump = route.chart_jump;
         }
         #[cfg(not(feature = "proving"))]
         let origin = Instant::now();

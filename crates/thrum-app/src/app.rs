@@ -2328,7 +2328,9 @@ fn run_with<G: WindowGame + 'static, E: std::error::Error>(
             .or_else(|| {
                 app.transition_proof
                     .as_ref()
-                    .filter(|proof| proof.arm == TransitionArm::Fullscreen)
+                    .filter(|proof| {
+                        matches!(proof.arm, TransitionArm::Fullscreen | TransitionArm::Route)
+                    })
                     .map(|proof| &proof.output)
             });
         if let Some(output) = account_output {

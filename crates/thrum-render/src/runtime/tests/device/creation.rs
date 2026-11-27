@@ -723,3 +723,98 @@ fn contribution_rebuilds_and_compile_thread_reloads_and_restores_are_declared() 
         drop((reloaded, undeclared, restored));
     });
 }
+
+#[test]
+fn chart_cadence_gpu_host_tiers_reuse_the_atmosphere_resources() {
+    use crate::governor::{DisplayRecord, ThermalState};
+    use crate::synthetic::RenderScale;
+
+    let Some(test_gpu) =
+        thrum_test_support::gpu("chart cadence tier creations", Some(wgpu::Backend::Metal))
+    else {
+        return;
+    };
+    pollster::block_on(async {
+        let (caps, queue) = gpu(&test_gpu, 7).await;
+        let source = crate::extract::SourceTick {
+            epoch: 5,
+            tick: 0,
+            timeline: 3,
+        };
+        let mut scene = crate::synthetic::SyntheticScene::grid(1).unwrap();
+        scene.view = scene.view.with_reconstruction(true);
+        scene.sun_shadows = false;
+        let mut host = crate::runtime::FrameHost::new(
+            &caps,
+            &queue,
+            crate::runtime::FrameConfig {
+                render_extent: [64, 64],
+                surface: Some(surface()),
+            },
+            super::StaticWorld {
+                authority: source,
+                publication: source,
+            },
+            Policy {
+                atmosphere: true,
+                ..Policy::default()
+            },
+            scene,
+            0.125,
+        )
+        .await
+        .unwrap();
+        let quality = |host: &Host, name: &str| {
+            host.quality_knobs()
+                .iter()
+                .find(|knob| knob.name == name)
+                .expect("registered atmosphere knob")
+                .value
+        };
+        assert_eq!(quality(&host, "atmosphere.chart cadence"), 1);
+        assert_eq!(quality(&host, "atmosphere.aerial cadence"), 1);
+        host.set_render_scale(RenderScale::Half).unwrap();
+        let display = DisplayRecord {
+            interval: Duration::from_secs(1),
+            thermal: ThermalState::Nominal,
+        };
+        assert!(host.enable_governor(display));
+        let output = drawable(&host, [64, 64]);
+        host.governor_display_tick(Duration::ZERO, 1);
+        play(&mut host, &output, 1);
+        host.governor_present_called();
+        let report = host.creation_report();
+        let baseline = report.phase(CreationPhase::Play);
+        assert_eq!(report.instrumentation, Instrumentation::Counted);
+        assert_eq!(quality(&host, "atmosphere.chart cadence"), 4);
+        assert_eq!(quality(&host, "atmosphere.aerial cadence"), 1);
+
+        for (start, chart, aerial) in [(2, 6, 2), (6, 8, 4)] {
+            for tick in start..start + 4 {
+                host.governor_display_tick(Duration::from_millis(tick * 5), tick);
+            }
+            let drawable = output.create_view(&wgpu::TextureViewDescriptor::default());
+            let output = crate::runtime::SurfaceOutput {
+                view: &drawable,
+                extent: [64, 64],
+            };
+            assert!(
+                host.drive(Duration::from_millis((start + 3) * 5), Some(&output))
+                    .unwrap()
+                    .submitted
+            );
+            retire(&mut host);
+            host.governor_present_called();
+            assert_eq!(quality(&host, "atmosphere.chart cadence"), chart);
+            assert_eq!(quality(&host, "atmosphere.aerial cadence"), aerial);
+            flush(&host);
+            let after = host.creation_report();
+            let counts = after.phase(CreationPhase::Play);
+            assert_eq!(counts.textures, baseline.textures);
+            assert_eq!(counts.texture_views, baseline.texture_views);
+            assert_eq!(counts.bind_groups, baseline.bind_groups);
+            assert_eq!(after.pipelines, report.pipelines);
+            assert_eq!(after.violations, 0);
+        }
+    });
+}

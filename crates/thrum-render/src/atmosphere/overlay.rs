@@ -6,6 +6,19 @@ const EDGE: u32 = 48;
 // Store physical radiance with headroom for the bright sky near the Sun.
 // Decode before the BRDF and exposure, just as for the clear-sky encoding.
 const GAIN: f32 = 32.0;
+pub(crate) const CHART_LIGHTING_BINDING: u32 = 30;
+
+#[repr(C, align(16))]
+#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+struct ChartLighting {
+    mode: u32,
+    cloudy: u32,
+    haze: f32,
+    padding: u32,
+    reflection_tags: [[u32; 4]; 2],
+}
+
+pub(crate) const CHART_LIGHTING_BYTES: u64 = size_of::<ChartLighting>() as u64;
 
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub(crate) enum Lighting {
@@ -20,6 +33,7 @@ pub(super) struct Target {
     pub(super) texture: wgpu::Texture,
     pub(super) view: wgpu::TextureView,
     pub(super) lighting: Lighting,
+    pub(super) chart_lighting: wgpu::Buffer,
 }
 
 impl Target {
@@ -57,9 +71,18 @@ impl Target {
             dimension: Some(wgpu::TextureViewDimension::Cube),
             ..Default::default()
         });
+        let chart_lighting = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("atmosphere chart lighting"),
+            size: CHART_LIGHTING_BYTES,
+            usage: wgpu::BufferUsages::UNIFORM
+                | wgpu::BufferUsages::STORAGE
+                | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
         Self {
             texture,
             view: overlay,
+            chart_lighting,
             lighting: if view_volume {
                 Lighting::Overlay
             } else {
@@ -113,14 +136,125 @@ pub(super) fn prepare_diffuse(
     (diffuse, group)
 }
 
+pub(super) fn prepare_chart_lighting(
+    device: &crate::runtime::DeviceSite,
+    buffers: [&wgpu::Buffer; 3],
+    chart: &wgpu::TextureView,
+    sampler: &wgpu::Sampler,
+    target: &Target,
+    (directional, cloud): (&wgpu::Buffer, Option<&super::CloudPrepared>),
+) -> (wgpu::ComputePipeline, wgpu::BindGroup) {
+    let [snapshot, live, environment] = buffers;
+    let haze = target.lighting == Lighting::OverlayAndHaze;
+    let variant = cloud.map_or(CloudVariant::Absent, super::CloudPrepared::variant);
+    let pipeline = pipeline(
+        device,
+        "atmosphere chart overlay",
+        if haze { "haze_main" } else { "classify_main" },
+        Shader::AtmosphereChartOverlay(haze, variant),
+    );
+    let faces = target.texture.create_view(&wgpu::TextureViewDescriptor {
+        dimension: Some(wgpu::TextureViewDimension::D2Array),
+        ..Default::default()
+    });
+    let mut entries = vec![
+        buffer(3, environment),
+        view(7, &faces),
+        buffer(8, &target.chart_lighting),
+    ];
+    if haze {
+        entries.extend([
+            buffer(0, snapshot),
+            view(1, chart),
+            sampler_entry(2, sampler),
+            buffer(4, live),
+            view(5, &target.view),
+            buffer(6, directional),
+        ]);
+        if let Some(cloud) = cloud {
+            entries.extend([view(13, &cloud.view), buffer(14, &cloud.uniform)]);
+            if let Some(band) = &cloud.band {
+                entries.extend(band.entries());
+            }
+        }
+    }
+    let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("atmosphere chart overlay inputs"),
+        layout: &pipeline.get_bind_group_layout(0),
+        entries: &entries,
+    });
+    (pipeline, group)
+}
+
+pub(crate) fn chart_overlay_source(haze: bool, cloud: CloudVariant) -> String {
+    let mut source = format!(
+        "{}\n{}\n{}\n{}",
+        wgsl!("environment_light.wgsl"),
+        include_str!("chart_lighting.wgsl"),
+        include_str!("chart_overlay_classify.wgsl"),
+        include_str!("chart_overlay.wgsl"),
+    );
+    if haze {
+        use std::fmt::Write;
+        write!(
+            source,
+            "\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
+            wgsl!(@lighting_constants),
+            wgsl!("atmosphere/storage.wgsl"),
+            wgsl!("atmosphere/geometry.wgsl"),
+            wgsl!("atmosphere/common.wgsl"),
+            wgsl!("directional_light.wgsl"),
+            include_str!("chart_overlay_meter.wgsl"),
+            include_str!("chart_haze.wgsl"),
+            include_str!("overlay.wgsl"),
+        )
+        .expect("append chart haze shader");
+        source.push_str("\n@group(0) @binding(6) var<uniform> overlay_sun: DirectionalLight;\n");
+        source.push_str("fn overlay_open_sun() -> f32 { return dot(overlay_sun.irradiance.rgb, REC709_LUMA) * max(overlay_sun.direction_to_light.y, 0.0); }\n");
+        append_cloud_factor(&mut source, cloud, "live_atmosphere");
+    }
+    source
+}
+
+fn append_cloud_factor(source: &mut String, cloud: CloudVariant, observer: &str) {
+    if cloud.present() {
+        use std::fmt::Write;
+        source.push_str(&cloud.sampling_source_for(0, observer));
+        writeln!(source, "fn overlay_sun_factor() -> f32 {{ return cloud_factor({observer}.camera_altitude.xyz); }}")
+            .expect("append cloud factor");
+    } else {
+        source.push_str("\nfn overlay_sun_factor() -> f32 { return 1.0; }\n");
+    }
+}
+
+pub(crate) fn chart_consumer_source(source: &str, group: u32) -> String {
+    with_reflection_gain(&format!(
+        "{source}\n{}\n@group({group}) @binding({CHART_LIGHTING_BINDING}) var<uniform> chart_lighting: ChartLighting;\n{}",
+        include_str!("chart_lighting.wgsl"),
+        include_str!("chart_reflection_sample.wgsl"),
+    ))
+}
+
 pub(crate) fn reflection_source() -> String {
     let integrate = wgsl!(@reflection_integrate
-        "            let encoded = textureSampleLevel(reflection_sky,reflection_sampler,uv,0.0);\n            if overlay_flags.sky_diffuse[2].w == 0.0 {\n                radiance += prepared.w * encoded;\n            } else {\n                radiance += vec4(prepared.w * overlay_radiance(direction,encoded,reflection_sampler) / OVERLAY_REFLECTION_GAIN,0.0);\n            }\n");
+        "            let encoded = textureSampleLevel(reflection_sky,reflection_sampler,uv,0.0);\n            if !cloudy {\n                radiance += prepared.w * encoded;\n            } else {\n                radiance += vec4(prepared.w * overlay_radiance(direction,encoded,reflection_sampler) / OVERLAY_REFLECTION_GAIN,0.0);\n            }\n");
     with_reflection_gain(&format!(
-        "{}\n{}\n{}\n@group(0) @binding(6) var<uniform> overlay_flags: EnvironmentLight;\n",
+        "{}\n{}\n{}\n{}
+@group(0) @binding(6) var<uniform> overlay_flags: EnvironmentLight;
+@group(0) @binding(7) var<storage, read_write> overlay_chart: ChartLighting;
+fn reflection_is_cloudy() -> bool {{
+    return select(overlay_chart.cloudy != 0u, overlay_flags.sky_diffuse[2].w != 0.0, overlay_chart.mode == 0u);
+}}
+fn publish_reflection_encoding(mip: u32, cloudy: bool) {{
+    if overlay_chart.mode != 0u {{
+        overlay_chart.reflection_tags[mip / 4u][mip % 4u] = u32(cloudy);
+    }}
+}}
+",
         super::reflection::cube_source_with(integrate),
         include_str!("overlay.wgsl"),
-        wgsl!("environment_light.wgsl")
+        wgsl!("environment_light.wgsl"),
+        include_str!("chart_lighting.wgsl"),
     ))
 }
 
@@ -129,6 +263,8 @@ pub(crate) fn diffuse_source(haze: bool, cloud: CloudVariant) -> String {
         include_str!("diffuse_nodes.wgsl"),
         include_str!("overlay_diffuse.wgsl"),
         include_str!("overlay.wgsl"),
+        include_str!("chart_overlay_classify.wgsl"),
+        include_str!("chart_overlay_meter.wgsl"),
     ));
     if !haze {
         return format!(
@@ -144,12 +280,7 @@ pub(crate) fn diffuse_source(haze: bool, cloud: CloudVariant) -> String {
         wgsl!("directional_light.wgsl"),
         include_str!("overlay_haze.wgsl")
     );
-    if cloud.present() {
-        source.push_str(&cloud.sampling_source_for(0, "atmosphere"));
-        source.push_str("\nfn overlay_sun_factor() -> f32 { return cloud_factor(atmosphere.camera_altitude.xyz); }\n");
-    } else {
-        source.push_str("\nfn overlay_sun_factor() -> f32 { return 1.0; }\n");
-    }
+    append_cloud_factor(&mut source, cloud, "atmosphere");
     source
 }
 
@@ -162,7 +293,7 @@ pub(crate) fn reflection_product(lighting: Lighting) -> &'static str {
         wgsl!(@reflection_product
             "    let radiance=decode_sky_light(encoded,atmosphere.sun_lux.w*atmosphere.colour_pre_exposure.rgb);\n")
     } else {
-        wgsl!(@reflection_product "    let radiance=select(decode_sky_light(encoded,atmosphere.sun_lux.w*atmosphere.colour_pre_exposure.rgb),encoded.rgb*OVERLAY_REFLECTION_GAIN,environment_light.sky_diffuse[2].w!=0.0);\n")
+        wgsl!(@reflection_product "    let radiance=sample_overlay_reflection(encoded,ray,level,atmosphere.sun_lux.w*atmosphere.colour_pre_exposure.rgb);\n")
     }
 }
 
@@ -171,10 +302,10 @@ pub(crate) fn forward_environment(lighting: Lighting, ambient: bool) -> &'static
         (true, false) => wgsl!("synthetic_environment.wgsl"),
         (true, true) => wgsl!(@ambient_environment),
         (false, false) => {
-            wgsl!(@environment_surface "    let environment=select(decode_sky_light(encoded,aerial_frame.sun_lux.w*aerial_frame.colour_pre_exposure.rgb),encoded.rgb*OVERLAY_REFLECTION_GAIN,environment_light.sky_diffuse[2].w!=0.0);\n")
+            wgsl!(@environment_surface "    let environment=sample_overlay_reflection(encoded,ray,level,aerial_frame.sun_lux.w*aerial_frame.colour_pre_exposure.rgb);\n")
         }
         (false, true) => {
-            wgsl!(@ambient_environment_terms "    let environment=select(decode_sky_light(encoded,aerial_frame.sun_lux.w*aerial_frame.colour_pre_exposure.rgb),encoded.rgb*OVERLAY_REFLECTION_GAIN,environment_light.sky_diffuse[2].w!=0.0);\n")
+            wgsl!(@ambient_environment_terms "    let environment=sample_overlay_reflection(encoded,ray,level,aerial_frame.sun_lux.w*aerial_frame.colour_pre_exposure.rgb);\n")
         }
     }
 }

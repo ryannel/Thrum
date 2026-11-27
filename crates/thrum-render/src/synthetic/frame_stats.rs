@@ -193,11 +193,9 @@ pub(crate) fn validate_pass_timings(
                 .position(|&entry| entry == stage)
                 .expect("atmosphere stage")
         };
-        let (aerial, diffuse) = (
-            index(AtmosphereStage::Aerial),
-            index(AtmosphereStage::Diffuse),
-        );
-        stage_order.swap(aerial, diffuse);
+        let aerial = index(AtmosphereStage::Aerial);
+        let overlay = index(AtmosphereStage::OverlayLighting);
+        stage_order[overlay..=aerial].rotate_right(1);
     }
     let mut stages = Some(stage_order.into_iter());
     let mut surface = None;

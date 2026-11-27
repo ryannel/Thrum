@@ -17,16 +17,19 @@ const spriteStatus = scene === 'sprites-status';
 const spriteField = scene === 'sprites-field' || spriteScroll || spriteSheets || spriteStatus;
 const witness = query.get('witness') ?? 'off';
 const atmosphere = query.get('atmosphere') ?? 'off';
-const heldSetup = witness !== 'off' || atmosphere !== 'off';
+const chartTake = query.get('chart-take') ?? 'off';
+const chartCadence = Number(query.get('chart-cadence'));
+const chartProof = chartTake !== 'off';
+const heldSetup = witness !== 'off' || atmosphere !== 'off' || chartProof;
 const atmosphereMotion = atmosphere === 'scrub' || atmosphere === 'ground-pan';
 const clouds = query.get('clouds') ?? 'off';
 const cloudView = query.has('cloud-view');
 const configuredExportSlots = Number(query.get('export-slots'));
-const allowedExportSlots = atmosphereMotion || cloudView ? [24, 32, 64, 128] : [24, 32, 64];
+const allowedExportSlots = atmosphereMotion || chartProof || cloudView ? [24, 32, 64, 128] : [24, 32, 64];
 const exportSlots = (governed || spriteField || scene === 'exit' || heldSetup || clouds !== 'off') && allowedExportSlots.includes(configuredExportSlots) ? configuredExportSlots : 8;
 const useUploadWorker = mode === 'realtime' && control === 'ordinary' &&
   (governed || spriteField || scene === 'exit' || heldSetup || clouds !== 'off');
-const useAnimationFrame = (governed || scene === 'exit' || atmosphereMotion || clouds !== 'off') && mode === 'realtime' &&
+const useAnimationFrame = (governed || scene === 'exit' || atmosphereMotion || chartProof || clouds !== 'off') && mode === 'realtime' &&
   (control === 'ordinary' || control === 'off');
 if (!['day', 'night', 'noon', 'exit', 'sprites-field', 'sprites-scroll', 'sprites-sheets', 'sprites-status'].includes(scene)) throw new Error('Unknown route scene');
 if (!['sdr', 'scene-linear'].includes(source)) throw new Error('Unknown capture source');
@@ -106,6 +109,9 @@ async function runCapture() {
   if (exitRecord) {
     game.enable_exit_frame_timings();
     record.exit_frames = [];
+  } else if (chartProof) {
+    game.enable_exit_frame_timings();
+    record.chart_frames = [];
   } else if (useAnimationFrame) game.capture_without_pass_timings();
   window.captureGame = game;
   const effect = query.get('effect') ?? 'off';
@@ -154,12 +160,12 @@ async function runCapture() {
     if (game.committed_tick() !== 0) fail('reconstruction witness advanced during residency');
   }
   if (!heldSetup) game.install_route(text);
-  else if (atmosphere === 'off') {
+  else if (atmosphere === 'off' && !chartProof) {
     game.set_time_of_day(witness === 'stars' ? 0 : 0.5);
     if (witness === 'stars') game.set_camera_pitch(7*Math.PI/180);
   }
   if (governed) {
-    game.route_render_scale(108);
+    if (!chartProof) game.route_render_scale(108);
     if (!game.enable_route_governor()) fail('the prepared capture route refused the governor');
   }
   if (exitRecord) {
@@ -170,7 +176,7 @@ async function runCapture() {
   }
   const base = game.route_step_ms(0.5) - 1000 / 60;
   game.set_paused(true, base);
-  if (atmosphere !== 'off') {
+  if (atmosphere !== 'off' || chartProof) {
     const parameters = await (await fetch('/capture-params.json')).text();
     record.parameters = JSON.parse(parameters);
     applyCaptureParameters(parameters, base);
@@ -197,6 +203,7 @@ async function runCapture() {
     if (game.committed_tick() !== 0) fail('reconstruction witness advanced during warmup');
     record.held_warmup_submissions = 128;
   }
+  if (chartProof) game.drain_exit_frame_timings();
   record.initial_report = JSON.parse(game.route_report(0));
   if (query.has('renderer-signature')) record.renderer_signature = JSON.parse(game.renderer_signature());
   record.culling = game.report();
@@ -219,7 +226,7 @@ async function runCapture() {
   record.base_world_ms = base;
   record.mode = mode;
   record.governor = governed;
-  record.gpu_pass_timing = Boolean(exitRecord) || !useAnimationFrame;
+  record.gpu_pass_timing = Boolean(exitRecord) || chartProof || !useAnimationFrame;
   record.witness = witness;
   record.extent = route.render_extent;
   record.ui = { included: 'canvas scene and engine route overlay', excluded: 'DOM, browser and native UI' };
@@ -278,15 +285,17 @@ async function runCapture() {
   const longGroundTake = ['climb', 'approach'].includes(record.haze_take?.motion);
   const throughHandover = atmosphereMotion && record.haze_take?.motion === 'throughhandover';
   const groundDuration = throughHandover ? 32000 : bankMover ? 13000 : longGroundTake ? 12000 : 7000;
-  const duration = atmosphereMotion ? (atmosphere === 'scrub' ? 10000 : groundDuration) :
+  const duration = chartProof ? (chartTake === 'fast' ? 1600 : 6800) : atmosphereMotion ? (atmosphere === 'scrub' ? 10000 : groundDuration) :
     (route.keys.at(-1).tick + 121) * 1000 / 60;
   const fixedExitPhaseMs = scene === 'exit' && mode === 'fixed'
     ? (route.phase[0] / route.phase[1]) * 1000 / 60 : 0;
   let ordinal = 0;
   let acted = false;
   let released = false;
+  let lastRaf;
+  let lastPresented;
   while (atmosphere === 'checkpoint' ? ordinal < 1 : atmosphere === 'cost' ? ordinal < 96 :
-    atmosphereMotion ? performance.now() - start < duration :
+    (atmosphereMotion || chartProof) ? performance.now() - start < duration :
     witness !== 'off' ? ordinal < 270 : mode === 'fixed' ? ordinal < route.keys.at(-1).tick + 121 :
     performance.now() - start < duration || game.committed_tick() < route.origin_tick + route.keys.at(-1).tick + 59) {
     if (hidden) fail('page became hidden during capture');
@@ -296,7 +305,9 @@ async function runCapture() {
       while (!game.route_slot_ready()) { drain(); await wait(1); }
       while (inflight.size > 0) { drain(); await wait(1); }
     } else if (useAnimationFrame) {
-      rafMs = await new Promise(requestAnimationFrame);
+      do { rafMs = await new Promise(requestAnimationFrame); }
+      while (chartProof && lastRaf !== undefined && rafMs - lastRaf < 14);
+      lastRaf = rafMs;
     } else if (performance.now() < due) { drain(); await wait(Math.min(4, due - performance.now())); continue; }
     const requested = performance.now();
     if (!acted && control === 'stall' && requested - start > 1500) {
@@ -329,7 +340,24 @@ async function runCapture() {
       game.set_camera_yaw(yaw * Math.PI / 180);
       record.actions.push({kind:atmosphere,frame_ms:timestamp,solar_hours:game.time_of_day()*24,yaw_degrees:yaw});
     }
-    if ((atmosphere === 'off' || bankMover) && !released && timestamp - base >= 1000 && !['stars','scrub'].includes(witness)) {
+    if (chartProof) {
+      const seconds = (timestamp - base) / 1000;
+      const submitted = Number(game.presented()) - record.initial_report.presented;
+      const climb = Math.max(0, Math.min(1, (seconds - 2.8) / 2));
+      const eye = [0, 244.92267 + 108 * climb, 16 - 100 * climb];
+      const hours = chartTake === 'fast'
+        ? 16.0 + Math.max(0, submitted - 12) * 0.1
+        : seconds >= 5.6 ? 12 : 16 + Math.min(6, Math.max(0, seconds - 0.35) * 2.45);
+      if (lastPresented !== submitted) {
+        game.set_cloud_capture_eye(...eye);
+        game.set_time_of_day(Math.min(23.9, hours) / 24);
+        if (governed) game.set_capture_chart_cadence(chartCadence);
+        record.actions.push({kind: 'chart pose', submission_after: Number(game.presented()), frame_ms: timestamp,
+          solar_hours: Math.min(23.9, hours), eye, jump: chartTake !== 'fast' && seconds >= 5.6});
+        lastPresented = submitted;
+      }
+    }
+    if (!chartProof && (atmosphere === 'off' || bankMover) && !released && timestamp - base >= 1000 && !['stars','scrub'].includes(witness)) {
       // Resume clears the clock fraction. Put the fixed exit route's origin
       // between the last held callback and this sample to restore its phase.
       game.set_paused(false, timestamp - fixedExitPhaseMs);
@@ -339,10 +367,11 @@ async function runCapture() {
     if (performance.now() - start > (mode === 'fixed' ? 120000 : Math.max(20000, duration + 6000))) fail('scenario deadline');
     game.frame(timestamp);
     const opportunity = { ordinal, requested_ms: requested, frame_ms: timestamp, returned_ms: performance.now(), tick: game.committed_tick() };
-    if ((exitRecord || governed || clouds !== 'off') && useAnimationFrame) opportunity.raf_ms = rafMs;
+    if ((exitRecord || chartProof || governed || clouds !== 'off') && useAnimationFrame) opportunity.raf_ms = rafMs;
     if (control === 'off' && scene === 'exit') opportunity.presented = Number(game.presented());
     record.opportunities.push(opportunity);
     if (exitRecord) record.exit_frames.push(...JSON.parse(game.drain_exit_frame_timings()));
+    if (chartProof) record.chart_frames.push(...JSON.parse(game.drain_exit_frame_timings()));
     ordinal++;
     if (mode === 'realtime' && !useAnimationFrame) ordinal = Math.max(ordinal, Math.floor((performance.now() - start) * 60 / 1000));
     if (control !== 'saturation' || performance.now() - start > 2000) drain();
@@ -359,6 +388,7 @@ async function runCapture() {
   await Promise.all(inflight);
   record.renderer_omissions = game.submitted_capture_omissions();
   record.end_ms = performance.now();
+  if (chartProof) record.chart_frames.push(...JSON.parse(game.drain_exit_frame_timings()));
   record.final_report = JSON.parse(game.route_report(0));
   if (exitRecord) record.exit_cooked = JSON.parse(game.cooked_status());
   if (atmosphere === 'cost') record.haze_cost = JSON.parse(game.haze_cost());

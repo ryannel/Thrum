@@ -17,13 +17,13 @@ pub(super) fn sample(
         .collect()
 }
 
-pub(super) struct Probe<const N: usize> {
+pub(in crate::atmosphere) struct Probe<const N: usize> {
     pipeline: wgpu::ComputePipeline,
     query_layout: wgpu::BindGroupLayout,
 }
 
 impl<const N: usize> Probe<N> {
-    pub(super) fn new(
+    pub(in crate::atmosphere) fn new(
         device: &wgpu::Device,
         products: &EnvironmentProducts,
         setup: &str,
@@ -74,7 +74,7 @@ fn query(@builtin(global_invocation_id) id: vec3<u32>) {{
         }
     }
 
-    pub(super) fn sample(
+    pub(in crate::atmosphere) fn sample(
         &self,
         device: &wgpu::Device,
         queue: &wgpu::Queue,

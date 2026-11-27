@@ -354,7 +354,7 @@ pub(crate) fn main_source(variant: crate::shaders::SceneVariant) -> String {
     let source = if variant.lighting == Lighting::Clear {
         source
     } else {
-        overlay::with_reflection_gain(&source)
+        overlay::chart_consumer_source(&source, 1)
     };
     traced(
         source,

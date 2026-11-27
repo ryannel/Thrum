@@ -1,6 +1,8 @@
 //! Generation-bound LUTs and prepared portable pipelines. Encoding belongs to
 //! the caller's existing compiled graph; this owner never submits GPU work.
 
+use std::sync::atomic::{AtomicBool, Ordering};
+
 use crate::binding;
 use crate::error::RenderError;
 use crate::graph::{CompiledPass, PipelineKey};
@@ -19,6 +21,8 @@ use super::{
         SKY_VALID, TRANSPORT_VALID,
     },
 };
+mod chart_schedule;
+use chart_schedule::{ChartSchedule, ChartSubmission};
 mod uniform;
 use uniform::AtmosphereUniform;
 mod aerial_view;
@@ -56,6 +60,15 @@ pub(super) const SKY_MOTION_BYTES: u64 = size_of::<crate::records::SkyMotion>() 
 pub(super) const UNIFORM_BYTES: u64 = UNIFORM_LEN as u64;
 const _: () = assert!(super::reflection::MIP_COUNT == REFLECTION_MIPS);
 
+#[derive(Default)]
+struct OverlayWrite(AtomicBool);
+
+impl Clone for OverlayWrite {
+    fn clone(&self) -> Self {
+        Self(AtomicBool::new(self.0.load(Ordering::Relaxed)))
+    }
+}
+
 #[derive(Clone)]
 pub(crate) struct AtmospherePrepared {
     frame: AtmosphereFrame,
@@ -69,6 +82,17 @@ pub(crate) struct AtmospherePrepared {
     transmittance_view: wgpu::TextureView,
     aerial_sampler: wgpu::Sampler,
     uniform: wgpu::Buffer,
+    chart_uniform: wgpu::Buffer,
+    schedule: ChartSchedule,
+    submitted_chart_uniform: AtmosphereUniform,
+    pending_chart_uniform: AtmosphereUniform,
+    resident_sky_mapping: [f32; 4],
+    pending_sky_mapping: [f32; 4],
+    pending_charts: [ChartSubmission; 2],
+    overlay_write: OverlayWrite,
+    camera_cut: bool,
+    #[cfg(all(test, not(target_arch = "wasm32")))]
+    omit_reflection: bool,
     pub(super) aerosol: Option<wgpu::Buffer>,
     // The four chart stages, each under the chart it integrates.
     chart_stages: Charts<(wgpu::ComputePipeline, wgpu::BindGroup)>,
@@ -79,6 +103,7 @@ pub(crate) struct AtmospherePrepared {
     sky_pipeline: wgpu::RenderPipeline,
     sky_groups: [wgpu::BindGroup; 2],
     pub(super) overlay: Option<super::overlay::Target>,
+    chart_lighting: Option<(wgpu::ComputePipeline, wgpu::BindGroup)>,
     diffuse_pipeline: wgpu::ComputePipeline,
     diffuse_group: wgpu::BindGroup,
     aerial_pipeline: wgpu::ComputePipeline,
@@ -97,20 +122,29 @@ pub(crate) struct AtmospherePrepared {
 }
 
 impl AtmospherePrepared {
-    pub(crate) fn aerial_quality(&self) -> &crate::contribution::QualityKnob {
-        &self.aerial_quality.knobs()[0]
+    pub(crate) fn quality(&self) -> &[crate::contribution::QualityKnob] {
+        self.aerial_quality.knobs()
     }
 
-    pub(crate) fn set_aerial_quality(
+    pub(crate) fn set_quality(
         &mut self,
         name: &str,
         value: u32,
     ) -> Option<Result<(), crate::contribution::QualityError>> {
-        (self.aerial_quality().name == name).then(|| self.aerial_quality.set(name, value))
+        self.quality()
+            .iter()
+            .any(|knob| knob.name == name)
+            .then(|| self.aerial_quality.set(name, value))
     }
 
-    pub(crate) fn commit_aerial_quality(&mut self) {
+    pub(crate) fn commit_quality(&mut self) {
         self.aerial_quality.commit();
+    }
+
+    pub(crate) fn pending_chart_update(&self) -> Option<&'static str> {
+        self.pending_charts[0]
+            .whole_update
+            .map(chart_schedule::WholeUpdate::name)
     }
 
     pub(crate) fn pending_aerial_age(&self) -> u32 {
@@ -150,6 +184,10 @@ impl AtmospherePrepared {
         )
     }
 
+    #[expect(
+        clippy::too_many_lines,
+        reason = "one preparation owns all chart and reader bindings"
+    )]
     pub(crate) fn prepare(
         device: &crate::runtime::DeviceSite,
         queue: &wgpu::Queue,
@@ -162,6 +200,12 @@ impl AtmospherePrepared {
     ) -> Self {
         let uniform = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("atmosphere frame"),
+            size: UNIFORM_BYTES,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let chart_uniform = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("atmosphere chart snapshot"),
             size: UNIFORM_BYTES,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
@@ -241,11 +285,18 @@ impl AtmospherePrepared {
             aerosol::write(queue, &buffer, sample);
             buffer
         });
-        let chart_stages = prepare_charts(device, &uniform, &views, &sampler, &night, None);
+        let chart_stages = prepare_charts(
+            device,
+            [&uniform, &chart_uniform],
+            &views,
+            &sampler,
+            &night,
+            None,
+        );
         let aerosol_chart_stages = aerosol.as_ref().map(|buffer| {
             Box::new(prepare_charts(
                 device,
-                &uniform,
+                [&uniform, &chart_uniform],
                 &views,
                 &sampler,
                 &night,
@@ -274,11 +325,21 @@ impl AtmospherePrepared {
         );
         let overlay =
             world_light.map(|_| super::overlay::Target::new(device, queue, frame.view_volume()));
+        let chart_lighting = overlay.as_ref().zip(world_light).map(|(target, inputs)| {
+            super::overlay::prepare_chart_lighting(
+                device,
+                [&chart_uniform, &uniform, environment_light],
+                &views.sky_view,
+                &sampler,
+                target,
+                inputs,
+            )
+        });
         let (diffuse_pipeline, diffuse_group) =
             if let Some((inputs, target)) = world_light.zip(overlay.as_ref()) {
                 super::overlay::prepare_diffuse(
                     device,
-                    &uniform,
+                    &chart_uniform,
                     &views.sky_view,
                     &sampler,
                     environment_light,
@@ -286,7 +347,7 @@ impl AtmospherePrepared {
                     inputs,
                 )
             } else {
-                prepare_diffuse(device, &uniform, &views, &sampler, environment_light)
+                prepare_diffuse(device, &chart_uniform, &views, &sampler, environment_light)
             };
         let (aerial_pipeline, aerial_group) = prepare_aerial(
             device,
@@ -301,14 +362,16 @@ impl AtmospherePrepared {
         let reflection = if let Some(overlay) = &overlay {
             ReflectionPrepared::prepare(
                 device,
-                &uniform,
+                &chart_uniform,
                 &reflection_charts,
                 &sampler,
-                Some((&overlay.view, environment_light)),
+                Some((&overlay.view, environment_light, &overlay.chart_lighting)),
             )
         } else {
-            ReflectionPrepared::new(device, &uniform, &reflection_charts, &sampler)
+            ReflectionPrepared::new(device, &chart_uniform, &reflection_charts, &sampler)
         };
+        let schedule = ChartSchedule::default();
+        let pending_charts = schedule.plan(frame.into(), 1, false, false);
         let mut result = Self {
             frame,
             environment: super::environment::EnvironmentState::new(frame),
@@ -321,6 +384,17 @@ impl AtmospherePrepared {
             transmittance_view: views.transmittance.clone(),
             aerial_sampler,
             uniform,
+            chart_uniform,
+            schedule,
+            submitted_chart_uniform: AtmosphereUniform::new(frame, view, frame.camera_altitude_m),
+            pending_chart_uniform: AtmosphereUniform::new(frame, view, frame.camera_altitude_m),
+            resident_sky_mapping: [0.0; 4],
+            pending_sky_mapping: [0.0; 4],
+            pending_charts: [pending_charts; 2],
+            overlay_write: OverlayWrite::default(),
+            camera_cut: false,
+            #[cfg(all(test, not(target_arch = "wasm32")))]
+            omit_reflection: false,
             aerosol,
             chart_stages,
             aerosol_chart_stages,
@@ -330,6 +404,7 @@ impl AtmospherePrepared {
             sky_pipeline,
             sky_groups,
             overlay,
+            chart_lighting,
             diffuse_pipeline,
             diffuse_group,
             aerial_pipeline,
@@ -351,6 +426,14 @@ impl AtmospherePrepared {
                     invalidation: crate::contribution::QualityInvalidation::Age,
                     governor_steps: Some([1, 2, 4]),
                 },
+                crate::contribution::QualityKnob {
+                    name: "atmosphere.chart cadence".into(),
+                    effect: "Sun-following chart refresh interval in submitted frames",
+                    value: 1,
+                    range: 1..=8,
+                    invalidation: crate::contribution::QualityInvalidation::None,
+                    governor_steps: Some([4, 6, 8]),
+                },
             ])
             .expect("prepared aerial update intervals"),
             aerial_age: 0,
@@ -368,6 +451,10 @@ impl AtmospherePrepared {
 
     pub(crate) fn has_overlay(&self) -> bool {
         self.overlay.is_some()
+    }
+
+    pub(crate) fn chart_lighting(&self) -> Option<&wgpu::Buffer> {
+        self.overlay.as_ref().map(|overlay| &overlay.chart_lighting)
     }
 
     pub(crate) fn uses_haze_scale(&self) -> bool {
@@ -472,7 +559,7 @@ impl AtmospherePrepared {
         };
         queue.write_buffer(&self.sky_motion, 0, bytemuck::bytes_of(&motion));
         self.pending_sky = Some((*view, frame.toward_sun));
-        let record = AtmosphereUniform::new(frame, view, frame.camera_altitude_m);
+        let mut record = AtmosphereUniform::new(frame, view, frame.camera_altitude_m);
         let [a, b, c, d] = record.inverse_view_projection;
         self.pending_aerial_dependencies =
             [a, b, c, d, record.camera_altitude].map(|lane| lane.map(f32::to_bits));
@@ -489,6 +576,36 @@ impl AtmospherePrepared {
         } else {
             self.pending_aerial_age = age;
         }
+        self.camera_cut = view.camera_cut();
+        let charts = self.plan_charts(false);
+        self.pending_chart_uniform = if charts.is_live_snapshot() {
+            record
+        } else {
+            self.submitted_chart_uniform
+        };
+        queue.write_buffer(
+            &self.chart_uniform,
+            0,
+            bytemuck::bytes_of(&self.pending_chart_uniform),
+        );
+        self.pending_sky_mapping = if charts.writes(AtmosphereStage::SkyView) == Some(true) {
+            self.pending_chart_uniform.sky_mapping
+        } else {
+            self.resident_sky_mapping
+        };
+        record.sky_mapping = self.pending_sky_mapping;
+        self.pending_charts = [charts, self.plan_charts(true)];
+        self.overlay_write.0.store(false, Ordering::Relaxed);
+        if let Some(buffer) = self.chart_lighting() {
+            let mode = if self.quality()[1].value == 1 {
+                0_u32
+            } else if self.schedule.was_governed() {
+                1
+            } else {
+                2
+            };
+            queue.write_buffer(buffer, 0, bytemuck::bytes_of(&mode));
+        }
         queue.write_buffer(&self.uniform, 0, bytemuck::bytes_of(&record));
     }
 
@@ -496,7 +613,17 @@ impl AtmospherePrepared {
     /// Call after updating the atmosphere, with no active geometry or effects.
     #[cfg(all(test, not(target_arch = "wasm32")))]
     pub(crate) fn omit_geometry_products_for_sky_test(&mut self) {
-        self.validity |= AERIAL_VALID | REFLECTION_VALID | DFG_VALID;
+        self.validity |= AERIAL_VALID | DFG_VALID;
+        self.omit_reflection = true;
+    }
+
+    fn plan_charts(&self, overlay_written: bool) -> ChartSubmission {
+        self.schedule.plan(
+            self.frame.into(),
+            self.quality()[1].value,
+            self.camera_cut,
+            overlay_written && self.overlay.is_some(),
+        )
     }
 
     pub(crate) fn commit(&mut self) {
@@ -504,6 +631,12 @@ impl AtmospherePrepared {
             volume.submitted();
         }
         self.submitted_sky = self.pending_sky.take();
+        let submitted_charts = self.pending_charts[usize::from(*self.overlay_write.0.get_mut())];
+        self.schedule.submitted(&submitted_charts);
+        self.submitted_chart_uniform = self.pending_chart_uniform;
+        self.resident_sky_mapping = self.pending_sky_mapping;
+        self.camera_cut = false;
+        self.pending_charts = [self.plan_charts(false), self.plan_charts(true)];
         if self.validity & AERIAL_VALID == 0 {
             self.aerial_dependencies = self.pending_aerial_dependencies;
             self.aerial_sky_dirty = false;
@@ -528,6 +661,11 @@ impl AtmospherePrepared {
             && self.frame.medium_epoch.is_some() == frame.medium_epoch.is_some()
             && self.frame.overlay_exposure_adaptation == frame.overlay_exposure_adaptation
             && (!frame.variable_aerosol() || self.aerosol.is_some())
+    }
+
+    #[cfg(all(test, feature = "creation-counters"))]
+    pub(crate) fn reflection_witness(&self) -> &wgpu::Texture {
+        &self.reflection.cube
     }
 
     #[cfg(feature = "creation-counters")]
@@ -591,13 +729,24 @@ impl AtmospherePrepared {
     ) -> Result<(), RenderError> {
         // Cached dependencies retain their graph identity without adding empty
         // GPU passes or timestamp work to an ordinary frame.
-        let overlay_due = overlay_written
-            && self.overlay.is_some()
-            && matches!(
-                stage,
-                AtmosphereStage::Diffuse | AtmosphereStage::Reflection(_)
-            );
-        if !overlay_due && self.validity & stage.validity() != 0 {
+        if stage == AtmosphereStage::Diffuse {
+            self.overlay_write
+                .0
+                .store(overlay_written, Ordering::Relaxed);
+        }
+        #[cfg(all(test, not(target_arch = "wasm32")))]
+        if self.omit_reflection && matches!(stage, AtmosphereStage::Reflection(_)) {
+            return Ok(());
+        }
+        let due = if stage == AtmosphereStage::OverlayLighting {
+            self.quality()[1].value > 1
+                && (overlay_written || self.uses_haze_scale() || !self.schedule.was_governed())
+        } else {
+            self.pending_charts[usize::from(overlay_written)]
+                .writes(stage)
+                .unwrap_or_else(|| self.validity & stage.validity() == 0)
+        };
+        if !due {
             return Ok(());
         }
         let mut compute = pass
@@ -613,6 +762,13 @@ impl AtmospherePrepared {
                 return self.reflection.encode(stage, &mut compute);
             }
             AtmosphereStage::Diffuse => (&self.diffuse_pipeline, &self.diffuse_group, [1, 1, 1]),
+            AtmosphereStage::OverlayLighting => {
+                let (pipeline, group) = self
+                    .chart_lighting
+                    .as_ref()
+                    .ok_or(RenderError::GraphPassMismatch)?;
+                (pipeline, group, [1, 1, 1])
+            }
             AtmosphereStage::Aerial => (
                 &self.aerial_pipeline,
                 &self.aerial_group,
@@ -660,7 +816,7 @@ impl AtmospherePrepared {
 
 fn prepare_charts(
     device: &crate::runtime::DeviceSite,
-    uniform: &wgpu::Buffer,
+    [live, snapshot]: [&wgpu::Buffer; 2],
     views: &Charts<wgpu::TextureView>,
     sampler: &wgpu::Sampler,
     night: &NightProfile,
@@ -680,7 +836,11 @@ fn prepare_charts(
         prepare_compute(
             device,
             stage,
-            uniform,
+            if stage == AtmosphereStage::SkyView {
+                snapshot
+            } else {
+                live
+            },
             views,
             sampler,
             &shader,

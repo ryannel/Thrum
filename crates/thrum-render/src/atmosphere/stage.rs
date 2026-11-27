@@ -123,7 +123,7 @@ impl AtmosphereStage {
         const GROUND: ChartRead = read(Chart::Ground, 5);
         const SKY: ChartRead = read(Chart::SkyView, 1);
         match self {
-            Self::Transmittance | Self::Dfg => &[],
+            Self::Transmittance | Self::Dfg | Self::OverlayLighting => &[],
             Self::MultipleScattering => &[TRANSMITTANCE],
             Self::Ground | Self::Aerial => &[TRANSMITTANCE, MULTIPLE],
             Self::SkyView => &[TRANSMITTANCE, MULTIPLE, GROUND],
@@ -138,7 +138,11 @@ impl AtmosphereStage {
             Self::MultipleScattering => Some(Chart::MultipleScattering),
             Self::SkyView => Some(Chart::SkyView),
             Self::Ground => Some(Chart::Ground),
-            Self::Diffuse | Self::Aerial | Self::Dfg | Self::Reflection(_) => None,
+            Self::OverlayLighting
+            | Self::Diffuse
+            | Self::Aerial
+            | Self::Dfg
+            | Self::Reflection(_) => None,
         }
     }
 
@@ -151,6 +155,7 @@ impl AtmosphereStage {
             Self::Aerial => AERIAL_VALID,
             Self::Ground => GROUND_VALID,
             Self::Dfg => DFG_VALID,
+            Self::OverlayLighting => 0,
             Self::Reflection(_) => REFLECTION_VALID,
         }
     }

@@ -112,6 +112,8 @@ fn main() {
         #[cfg(feature = "proving")]
         solar_sweep: window_solar_sweep().unwrap_or_else(|error| report_capture_failure(&error)),
         #[cfg(feature = "proving")]
+        chart_jump: window_chart_jump().unwrap_or_else(|error| report_capture_failure(&error)),
+        #[cfg(feature = "proving")]
         exit_route_starts_paused: std::env::var_os("THRUM_SHOWCASE_ROUTE_START_PAUSED").is_some(),
         #[cfg(feature = "proving")]
         exit_content_report: std::env::var_os("THRUM_SHOWCASE_CONTENT_REPORT").map(Into::into),
@@ -185,6 +187,19 @@ fn window_solar_sweep() -> Result<Option<v1_game::WindowSolarSweep>, String> {
         return Err("invalid route solar sweep".to_owned());
     }
     Ok(Some((ticks, hours)))
+}
+
+#[cfg(all(target_os = "macos", feature = "proving"))]
+fn window_chart_jump() -> Result<Option<(u64, f32)>, String> {
+    let Ok(value) = std::env::var("THRUM_MAC_CHART_JUMP") else {
+        return Ok(None);
+    };
+    let (tick, hour): (u64, f32) =
+        serde_json::from_str(&value).map_err(|error| error.to_string())?;
+    if !(1..=1800).contains(&tick) || !(0.0..24.0).contains(&hour) {
+        return Err("invalid chart proof jump".to_owned());
+    }
+    Ok(Some((tick, hour)))
 }
 
 #[cfg(all(target_os = "macos", feature = "proving"))]
@@ -384,7 +399,7 @@ fn window_transition_proof() -> Result<Option<thrum_app::WindowTransitionProof>,
         output: output.into(),
         arm,
         tap: std::env::var_os("THRUM_MAC_TRANSITION_TAP").is_some(),
-        capture_cue: fullscreen_capture_cue(arm)?,
+        capture_cue: window_capture_cue(arm)?,
         scale_replay,
         fullscreen_output_scale: output_scale_setting("THRUM_MAC_OUTPUT_SCALE_PROOF_REGISTRY")?,
         governor: match record.as_deref() {
@@ -400,7 +415,7 @@ fn window_transition_proof() -> Result<Option<thrum_app::WindowTransitionProof>,
 }
 
 #[cfg(all(target_os = "macos", feature = "proving"))]
-fn fullscreen_capture_cue(
+fn window_capture_cue(
     arm: thrum_app::TransitionArm,
 ) -> Result<Option<([u64; 2], thrum_render::runtime::CaptureLimits)>, String> {
     let Ok(value) = std::env::var("THRUM_MAC_CAPTURE_CUE") else {
@@ -408,15 +423,17 @@ fn fullscreen_capture_cue(
     };
     let (ticks, staging_slots, cpu_buffers, mib): ([u64; 2], usize, usize, u64) =
         serde_json::from_str(&value).map_err(|error| error.to_string())?;
-    if arm != thrum_app::TransitionArm::Fullscreen
-        || std::env::var_os("THRUM_MAC_TRANSITION_TAP").is_none()
+    if !matches!(
+        arm,
+        thrum_app::TransitionArm::Fullscreen | thrum_app::TransitionArm::Route
+    ) || std::env::var_os("THRUM_MAC_TRANSITION_TAP").is_none()
         || ticks[0] > ticks[1]
         || ticks[1] - ticks[0] > 360
         || !(1..=32).contains(&staging_slots)
         || !(1..=96).contains(&cpu_buffers)
         || !(1..=4096).contains(&mib)
     {
-        return Err("invalid fullscreen capture cue or working-set limits".to_owned());
+        return Err("invalid route capture cue or working-set limits".to_owned());
     }
     Ok(Some((
         ticks,

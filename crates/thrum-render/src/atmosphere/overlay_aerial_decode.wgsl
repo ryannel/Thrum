@@ -4,7 +4,7 @@ fn aerial_uv(screen_position: vec4<f32>) -> vec2<f32> {
 // Decode the stored solar term and apply the registered haze scale once.
 fn aerial_radiance(scatter: vec3<f32>) -> vec3<f32> {
     return (scatter * (aerial_frame.sun_lux.w / SKY_LUT_GAIN) * aerial_frame.colour_pre_exposure.rgb)
-        * environment_light.sky_diffuse[1].w;
+        * chart_haze_scale();
 }
 
 fn composite_aerial(sample: AerialSample, surface: vec3<f32>, solar_scatter: vec3<f32>) -> vec3<f32> {

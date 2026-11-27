@@ -182,7 +182,7 @@ fn m2_history_commits_in_submission_order_with_two_in_flight_and_cancelled_acqui
             .encode_scene()
             .unwrap()
             .cancel_background();
-        assert!(host.history_reset_pending);
+        assert!(host.history_reset_pending.resets_history());
         let resumed = host
             .advance(Duration::ZERO)
             .unwrap()
@@ -231,7 +231,7 @@ fn m2_forced_submission_refusal_resets_without_publishing_the_candidate() {
         });
         assert!(result.is_err());
         assert_eq!(host.prepared.history_identity(), prior);
-        assert!(host.history_reset_pending);
+        assert!(host.history_reset_pending.resets_history());
         assert_eq!(host.pending_frames(), 0);
         let next = host
             .advance(Duration::ZERO)

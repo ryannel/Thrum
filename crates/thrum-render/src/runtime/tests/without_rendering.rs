@@ -218,7 +218,7 @@ fn destroyed_device_with_pending_work_does_not_block_authority_or_touch_presenta
             .collect();
         let history = (
             host.last_view_source,
-            host.history_reset_pending,
+            host.history_reset_pending.resets_history(),
             host.upload_reset_pending,
         );
         let before = (
@@ -266,7 +266,7 @@ fn destroyed_device_with_pending_work_does_not_block_authority_or_touch_presenta
         assert_eq!(
             (
                 host.last_view_source,
-                host.history_reset_pending,
+                host.history_reset_pending.resets_history(),
                 host.upload_reset_pending
             ),
             history

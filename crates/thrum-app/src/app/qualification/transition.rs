@@ -378,11 +378,13 @@ impl TransitionProof {
         let governor = self.governor.map(|_| {
             let samples = reply.samples.iter().flatten().map(|sample| json!({
                 "submission": sample.submission_order,
-                "tick": sample.tick,
+                "tick": sample.tick, "alpha": sample.presentation_alpha,
                 "observation_ns": sample.observation.as_nanos(),
                 "render_extent": sample.render_extent,
                 "gpu_ns": sample.gpu_pass_ns.as_ref().map(|gpu| gpu.sum() + sample.gpu_present_ns.unwrap_or_default()),
                 "gpu_pass_ns": sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::values),
+                "gpu_pass_order": sample.gpu_pass_ns.as_ref().map(|timing|
+                    timing.passes().iter().map(|pass| pass.name.as_ref()).collect::<Vec<_>>()),
                 "gpu_present_ns": sample.gpu_present_ns,
                 "native_segment": sample.native_segment.as_ref().map(|segment| json!({
                     "pass": segment.pass_name(),
@@ -469,6 +471,7 @@ fn governor_record(frame: &thrum_render::runtime::GovernorFrame) -> Value {
         "thermal": format!("{:?}", frame.display.thermal),
         "held": frame.mark.held(),
         "aerial_age": frame.aerial_age,
+        "chart_update": frame.chart_update,
         "knobs": frame.knobs.iter().map(|knob| (&knob.name, knob.value)).collect::<std::collections::BTreeMap<_, _>>(),
     })
 }

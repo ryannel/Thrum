@@ -1,6 +1,9 @@
 //! Actual pass observations: caching and cancelled recording must agree with
 //! submitted products, independently of the implementation's validity bits.
 
+#[cfg(feature = "creation-counters")]
+mod chart_cadence_gpu;
+
 use crate::pass_key::AtmosphereStage;
 use crate::{
     atmosphere::AtmosphereFrame,

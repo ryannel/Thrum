@@ -305,6 +305,13 @@ impl PreparedSynthetic {
             ),
         ];
         if matches!(lighting, FrameLighting::Atmosphere(_)) {
+            if scene.sky_overlay {
+                light_entries.push(binding::uniform(
+                    crate::atmosphere::overlay::CHART_LIGHTING_BINDING,
+                    wgpu::ShaderStages::FRAGMENT,
+                    crate::atmosphere::overlay::CHART_LIGHTING_BYTES,
+                ));
+            }
             for (binding, dimension) in [
                 (4, wgpu::TextureViewDimension::D2Array),
                 (5, wgpu::TextureViewDimension::D2Array),
@@ -412,6 +419,10 @@ impl PreparedSynthetic {
         let mut environment_usage = wgpu::BufferUsages::UNIFORM;
         if matches!(lighting, FrameLighting::Atmosphere(_)) {
             environment_usage |= wgpu::BufferUsages::STORAGE;
+            #[cfg(all(test, feature = "creation-counters"))]
+            {
+                environment_usage |= wgpu::BufferUsages::COPY_SRC;
+            }
         }
         // WebGPU initializes this buffer to zero. Only the atmosphere can write it.
         let environment_light = device.create_buffer(&wgpu::BufferDescriptor {

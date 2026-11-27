@@ -932,6 +932,17 @@ impl BrowserGame {
         self.page.shell.enable_governor()
     }
 
+    /// Stage the chart cadence selected by the realtime proof.
+    /// # Errors
+    /// Refuses a capture without a governed atmosphere.
+    #[cfg(feature = "proving")]
+    pub fn set_capture_chart_cadence(&mut self, cadence: u32) -> Result<(), JsValue> {
+        self.page
+            .shell
+            .set_quality_knob("atmosphere.chart cadence", cadence)
+            .map_err(|error| js_error(error.to_string()))
+    }
+
     /// Selections observed on the running exit scene's device and frame host.
     #[cfg(feature = "proving")]
     #[must_use]
@@ -988,6 +999,11 @@ impl BrowserGame {
                 "presented": sample.surface_presented, "observation_ns": sample.observation.as_nanos(),
                 "callback_cpu_ns": sample.wall.as_nanos(),
                 "gpu_pass_ns": sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::values),
+                "gpu_pass_order": sample.gpu_pass_ns.as_ref().map(|timings|
+                    timings.passes().iter().map(|pass| pass.name.as_ref()).collect::<Vec<_>>()),
+                "chart_cadence": sample.governor.as_ref().and_then(|quality| quality.knobs.iter()
+                    .find(|knob| knob.name == "atmosphere.chart cadence").map(|knob| knob.value)).unwrap_or(1),
+                "chart_update": sample.governor.as_ref().and_then(|quality| quality.chart_update),
                 "gpu_present_ns": sample.gpu_present_ns,
                 "timing_requested": sample.timing_requested, "timing_fault": sample.timing_fault,
             }));

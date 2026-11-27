@@ -3,7 +3,7 @@
 mod diffuse;
 mod filtered;
 mod night;
-mod observer;
+pub(in crate::atmosphere) mod observer;
 mod reflection;
 mod sun;
 use crate::{

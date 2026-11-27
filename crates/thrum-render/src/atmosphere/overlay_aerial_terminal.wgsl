@@ -4,5 +4,5 @@ fn environment_far_sky(direction: vec3<f32>, uv: vec2<f32>) -> vec3<f32> {
     let encoded = textureSampleLevel(environment_sky, aerial_sampler, sky_coordinate, 0.0);
     let night = vec3(encoded.a / NIGHT_LUT_GAIN);
     let solar = atmosphere.sun_lux.w * atmosphere.colour_pre_exposure.rgb;
-    return encoded.rgb / SKY_LUT_GAIN * solar * environment_light.sky_diffuse[1].w + night;
+    return encoded.rgb / SKY_LUT_GAIN * solar * chart_haze_scale() + night;
 }
