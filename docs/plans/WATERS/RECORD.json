@@ -1,14 +1,27 @@
 {
   "module": "WATERS",
   "design": {
-    "verdict": "ok",
-    "by": "review_limit",
-    "hash": "ce7e8248b82ea720deb86bb9e1cb1d39e8729bdcb536050dfdf1e86a0078d866",
-    "after": [
-      ".orchestrate/evidence/WATERS/design-review-41.md",
-      ".orchestrate/evidence/WATERS/design-review.md"
-    ],
-    "at": "2026-11-27T21:02:39Z"
+    "verdict": "changes",
+    "review": ".orchestrate/evidence/WATERS/design-review.md",
+    "commit": "4c9728a1cfa0e4e705c30abfaa3cd54b90e08153",
+    "hash": "956343eb9f34f99f509f1fefc2deed21c9398bef625d692a19a479e3feac909b",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6.2-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6.2-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.171.0-alpha.13.2",
+    "path": "headless",
+    "usage": {
+      "input": 103478,
+      "cached": 1480832,
+      "output": 7149,
+      "turns": 1
+    },
+    "at": "2026-11-27T22:05:07Z"
   },
   "work_packages": {
     "WP1": {
@@ -4767,7 +4780,7 @@
     },
     {
       "verdict": "changes",
-      "review": ".orchestrate/evidence/WATERS/design-review.md",
+      "review": ".orchestrate/evidence/WATERS/design-review-42.md",
       "commit": "9846c1572cbe4ecd4224b4ca7dba5ebe678c1610",
       "hash": "eeb6752aa0a97ffccbfaeff87d351ce8c39b9e6af5c5746053e50ccea809996d",
       "by": "review",
@@ -4787,6 +4800,16 @@
         "turns": 1
       },
       "at": "2026-11-27T20:58:22Z"
+    },
+    {
+      "verdict": "ok",
+      "by": "review_limit",
+      "hash": "ce7e8248b82ea720deb86bb9e1cb1d39e8729bdcb536050dfdf1e86a0078d866",
+      "after": [
+        ".orchestrate/evidence/WATERS/design-review-41.md",
+        ".orchestrate/evidence/WATERS/design-review.md"
+      ],
+      "at": "2026-11-27T21:02:39Z"
     }
   ]
 }
