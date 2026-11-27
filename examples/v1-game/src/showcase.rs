@@ -159,6 +159,8 @@ pub(crate) fn prepare_chart_showcase(
         .find(|placement| placement.mesh == "sphere")
         .ok_or("the chart proof needs the authored valley sphere")?;
     sphere.material.roughness = 1.0;
+    // Put the sphere to the right of the sky patch with the original scrub camera.
+    sphere.transform[3] = [-11.5, 242.0, 12.5, 1.0];
     let assets = CookedAssets::new(config).map_err(|error| format!("showcase: {error}"))?;
     Ok((camera, assets))
 }

@@ -351,7 +351,8 @@ async function runCapture() {
     if (chartProof) {
       const seconds = (timestamp - base) / 1000;
       const submitted = Number(game.presented()) - record.initial_report.presented;
-      const climb = chartTake === 'scrub' ? Math.max(0, Math.min(1, (submitted - 84) / 180)) : 0;
+      const climb = chartTake === 'scrub' && seconds < 4.9
+        ? Math.max(0, Math.min(1, (submitted - 72) / 156)) : 0;
       const eye = [0, 244.92267 + 108 * climb, 16 - 100 * climb];
       if (lastPresented !== submitted) {
         game.set_chart_capture_eye(...eye);
