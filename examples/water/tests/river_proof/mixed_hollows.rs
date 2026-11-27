@@ -128,7 +128,7 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
         ] {
             let ndc = projection.project_point3(glam::Vec3::from_array(point));
             assert!(ndc.x.abs() < 1.0 && ndc.y.abs() < 1.0, "{body} in view");
-            let x = ((ndc.x + 1.0) * 0.5 * f32::from(width)) as usize;
+            let x = (ndc.x.midpoint(1.0) * f32::from(width)) as usize;
             let y = ((1.0 - ndc.y) * 0.5 * f32::from(height)) as usize;
             let actual = depth[y * usize::from(width) + x];
             assert!(
