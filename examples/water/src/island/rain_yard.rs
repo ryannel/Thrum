@@ -604,7 +604,7 @@ impl Walk {
                 let depth = depth(foot);
                 // A thin sheet is struck by the heel. Deeper water wets a
                 // broader area of the foot before it reaches the bed.
-                let heel_radius = 0.039 + 0.55 * (depth - 0.020).clamp(0.0, 0.045);
+                let heel_radius = 0.039 + 0.33 * (depth - 0.020).clamp(0.0, 0.045);
                 impulse(foot, FOOT_IMPULSE_PER_METRE * depth, heel_radius, 0);
                 self.next_step += STEP_SECONDS;
                 self.right_foot = !self.right_foot;

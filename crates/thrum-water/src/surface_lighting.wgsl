@@ -53,7 +53,7 @@
     let fresnel=clamp(reflected.w,0.0,1.0);
     // A dielectric interface splits the reflected and transmitted paths by R.
     // The environment lends its filtered radiance; its opaque-material DFG is not R.
-    let paths=water_optical_paths(row,input.world,vec2<u32>(input.clip.xy),n,v,variance,reflected.rgb,fresnel);
+    let paths=water_optical_paths(row,input.world,vec2<u32>(input.clip.xy),n,v,variance,reflected.rgb,fresnel,hollow_surface);
     var light=paths.reflected;
     // Deep-water in-scatter, driven only by the shared hemispherical irradiance.
     let l=environment_sun_direction();
@@ -97,7 +97,7 @@
         }
         // The unresolved solar lobe keeps a graded peak even on glassy water.
         // Limit its response before lent irradiance so cloud shade stays linear.
-        let peak = select(0.55, mix(0.045, 0.25, smoothstep(0.14, 0.45, l.y)), hollow_surface);
+        let peak = select(0.55, mix(0.025, 0.25, smoothstep(0.14, 0.45, l.y)), hollow_surface);
         light += sunlight * (glint / (1.0 + glint / peak));
     } else {
         light+=sunlight*d*gv*gl*fh/(4.0*nv+0.00001);

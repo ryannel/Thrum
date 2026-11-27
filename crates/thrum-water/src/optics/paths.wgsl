@@ -381,7 +381,7 @@ fn scene_reflection(
 
 fn water_optical_paths(
     row: SurfaceRow, world: vec3<f32>, pixel: vec2<u32>, n: vec3<f32>, v: vec3<f32>,
-    variance: f32, sky: vec3<f32>, fresnel: f32,
+    variance: f32, sky: vec3<f32>, fresnel: f32, hollow_surface: bool,
 ) -> OpticalPaths {
     let mask = optics_mask(pixel);
     let reach = optics.reach_slope_scene.x;
@@ -397,7 +397,13 @@ fn water_optical_paths(
     }
     let depth = max(0.0, world.y - row.bed);
     let rough_limit = optics.downwelling_mirror.w;
-    let still = 1.0 - smoothstep(rough_limit * 0.5, rough_limit, sqrt(variance));
+    var still = 1.0 - smoothstep(rough_limit * 0.5, rough_limit, sqrt(variance));
+    if hollow_surface {
+        // A steep ripple can send the single scenery ray along the bed,
+        // where it jumps between lit banks and empty depth. Fade the
+        // uncertain scenery sample into the filtered environment there.
+        still *= slope_weight * smoothstep(0.02, 0.22, reflected_ray.y);
+    }
     var body = no_reflection(reach);
     if reflected.distance > 0.0 {
         let along = dot(reflected.point - world, reflected_ray);
