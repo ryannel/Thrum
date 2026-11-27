@@ -310,3 +310,10 @@
   matched frames to zero. The one-sample chart guard, regular river checks, both 420-tick tidal
   comparisons, unchanged channel checks, hardware Chrome and paired cost record passed.
   [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/basin-shoreline/README.md)
+
+- 2026-11-27 WP4 review fix. The hollows vertex return initializes shared fields by name,
+  so its optional sheet data has the correct zero value in either surface layout. The
+  Metal guard reproduced the original validation error and now reads the expected submitted
+  depths from both the chart and its separate puddle. The puddle reading is identical in
+  both arms. The three existing hollows tests and the configured WP4 item checks passed.
+  [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/mixed-hollows/README.md)
