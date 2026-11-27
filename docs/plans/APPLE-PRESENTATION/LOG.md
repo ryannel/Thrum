@@ -798,3 +798,12 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
   native mode changes took one generation and one configure each. The device test verified allocation, draw and
   presentation sizes, history reset and detached creation in both directions. The final visual and refresh-rate
   judgment belongs to WP17. [WP18 evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP18/README.md)
+
+- 2026-11-27 Planner: the main-branch check `long-tests` failed at `c6734fe1b`, last passing at `3d1f03509`.
+  WP18's output-scale device test has failed there since `05a420f3d`, the commit that added it. The engine is
+  right: the detached build makes its bind groups on the worker. The test loses them from the creation trace
+  when another test of its binary runs beside it, because `tracing` caches a call site's interest for the whole
+  process. D18.2's check runs the test alone, so it passed. New WP19, before WP18's rework, makes the test pass
+  in the whole binary with its assertions kept (design, WP19.1). No assumption was added and no other module's
+  file changed.
+  [The runs](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP19-plan/README.md)

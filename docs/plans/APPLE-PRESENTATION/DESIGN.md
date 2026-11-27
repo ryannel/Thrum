@@ -69,7 +69,9 @@ retake as it was taken. It changes no mechanism but the judge of pacing. The 27 
 [what WP17 does](#reaching-the-full-refresh-at-full-screen-wp17), and lets a quality knob hold one value with
 the governor off and another at its first tier ([the governor's knobs](#the-governors-knobs-and-state-wp7)).
 It changes nothing WP1 to WP16 built or proved: until WP17 is Done a window resolves the extent and the frame
-rate it resolves today.
+rate it resolves today. A later revision that day adds
+[the generation tests in one process](#the-generation-tests-in-one-process-wp19), for WP19, after the
+main-branch check `long-tests` failed on WP18's device test. It changes a test and no mechanism of the engine.
 
 ## Purpose and scope
 
@@ -1189,6 +1191,39 @@ the output scale.
 the shadow passes, which is the performance phase's work. They add no interface drawn at the backing size: V1
 has none in the frame, and an interface a later game draws over a 3D scene at a reduced output scale is scaled
 with the picture until its module proposes otherwise.
+
+### The generation tests in one process (WP19)
+
+Added 27 November 2026, after the main-branch check `long-tests` failed at `c6734fe1b`. It last passed at
+`3d1f03509`. The failing test is WP18's `output_scale_switches_the_scene_and_metal_surface_together`, in
+`crates/thrum-render/tests/generation_transition/metal.rs`. It has failed in that check since `05a420f3d`,
+the commit that added it: between that commit and `c6734fe1b` nothing the test binary builds from changed
+but a renamed default in two test files.
+[The planner's record](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP19-plan/README.md) has the runs.
+
+**The engine is right and the test is wrong.** A detached build makes its bind groups on the preparation
+thread, as [the lifecycle](#the-lifecycle-of-a-generation-build-wp4) says. The test does not always see them.
+Run alone in its process, or with one test thread, it passes every time. Run beside another test of its file
+on another thread, it fails most runs, with the worker's bind group missing from the creation trace. D18.2's
+check runs it alone under nextest, so WP18's proof passed. `./dev long-tests` runs a binary behind a Cargo
+feature whole in one process with `cargo test`, so the main tier failed.
+
+**Why the trace loses the span.** The creation trace, `thrum_test_support::creation_trace`, reads wgpu's
+creation spans through `tracing`, on a dispatcher the test installs on its own threads. `tracing` decides once
+for the whole process whether a span's call site is on. While one dispatcher is registered, it asks the
+default dispatcher of whichever thread reaches the call site first (tracing-core 0.1.36,
+`Rebuilder::JustOne`). Another test's thread has none, so a call site that thread reaches first is off for
+every thread until another dispatcher registers. With a second dispatcher registered and kept alive, and
+nothing else changed, the test passed beside each of its file's tests, 32 runs of 32.
+
+**The rule.** A test in this file gives the same answer whichever tests share its process, because it is
+proved both ways: alone under nextest by its item, and whole with `cargo test` by the main tier. The file's
+four older tests hold its device mutex for their whole body, which is how they take turns under `cargo test`
+(`.config/nextest.toml` records that the mutex still holds there). The output-scale test takes no turn. With
+it holding the mutex, the whole binary passed 12 runs of 12 on 16 threads. WP19 makes the test meet the rule
+and keeps everything it asserts: that the worker created a texture, a view and a bind group, and that the
+render thread created nothing but its control, in both directions of the switch. Nothing under
+`crates/thrum-render/src` changes. A test WP18's rework adds to this file meets the rule too.
 
 ### Reaching the full refresh at full screen (WP17)
 

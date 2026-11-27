@@ -85,6 +85,16 @@ Build in the order below.
 ## WP11 Apple tile with MetalFX and EDR is compared with portable TAAU on the route, and each clause of G4 is proved: done
 [review](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11-review.md)
 
+## WP19 The long tests pass again: the output-scale device test passes beside the other tests of its binary
+
+Read [the generation tests in one process](DESIGN.md#the-generation-tests-in-one-process-wp19) first. It comes
+before WP18's rework because the main-branch check `long-tests` fails until it merges.
+[The planner's record](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP19-plan/README.md) has the runs that
+show the fault and two scratch changes that each cleared it. The creation trace the test reads is in
+`crates/thrum-test-support`, which `TEST-SUPPORT` owns and `CLOUDS`' depth contract test in the game also
+reads. This work package needs no change there. WP18's rework edits the same test file, so merge one after the
+other.
+
 ## WP18 A launch setting draws the valley below the window's pixel size and the display scales it to fill, with no hitch at the change
 
 Read [the output scale](DESIGN.md#the-output-scale-wp18) and

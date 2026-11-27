@@ -1239,6 +1239,27 @@
       "quality_bar": "The whole presentation path at the level of a shipped high-end Mac game: sharp and stable at the display's full resolution, highlights above SDR white in the frame the XDR display's surface is given, no hitch or compile during play, and smooth at the display's full refresh, with the Apple path's win over the portable one measured and not assumed. At full screen this work package is judged at a steady, evenly paced 60 Hz, which is an interim rate and not the bar: the display's full 120 Hz there stays part of the bar, is recorded as owed, and is WP17's to reach."
     },
     {
+      "id": "WP19",
+      "name": "The long tests pass again: the output-scale device test passes beside the other tests of its binary",
+      "status": "not_started",
+      "depends_on": [],
+      "quality_bar": "A test suite as dependable as a shipped engine's: a proof gives the same answer whichever tests run beside it, and a fix to a test weakens nothing the test proves.",
+      "items": [
+        {
+          "id": "WP19.1",
+          "statement": "`output_scale_switches_the_scene_and_metal_surface_together`, in the `generation_transition` test binary of `thrum-render`, passes whichever tests share its process, and asserts what it asserted. Run whole in one process on 16 test threads, as `./dev long-tests` runs a binary, every test of the binary passes in each of ten runs in a row. Run alone in a process of its own, as D18.2's check runs it, the test passes. For 100% to 75% and for 75% back to 100%, the test still fails unless the detached build's worker thread created a texture, a view and a bind group, and unless the render thread's creations equal its control. Nothing under `crates/thrum-render/src` changes. Guard: a device test; only a device shows what each thread creates.",
+          "check": "for i in 1 2 3 4 5 6 7 8 9 10; do THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --features creation-counters --test generation_transition -- --test-threads=16 || exit 1; done; THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test generation_transition -E 'test(/output_scale/)' --no-tests=fail",
+          "lock": "gpu",
+          "ask": "Read the change and the test. 1. For each direction of the switch, does the test assert that the worker thread's creations include a texture, a view and a bind group, and that the render thread's creations equal its control, with no branch that skips either assertion in a whole-binary run? 2. Is every changed file a test or a test-support file, with nothing changed under `crates/thrum-render/src`?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
       "id": "WP18",
       "name": "A launch setting draws the valley below the window's pixel size and the display scales it to fill, with no hitch at the change",
       "status": "in_progress",
