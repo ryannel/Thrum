@@ -34,7 +34,8 @@ const NEW: [u32; 2] = [96, 64];
 const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
 // The device-loss arm tears down a Metal device while work is held. Run these
 // proofs one at a time so overlapping test devices cannot disturb the loss
-// and capture observations.
+// and capture observations. This also keeps other tests from caching wgpu
+// call sites as disabled while the output-scale test traces creations.
 #[cfg(target_os = "macos")]
 static METAL: Mutex<()> = Mutex::new(());
 
@@ -660,6 +661,9 @@ fn output_scale_switches_the_scene_and_metal_surface_together() {
         synthetic::RenderScale::{Half, Native, Percent67, Percent75},
     };
 
+    let _metal = METAL
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let Some(thrum_test_support::Opened { gpu, device, queue, .. }) = thrum_test_support::open(
         "output scale on Metal",
         Some(wgpu::Backend::Metal),
