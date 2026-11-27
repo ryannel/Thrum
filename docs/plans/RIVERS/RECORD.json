@@ -1058,12 +1058,12 @@
       }
     },
     "WP6": {
-      "definitions": "97f1a37bd7d8921e14a45794321e2ae2f5703af321f961e440c75a23ac5c13ab",
+      "definitions": "e6869cfb95457c51542558332bd69b740993db4b77ea219a0688b8c202ff2409",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Lead ruling for RIVERS WP6 (blocked, needs feedback): park the flood-gauge waterfall look. Three bounded attempts (optic",
-        "at": "2026-11-27T12:50:26Z"
+        "task": "The design review of RIVERS at .orchestrate/evidence/RIVERS/design-review.md asked for changes, with its 4 Must Fix find",
+        "at": "2026-11-27T13:34:05Z"
       }
     },
     "WP7": {
@@ -1322,12 +1322,12 @@
       }
     },
     "WP11": {
-      "definitions": "2e072cf69aa8ebc945f52054dcd07726d062d25451c92f340362c11d8be1ad8a",
+      "definitions": "f995c66084659fbc32b94e8f3c4be192e7fe4d9c8ec25162630a8d0e8a5d7308",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Lead ruling for RIVERS WP6 (blocked, needs feedback): park the flood-gauge waterfall look. Three bounded attempts (optic",
-        "at": "2026-11-27T12:50:26Z"
+        "task": "The design review of RIVERS at .orchestrate/evidence/RIVERS/design-review.md asked for changes, with its 4 Must Fix find",
+        "at": "2026-11-27T13:34:05Z"
       },
       "ends_stretch": true
     }
@@ -1400,11 +1400,15 @@
     {
       "task": "Lead ruling for RIVERS WP6 (blocked, needs feedback): park the flood-gauge waterfall look. Three bounded attempts (optics/lighting tuning, island profile tuning, separating strands with own contacts; see .claude/worktrees/rivers/.orchestrate/evidence/RIVERS/WP6-handoff.md and WP6/strand-pass/README.md, branch build/rivers at 7bafabb80) all left the flood side and bank views reading as a curtain with hard strand ends. Split WP6 so it can close on what passes: the brink rule, WP6.12, the trickle and middle-gauge falls, the pool contact, the dry transition and the nine automated items. Move only the flood-gauge curtain and hard-ends cues (from WP6.4 and WP6.5) into a new later RIVERS work package: a spike that first researches how shipped high-end games render heavy waterfalls today (modern techniques only) and picks an approach before building. Keep it last among RIVERS work and not blocking SHOWCASE. Leave WP6 ready to resume and merge.",
       "at": "2026-11-27T12:50:26Z"
+    },
+    {
+      "task": "The design review of RIVERS at .orchestrate/evidence/RIVERS/design-review.md asked for changes, with its 4 Must Fix findings.",
+      "at": "2026-11-27T13:34:05Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T12:50:26Z"
+    "at": "2026-11-27T13:34:05Z"
   },
   "design_history": [
     {
