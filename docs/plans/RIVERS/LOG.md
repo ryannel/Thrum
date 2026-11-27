@@ -364,8 +364,13 @@
   through a trickle and two running levels. The late sheet supplies the same depth and colour read by
   the pool's gather. The sheet's runtime spacing is listed as `river.fall_path_spacing` in
   millimetres with no history invalidation. Plunge power feeds the shared foam stocks and its
-  departure-time pattern drives interaction impulses. The scene uses a wave share of 0.5.
+  departure-time pattern drives interaction impulses. The scene uses a wave share of 0.75.
 - 2026-11-27 WP6. Metal carriage trials put each of the two ring sets within 0.33 m after five
   seconds. Fivefold riffle forcing moved the pool centre by at most 0.024 m. The blend retained
   98.5% of the still-water ring energy on the straight and 77.6% on the bend. Those five-second
   trials run in the main tier. The smaller budget and uniform-current comparisons run at merge.
+- 2026-11-27 WP6. The Metal plunge readback showed 56 mm at the first Lake station and 11 mm
+  another 6 m downstream. The overhead Sun glint take shows the same class of crest crossing the
+  pool and fading into the shallows. Hardware Chrome also reads the sheet's submitted motion and
+  pool foam. Wet 1440p completion brackets remained around 300 ms under shared load.
+  [Target evidence](../../../.orchestrate/evidence/RIVERS/WP6/README.md)

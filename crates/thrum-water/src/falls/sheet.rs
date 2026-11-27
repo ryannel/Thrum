@@ -458,7 +458,7 @@ fn stitch(vertices: &mut Vec<Vertex>, top: [Vertex; 3], bottom: [Vertex; 3]) {
     }
 }
 
-// The thin crown above the sump belongs to the visible fall. The foam and
+// The thin crown above the pool belongs to the visible fall. The foam and
 // wave fields still receive the original impact at the receiving level.
 fn splash(vertices: &mut Vec<Vertex>, foot: [Vertex; 3]) {
     use glam::{Vec2, Vec3};
