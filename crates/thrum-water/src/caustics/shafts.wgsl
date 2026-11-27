@@ -35,19 +35,29 @@ fn march_shafts(@builtin(global_invocation_id) slot: vec3<u32>) {
     let level = select(water.level_dt_reset.x, column.x, column.w > 0.0);
     let ray = normalize(lens_point(uv) - camera);
     let reach = shaft_range(uv, camera, ray, level);
+    // Downward paths can enter the mean water plane in front of a split lens.
+    // March only the submerged interval, including as the entry approaches 0.
+    var entry = 0.0;
+    if camera.y >= level {
+        entry = reach;
+        if ray.y < -0.000001 {
+            entry = clamp((level - camera.y) / ray.y, 0.0, reach);
+        }
+    }
+    let length_m = reach - entry;
     let sun = environment_sun_direction();
     let surface = vec3(camera.x, level, camera.z);
     let beam = shaft_beam(ray, surface);
     let count = shaft_mapping.quality.z;
-    let step = reach / f32(max(count, 1u));
+    let step = length_m / f32(max(count, 1u));
     let sun_slope = water_mean_sun_slope(sun);
     let footprint = step * length(ray.xz + ray.y * sun_slope);
     let noise = fract(52.9829189 * fract(dot(vec2<f32>(slot.xy), vec2(0.06711056, 0.00583715))));
     var result = vec3(0.0);
-    if shaft_mapping.window.w > 0.0 && camera.y < level && reach > 0.0 {
+    if shaft_mapping.window.w > 0.0 && length_m > 0.0 {
         for (var index = 0u; index < count; index++) {
             let t = (f32(index) + noise) * step;
-            let point = camera + ray * t;
+            let point = camera + ray * (entry + t);
             let column = caustic_column(point.xz, window, shaft_columns);
             let level_here = select(level, column.x, column.w > 0.0);
             let depth = max(0.0, level_here - point.y);
