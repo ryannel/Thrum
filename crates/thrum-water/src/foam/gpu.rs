@@ -125,7 +125,7 @@ fn transport_source(river: bool, plunge: bool) -> String {
 }
 
 impl Foam {
-    fn source(surf: bool) -> String {
+    fn sample_prefix(surf: bool) -> String {
         let [fine, coarse] = SPACING;
         let handoff_cells = if surf { 2 * CELLS } else { 1 };
         format!(
@@ -134,12 +134,24 @@ impl Foam {
              const FOAM_HANDOFF_CELLS: u32 = {handoff_cells}u;\nconst FOAM_HANDOFF: bool = {surf};\n\
              const HULL_LIMIT: u32 = {HULL_LIMIT}u;\nconst COMPONENT_LIMIT: u32 = {COMPONENT_LIMIT}u;\n"
         ) + include_str!("../column/records.wgsl")
+    }
+
+    fn source(surf: bool) -> String {
+        Self::sample_prefix(surf)
             + include_str!("../column.wgsl")
+            + include_str!("sample_bindings.wgsl")
+            + include_str!("sample_column.wgsl")
             + include_str!("sample.wgsl")
     }
 
     pub(crate) fn sample_source(&self) -> String {
         Self::source(self.prepare_shore_births.is_some())
+    }
+
+    pub(crate) fn stock_source(&self) -> String {
+        Self::sample_prefix(self.prepare_shore_births.is_some())
+            + include_str!("sample_bindings.wgsl")
+            + include_str!("sample.wgsl")
     }
 
     pub(crate) fn sample_layout() -> [wgpu::BindGroupLayoutEntry; 2] {
