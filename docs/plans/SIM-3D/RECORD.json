@@ -1,0 +1,35 @@
+{
+  "module": "SIM-3D",
+  "design": null,
+  "work_packages": {
+    "WP1": {
+      "definitions": "3247dce7550c8890f26a3adf69e3a9762a25863a8e859d49880ef7fe496a13bc",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module SIM-3D. It needs: SIM-2D WP3. It serves the approved Game SDK (owner approved 27 Nov; scope question 1: 3D c",
+        "at": "2026-11-27T22:02:25Z"
+      }
+    },
+    "WP2": {
+      "definitions": "48754d6c0fdb411d62c8b5a94b3e384aa7b894f1cb83587d08654a1e89eb5ce7",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module SIM-3D. It needs: SIM-2D WP3. It serves the approved Game SDK (owner approved 27 Nov; scope question 1: 3D c",
+        "at": "2026-11-27T22:02:25Z"
+      },
+      "ends_stretch": true
+    }
+  },
+  "tasks": [
+    {
+      "task": "Plan module SIM-3D. It needs: SIM-2D WP3. It serves the approved Game SDK (owner approved 27 Nov; scope question 1: 3D collision queries and a kinematic character move, no rigid bodies, deterministic for input-only networking); read docs/plans/GAME-SDK/DESIGN.md for what the SDK expects of it.",
+      "at": "2026-11-27T22:02:25Z"
+    }
+  ],
+  "planner": {
+    "host": "claude",
+    "at": "2026-11-27T22:02:25Z"
+  }
+}

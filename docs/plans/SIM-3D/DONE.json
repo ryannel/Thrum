@@ -44,7 +44,7 @@
         },
         {
           "id": "WP1.3",
-          "statement": "Rays. A ray against a sphere, a capsule, a cuboid, a turned cuboid and a triangle gives the hand-worked fraction, point and normal for: a hit from outside; a start inside a sphere, a capsule or a cuboid, which is a hit at fraction zero with the normal of the shallowest way out; a ray that stops short of the shape; one that points away from it; one that passes beside it; a ray of zero length, inside a shape and outside it; a triangle met from each side, with the normal toward the ray's start each time; and a triangle met edge-on and a triangle of no area, which are misses. Each normal's length is within 2⁻²⁰ of one. Every case is asserted at the origin and at a corner of the working range. Guard: CPU tests, in `./dev check`.",
+          "statement": "Rays. A ray against a sphere, a capsule, a cuboid, a turned cuboid and a triangle gives the hand-worked fraction, point and normal for: a hit from outside; a start inside a sphere, a capsule or a cuboid, which is a hit at fraction zero with the normal of the shallowest way out; a ray that stops short of the shape; one that points away from it; one that passes beside it; a ray of zero length, inside a shape and outside it; a triangle met from each side, with the normal toward the ray's start each time; and a triangle met edge-on and a triangle of no area, which are misses. Each normal's length is within 2\u207b\u00b2\u2070 of one. Every case is asserted at the origin and at a corner of the working range. Guard: CPU tests, in `./dev check`.",
           "check": "cargo test --locked --offline -p thrum-sim3d --test it ray::",
           "reads": [
             "crates/thrum-sim3d/",
@@ -60,7 +60,7 @@
         },
         {
           "id": "WP1.4",
-          "statement": "Sweeps, for a sphere, a capsule and a cuboid moved against each of the three and against a triangle: twelve pairs. In hand-worked cases for each pair (head-on; grazing, where the path passes within half the contact tolerance; passing by, where it stays twice the tolerance clear; onto a corner and onto an edge of a cuboid and of a triangle; and a triangle met from each side): (1) passing by reports nothing and every other case reports a hit; (2) at a hit, the mover set at its start plus the motion times the fraction does not overlap what it struck, and its distance from it is at most the contact tolerance; (3) the normal's length is within 2⁻²⁰ of one and it points from what was struck toward the mover; (4) a sweep that starts overlapping reports fraction zero with the hand-worked shallowest way out, and one that starts within the tolerance and moves along the surface or away from it reports nothing; (5) a motion of zero length reports a hit exactly where the overlap test is true; (6) a motion 10,000 times the mover's size through a triangle, and through a flat cuboid, reports the hit; (7) with both shapes moving, the answer is that of the mover swept by the difference of the two motions against the other standing still. Every case is asserted at the origin and at a corner of the working range. Guard: CPU tests, in `./dev check`.",
+          "statement": "Sweeps, for a sphere, a capsule and a cuboid moved against each of the three and against a triangle: twelve pairs. In hand-worked cases for each pair (head-on; grazing, where the path passes within half the contact tolerance; passing by, where it stays twice the tolerance clear; onto a corner and onto an edge of a cuboid and of a triangle; and a triangle met from each side): (1) passing by reports nothing and every other case reports a hit; (2) at a hit, the mover set at its start plus the motion times the fraction does not overlap what it struck, and its distance from it is at most the contact tolerance; (3) the normal's length is within 2\u207b\u00b2\u2070 of one and it points from what was struck toward the mover; (4) a sweep that starts overlapping reports fraction zero with the hand-worked shallowest way out, and one that starts within the tolerance and moves along the surface or away from it reports nothing; (5) a motion of zero length reports a hit exactly where the overlap test is true; (6) a motion 10,000 times the mover's size through a triangle, and through a flat cuboid, reports the hit; (7) with both shapes moving, the answer is that of the mover swept by the difference of the two motions against the other standing still. Every case is asserted at the origin and at a corner of the working range. Guard: CPU tests, in `./dev check`.",
           "check": "cargo test --locked --offline -p thrum-sim3d --test it sweep::",
           "reads": [
             "crates/thrum-sim3d/",
@@ -160,7 +160,9 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
     },
     {
       "id": "WP2",
@@ -300,7 +302,9 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
     }
   ]
 }
