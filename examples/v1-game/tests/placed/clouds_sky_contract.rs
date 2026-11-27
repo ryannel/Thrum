@@ -12,15 +12,14 @@ use thrum_cloud_model::Parameters;
 use thrum_render::{
     present::SurfaceProfile,
     runtime::{CaptureLimits, FrameConfig, SurfaceOutput},
-    synthetic::{CaptureSource, DisplayOverlay},
+    synthetic::CaptureSource,
 };
 use thrum_test_support::{
     Opened, Profile, Restriction,
     readback::{self, Mip},
 };
 use v1_game::{
-    CloudSelection, GameHost, GameReconstruction, GameSetup, GroundWeather, SceneCamera,
-    clouds::WeatherPreset,
+    CloudSelection, GameHost, GameSetup, GroundWeather, SceneCamera, clouds::WeatherPreset,
 };
 
 fn open(label: &str) -> Option<Opened> {
@@ -52,6 +51,7 @@ fn read(gpu: &Opened, texture: &wgpu::Texture) -> Vec<u8> {
     readback::texture(&gpu.device, &gpu.queue, texture, Mip::level(0), ..)
 }
 
+#[cfg(target_os = "macos")]
 fn half(bytes: &[u8], pixel: usize, channel: usize) -> f32 {
     let offset = pixel * 8 + channel * 2;
     half::f16::from_le_bytes([bytes[offset], bytes[offset + 1]]).to_f32()
@@ -208,12 +208,17 @@ fn inside_upper_cloud_compose_interpolates_only_sky_stops() {
     }
 }
 
+#[cfg(target_os = "macos")]
 const REACTIVE_EXTENT: [u32; 2] = [96, 64];
+#[cfg(target_os = "macos")]
 const REACTIVE_EYE: [f32; 3] = [0.0, 40.0, 0.0];
 // R8Unorm coverage allows one quantisation step and a half-float readback.
+#[cfg(target_os = "macos")]
 const MASK_TOLERANCE: f32 = 0.005;
+#[cfg(target_os = "macos")]
 const CHANGE_STEP: f32 = 0.08;
 
+#[cfg(target_os = "macos")]
 struct ReactiveFrame {
     stops: Vec<u8>,
     fronts: Vec<u8>,
@@ -222,6 +227,7 @@ struct ReactiveFrame {
     history: bool,
 }
 
+#[cfg(target_os = "macos")]
 impl ReactiveFrame {
     fn pixels() -> impl Iterator<Item = (u32, u32)> {
         (2..REACTIVE_EXTENT[1] - 2).flat_map(|y| (2..REACTIVE_EXTENT[0] - 2).map(move |x| (x, y)))
@@ -285,6 +291,7 @@ impl ReactiveFrame {
     }
 }
 
+#[cfg(target_os = "macos")]
 fn reactive_frame(
     gpu: &Opened,
     host: &mut Host,
@@ -308,6 +315,7 @@ fn reactive_frame(
 }
 
 #[test]
+#[cfg(target_os = "macos")]
 fn reactive_mask_distinguishes_held_reset_changing_and_drifting_clouds() {
     let Some(gpu) = open("Ground sky reactive coverage at the reconstructor") else {
         return;
@@ -329,8 +337,8 @@ fn reactive_mask_distinguishes_held_reset_changing_and_drifting_clouds() {
             GameSetup {
                 clouds: CloudSelection::Ground(GroundWeather::Clear),
                 cloud_weather: weather,
-                reconstruction: GameReconstruction::Taau,
-                display_overlay: DisplayOverlay::TemporalInputs,
+                reconstruction: v1_game::GameReconstruction::Taau,
+                display_overlay: thrum_render::synthetic::DisplayOverlay::TemporalInputs,
                 ..GameSetup::default()
             },
             REACTIVE_EXTENT,

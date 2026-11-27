@@ -1,6 +1,5 @@
 //! The real V1 after-opaque trace sees a foreground occluder uncover a farther surface.
 
-#[cfg(target_os = "macos")]
 mod clouds_sky_contract;
 #[expect(dead_code, reason = "the placement tests share this fixture")]
 mod fixture;
