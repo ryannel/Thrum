@@ -2015,3 +2015,26 @@
   the planner. WP16.6, WP16.7, WP16.8 and WP16.11 remain open.
   [Optics comparison](../../../.orchestrate/evidence/WATERS/WP16/replanned-visuals/README.md#s3-visibility-sensitivity)
   · [Handoff](../../../.orchestrate/evidence/WATERS/WP16-handoff.md).
+
+## WP16 receiver and depth follow-up
+
+- 2026-11-27 The final Metal tour holds the split-lens cases, the sea at
+  20 m and the lake at its bed through dawn, noon and twilight. The dawn
+  checkpoints at 1/30 s show the waterline advancing over a registered
+  hull while its refracted image bends in the surface window. The
+  elapsed-time tours keep their actual frame gaps. WP16.8 passed.
+  [Depth and crossing evidence](../../../.orchestrate/evidence/WATERS/WP16/finish/waterline/README.md).
+- The raised float, broader crown and finer-grid looks still leave
+  separated marks on the hull and float. The finer grid was reverted.
+  The 10 m translations confirm the window fade and the pattern's
+  anchoring in both bodies. WP16.6 remains open after these looks.
+- Metal shows the retained shaft and glow cues. Bounding the signed
+  correction by the visible path's direct Sun removed the purple spot
+  near the keel. The visual shadow beside lit water remains unproved
+  in WP16.7. The latest Chrome tours completed with zero capture
+  omissions. WP16.11 still takes the open receiver and keel lists.
+- The eight configured target checks passed on the rendering candidate.
+  The cross-target script passed. A configured repository run timed
+  out the wet-shore test at its 10 s limit. The scoped retry passed its
+  assertions in 10.45 s under load.
+  [Inspections and checks](../../../.orchestrate/evidence/WATERS/WP16/finish/README.md).

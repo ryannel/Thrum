@@ -1937,8 +1937,8 @@
           "statement": "As the camera sinks from the surface to 20 m in the sea and to the lake's bed, the picture stays readable: the bed, the hull and the open water keep their detail, deeper water is darker and bluer or greener and never flat black, and nothing jumps as the lens crosses the surface either way or hangs half under, at dawn, noon and twilight.",
           "inspect": "`realtime` sequences of the descent and the return in the sea and the lake at the three hours, with stills at 0.5 m, 3 m, 10 m and 20 m, and a lens held half under in a trade wind: the brightness of the bed, the hull and the open water at each depth, and both sides of the waterline.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP16/finish/waterline/README.md",
           "verdict": "",
           "review": ""
         },
