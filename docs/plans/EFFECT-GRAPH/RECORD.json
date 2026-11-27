@@ -724,7 +724,7 @@
         {
           "verdict": "fail",
           "commit": "a27601954332e9fb30c1b2486ae97ec7a6920dde",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP7-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP7-review-2.md",
           "items": {
             "WP7.1": "pass",
             "WP7.2": "pass",
@@ -758,6 +758,40 @@
             "turns": 1
           },
           "at": "2026-11-27T10:11:28Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "2dc6cde517600fed0a7ddd5acdca260419470ea1",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP7-review.md",
+          "items": {
+            "WP7.1": "pass",
+            "WP7.2": "pass",
+            "WP7.3": "pass",
+            "WP7.4": "pass"
+          },
+          "findings": [
+            {
+              "name": "Detached capture skips the producer of a transient output when its colour attachment is persistent",
+              "repeat": false
+            }
+          ],
+          "summary": "All four WP7 items pass, and both Must Fix findings from the latest review are resolved. WP7 fails on a new defect outside the items. A detached capture on the M3 Max lost the red channel across the entire 16 \u00d7 8 frame because the executor skipped the only draw that initialized a transient buffer.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 135819,
+            "cached": 3630336,
+            "output": 13655,
+            "turns": 1
+          },
+          "at": "2026-11-27T11:02:39Z"
         }
       ],
       "authorised": {
