@@ -3446,6 +3446,15 @@
         "device": "Apple M3 Max native and portable Metal and hardware Chrome WebGPU. The paired 1440p Metal record covers above-water, half-under, submerged and dry live-wake cases under shared load. The two wake arms retain completion bounds after GPU timestamp refusal.",
         "evidence": "../../.orchestrate/evidence/WATERS/WP15/hull-repair/README.md"
       },
+      "waters_underwater_meter": {
+        "implementation": "partial",
+        "functional_validation": "passed",
+        "experienced_quality": "not_run",
+        "scope": "WATERS WP16.5 supplies model-driven RGB incident transmission to the dive camera's meter.",
+        "correctness": "The model passes the 1 cm crossing continuity bound. Submitted Metal exposure words preserve a unit factor exactly and apply a half factor to incident lux.",
+        "device": "Apple M3 Max Metal meter fixture and submitted lake and sea frames. The water scene type-checks for Wasm.",
+        "evidence": "../../.orchestrate/evidence/WATERS/WP16/meter-proof.md"
+      },
       "waters_chart_optics": {
         "implementation": "partial",
         "functional_validation": "passed",

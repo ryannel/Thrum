@@ -1907,8 +1907,8 @@
           "ask": "Is the factor a function of the model alone, the same for a given camera on every device? Does anything read the rendered picture to set the exposure?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP16/meter-proof.md",
           "verdict": "",
           "review": ""
         },

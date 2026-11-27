@@ -1858,3 +1858,18 @@
   out on either, takes both. The list asks them apart (questions 5 and 6, the later ones now 7 to 9), and the
   reviewer question asks of the shadow's place for any of the three and of the finer sum only for the march
   or the shadow's own light.
+## WP16 meter and caustic pass dependency
+
+- 2026-11-27 The dive camera takes its incident-meter factor from the water
+  model at display time. On Metal the unit factor preserved the resolved
+  exposure words and a half factor halved measured incident lux. The ordinary
+  calm lake and Trade sea also submitted progressively lower incident lux at
+  their deeper noon views. [Meter proof](../../../.orchestrate/evidence/WATERS/WP16/meter-proof.md).
+- The caustic field needs one additive draw per rung in `simulate`, before
+  opaque receivers sample it. [EFFECT-GRAPH](../EFFECT-GRAPH/DESIGN.md#effects-and-stages-wp2-wp3)
+  defines `simulate` as compute, and the executor supplies a compute pass.
+  The render stage with effect-owned colour attachments would need a seam
+  ruling. Propose allowing a graph-declared render pass in `simulate`
+  after wave simulation, with the rung attachment and the forward sampled read
+  in the graph. This keeps the approved raster producer and its per-pass
+  timing. [Builder handoff](../../../.orchestrate/evidence/WATERS/WP16-handoff.md).
