@@ -963,7 +963,7 @@
         {
           "verdict": "fail",
           "commit": "2d49fd9e7c2d97fed18f208bf07c05a63f54b826",
-          "review": ".orchestrate/evidence/ATMOSPHERE/WP12-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP12-review-2.md",
           "items": {
             "WP12.1": "pass",
             "WP12.2": "pass",
@@ -995,6 +995,36 @@
             "turns": 1
           },
           "at": "2026-11-27T15:04:48Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "5d9214e78e1d5d1635100308db19a57e66f22b5b",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP12-review.md",
+          "items": {
+            "WP12.1": "pass",
+            "WP12.2": "pass",
+            "WP12.3": "pass",
+            "WP12.4": "pass",
+            "WP12.5": "pass",
+            "WP12.6": "pass"
+          },
+          "summary": "WP12 passes all six items. On the first governed submission after a held light edit, all seven cloudy reflection levels match the new light in both forward shading and the lent lookup. The governed Metal route covered 356 of 360 moving submissions with four-submission refreshes, and the paired Mac and Chrome captures showed the sky, shade and reflection following the governor-off take through twilight, scrubs, climbs and hour jumps.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 314392,
+            "cached": 9013888,
+            "output": 30884,
+            "turns": 1
+          },
+          "at": "2026-11-27T15:49:10Z"
         }
       ],
       "authorised": {
@@ -1034,6 +1064,13 @@
           "output": 432415,
           "turns": 8
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "5d9214e78e1d5d1635100308db19a57e66f22b5b",
+        "review": ".orchestrate/evidence/ATMOSPHERE/WP12-review.md",
+        "checked": "ec4b096a90e729d611d92bb55deb318ed0893c61",
+        "at": "2026-11-27T15:49:10Z"
       }
     }
   },

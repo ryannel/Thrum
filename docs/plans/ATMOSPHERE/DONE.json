@@ -729,7 +729,7 @@
     {
       "id": "WP12",
       "name": "The sky's charts are rebuilt over several frames under the governor, so they cost each frame a fraction of what they did and nothing in the sky is seen to update",
-      "status": "ready_for_review",
+      "status": "done",
       "depends_on": [
         "APPLE-PRESENTATION:WP7"
       ],
@@ -801,13 +801,7 @@
         }
       ],
       "failed_reviews": 2,
-      "failed_reviews_with_repeat": 0,
-      "findings": [
-        {
-          "name": "Enabling the governor leaves cloudy reflections at the old illuminance",
-          "repeat": false
-        }
-      ]
+      "failed_reviews_with_repeat": 0
     }
   ]
 }
