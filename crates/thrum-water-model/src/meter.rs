@@ -4,9 +4,8 @@
 /// downwelling coefficients are inverse metres. Surface transmission is the
 /// optical power fraction entering the water at zero depth.
 ///
-/// The submerged fraction models the lens as a vertical 10 cm aperture. The
-/// attenuation distance uses the centre of its underwater portion. At and
-/// below 5 cm depth this is the lens centre itself.
+/// The submerged fraction models the lens as a vertical 10 cm aperture.
+/// Water attenuation uses the lens centre's depth.
 #[must_use]
 pub fn meter_light_factor(
     signed_depth: f64,
@@ -18,9 +17,7 @@ pub fn meter_light_factor(
     if wet == 0.0 {
         return [1.0; 3];
     }
-    let depth = (signed_depth - HALF_APERTURE)
-        .max(0.0)
-        .midpoint(signed_depth + HALF_APERTURE);
+    let depth = signed_depth.max(0.0);
     downwelling.map(|rate| {
         let transmitted = surface_transmission * (-rate * depth).exp();
         wet.mul_add(transmitted - 1.0, 1.0)

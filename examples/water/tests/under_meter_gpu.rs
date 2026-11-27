@@ -18,6 +18,8 @@ fn a_centimetre_of_lens_travel_changes_the_meter_by_less_than_a_twentieth_stop()
             previous = next;
         }
         assert!(largest_step < 0.05, "{downwelling:?}: {largest_step} EV");
+        let half_under = meter_light_factor(0.0, downwelling, 0.96);
+        assert!(half_under.into_iter().all(|f| (f - 0.98).abs() < 1e-12));
     }
     let depth = 5.0;
     let [red, green, blue] = meter_light_factor(depth, [0.16, 0.08, 0.06], 0.96);
