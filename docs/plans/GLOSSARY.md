@@ -321,6 +321,28 @@ governor's and sets how many pixels are drawn inside the output extent before re
 
 Proposed: the planner chose the name.
 
+### Puff
+
+One of the spheres a procedural cloud is built from. A weather cell's **cluster** of puffs gives a heaped
+cloud its form: a few stacks of them rising from one level base, with smaller ones on their upper sides.
+Defined in [CLOUDS' design](CLOUDS/DESIGN.md#one-weather-field-in-the-air-frame).
+
+- **Source** — cloud modelling practice, where a cumulus is built from spheres and then given noise; a puff
+  stands for what meteorology calls a thermal's turret.
+
+Proposed: the planner chose "puff" over "sphere", "lobe" and "turret", which the design used for the form
+this replaces.
+
+### Weather volume
+
+The 3D grid near the camera that holds where the weather's own clouds stand, beside the 2D weather map that
+holds how much cloud is over each point out to the horizon. Defined in
+[CLOUDS' design](CLOUDS/DESIGN.md#the-weather-volume).
+
+- **Source** — the field's terms are a voxel grid and a clipmap.
+
+Proposed: the planner chose the name, after the weather map.
+
 ### Cast width
 
 How wide a thing is for casting a shadow: the diameter of the largest ball that fits inside its mesh, scaled

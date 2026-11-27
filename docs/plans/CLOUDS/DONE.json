@@ -1945,6 +1945,92 @@
       ]
     },
     {
+      "id": "WP23",
+      "name": "The weather's own clouds take a new form, a cluster of rounded heaps, in what a game reads and in stills drawn from it on the CPU",
+      "status": "not_started",
+      "depends_on": [],
+      "quality_bar": "The outline and relief of fair-weather cumulus as in Red Dead Redemption 2 or Horizon Forbidden West, looked at one cloud at a time from the ground: rounded heaps of different heights on one level base, crowns in billows, no two clouds alike. These stills are judged for form alone; the engine's light, colour and motion are WP17's.",
+      "items": [
+        {
+          "id": "WP23.1",
+          "statement": "Under a profile that names the puff form, the point query keeps what a game reads from the weather, in seven behaviours. 1. A clear column has coverage, age and column optical depth exactly zero and its top exactly at its base, and the base is the type's condensation level in cloud and in clear air. 2. The field at a world point after any travel equals the field with no travel at that point less the travel, bit for bit. 3. At fixed air-frame points over a day, across births, deaths and generation boundaries, a ramp of coverage and a ramp of type, each halving of the time step shrinks the largest change in column optical depth, in coverage, in top and in thickness by at least the factor the test states, and a cell the test switches on between two samples fails that assertion. 4. Along a line that crosses overlapping cells, each halving of the step shrinks the largest change in column optical depth and in coverage by at least that factor; the top is left out there, because it steps at a heap's edge. 5. The column optical depth a query returns equals the model's own sum of the uneroded density up that column, and the full and the coarse density each integrate to no more than it, and to zero where it is zero. 6. As coverage rises from 0 to 1 the share of cloudy columns in a square 20 lattice sites across never falls. 7. A mature cell has a column that holds clear air between two heights that hold cloud, which a form of one height a column cannot. The turret form's own tests are unchanged and pass. Guard: CPU tests of the model on a small world, in `./dev check`.",
+          "check": "sh -c 'cargo test --locked --offline -p thrum-cloud-model --test it puff 2>&1 | tee /dev/stderr | grep -Eq \"test result: ok. ([7-9]|[1-9][0-9]+) passed\"'",
+          "ask": "Do the tests whose names contain `puff` assert each of the seven behaviours on a profile that names the puff form, and does the switched cell of the third fail its assertion?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP23.2",
+          "statement": "Marched on the CPU through the model's own full density, with no weather map and no graphics device, a fair sky of the puff form holds up from the ground one cloud at a time. The stills are of the fair weather the valley's game has, with the puff form named and no placed or directed shape, from 2 m over the ground under the noon Sun, toward, across and away from it, each as opacity and under one simple light the record states. Beside each is the same weather in the turret form from the same tool, and it shows at least one of the flaws the puff stills must not: a tool that draws both forms well, or both badly, proves nothing. A strip follows one cell at six ages from its birth to its death. Record: the stills, the tool and its inputs, in the work package's evidence.",
+          "inspect": "Look at the six puff stills whole and at full size, at the six turret stills beside them, and at the life strip. In the puff stills: 1. the larger clouds are clusters of rounded heaps of different heights, and their crowns are in billows; 2. each cloud's base is level and ragged, and its rim is a rounded underside, with no thin skirt, lip or level band standing out from it; 3. no cloud is a smooth dome, lens or cap, and none has a level terrace on its side or a fold or squared break in its outline; 4. no face is a vertical curtain or a cylinder, with or without streaks down it; 5. where a far cloud shows below or behind a near one, they read as two clouds at two distances, and not as a shelf of one; 6. outlines differ from cloud to cloud, and no dome, lens, cap, cone or tower repeats across the frame. 7. the turret stills show at least one flaw of points 2 to 4 where the puff stills show none; 8. in the life strip the cloud first shows as tufts on its base and grows by rising, and each age up to the grown cloud reads as a smaller cloud of the same kind; 9. past its grown age it frays and thins, and at no age does it read as a solid shape sunk into its base.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
+      "id": "WP24",
+      "name": "The engine draws, shades and answers for the new cloud form on the Mac and in Chrome, and the old form is gone",
+      "status": "not_started",
+      "depends_on": [],
+      "quality_bar": "A GPU held to what a game reads, as WP2 and WP7.6 held it: the weather the engine draws and shades is the weather the CPU query answers, cloud where the query has it and never more of it. No look is judged here; WP17 judges the sky this leaves on main.",
+      "items": [
+        {
+          "id": "WP24.1",
+          "statement": "Each voxel of the weather volume holds the model's heaped profile at its own centre, on every level, at the tick its part was last written, within the tolerance the test states. The centres compared include ones in a cloud's core, ones in its fade and clear ones, and at least one clear centre lies below a cloudy one in the same column. No part is older than its cadence allows in weather time, at 1x and at 60x. That holds after a day of travel at 40 m/s, and after repeated ticks, a pause, a hitch, a backward tick and a replaced device. A volume filled from the map's column, one height a column, fails the comparison. Guard: a GPU test in `./dev check` on the smallest volume that has every level; only a device shows what the compute passes wrote.",
+          "check": "sh -c 'cargo test --locked --offline -p thrum-clouds --test it weather_volume 2>&1 | tee /dev/stderr | grep -Eq \"test result: ok. [1-9][0-9]* passed\"'",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP24.2",
+          "statement": "What a game reads and what shades the ground hold under the puff form, by the tests that held them under turrets. They are: the weather-map test, where on every level each texel holds the CPU query's column at its own centre and the coarsest level's centres include clear ones and cloudy ones (WP2.2's and WP3.15's); the shade-only test, where the ground field holds the same bytes with visible clouds off under a sky where the detail noise changes the full density (WP3.8's); the five weather-range tests, where the map follows presets, ramps and wind and the column the GPU draws through cells, the deck, broken banks and placed columns is no more than the queried column plus 0.12, and twice the density fails (WP7.6's); and the Sun-path test on the native recipe and under WebGPU's default limits, within the bounds it states today, which at a 20\u00b0 Sun on the far level are a largest transmittance error of 0.35 and a root-mean-square error of 0.075. Guard: these tests, as they stand in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum-clouds --features thrum-render/creation-counters --test it --test weather_range_gpu",
+          "ask": "In this work package's changes, did those tests move only in expected values and probe points, with every assertion, every stated tolerance and every wrong version they reject kept?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP24.3",
+          "statement": "The engine has one heaped form. The turret rule, its profile constants and the profile's choice between forms are gone from the engine's crates and from the example games, and the tests that only the turret rule had go with them: WP23.1's seven behaviours guard what a game reads from then on. Guard: a search of `crates` and `examples`.",
+          "check": "sh -c '! git grep -q -e turret_pitch -e turret_least -e turret_fade -- crates examples && git grep -q -i puff -- crates/thrum-cloud-model/src crates/thrum-clouds/src'",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP24.4",
+          "statement": "In Chrome, with the cloud selection, the game's page reaches its first cloud frame under the puff form with no validation error, and through repeated ticks, a hidden and shown page, a hitch and a lost and recovered device every part of the weather map and of the weather volume is the model's for the tick that part was last written. Guard: the two Chrome cases WP4.1 and WP4.2 run, with the weather volume among the products they read.",
+          "check": "sh -c 'node scripts/check_v1_browser.mjs --case clouds-first-frame && node scripts/check_v1_browser.mjs --case clouds-state'",
+          "target": "chrome-webgpu",
+          "lock": "chrome",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP24.5",
+          "statement": "The weather's cost under the puff form is on record. On this Mac at 2560\u00d71440, capture off, the shade scene's paired record is taken again at 1x, 8x and 60x, and names the weather volume's pass and its bytes beside the weather map's and the Sun path's. Each tripwire it trips has its investigation beside it. No figure in the record decides this item. Record: the shade scene's paired cost record, which is test data the check reads.",
+          "check": "sh -c 'python3 scripts/cloud_cost.py check --scene shade && grep -qi weather.volume tests/fixtures/clouds/shade-cost.json'",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
       "id": "WP17",
       "name": "Each fair-weather cloud holds up on its own: a cluster of heaps of different heights, with no shelf, fold or repeated outline",
       "status": "blocked",
@@ -1952,12 +2038,12 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
-      "quality_bar": "Fair-weather cumulus as in Red Dead Redemption 2 or Horizon Forbidden West, looked at one cloud at a time, with no library shape standing in for the procedural clouds: rounded heaps of different heights on one base, relief that reads as billows, and no two clouds in a view alike.",
+      "quality_bar": "Fair-weather cumulus as in Red Dead Redemption 2 or Horizon Forbidden West, looked at one cloud at a time, with no library shape standing in for the procedural clouds: rounded heaps of different heights on one level base, relief that reads as billows, a shaded base under a lit crown, and no two clouds in a view alike.",
       "items": [
         {
           "id": "WP17.1",
-          "statement": "At noon under the fair preset with the placed share at 0 and no directed shape, so that every cloud in the sky is procedural, from 2 m and from 40 m, each cloud holds up when it is looked at alone. The larger clouds are clusters of rounded heaps of different heights, tops billow, edges break up, and outlines differ from cloud to cloud. No cloud has a stacked shelf, a lip or level band under it, or a fold or squared break in its outline, and no dome, lens, cap or cone repeats across the sky.",
-          "inspect": "Capture `fixed` stills with T2 engine capture at 2560\u00d71440 at noon, with the placed share at 0, looking toward, across and away from the Sun, from 2 m and from 40 m. Judge each frame whole, comparing the outlines of its clouds with one another, and in native-size crops of a near cloud's edge, base and top and of the middle distance.",
+          "statement": "At noon under the fair preset with the placed share at 0 and no directed shape, so that every cloud in the sky is procedural, from 2 m and from 40 m, each cloud holds up when it is looked at alone. The larger clouds are clusters of rounded heaps of different heights, crowns billow, edges break up, bases are level and shaded under lit crowns, and outlines differ from cloud to cloud. No cloud has a stacked shelf, a lip or level band under it, a fold or squared break in its outline, or a curtain for a face, and no dome, lens, cap or cone repeats across the sky.",
+          "inspect": "Capture `fixed` stills with T2 engine capture at 2560\u00d71440 at noon, with the placed share at 0, looking toward, across and away from the Sun, from 2 m and from 40 m. Judge each frame whole, comparing the outlines of its clouds with one another, and in native-size crops of a near cloud's edge, base and top and of the middle distance: 1. the larger clouds are clusters of rounded heaps of different heights, and their crowns are in billows; 2. each cloud's base is level and ragged, and its rim is a rounded underside, with no thin skirt, lip or level band standing out from it; 3. no cloud is a smooth dome, lens or cap, and none has a level terrace on its side or a fold or squared break in its outline; 4. no face is a vertical curtain or a cylinder, with or without streaks down it; 5. where a far cloud shows below or behind a near one, they read as two clouds at two distances, and not as a shelf of one; 6. outlines differ from cloud to cloud, and no dome, lens, cap, cone or tower repeats across the frame; 7. a cloud's base is darker than its sunlit crown and is not black; 8. no line, step or change in a cloud's form shows where the weather volume ends or where one of its levels meets the next.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1966,8 +2052,8 @@
         },
         {
           "id": "WP17.2",
-          "statement": "In Chrome at noon the same sky, the fair preset with the placed share at 0 and no directed shape, passes WP17.1's list from 2 m and from 40 m.",
-          "inspect": "Capture `fixed` stills in Chrome with T2 engine capture at WP17.1's six views, toward, across and away from the Sun from 2 m and from 40 m, with the placed share at 0. Judge them by that list, whole and in the same native-size crops, then compare the crops with the Mac's.",
+          "statement": "In Chrome at noon the same sky, the fair preset with the placed share at 0 and no directed shape, passes WP17.1's eight points from 2 m and from 40 m.",
+          "inspect": "Capture `fixed` stills in Chrome with T2 engine capture at WP17.1's six views, toward, across and away from the Sun from 2 m and from 40 m, with the placed share at 0. Judge them by WP17.1's eight points, whole and in the same native-size crops, then compare the crops with the Mac's: 9. each crop shows the same clouds with the same heaps as the Mac's.",
           "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": "",
@@ -1976,8 +2062,8 @@
         },
         {
           "id": "WP17.3",
-          "statement": "The changed form costs the rest of the sky nothing that shows. With the presets as they ship, library shapes included: at noon the fair sky's horizon still passes WP3.2's list; at a 10\u00b0 Sun the fair sky passes WP5.3's, and its library clouds still read as one sky with the procedural clouds around them; at noon the broken and the overcast presets pass WP7.1's. No procedural cloud in the fair sky's views shows a flaw WP17.1 names.",
-          "inspect": "Capture `fixed` stills of the fair sky along the horizon at noon and toward, across and away from a 10\u00b0 Sun, and of the broken and the overcast presets at noon from 2 m and from 40 m, all at the presets' own placed share. Judge them by those lists, and the 10\u00b0 stills also in native-size crops where a library cloud meets a procedural one.",
+          "statement": "The changed form costs the rest of the sky nothing that shows. With the presets as they ship, library shapes included: at noon the fair sky's horizon still passes WP3.2's list, with no line where the weather volume ends; at a 10\u00b0 Sun the fair sky passes WP5.3's, and its library clouds still read as one sky with the procedural clouds around them; at noon the broken and the overcast presets pass WP7.1's. No procedural cloud in the fair sky's views shows a flaw WP17.1 names.",
+          "inspect": "Capture `fixed` stills of the fair sky along the horizon at noon and toward, across and away from a 10\u00b0 Sun, and of the broken and the overcast presets at noon from 2 m and from 40 m, all at the presets' own placed share. Judge them by those lists, the horizon stills also in native-size crops at about 12, 25, 40 and 150 km, and the 10\u00b0 stills also in native-size crops where a library cloud meets a procedural one.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1986,13 +2072,22 @@
         },
         {
           "id": "WP17.4",
-          "statement": "What a game reads from the weather holds under the changed form. The tests that hold the GPU weather map, the turret clearing, the shade with visible clouds off and the drawn column to the CPU query (WP2.2's, WP3.8's, WP3.15's and WP7.6's) assert what those work packages left and pass in the project's test command.",
-          "ask": "In this work package's changes, did those tests move only in expected values, probe points and a stated tolerance, with every assertion and every wrong version they reject kept?",
+          "statement": "At 8x and at 60x under the fair preset with the placed share at 0, a cloud followed through its life is born on its base, rises into heaps, frays and thins away. Nothing pops, nothing slides inside a cloud's shape, nothing reappears where it stood on a beat, and no cloud sinks into its base as a solid shape.",
+          "inspect": "Capture `realtime` sequences at 8x and at 60x from 40 m, each long enough to hold whole lives. Judge consecutive frames, following at least three clouds from birth to death, and then the whole frame for any rhythm: 1. each cloud first shows as tufts on its base and grows by rising; 2. its billows change as structure, and no texture slides through its shape; 3. it frays and thins before it is gone, and does not read as a solid shape sinking; 4. no cloud or part of one appears or vanishes between two frames; 5. no beat shows across the sky.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
           "verdict": "",
           "review": ""
+        },
+        {
+          "id": "WP17.5",
+          "statement": "The sky's cost under the puff form is on record. On this Mac at 2560\u00d71440, capture off, under the fair preset, the first-frame scene's paired record is taken again beside WP3.9's, with each cloud pass's GPU time by name, the rays traced, the samples a ray and the bytes of each resource, the weather volume's among them. Each tripwire it trips has its investigation beside it. No figure in the record decides this item. Record: the first-frame scene's paired cost record, which is test data the check reads.",
+          "check": "sh -c 'python3 scripts/cloud_cost.py check --scene first-frame && grep -qi weather.volume tests/fixtures/clouds/first-frame-cost.json'",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": ""
         }
       ],
       "blocked": {

@@ -1368,3 +1368,8 @@ pass comparisons at identical trace work. Shared load leaves the cause
 of the pass differences open for an isolated trace in the performance phase.
 The replacement command and validator exercised the same comparison with a fresh pair.
 [Metal cost evidence](../../../.orchestrate/evidence/CLOUDS/WP11/review-repair/sea-cost.md)
+
+- 2026-11-28 Planner, unblocking WP17 after three looks on turrets failed on form. A heaped cell is now a
+  cluster of puffs held near the camera in a weather volume, and a column's top may step at a heap's edge.
+  New WP23 and WP24 build it before WP17, whose items are written again. Nothing on `build/clouds` at
+  `aeb56f582` merges. [What changed and why](../../../.orchestrate/evidence/CLOUDS/WP17-unblock.md)

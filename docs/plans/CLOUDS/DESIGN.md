@@ -69,6 +69,13 @@ changed broken preset is judged again as a broken sky (WP22.8). Revised once mor
 of those fixes (three findings, the last round): WP22.8 judges every preset whose cloud WP22 changes, overcast
 and fair as well as broken, and judges broken's banks whole; and a moving shaft may fade or end while its
 opening stays open, where the scene accounts for it (WP22.2). No mechanism and no interface changed.
+Revised 28 November 2026 after [WP17's handoff](../../../.orchestrate/evidence/CLOUDS/WP17-handoff.md): three
+more looks on turrets failed on form, on the Mac and in Chrome. A heaped cell's form is now
+[a cluster of puffs](#one-weather-field-in-the-air-frame) whose interior gradient is measured in metres, held
+near the camera in [the weather volume](#the-weather-volume), in place of turret caps on a level base
+([part XX](#check-that-it-can-work)). What a query answers changes in one place: over a heaped cell the top
+may step at a heap's edge, as it does at a placed shape's silhouette. WP23 and WP24 build the form and WP17
+judges it. No interface with another module changed.
 
 ## The request
 
@@ -243,6 +250,24 @@ What each source was read for, and how far.
   the cloud are the noise's, a few to a cloud. This design kept that operator and lost what it works on: its
   column was one smooth dome a cell, and its noise a skin 200 m long on a cloud several kilometres wide.
   [Part XVIII](#check-that-it-can-work) measures the difference.
+- **How shipped clouds get the form of one cloud, read on 28 November** after WP17's three looks on turrets
+  failed. Nubis Evolved (the 2022 slides' modelling sections, read again as text) has two models, and both
+  are 2D fields: the "Vertical Profile" model for the sky, which is this design's column, and the "Envelope"
+  model for clouds near the player, two height fields (`min_height`, `max_height`) authored in Houdini, with
+  `dimensional_profile = bottom_gradient * top_gradient * edge_gradient`. Nubis³ (the 2023 slides, read again)
+  lists both with "Freeform Modeling: No", and replaces them for any cloud seen closely. Its clouds are grown
+  by fluid simulation or voxelised from meshes, kept as a **dimensional profile made from a signed distance**
+  in a 512×512×64 grid of 8 m voxels, and given their detail at render time:
+  `uprezzed_density = ValueErosion(dimensional_profile, noise_composite)`, with billows where the profile is
+  high and wisps where it is low. Seen from the ground those clouds are its sky. Houdini's cloud tools
+  ([SideFX's cloud modelling page](https://www.sidefx.com/docs/houdini/model/cloud.html), read for Houdini 22;
+  the nodes arrived in Houdini 20) are how such a shape is made without a simulation: Cloud Shape Generate
+  places spheres in a cumulus-like heap, Cloud Shape Replicate adds smaller spheres around them, the spheres
+  become a fog volume, Billowy Noise and Wispy Noise displace it, and a clip flattens the bottom. Guerrilla's
+  2015 notes say what noise alone lacks: "There are no larger governing shapes". Looked for and not found: a
+  talk from 2024 to 2026 on a shipped game's cloud shapes. SIGGRAPH's Advances course of 2025 has none, and a
+  GDC 2025 talk on REDengine's clouds that one secondary page names was not found to open. Not opened this
+  time: Red Dead Redemption 2's deck, Unreal's cloud material and Unity's. Nothing below rests on them.
 - **Frostbite** ([Hillaire 2016 course notes](https://media.contentapi.ea.com/content/dam/eacom/frostbite/files/s2016_pbs_frostbite_sky_clouds.pdf),
   sections 5.6 to 5.10 read). Equation 17 integrates a step's scattering against its own extinction, which
   conserves energy at any step length. Equations 19–20 approximate multiple scattering as octaves with scaled
@@ -331,6 +356,17 @@ reports them.
 | Cloud cards or a panorama | Fails K1's parallax and K3's shade |
 | A per-cloud cached volume (the earlier cohort lab) | 13 ms for one cloud on this Mac |
 | **2D weather fields with a vertical profile, noise for detail, light from one summed Sun-path product, traced at part of the render extent and reconstructed over frames** | **Selected.** Every part is shipped practice; the work a ray does is bounded by a few texture reads a sample |
+
+**What gives one cloud its form, decided on 28 November against [part XX](#check-that-it-can-work).** Every
+candidate keeps one density that the query, the view and the Sun's path read at a point.
+
+| Candidate | Verdict |
+|---|---|
+| More looks on turret caps | Eight rounds of looks across WP3 and WP17 left the same kinds of flaw. The form is a height a column with a level base, and its gradient is stretched to that height |
+| A layer carved from 3D noise by a soft 2D coverage (Nubis 2015 and 2017) | The lobes a viewer reads are the tiling noise's, so they repeat at its period and nothing larger governs them. Its authors left it for clouds seen closely |
+| Two heights a column from a cluster of spheres (Nubis Evolved's envelope) | Fits the weather map as it is. Part XX: its outline is right and its faces are curtains, because a column cannot hold an overhang |
+| Every heaped cell a [placed cell](#placed-volumes) on a slab from a set the engine generates | The placed path is built and passed WP6 and WP10. It needs cells that never overlap, since a map texel names one slab, about ten times the instances it admits, and a set repeats. Kept as [the fallback](#risks) |
+| **A cluster of puffs a cell as a signed distance, its interior gradient held near the camera in a 3D weather volume and eroded by noise** | **Selected.** It is Nubis³'s representation with Houdini's modelling rule in place of a simulation. The form is a pure function of the point, so the query, the view and the Sun's path read one field; cells overlap freely; every cloud is its own |
 
 ### Judged from first principles
 
@@ -436,37 +472,46 @@ with no GPU:
   one cell per generation period. A hash of the site and the generation gives the cell its birth time anywhere
   in the period, its lifetime (12 to 30 minutes in the first profile), its centre anywhere in the site, its
   size, its depth and a shape seed. A cell's **envelope** rises smoothly from zero at birth and returns to zero
-  at death, and scales its radius, depth and density together: the cell forms, grows and thins. Coverage sets
+  at death: the cell forms, grows and thins. Coverage sets
   how many cells exist, through a smooth threshold on a per-cell hash, so raising coverage swells cells in and
-  never switches one on. A cell's column is a cluster of turrets over a flat base at the type's condensation
-  level, or the footprint of an authored shape where the cell is a [placed](#placed-volumes) one; bases are
+  never switches one on. A cell's cloud is a cluster of puffs over a flat base at the type's condensation
+  level, or an authored shape where the cell is a [placed](#placed-volumes) one; bases are
   shared, sizes vary.
-- **Turrets.** A heaped cloud is several rising heaps of different heights on one base, and its outline is
-  theirs. The **turret field** is a second, finer lattice in the air frame, hash-named as the cells' is. Each
-  site holds one rounded cap with its own centre, width and height: a few tall and wide, most low and narrow.
-  The field is a function of the air-frame point alone. It takes no time, so a cell's envelope raises and
-  lowers the turrets under it. It takes no footprint, so every reader gets the same value at the same point:
-  the query, and each level of [the weather map](#the-weather-map). A cell's thickness at a point is the
-  lesser of two: its **dome**, which rises from the cell's rim to its depth at its centre and is the most the
-  cell can hold there, and its depth times its envelope times the turret field. What that leaves thinner than
-  a least share of the cell's depth is cleared by one **clearing factor**, which rises smoothly from 0 at the
-  least share to 1 a little above it. The factor multiplies the cell's thickness and its coverage alike,
-  before overlapping cells are combined. So no sheet or lip stands between turrets or round a rim, and a cell
-  that grows through the least share brings its coverage up from zero with its thickness. Coverage left whole
-  wherever any thickness stood would switch a cell on in what a game reads: by 0.27 at one cell's centre
-  however small the step, where under the factor the change shrinks with the step (part XVIII). The turret pitch, the least share and the
-  factor's width are profile constants, as the lattice is. One dome a cell, the rule this replaces, gave every
-  cloud the same outline at a different size ([part XVIII](#check-that-it-can-work)).
+- **Puffs.** A heaped cloud is several rising heaps of different heights on one base, each a pile of rounded
+  masses, and its outline is theirs from every side. A cell's **cluster** is a set of spheres, its **puffs**,
+  which the cell's hash places inside the cell's radius and depth: a few thermals, each a short stack of
+  shrinking spheres that leans as it climbs, taller toward the cell's centre, and on the upper surface of each
+  sphere a few smaller ones. It is the rule clouds are modelled by for film and games
+  ([research](#research-and-selection)). A cluster is a function of its cell's identity alone and is fixed in
+  the air frame for the cell's life, so every reader gets the same puffs. Its **signed distance** is the
+  distance to the union of its spheres, cut off level at the condensation level, which is the cloud's flat
+  base; the union may be rounded over a short length. A puff whose underside stands above the base keeps it, so
+  a cloud's rim is a rounded underside and never a wedge thinning onto the base. The cell's **profile** at a
+  point is its depth inside that surface as a share of the **fade length** (300 m in part XX), and no more
+  than 1: 0 at the surface and outside it, 1 in the core. It is measured in metres along the surface's own
+  normal, so [the noise that erodes it](#one-density-in-m¹) moves a crown, a flank and a rim in by the same
+  distance. The rule this replaces stretched a profile to each column's height, which moved a tall column's
+  top by hundreds of metres and a rim by none: caps, lenses and skirts with a smooth skin
+  ([part XX](#check-that-it-can-work)). The puff counts, their size ranges, the lean and the fade length are
+  profile constants, as the lattice is.
+- **A cell's life moves its cluster up and down, and never sideways.** The envelope sets how far the cluster
+  has risen through the condensation level. At 0 all of it lies below the base, where nothing condenses, and
+  the column is clear. At 1 it stands whole. So a cell grows as a thermal does, its tallest stack breaking
+  through first, and each stage is a smaller cloud of the same kind. The envelope also scales the cell's
+  density, and over the last part of a life the erosion deepens, so a dying cloud frays and thins while it
+  subsides. Nothing moves sideways and no puff changes size, because a heap's edge that swept over a point
+  would step the column's top there. A type's share of cells scales the rise and the density the same way.
 - **The deck.** Layered cloud is a sheet whose thickness follows a smooth evolving noise against a threshold set
   by coverage and type: gaps at a broken deck, none at overcast.
 - **Types** are game data: a table along the type axis giving base height, depth range, liquid water content,
   droplet radius, the shares of cells and deck, and a vertical profile. The engine interpolates it. Extinction
   is physical: `σ = 3·LWC / (2·ρ_water·r_droplet)` in m⁻¹, about 0.06 m⁻¹ for 0.4 g/m³ and 10 µm.
 - **Continuity.** Under cells and the deck the field is continuous in space, in weather time and in every
-  parameter: its density at every point, and its column's optical depth, coverage, thickness and top. Where
-  cells overlap the column takes the larger depth and the larger profile, never a switch between cells.
-  Overlapping cells scale the one turret field, so a shallow cell beside a deep one is lower turrets beside
-  taller ones, and never a shelf under a dome.
+  parameter: its density at every point, and its column's optical depth and coverage. Where cells overlap,
+  and where a cell stands in the deck, a point takes the greatest profile, never a switch: two cells'
+  clusters join as one cell's puffs do. At a fixed point of the air frame the top and the thickness are
+  continuous in weather time too. From one point to the next the top steps at a heap's edge, where a puff
+  overhangs the column beside it.
   [Outputs](#one-weather-field-in-the-air-frame) says what a placed shape's column does.
 - **Lattice and period are profile constants.** A preset never changes them, because scaling a lattice would move
   every cloud at once.
@@ -479,10 +524,12 @@ with no GPU:
 - **Type** is the weather's, the same at every point: the type axis as the state holds it.
 - **Base and top** are heights in the world, and between them lies all of the column's condensate, with
   nothing eroded. Under cells and the deck the base is the type's condensation level, which every column
-  shares, and the top is the base plus the column's **thickness**, its depth of cloud. Over a
+  shares, and the top is the base plus the column's **thickness**, its depth of cloud: over a heaped cell,
+  the highest point of its cluster's surface in the column. Over a
   [placed shape](#placed-volumes) they are the lowest and the highest height of the shape's own column, and
   where a shape and weather share a column, the lower base and the higher top.
-- **Coverage** is the column's profile, and **age** the dominant cell's life phase.
+- **Coverage** is the column's profile, over a heaped cell the greatest profile in the column, and **age**
+  the dominant cell's life phase.
 - **A clear column** has no thickness: its top is exactly its base, at the type's condensation level, and its
   coverage, age and column optical depth are exactly zero. A consumer asks whether a column is clear by its
   coverage or its optical depth, never by a height.
@@ -495,16 +542,20 @@ every cloud's edge, where a clear texel that holds its base draws a thinner clou
 that fell to zero as a cell cleared would step by the height of the base, where the cell's thickness goes to
 nothing smoothly.
 
-**What steps and what does not.** Thickness follows a cell's envelope, its rim and its turrets to zero, so under cells and
-the deck the top comes down to the base as a column clears and rises from it as one forms. There the top, the
-thickness, the coverage and the optical depth never step, and the base moves only as the type does. A placed
+**What steps and what does not.** Under the deck thickness follows the sheet to zero. Under a heaped cell a
+column's top rises from the base as the cluster rises through it and returns to the base as the cluster
+subsides. So at a fixed point of the air frame the top, the thickness, the coverage and the optical depth
+never step in time, and the base moves only as the type does. In space the coverage and the optical depth
+never step either, because a profile is zero at its surface. The top and the thickness do, at a heap's edge:
+a puff that overhangs has a height where it ends. A placed
 shape's extents are its geometry, and its envelope does not scale them: its base and top stand whole at its
 silhouette and from the tick its envelope leaves zero, while its optical depth and its density rise from
 zero. Age changes hands when another cell becomes the dominant one.
 
 **What a query promises.** Column optical depth is the vertical integral of the density below with nothing
-eroded: every noise term at its uneroded value. In the model that is exact at every point, for cells, the deck
-and [placed shapes](#placed-volumes) alike. It is an upper **bound** on the column that is drawn there, because
+eroded: every noise term at its uneroded value. In the model that is exact at every point for the deck and
+[placed shapes](#placed-volumes). Over a heaped cell it is the model's own sum of the uneroded density at a
+fixed spacing up the column, a profile constant, which the GPU's map repeats. It is an upper **bound** on the column that is drawn there, because
 noise only removes extinction, and it is zero exactly where the sky is clear. The field holds no average: a
 query never answers for a neighbourhood, and no form of a cloud is fitted to another's mean. The averages in
 this design are named where they are made: the GPU reads the field through filtered textures, so what it draws
@@ -585,25 +636,31 @@ phase is exactly 1 because the clock is not interpolating: a pause, an overload 
 
 Every consumer (the view, the Sun's path, the sky overlay, the CPU reference) evaluates one density function:
 
-`σ(point) = σ_type · profile(height fraction) · shape(column profile, noise)`
+`σ(point) = σ_type · erode(profile(point), noise(point))`
 
-The column profile is held against the **shape noise**, a billow field in the air frame: a few octaves of
+The **profile** is the field's interior gradient at the point, from 0 at a cloud's surface to 1 in its core.
+For a heaped cell it is the [cluster's](#one-weather-field-in-the-air-frame), in metres on every side, and
+takes no vertical profile: its surface is the cluster's above, beside and below. For the deck, and for any
+cell in its column form, it is the column's profile times the type's vertical profile over the column's
+height. Where a cell stands in the deck a point takes the greater.
+
+The profile is held against the **shape noise**, a billow field in the air frame: a few octaves of
 round lobes with sharp creases between them, as inverted cellular noise gives them and the Perlin-Worley
-noise of shipped clouds has them. Its coarsest lobe is about half a turret
-wide and each octave is two to three times finer. The threshold it sets spans the profile's whole range short
-of the core, so a turret's interior stays solid and its surface moves by a lobe's size and not by a skin's:
-lobes on a turret, and smaller lobes on those. A finer detail noise erodes only the edge. Noise can remove
-extinction and never add it beyond the column's bound. As a cell's envelope moves, the threshold sweeps
-through fixed noise, so billows appear and dissolve as structure and nothing slides.
+noise of shipped clouds has them. Its coarsest lobe is about as wide as a small puff
+and each octave is two to three times finer. The threshold it sets spans the profile's whole range short
+of the core, so a puff's interior stays solid and its surface moves in by up to most of the fade length:
+lobes on a puff, and smaller lobes on those. A finer detail noise erodes only the edge. Noise can remove
+extinction and never add it beyond the column's bound: any shaping of the eroded value is one rising function
+applied to the uneroded profile alike. As a cluster rises through fixed noise, and as a dying cell's erosion
+deepens, billows appear and dissolve as structure and nothing slides.
 
 Each noise is one tiling volume, generated on the GPU at preparation from the same integer hash on every
 target, and costs a sample one read, where octaves of lobes computed at the sample would each cost a
 neighbourhood of lattice sites. The volume's texels are the noise's definition: the model computes the same
 texels from the hash and interpolates them as the sampler does, so the GPU and the model read one function. A
 volume is read at a mip chosen from the sample's footprint, so a far ray reads an average, not aliased detail,
-and keeps every lobe wider than its footprint. A volume repeats, at a period longer than a turret. The turret
-field is what makes each cloud its own, so it is evaluated from the hash, in the weather map, and never
-repeats.
+and keeps every lobe wider than its footprint. A volume repeats, at a period longer than a puff. The
+cluster is what makes each cloud its own, so it is made from the hash and never repeats.
 
 **Full and coarse.** The function is evaluated two ways, which differ only in the detail term. The **full
 density** reads the detail noise; the view march and its local light samples use it. The **coarse density**
@@ -622,34 +679,35 @@ darkened twice and no density is divided by a count.
 The GPU reads the field through a **weather map**: a few world-anchored wrapping levels in the air frame, whose
 texel doubles or quadruples outward to the horizon. A texel holds the field's column (base, top, profile, type),
 a clear one with its top at its base, and, apart from it, two presentation values: the slot of at most one
-placed shape and the weight of its volume form. Compute passes in `simulate` evaluate the same cell, turret and deck rules as the CPU. Because the map lives in
+placed shape and the weight of its volume form. Compute passes in `simulate` evaluate the same cell, puff and deck rules as the CPU. Because the map lives in
 the air frame, wind costs nothing: only evolution and the camera's movement through the air need new texels, so
 the map is refreshed in parts. A coarse level of the tallest top in each region lets a ray step across empty
 air: a region is empty where its tallest top is no higher than the base.
 
 **Every level holds the query's column.** On each level a texel holds the field's column at its own centre:
-the point query's answer there, turrets and clearing included. It is never an average over the texel, and
+the point query's answer there, puffs and their rise included. It is never an average over the texel, and
 never a column made by a rule the query does not have. So a centre the query calls clear is stored clear, a
 centre it calls cloudy is stored with its thickness, and the map's check compares the two at the centre on
 every level. What is drawn between centres is the filter's, as
 [what a query promises](#one-weather-field-in-the-air-frame) says.
 
-A level whose texel is wider than a turret, as the first profile's 1,600 m level is against a 1,300 m pitch,
-samples turrets it cannot resolve. It holds the columns its centres land on and misses the rest, and the
-filter joins what it holds into broader heaps than the near levels draw, carved by the same shape noise.
-Three things make that sound ([part XVIII](#check-that-it-can-work)):
+A level whose texel is wider than a puff, as the first profile's 1,600 m level is, samples heaps it cannot
+resolve. It holds the columns its centres land on and misses the rest, and the filter joins what it holds
+into broader heaps than the near levels draw, carved by the same shape noise. Three things make that sound.
+[Part XVIII](#check-that-it-can-work) measured them for turrets, and WP24's map test holds the first two for
+puffs:
 
-- **It keeps the sky's amount.** Over 96 km of the fair sky the far centres are cloudy at 0.131 of points
-  where the field is at 0.128, and the mean thickness is 99 m in both.
+- **It keeps the sky's amount.** Over 96 km of the fair sky under turrets the far centres were cloudy at
+  0.131 of points where the field was at 0.128, and the mean thickness was 99 m in both.
 - **It does not flicker.** A level moves by whole texels, so a centre is a fixed point of the air frame, and
   there the field is continuous in weather time: a far texel's column rises and falls smoothly.
-- **One rule serves every texel.** A share standing in for the turrets a level cannot resolve does not: of
+- **One rule serves every texel.** A share standing in for the heaps a level cannot resolve does not: of
   the review's two far texels, one needs a share of at most 0.42 to stay clear and the other more than 0.75
   to keep any cloud.
 
-What the sample changes is a far cloud's heaps: 0.60 of the far texels with cloud somewhere in them have a
-clear centre, so the far level draws fewer and broader heaps, and they change where a cloud drifts from one
-level into the next. WP3.2 judges both, and [the second risk](#risks) gives the fixes.
+What the sample changes is a far cloud's heaps: the far level draws fewer and broader heaps, and they change
+where a cloud drifts from one level into the next. WP17.3 judges both again at the horizon, and
+[the second risk](#risks) gives the fixes.
 
 **The map holds nothing of the ground.** With ground condensate a texel also holds each ground row's **air
 factors**, and only those: its extent and the cut of its noise. A row's
@@ -666,6 +724,37 @@ frame and replaces no texel with one further on in the weather than real time wo
 The GPU column matches the CPU evaluator at texel centres, on every level, at the tick each part was written, within a tolerance
 that WP2 measured and its test states; that no part is older than its bound is asserted apart from it.
 
+### The weather volume
+
+A column says how much cloud stands over a point and between which heights. It cannot say where in the column
+the cloud lies, and a cluster of puffs overhangs. So near the camera the GPU reads a heaped cell's profile
+from a **weather volume**: a few world-anchored wrapping levels of voxels in the air frame, beside the map's
+and built like them, whose voxel doubles outward. A voxel holds the field's heaped profile at its own centre
+at the tick its part was written: the model's value there, with puffs, rise and overlapping cells in it, and
+never an average over the voxel. It holds nothing of the deck, the ground or a placed shape, which keep their
+own forms. Like the map it lives in the air frame, so wind costs nothing, and it is refreshed in parts, no
+part older than the map's bound in weather time and in the camera's travel through the air.
+
+- **Who reads it.** The one density function, and so every consumer: the view march and its local light
+  samples, the Sun's path, the sky overlay and the medium coefficients. Inside the volume a heaped cell's
+  profile is the volume's, read through its filter. Past its outermost level a heaped cell is drawn in its
+  **column form**: the map's column spread by the type's vertical profile between its base and its top, as a
+  [placed cell's](#placed-volumes) column form is. The two are blended across a band inside the volume's
+  edge with weights that sum to one. Each is bounded by the query's column, so their blend is.
+- **It belongs to the weather, not to the sky.** The Sun's path integrates it. A scene with Shade and no
+  visible sky holds it, and its ground field is the same bytes as with the sky drawn.
+- **Its size.** Its reach and its voxels are profile constants. The first profile starts from 50 m voxels to
+  about 12 km and 100 m voxels to about 25 km, over the heaped type's depth: about 40 MiB at one byte a voxel.
+  At 12 km a 50 m voxel is 7 pixels of a 2560×1440 frame, and a profile changes over a fade length of 300 m,
+  so the filter draws the cluster and the noise draws everything finer. Past 25 km a heap is a few layer
+  texels wide, which the column form holds.
+- **What fills it.** Compute passes in `simulate` evaluate the model's rule at voxel centres. Whether a pass
+  makes a cell's puffs from the hash or reads a list the model made for each live cell is the builder's
+  choice. The check is the voxel centres against the model, at a tolerance the test states.
+
+The map still holds every column to the horizon. It is what a game's query is checked against, it steps a ray
+across empty air, and it draws the column form.
+
 ### The Sun's path: one optical-depth product
 
 This section describes the product's **cloud band**. With ground condensate it continues to the ground in a
@@ -678,7 +767,8 @@ height)`, in levels of camera-following windows whose columns are Sun rays. A co
 crosses the bottom of the layer. It is filled by marching the **coarse density** along each ray, time-sliced by
 tiles of columns, and stored in place. It integrates the same density in every profile and never reads the
 detail noise, so its bytes do not depend on whether clouds are drawn. Over a placed cell that density is the
-[shape's own](#placed-volumes), read from the lent slab.
+[shape's own](#placed-volumes), read from the lent slab, and over a heaped cell the cluster's, read from
+[the weather volume](#the-weather-volume) wherever the view march reads it there.
 
 **The path direction.** The columns follow the environment identity's true Sun, never the apparent surface
 light, with one floor: their elevation is `max(Sun elevation, lowest elevation)`, a profile constant (2° in the
@@ -1031,7 +1121,7 @@ A sky with clouds must light the world as one. Three small products do it, each 
 
 A placed volume is a cooked density volume that stands for one cell.
 
-A placed cell is a cell of the weather field whose cloud is an authored shape and not a cluster of turrets. The field knows
+A placed cell is a cell of the weather field whose cloud is an authored shape and not a cluster of puffs. The field knows
 the shape, so the query, the picture and the shade agree on its outline at any distance and with no camera.
 
 - **Content.** The game cooks its library as one stacked volume product: each shape is a slab of the same
@@ -1246,7 +1336,7 @@ and costs nothing; changing the set rebuilds the effect and starts a new epoch.
 | Capability | What it adds | Needs |
 |---|---|---|
 | **Weather** | The state, its step and the point query, in `thrum-cloud-model`. No graphics device, nothing allocated | Always present |
-| **Shade** | The weather map, the shape noise and the Sun's path, with the ground field `ATMOSPHERE` applies | Weather |
+| **Shade** | The weather map, the weather volume, the shape noise and the Sun's path, with the ground field `ATMOSPHERE` applies | Weather |
 | **Sky** | The visible layer: the trace, the layer's history, the detail noise, the compose and the far-aerial use | Shade |
 | **World light** | The sky overlay and the haze scale | Sky |
 | **Shapes** | The library: its footprints, which the field's query reads (its voxels too, where a game gives them to the model), and its leased volumes, which the Sun's path reads for a shape's shade and the trace, with Sky, for its picture. By the field's hash or by the game | Shade |
@@ -1273,16 +1363,17 @@ and costs nothing; changing the set rebuilds the effect and starts a new epoch.
   never a quality setting (C04). Chrome and the Mac hold the same weather.
 - **Limits are inputs.** Volume and storage formats, 3D extents, sampled textures per stage and placed capacity
   are read from the capability record and refused at preparation when exceeded. Levels are array layers or
-  packed regions so the trace stays inside sixteen sampled textures with the lent environment group.
+  packed regions, the weather volume's too, so the trace stays inside sixteen sampled textures with the lent
+  environment group.
 - **Recipes.** Both recipes run the portable kernels first. An Apple-tile variant (f16 arithmetic, compute in
   place of a fragment pass or the reverse) is promoted only by a paired measured win with no visible difference
   in the same views.
 - **Knobs.** Each is a named runtime value in `EFFECT-GRAPH`'s list with a declared invalidation: the trace's
   refresh fraction, the layer's scale, step length and sample cap, local light samples, the Sun's path cadence
-  per level, weather map cadence, overlay cadence, placed range, the ground band's cadence and the medium coefficients' cadence. The handover
+  per level, weather map cadence (the weather volume's is the same value), overlay cadence, placed range, the ground band's cadence and the medium coefficients' cadence. The handover
   distance is a profile value and not a knob, because it decides which integrator draws a thing. Extent knobs select a sub-rectangle of a
   fixed allocation, so no knob creates a resource or pipeline. None changes the weather field, the columns the
-  weather map holds or what a query returns; the placed range changes only the map's presentation values, the
+  weather map holds, the profiles the weather volume holds or what a query returns; the placed range changes only the map's presentation values, the
   slot and the volume form's weight, and through them which form of a placed cell is drawn and shaded.
 
 <a id="numerical-acceptance-for-ground-condensate"></a>
@@ -1312,7 +1403,8 @@ The owner's bar of 17 November 2026 ([the request](#the-request), and
 - **What a game reads is tested.** The weather field is the game's: it is deterministic, and its CPU query is
   what a server reads. So the GPU's weather map and ground condensate are tested against the query, at a
   tolerance the test states: cloud and mist stand where the query has them and not where it is clear (WP2, WP4.1,
-  WP6.2, WP6.9, WP7.6, WP14.2). Presence is not enough. A GPU that draws twice the query's extinction puts mist at
+  WP6.2, WP6.9, WP7.6, WP14.2), and [the weather volume](#the-weather-volume)'s voxels hold the model's
+  profile at their centres (WP24.1). Presence is not enough. A GPU that draws twice the query's extinction puts mist at
   every probe the query does, and a player loses sight of a thing at half the range the game works with. So
   the test of each GPU path that WP2's map test does not reach also compares the amount, at a point inside the
   condensate: through ground condensate, the optical depth along a sight line, summed from the GPU's coarse
@@ -1774,12 +1866,40 @@ November, after WP3 stopped a second time, on a bright underside under a dark st
 - **Unrun:** a still from the built rule; a layered type; the far side of a turreted cloud at a low Sun,
   which WP5.3 judges; cost, which falls by the vertical reads the inferred plane took and WP3.9 records.
 
+From `form.rs`, [the form control](../../../.orchestrate/evidence/CLOUDS/design-proof/form-control/README.md) of
+28 November, after WP17 stopped on three more looks at turrets
+([its handoff](../../../.orchestrate/evidence/CLOUDS/WP17-handoff.md),
+[its cell isolation](../../../.orchestrate/evidence/CLOUDS/WP17/cell-isolation/README.md)). Part XVIII drew cells from
+the side and passed a form that failed from the ground, so this one looks from where the player stands: one
+fixed sky of six heaped cells, marched on the CPU from 2 m over the ground under a 60° Sun, toward, across
+and away from it, in four forms that share the noise, the erosion's strength, the light and the camera. It
+is a toy. It shows outline and relief, and nothing of the engine's light, map or cost.
+
+- **XX, the form of one cloud from the ground.** *Turrets*, by `field.rs`'s rule at `d17d0963f`: with
+  nothing eroded every cloud is a dome or a lens on a level base, with a terrace where a cap meets the dome
+  and a thin skirt at the rim. Eroded, one cloud is a lens over a lens and another a cap on a stalk. Those are
+  the kinds of flaw WP17's Metal and Chrome stills show, so the toy's camera tells the forms apart. *Puffs*,
+  46 to 136 spheres a cell from 88 to 1,100 m in radius, as a signed distance with a 300 m fade length: heaps
+  of different heights on one ragged level base, crowns in billows, a tower on one cloud, no two outlines
+  alike, and no lens, cap, skirt or terrace. Where a far cell stands behind a near one its lit crown shows
+  under the near cell's shaded base, as a second cloud. *The same clusters as two heights a column*, the
+  lowest and the highest sphere surface, with and without a correction for the surface's slope: the outline
+  is the puffs' to within a few pixels, and every overhang is filled to the sphere below it, which draws as a
+  vertical curtain with streaks down it and turns the tower into a cylinder. So the form needs the third
+  dimension, and the weather map's column cannot carry it. *Rise*: the puff sky with every cluster risen a
+  quarter, a half, three quarters and all of the way through its base reads at each stage as a smaller cloud
+  of the same kind: tufts, low heaps, a tower beginning.
+- **Unrun:** the engine's light and its noise on the form; the weather volume's filter at 50 and 100 m
+  voxels, where the toy's grid is 25 m; the column form past the volume and the band between them; a dying
+  cloud, in motion; cost. WP23's stills from the model, WP24's tests and WP17's inspections take those up, in
+  that order.
+
 ## The system as it runs
 
 | State | Owner |
 |---|---|
 | The weather field, its state and step, the density function, the f64 references | `thrum-cloud-model` (this module), no GPU dependency |
-| The weather map, noise, the Sun's path in both bands, the layer and its history, the overlay, placed-volume sampling, the medium coefficients it writes for the view volume | `thrum-clouds` (this module), an effect on `EFFECT-GRAPH`'s seam |
+| The weather map, the weather volume, noise, the Sun's path in both bands, the layer and its history, the overlay, placed-volume sampling, the medium coefficients it writes for the view volume | `thrum-clouds` (this module), an effect on `EFFECT-GRAPH`'s seam |
 | The view volume: its grid, its history, the joint integration of air, haze and condensate near the camera, and the lent aerial operation that reads it | `ATMOSPHERE` |
 | The air's haze: how much aerosol, as a visual range, and what kind, as an Ångström exponent | The weather state; `ATMOSPHERE` owns what the air does with them |
 | The surface field (ground heights and water levels) and the fog table | The game, like the type table |
@@ -1792,7 +1912,7 @@ November, after WP3 stopped a second time, on a bright underside under a dark st
 | The shell, typed controls, parameter files | `CREATOR` |
 
 **A frame, in order.** `upload` takes the page's weather state and forms the travel at the display's time, from the frame's display phase.
-`simulate`, on a new tick only: the due part of the weather map; the
+`simulate`, on a new tick only: the due part of the weather map and of the weather volume; the
 due tiles of the Sun's path in both bands and the ground field; the due part of the overlay. Each frame the
 effect writes the medium coefficients at the view volume's sample points, and `ATMOSPHERE` integrates the view
 volume. `ATMOSPHERE` filters its
@@ -1876,8 +1996,9 @@ there, not here.
 | Weather step | Tick, CPU | One record and at most 16 directed shapes | Microseconds | |
 | Phases | Frame, once a ray; the tables at preparation | One table read and one closed form; a table for each row of the type table, about 4 KiB each at 1,025 entries, with the Sun term's four numbers | None in the march | |
 | Weather map | Half a second of weather, in parts: 2 Hz at 1× | 4 levels × 256², two textures | Under 0.1 ms a frame at 1× | 2 ms an update |
+| Weather volume | With the map, in parts | 2 levels of 512² columns, 96 and 48 voxels deep, one byte a voxel. A voxel in a cloudy column measures its distance to the puffs of the cells over it, 46 to 136 a cell in part XX; a voxel in a clear column costs its cells' footprint tests | Unestimated. WP24 records it at 1×, 8× and 60×, where the whole volume is due each frame | |
 | Noise | Preparation | 128³ and 32³ | None in a frame | |
-| Sun's path | At 1×, near level over 8 frames, mid 32, far 128 | 3 × 256² columns (80 m, 320 m and 1.6 km wide, the last reaching the horizon), 48, 32 and 16 slices of the coarse density, which reads the map and the shape noise, and a placed cell's slab where its volume form has weight: 6.3 M stored slices to fill, about 0.5 M a frame. A stored slice is one or more density reads: part H's accuracy figures took four | 0.1–0.2 ms | 2.2 ms shadow |
+| Sun's path | At 1×, near level over 8 frames, mid 32, far 128 | 3 × 256² columns (80 m, 320 m and 1.6 km wide, the last reaching the horizon), 48, 32 and 16 slices of the coarse density, which reads the map, the weather volume and the shape noise, and a placed cell's slab where its volume form has weight: 6.3 M stored slices to fill, about 0.5 M a frame. A stored slice is one or more density reads: part H's accuracy figures took four | 0.1–0.2 ms | 2.2 ms shadow |
 | Ground field and far value | With the Sun's path; the far value each frame | 1024², and a mean over the outermost level's ground slice | Under 0.05 ms | |
 | Time-lapse | Ages are held in weather time | At 60×, the whole map (262 k texels) and up to the Sun path's whole fill each frame | Unestimated beyond those counts; WP2 records 1×, 8× and 60× | |
 | Trace | Frame | 640×360 rays, three quarters sky: 3–7 M reads, up to 16 M with three local light samples; the Sun term adds one read of the Sun column's last slice and four exponentials a lit sample, and no density read | The largest term; WP3 measures it | 268 ms; 33 M density evaluations |
@@ -1888,7 +2009,7 @@ there, not here.
 | Ground band of the Sun's path | With the Sun's path | 3 levels × 256² columns × 8 to 12 heights, with one visibility bit a node | As the cloud band, about a quarter of its samples | |
 | Medium coefficients | Frame | One sample for each view-volume cell inside the handover (about 0.7 M of 0.9 to 1.4 M cells): the map, the shape noise, the Sun's path | Unmeasured; Frostbite's write and lighting of a like grid took 2.5 ms on a PlayStation 4. WP14 records it | |
 | Far condensate in the trace | Frame | The same rays, longer where mist lies between the handover and the land; a stop for each pixel of a texel, kept as the ray passes its depth; one lent aerial read for each part of a ray that holds condensate, one for a ray through a cloud and up to tens through thin mist in thick haze; and the texels traced out of turn where no carried stop passes | Unmeasured; WP15 records it beside WP9's, with the rays traced out of turn | |
-| Memory | | Weather 4 MiB, noise 2, Sun's path 13, ground 2, layer history and trace 25, footprints about 1, library 27 MiB as R8 or 14 as BC4, growth track the same again; the library is held by every scene that declares Shapes, shadow-only included. With Ground: the surface field and datum about 2 MiB, the ground band about 4, the medium coefficients about 8 at 160×90×72, and four stops a texel in the layer and its history where there was one, about 52 | About 47 MiB plus the library, and about 66 more with Ground | 62 MiB plus history |
+| Memory | | Weather 4 MiB, the weather volume about 40, noise 2, Sun's path 13, ground 2, layer history and trace 25, footprints about 1, library 27 MiB as R8 or 14 as BC4, growth track the same again; the library is held by every scene that declares Shapes, shadow-only included. With Ground: the surface field and datum about 2 MiB, the ground band about 4, the medium coefficients about 8 at 160×90×72, and four stops a texel in the layer and its history where there was one, about 52 | About 87 MiB plus the library, and about 66 more with Ground | 62 MiB plus history |
 
 **Records and tripwires, never gates** ([brief](../VISION.md), decision 3). `scripts/cloud_cost.py`, created in
 WP2, takes a paired record of one scene at one view, capture off: the scene with clouds and with them absent,
@@ -1928,64 +2049,73 @@ is judged for the weather sky in WP20's wind series and recorded for the finishe
    over the refresh interval is written up as a follow-up for the performance phase. The weather sky under the
    fair preset is the exception from WP19 on: there a refresh lost to the clouds is fixed, first by moving when
    work is done, and a remedy from this list brings the stills and sequences it changes back for inspection.
-2. **Procedural cumulus reads as repeated shapes, and a single cloud shows shelves and folds.** WP3's first
-   form did, through three looks: one dome a cell, so domes, lenses and shelves. Turrets and the billow field
-   replace it (part XVIII). On Metal they gave a sky that reads as scattered cumulus at a glance, with separate
-   clouds, varied sizes, solid interiors and parallax, and left four flaws in a cloud seen alone: stacked
-   level shelves under the large clouds toward the Sun; a lip or level band under an isolated one; a hooked
-   fold or squared break in the near cloud's lower edge across the Sun; and caps, wedges and cones that repeat
-   in the middle distance. The lead parked the cue on 18 November 2026, after five rounds of looks. WP3.1
-   judges the sky at a glance, and **WP17** judges each cloud, after the rest of the module's sky is built.
+2. **Procedural cumulus fails when one cloud is looked at alone.** It has twice. WP3's first form was one
+   dome a cell: domes, lenses and shelves, through three looks. Turrets and the billow field replaced it
+   (part XVIII) and gave a sky that reads as scattered cumulus at a glance, with separate clouds, varied
+   sizes, solid interiors and parallax. A cloud seen alone kept four flaws: stacked level shelves under the
+   large clouds toward the Sun; a lip or level band under an isolated one; a hooked fold or squared break in
+   a lower edge across the Sun; and caps, wedges and cones that repeat in the middle distance. The lead
+   parked the cue on 18 November 2026 after five rounds of looks, and WP17 took it up on 27 November. Three
+   more looks, on the Mac and in Chrome, left a smooth dome over a folded rim, a notch between two hanging
+   flaps and pointed tops on level skirts. Puffs replace turrets ([part XX](#check-that-it-can-work)).
 
-   WP17 judges the clouds that failed. By then the fair preset places library shapes among its procedural
-   clouds, and at a placed share of 1 it holds no procedural heap at all, so a sky judged with shapes in it
-   could pass on their heaps while the turrets kept every flaw. WP17.1 on the Mac and WP17.2 in Chrome
-   therefore take the fair preset with the placed share at 0 and no directed shape, which is
-   [a sky of weather alone](#placed-volumes) and the sky WP3 stopped on, from 2 m and from 40 m on both
-   targets. WP17.3 then looks at the presets as they ship, shapes included.
+   What those rounds established, in [WP3's erosion notes](../../../.orchestrate/evidence/CLOUDS/WP3-erosion/README.md),
+   [WP17's evidence](../../../.orchestrate/evidence/CLOUDS/WP17/README.md) and
+   [its cell isolation](../../../.orchestrate/evidence/CLOUDS/WP17/cell-isolation/README.md):
 
-   The flaws are excused only until WP17 starts. In a work package built before it (WP3 to WP16, and WP11) the four
-   are known: they fail no inspected item, and a reviewer who sees them says so and judges the item's own
-   list. From WP17 on nothing excuses them. One that shows on a procedural fair-weather cloud fails the
-   inspected item whose view shows it, in WP17 and in WP12, and in
+   - The flaws are in the density and not in the light. They are in the trace's opacity before light is
+     composed, and the CPU point march draws them with no weather map, no mip and no light. Turning the lit
+     plane, and taking the local light samples away, changed brightness and fine stripes and no outline.
+   - One cloud alone keeps its smooth cap and its level base with every other cell removed, with nothing
+     eroded, and with the first octave of the billows coarsened from eight lobes to six and to four. So the
+     cap is the column's own form and no noise setting removes it.
+   - Part of a shelf is another cloud. On the rays of one shelf the near cell has no extinction at all and a
+     cell two sites farther off is opaque. Clouds in line toward the horizon are a real sky; they read as one
+     cloud's shelf when both are flat-topped and evenly pale.
+   - Tried on turrets, each leaving a flaw: erosion from 0.10 to 0.61; a wider and a narrower pitch; deeper,
+     and then evenly drawn, depths; a doubled noise wavelength; a stronger taper; lower water with a longer
+     base fade; a higher clearing threshold; independently varied widths; lifted and joined shoulders; varied
+     crown curvature; billows stretched upward; a softer heaped edge.
+
+   The causes, as the design now takes them: a height a column cannot overhang, so every side is a slope
+   down to a level base; a profile stretched to each column's height erodes a rim by nothing; and two clouds
+   in line need a shaded base over a lit crown to read as two. The puff form answers the first two in the
+   density. The third is the light's and the inspection list's: WP17.1 asks for it by name.
+
+   **Early signs, in order.** WP23's stills from the model, before any GPU work: if they show part XX's
+   turret flaws, or curtains, the form is wrong again, and the builder ends `BLOCKED` with `needs_context`
+   and the stills, for a planner. If they fail on a cue part XX's puff frames do not show, the profile
+   constants are the builder's to tune (puff counts, sizes and lean, the fade length, the erosion and the
+   noise's lobe sizes). Then WP17's Metal and Chrome stills, where the constants and the light's are the
+   builder's. Three failed looks on one cue go to the log and end `BLOCKED`.
+
+   **Never:** a height a column in place of the cluster, or one dome a cell; a form only the trace has, since
+   the query, the map, the weather volume, the Sun's path and the trace read one density, which WP24 holds;
+   a column the query does not give, such as a share standing in for heaps a far level cannot resolve or a
+   field smoothed for it; a puff that moves sideways or changes size in its cell's life.
+
+   **The fallback**, a planner's decision from the record and not a builder's: every heaped cell near the
+   camera becomes a [placed cell](#placed-volumes) on a slab from a set of forms the engine generates. The
+   placed path passed WP6 and WP10. It needs cells that never overlap and about ten times the volume
+   instances, and a set of forms repeats.
+
+   **The far levels.** The map level whose texel is wider than a puff holds
+   [a sample of the heaps](#the-weather-map), so a far cloud's heaps are fewer and broader than a near one's,
+   and past [the weather volume](#the-weather-volume) a cloud is its column form. If WP17's crops show where
+   either begins, the fixes in order: a wider band between the two forms, or a fade between two map levels
+   across a band at the finer one's edge; then the volume's reach and the levels' texels and sizes, which are
+   profile constants.
+
+   **Who judges it.** WP17 judges the clouds that failed. The fair preset places library shapes among its
+   procedural clouds, and at a placed share of 1 it holds no procedural heap at all, so a sky judged with
+   shapes in it could pass on their heaps. WP17.1 on the Mac and WP17.2 in Chrome therefore take the fair
+   preset with the placed share at 0 and no directed shape, which is
+   [a sky of weather alone](#placed-volumes), from 2 m and from 40 m. WP17.3 then looks at the presets as
+   they ship, shapes included. WP24 lands the form in the engine and is judged by its tests alone; the sky it
+   leaves on main is unjudged until WP17. In a work package built before WP17 (WP3 to WP16, and WP11) the
+   four flaws fail no inspected item. From WP17 on nothing excuses them. One that shows on a procedural
+   fair-weather cloud fails the inspected item whose view shows it, in WP17 and in WP12, and in
    [the noon-relief follow-up](#the-noon-relief-follow-up) after them.
-
-   What WP3 found, in [the erosion notes](../../../.orchestrate/evidence/CLOUDS/WP3-erosion/README.md) and
-   [the type-plane notes](../../../.orchestrate/evidence/CLOUDS/WP3-type-plane/README.md). At `5f84d354a3bf`
-   Git stored both under `docs/evidence/CLOUDS/`. Their archives hold the opacity observer, the point march and
-   the capture scripts.
-
-   - The fold is in the density and not in the light. It is in the trace's opacity before light is composed,
-     and turning the lit plane by 0.25, 0.50 and 0.75 changed its brightness and not its outline. The shelves
-     stayed through those turns too.
-   - The CPU point march draws the same break with no weather map and no mip: 82 px at the profile's erosion
-     of 0.61, against 108 px on Metal; 80 px with the detail noise at its mean; 2 px with nothing eroded. So
-     the shape noise held against the column profile cuts it, and the detail noise and the map's filtering do
-     not. What makes Metal's break larger was not found.
-   - On the CPU the break shrinks only below an erosion of about 0.3: 66 px at 0.30, 20 at 0.20, 8 at 0.10.
-     The one Metal look at 0.20 kept the shelves, the break and the repeated caps, and smoothed the far side
-     into domes and a cone. Its opacity was not read back, so those CPU figures do not describe it. Erosion
-     strength alone is ruled out.
-   - Also tried, each leaving shelves or repeats: a wider pitch; deeper, and then uniformly drawn, mature
-     depths; a doubled shape-noise wavelength with a stronger taper; lower water with a longer base fade; a
-     higher clearing threshold; coverage blended in the march.
-   - Not explained: the stacked shelves toward the Sun. Opacity saturates there where near and far clouds
-     overlap, so a shelf may be one cloud's own terraces, where a lobe several hundred metres wide is cut
-     along a level of the column profile, or a farther cloud standing under a nearer one. Nor is the repeat
-     of caps and cones explained.
-
-   WP17 starts from causes, as [the lit plane](#cloud-light) was found: a control on the point march or the
-   opacity observer that removes one flaw, before any look on Metal. The candidate fixes, none yet tried
-   against a named cause: a wider spread of turret heights and widths; a coarser first octave; turrets with
-   lives of their own, by the cell rule one level down. A cause that asks for a mechanism this design lacks
-   ends `BLOCKED` with `needs_context` and the cause, for a planner. Never one dome a cell again, and never a form only the trace has: the query,
-   the map, the Sun's path and the trace read one density, and WP17.4 holds the changed form to that. The map
-   level whose texel is wider than a turret holds [a sample of them](#the-weather-map), so a far cloud's
-   heaps are fewer and broader than a near one's and change where it crosses into that level. If WP3.2's crops show where that begins, the fixes in order: a
-   fade between the two levels across a band at the finer one's edge; then the levels' texels and sizes,
-   which are profile constants. Never a column the query does not give: no share standing in for turrets, and
-   no turret field smoothed for a far level.
-   Three failed looks on one cue go to the log and end `BLOCKED`.
 3. **The reconstructed layer ghosts or crawls.** Early sign: WP3's pan. Fallback: refresh every texel every
    frame at a lower layer scale, which removes the layer's history from the picture.
 4. **Low-Sun relief is lost in the summed product**, or its coarse density shades an eroded edge visibly
@@ -2351,6 +2481,10 @@ water scene, WP11.5 uses `scripts/check_water_browser.mjs`.
 - **Game content stays in the game.** Presets, type tables, looks, volumes and the library never enter
   `thrum-cloud-model`, `thrum-clouds` or their tests; tests make their own inputs.
 - **Dependencies.** New crates and any third-party dependency are registered in `.config/architecture.toml`.
+- **Two heaped forms, from WP23 to WP24 only.** WP23 adds the puff form to `thrum-cloud-model` beside the
+  turret rule, and a profile names one. The GPU builds turrets alone until WP24, so every game keeps turrets
+  and `./dev check` stays as it was. WP24 moves the GPU and the games to puffs and deletes the turret rule,
+  its constants, its tests and the choice. Nothing else may read the choice.
 - **Maturity.** The ledger's `E1.clouds` row is kept current from WP2, with implementation, correctness, visuals
   and device apart.
 - **The bar.** [How the module is proved](#how-the-module-is-proved) governs every work package not yet Done.
@@ -2377,11 +2511,13 @@ water scene, WP11.5 uses `scripts/check_water_browser.mjs`.
 | Does the summed Sun-path product carry low-Sun relief with three local samples? | WP5 |
 | Does the Sun term give clouds their brightness and relief with nothing tuned, and if not, which constant moves? | WP3's stills, then WP5's at a low Sun; the builder records any constant it changed |
 | Does a far side at a low Sun stay dark enough under a plane held for the whole cloud? | WP5's stills at a 10° and a 4° Sun |
-| Do turrets that only the cell's envelope raises and lowers read as a cloud growing, or do they need lives of their own? | WP7's time-lapse |
-| What draws the shelves, the fold and the repeated caps on turrets, when the lit plane and the erosion strength do not? | WP17 finds each cause by a control before any look ([risk 2](#risks)) |
+| Does a cluster that rises through its base read as a cloud growing, and does a dying one fray before it subsides? | WP23's life strip from the model, then WP17.4's time-lapse |
+| Do puffs hold up from the ground in the engine's own density and noise, as part XX's toy has them? | WP23's stills, before any GPU work ([risk 2](#risks)) |
+| Does a cluster read from 50 m and 100 m voxels keep its heaps, and does the edge of the weather volume show? | WP17.1's crops and WP17.3's horizon |
+| What does filling the weather volume cost at 1×, 8× and 60×? | WP24 records |
 | What brings out the creases of a broad lobe under a high Sun, when a finer Sun march, a broader diffuse column and density probes do not? | [The noon-relief follow-up](#the-noon-relief-follow-up), after WP12, finds the cause by a control before any look |
 | Why does a beam below broken cloud stop reading as a shaft where it meets the mist, when the mist's depth, a local bank, the opening's width, the ground band's spacing and the diffuse solar term do not explain it? | [WP22](#the-broken-cloud-shaft-follow-up-wp22) finds the cause by a control before any look ([risk 15](#risks)) |
-| Does a far cloud read as cumulus on the map level that samples turrets it cannot resolve, and does its crossing into that level show? | WP3.2's crops |
+| Does a far cloud read as cumulus on the map level that samples heaps it cannot resolve, and does its crossing into that level show? | WP3.2's crops for turrets; WP17.3's for puffs |
 | Does the droplet's forward peak hold steady in the part-extent trace? | WP5 |
 | How many entries does the phase table need to hold its integral and its values near the Sun? | WP1 measures first, beside part G's 1,025 |
 | Does the incident-light meter already see cloud shade? | WP8 reads the code and measures |

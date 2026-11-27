@@ -26,12 +26,12 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 - Assumption: clouds are shown through a selection inside `examples/v1-game` and `examples/water`, off by default; the V1 exit scene is unchanged.
 - Assumption: finished excludes the Broadsides game's ten genera, squall and warm front, rain, a cloud a simulation writes, a cloud held against the wind, and lamps glowing in fog.
 - Assumption: time-lapse runs from 1× to 60×, and "continuous to the horizon" means about 200 km.
-- Assumption: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item (brief decision 3), except in WP20: by the OS-reported presented times, the weather sky loses at most one refresh in 20 seconds beyond the same game without clouds, and stalls at most one refresh longer. Only a run's longest stall is compared, not how many it has.
+- Assumption: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item (brief decision 3), except in WP20, by [its rule](DESIGN.md#holding-the-displays-refresh-while-clouds-drift-wp19-and-wp20).
 - Assumption: what the game loses with clouds absent stops nothing here; it is listed for `PLATFORM-RUNTIME-MAC` and the performance phase.
 - Assumption: only the fair preset's sky is held to the refresh. The broken and overcast skies' cost and the finished sky's presented cadence are recorded and investigated (WP7.8, WP12.5, WP12.6), and the rest is the performance phase's.
-- Assumption: the fair cumulus's close-up form (shelves, folds, repeated caps) waits for WP17, just before the module closes; every sky until then shows those flaws.
-- Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX work packages. Fog waits for `ATMOSPHERE` WP8, and the sea for `WATERS` WP8.
-- Assumption: the game WP20 measures is the release V1 game in its 1920×1080 window, on the Apple recipe with TAAU under the fair preset. WP20 comes before WP8 and pauses every other agent for one attended series of eleven recorded runs.
+- Assumption: "each cloud holds up on its own" is met by a new form for the weather's own clouds (heaps held in a 3D volume, about 40 MiB more), not by library shapes filling the fair sky. From WP24 until WP17 passes, main shows it unjudged.
+- Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX work packages.
+- Assumption: the game WP20 measures is the release V1 game in its 1920×1080 window, on the Apple recipe with TAAU under the fair preset.
 - Assumption: the finished sky closes at WP12 with weak noon relief on broad lobes of library shapes as a listed weakness ([risk 14](DESIGN.md#risks)). The relief work is no work package: [the noon-relief follow-up](DESIGN.md#the-noon-relief-follow-up) holds it, and waits for the lead to schedule it.
 - Assumption: WP14 to WP12 pass without a shaft of sunlight followed inside mist below broken cloud ([risk 15](DESIGN.md#risks)); WP22, last, takes it up.
 - Assumption: a scene that declares Ground pays its full-refresh trace at every fog amount, zero included. With no mist it is held to the look of the same scene without Ground, not to the bytes it drew before WP15.
@@ -100,17 +100,26 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 
 ## WP16 Through a day mist forms after dusk and burns off in the morning, haze runs from crisp to murky, and a visitor sets them, on the Mac and in Chrome
 
+[Review](../../../.orchestrate/evidence/CLOUDS/WP16-review.md)
+
 ## WP11 Clouds drift over the open sea, shade it and show in its reflections, and a fog bank drifts ashore
 
-Do WP11.11 first and merge it as its own checkpoint: main's `cross-target` check fails until it lands. The
-[log](LOG.md)'s last entry names the one error.
+[Review](../../../.orchestrate/evidence/CLOUDS/WP11-review.md)
 
-`examples/water` is `WATERS`': add the selection and its surface field and change nothing else of that module's.
+## WP23 The weather's own clouds take a new form, a cluster of rounded heaps, in what a game reads and in stills drawn from it on the CPU
+
+Start from main: `build/clouds` holds only the failed turret looks.
+[The form control](../../../.orchestrate/evidence/CLOUDS/design-proof/form-control/README.md)'s numbers are a
+starting point. WP23.1's check runs the tests whose names contain `puff`. If WP23.2's stills
+show the turret flaws or curtains, end `BLOCKED` with `needs_context` ([risk 2](DESIGN.md#risks)).
+
+## WP24 The engine draws, shades and answers for the new cloud form on the Mac and in Chrome, and the old form is gone
+
+WP24.1's check runs the tests whose names contain `weather_volume`. Judge no look here.
 
 ## WP17 Each fair-weather cloud holds up on its own: a cluster of heaps of different heights, with no shelf, fold or repeated outline
 
-[Risk 2](DESIGN.md#risks) holds what WP3 found, what its looks ruled out and where its records are. Find each
-flaw's cause with those controls before any look.
+[Risk 2](DESIGN.md#risks) says what is the builder's to tune. Take WP17.1's stills first.
 
 ## WP12 On the Mac's Apple recipe the sky runs with MetalFX and the governor, its cadence on the built-in display is on record, and the module is closed
 
