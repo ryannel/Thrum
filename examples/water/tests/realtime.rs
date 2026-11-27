@@ -123,6 +123,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let surf = super::surf_route();
     let route = std::env::var("THRUM_WATER_ROUTE").unwrap_or_default();
     let fall_dry = fall && route == "plunge-dry";
+    let plunge_inspection = fall && route == "plunge-inspection";
     let wet_yard = yard && matches!(route.as_str(), "wet-shower" | "wet-dry");
     let shore_ebb = matches!(super::settings(), super::Settings::WetShore(_)) && route == "ebb";
     let yard_camera_cut = yard && route == "yard-walk-low-sun-cut";
@@ -270,7 +271,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         ([1280, 720], 20.5, 8.0, CHANNEL_SUBMISSIONS)
     } else if fall_sequence {
         ([1280, 720], 6.0 * shot_seconds, 15.0, RIVER_SUBMISSIONS)
-    } else if fall_dry {
+    } else if fall_dry || plunge_inspection {
         ([1280, 720], 12.0, 9.0, MAX_SUBMISSIONS)
     } else if fall {
         ([1280, 720], 3.0, 24.0, MAX_SUBMISSIONS)
