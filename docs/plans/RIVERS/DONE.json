@@ -615,7 +615,7 @@
     {
       "id": "WP6",
       "name": "A waterfall pours over its lip in a smooth tongue, breaks into white strands as it gathers speed and plunges into its pool, which boils, foams and sends out rings",
-      "status": "in_progress",
+      "status": "blocked",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -745,7 +745,17 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_human_feedback",
+        "what": "The lead needs to decide whether to park the flood look or authorize another approach.",
+        "work": {
+          "commit": "7bafabb800e95b51d81f62c38dd55a05cdedde76",
+          "branch": "build/rivers",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/RIVERS/WP6-handoff.md"
+      }
     },
     {
       "id": "WP7",
