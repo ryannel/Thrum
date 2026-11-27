@@ -976,7 +976,7 @@
         {
           "verdict": "fail",
           "commit": "4937602f47143d786ebc3c985b81c1dbb6e8be1a",
-          "review": ".orchestrate/evidence/PUDDLES/WP6-review.md",
+          "review": ".orchestrate/evidence/PUDDLES/WP6-review-1.md",
           "items": {
             "WP6.1": "fail",
             "WP6.2": "pass",
@@ -1033,6 +1033,61 @@
             "turns": 1
           },
           "at": "2026-11-27T14:32:41Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "064614ef077565db64450441e7c990e5e71d3c72",
+          "review": ".orchestrate/evidence/PUDDLES/WP6-review.md",
+          "items": {
+            "WP6.1": "fail",
+            "WP6.2": "pass",
+            "WP6.3": "fail",
+            "WP6.4": "pass",
+            "WP6.5": "fail"
+          },
+          "findings": [
+            {
+              "name": "The default exit cook breaks the retained showcase flythrough",
+              "item": "WP6.1",
+              "different": "The selected native launch now draws the floor and patch. The new failure is in the rain-off exit cook, whose added mesh changes the content root required by the unchanged route.",
+              "repeat": false
+            },
+            {
+              "name": "The wet boundary on a slope boulder forms horizontal steps",
+              "item": "WP6.3",
+              "different": "The distant boulder now has shelter. The new defect is the stepped wetting boundary on its exposed face in low Sun.",
+              "repeat": false
+            },
+            {
+              "name": "The patch casts parallel shadow stripes beside the dry hollows",
+              "item": "WP6.3",
+              "different": "The stripes appear on dry ground with no water geometry submitted. The previous finding concerned the soaked waterline and the outer sheen outline.",
+              "repeat": false
+            },
+            {
+              "name": "The valley cost record omits the water gather colour and depth textures",
+              "item": "WP6.5",
+              "different": "The forward wetness allocation is now recorded. The missing resources are the two render-graph textures written by the water gather and read by the film and surface.",
+              "repeat": false
+            }
+          ],
+          "summary": "WP6 fails because the rain patch enters the default exit cook and the retained showcase flythrough refuses its new content root before frame one. The selected shower now works on Metal and shipping Chrome, including visible rings and drying, but the low Sun exposes stepped wetting on a boulder and striped shadows beside the hollows. The paired cost record also omits the two full-resolution water gather textures. [Flythrough failure](WP6-review/064614ef/exit-route.log) \u00b7 [Rock comparison](WP6-review/064614ef/slope-low-sun.jpg) \u00b7 [Patch comparison](WP6-review/064614ef/bank-shadow-control.png) \u00b7 [Gather resources](WP6-review/064614ef/gather-resources.json)",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 199289,
+            "cached": 11406464,
+            "output": 25754,
+            "turns": 1
+          },
+          "at": "2026-11-27T16:53:47Z"
         }
       ],
       "authorised": {
