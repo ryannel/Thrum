@@ -1848,7 +1848,9 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "depends_on": [],
+      "depends_on": [
+        "EFFECT-GRAPH:WP7"
+      ],
       "quality_bar": "Light under water as in the shallows of Subnautica and under the hull in Sea of Thieves: a net of sunlight that moves with the waves over sand and timber, fine in the shallows and soft in the deep, with none in a shadow; beams that stand round the Sun and sweep as the swell passes, dark beneath the hull; and a picture a player can read from the waterline to 20 m down, darker with depth and never black.",
       "items": [
         {

@@ -284,3 +284,9 @@
   work on wgpu's one queue, and the view ahead of the batch held the device for 93 ms in the water's own
   surf field cache, which `WATERS` WP21 brings down.
   [WATERS' design](../WATERS/DESIGN.md#a-surf-view-a-running-game-can-afford-wp21)
+- 2026-11-27 Planner. `WATERS` WP16's builder ended `BLOCKED needs_dependency`: the caustic field is drawn
+  with additive blending ahead of forward, and `simulate` gives an effect a compute pass only
+  ([handoff](../../../.orchestrate/evidence/WATERS/WP16-handoff.md)). WP7 added:
+  [a `simulate` pass may draw](DESIGN.md#a-simulate-pass-that-draws-wp7) into its effect's own textures, with
+  the executor beginning the pass. The draw is kept over a compute producer, which would be a fixed-point
+  atomic scatter or a gather that fails where sheets cross. No Done item, contract or exact baseline changes.

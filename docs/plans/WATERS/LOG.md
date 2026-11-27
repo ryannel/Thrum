@@ -1589,3 +1589,19 @@
   raised-lake crest still produces pale overhead foam after its authored modes
   were adjusted to clear the angular edge. The paired 1440p record covers the
   shared-load cost. [Target proof](../../../.orchestrate/evidence/WATERS/WP15/hull-repair/README.md).
+
+## WP16 caustic draw
+
+- 2026-11-27 Planner, after WP16's builder ended `BLOCKED needs_dependency`
+  ([handoff](../../../.orchestrate/evidence/WATERS/WP16-handoff.md)): `simulate` gave an effect a compute pass
+  only, and the caustic field is drawn. The field stays a draw, as the design has it, and
+  [`EFFECT-GRAPH` WP7](../EFFECT-GRAPH/DESIGN.md#a-simulate-pass-that-draws-wp7) lets a `simulate` pass draw
+  into its effect's own textures. WP16 now waits for `EFFECT-GRAPH:WP7`. No item and no word of the design
+  changed.
+- 2026-11-27 Planner, for WP16's next builder. Declare each rung's draw as a `simulate` pass on that stage,
+  with its attachment and the forward pass's read in the graph, and record no draw from a callback that
+  holds the encoder. A rung's pass may be skippable, which is how the field's cadence and its count of
+  rungs stay knobs. If the stage as built lacks something the field needs, write the proposal here and end
+  `BLOCKED`. The meter on `build/waters` at `e67b55584` stands. WP16.8's 20 m is reached in the example's
+  own scene: its dive site and the height it lifts the sea to are the example's, and the sky's altitude
+  range is not changed for it.

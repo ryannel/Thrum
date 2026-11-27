@@ -41,32 +41,23 @@ Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exact-baselin
 ## WP5 The world lane’s resume origin is proved without real-time pacing: done
 [review](../../../.orchestrate/evidence/EFFECT-GRAPH/WP5-review.md)
 
-## WP6 A game's question to an effect is answered every tick from the state the last drawn frame left, even when that tick's frame is skipped, on the Mac and in Chrome
+## WP6 A game's question to an effect is answered every tick from the state the last drawn frame left, even when that tick's frame is skipped, on the Mac and in Chrome: done
+[review](../../../.orchestrate/evidence/EFFECT-GRAPH/WP6-review.md)
 
-[The tick stage](DESIGN.md#the-tick-stage-wp6) is the design, and
-[the ruling](../ARCHITECTURE.md#seam-ruling-for-effect-graph-wp6) says whose files it is built in. `WATERS` WP19
-waits for this work package and for nothing else.
+## WP7 A test effect draws into a texture of its own before the scene is shaded, and the scene's shading reads it in the same frame, on the Mac and in Chrome
 
-The body query on main shows the shape a consumer has today: `crates/thrum-water/src/query/gpu.rs` stages its
-inputs in `encode_upload`, dispatches in a `simulate` pass, copies in `encode_effect_readback` and starts its
-map in `submitted`. Leave it there. Moving it is WP19's, on its own candidate, and `thrum-water` builds and
-passes its tests unchanged when you land.
+[A `simulate` pass that draws](DESIGN.md#a-simulate-pass-that-draws-wp7) is the design. `WATERS` WP16 waits
+for this work package and for nothing else: its caustic field is drawn this way, in its own crate, after you
+land.
 
-Two shells change, each in one place, and nothing else in either:
-[the Mac's render actor](DESIGN.md#the-tick-stage-wp6) makes the asking before its wait for a frame slot, and
-the iPhone's render owner gives its host a submission permission made of its lease, its request's epoch and
-its background flag. Leave the wait's length, the lead, the lease's protocol, the frame's present section
-and every call into the host as they are. The permission's two checks are rule 6's: build no wait into the
-shell and no lock beyond the lease's section.
+Every file is this module's own. A `simulate` pass that computes is declared, recorded and timed as it is
+today, so `thrum-sea`, `thrum-water`, `thrum-clouds` and `examples/water` build and pass their tests
+unchanged when you land: leave them alone.
 
-A game states a post's endpoint, so the test contribution's posts and the diagnostic effect's carry one.
-`thrum-app`'s sky world changes in one place: its fixed update is handed its tick's endpoint beside the
-tick number and duration it has. Leave `examples/water` as it is. `WATERS` WP19 takes the endpoint from
-there, as [what WP19 takes](DESIGN.md#the-tick-stage-wp6) says.
+The diagnostic effect's new texture is read by its qualification and by nothing the game draws, so the
+registered `effect-state` and `effect-after-opaque` images keep their bytes. The checks find their tests by
+name, so put the tests in test binaries that exist.
 
-`runtime/tests/without_rendering.rs` holds `advance_without_rendering` to touching no device, and those tests
-stand. `APPLE-PRESENTATION` WP16 is not built and will hold a host to one timestamp query set for each frame
-slot, so add none. Other builders are in the frame host's files: integrate on top of what has landed.
-`contribution.rs`'s module documentation says a contribution runs only inside the frame, and the seam's row in
-the maturity ledger says what the seam offers: bring both up to date. If a rule of the stage cannot be built
-as written, write what you found in the log and end `BLOCKED`.
+`contribution.rs`'s module documentation says what a `simulate` pass is given, and the seam's row in the
+maturity ledger says what the seam offers: bring both up to date. If a rule of the stage cannot be built as
+written, write what you found in the log and end `BLOCKED`.

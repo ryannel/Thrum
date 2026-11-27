@@ -1,7 +1,7 @@
 # WATERS plan
 
-[Done-when file](DONE.json), [log](LOG.md). First read [the handoff](DESIGN.md#proof-and-builder-handoff) and
-[Exact baselines](../ARCHITECTURE.md#exact-baselines).
+[Items](DONE.json), [log](LOG.md). First read [handoff](DESIGN.md#proof-and-builder-handoff),
+[baselines](../ARCHITECTURE.md#exact-baselines).
 
 ## Open for the human
 
@@ -102,9 +102,12 @@
 
 ## WP15 The camera goes under water: the waterline crosses the lens, and the surface overhead shows the sky through a bright window
 
-[Finishing WP15](DESIGN.md#finishing-wp15-after-its-diagnosis).
+[Review](../../../.orchestrate/evidence/WATERS/WP15-review.md)
 
 ## WP16 Under water the Sun casts a moving net of light on the bed and the hull, shafts of light stand in the water, and the picture stays readable as the camera goes down
+
+Draw each rung on [`EFFECT-GRAPH` WP7](../EFFECT-GRAPH/DESIGN.md#a-simulate-pass-that-draws-wp7);
+[log](LOG.md#wp16-caustic-draw).
 
 ## WP20 A pitching crest seen close is drawn whole, with no tabs, strands, bands or flashing patch on its face, on the Mac and in Chrome
 
@@ -118,8 +121,8 @@ A defect in `APPLE-PRESENTATION`'s reconstructor, not the water's inputs, goes t
 
 ## WP14 Still water mirrors the hills, trees and far shore that the camera cannot see, on the Mac and in Chrome
 
-Ask `SCENE-VIEWS` through [its interface](../SCENE-VIEWS/DESIGN.md#what-the-consumer-reads), and log what it lacks there as a proposal.
+Ask `SCENE-VIEWS` through [its interface](../SCENE-VIEWS/DESIGN.md#what-the-consumer-reads), and log what it lacks as a proposal.
 
 ## WP11 On the Mac's Apple recipe the water runs with MetalFX and the governor, its cadence on the built-in display is measured, and the module is closed
 
-Run WP11.1's check first; if it fails, end `BLOCKED needs_dependency`. WP11.6 needs the owner's attended sitting; do every other item first.
+Run WP11.1's check first; if it fails, end `BLOCKED needs_dependency`. WP11.6 needs the owner's attended sitting; do the others first.

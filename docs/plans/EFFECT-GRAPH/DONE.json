@@ -533,6 +533,43 @@
       ],
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0
+    },
+    {
+      "id": "WP7",
+      "name": "A test effect draws into a texture of its own before the scene is shaded, and the scene's shading reads it in the same frame, on the Mac and in Chrome",
+      "status": "not_started",
+      "quality_bar": "A raster pass declared as in Unreal's RDG or Unity's render graph: a module draws into a target of its own, and the one executor orders it, clears or loads it, stores it and times it. A wrong declaration is refused when the scene is prepared, with a named error, and never becomes a lost frame or a texture holding an earlier frame's light.",
+      "items": [
+        {
+          "id": "WP7.1",
+          "statement": "A contribution declares a `simulate` pass that draws, and preparation holds the stage's rules for it. It accepts a pass that clears one mip of one layer of its effect's own persistent 2D-array texture as a colour attachment, run every frame or skippable, with a later `simulate` pass and the opaque reads sampling that texture. It refuses each of these with a named error: a drawing pass that is time-sliced; one that is skippable and loads its attachment; one that is skippable and attaches a transient; one declared async-eligible; one that attaches a history side; one with a depth attachment; one that attaches a 3D texture; one whose attachment's format the capability record does not allow as a colour attachment; one that says it blends into a format the record does not allow blending into; one with more colour attachments than the record's limit; and one declared in a 2D scene. Guard: CPU tests of the declaration checks in `thrum-render`.",
+          "check": "cargo nextest run --locked --offline -p thrum-render -E 'test(/simulate_draw_rules/)' --no-tests=fail",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP7.2",
+          "statement": "On Metal a test effect's drawing pass makes a texture this frame that this frame's shading reads. Each frame the effect clears a persistent 16-bit float texture of its own and draws two overlapping shapes into it, each adding 1 by additive blending, at a place that follows the frame's tick, and its opaque draw writes what it samples from that texture into scene colour. In one scripted run: after a submitted frame the texture reads back 2 where the shapes overlap, 1 where one covers and 0 elsewhere, exactly, at that frame's place, on two frames at different places, so nothing of the earlier frame is left; the scene colour the second frame stored shows that frame's place and not the first's; with a second drawing pass that loads the texture declared after the first, the texels its shape covers are higher by 1; made skippable and skipped, the pass leaves the texture and what forward samples as its last run left them and is reported as not run under its own name, and on a frame it runs, with timing requested, its GPU time is reported under that name; a frame recorded with the pass at a new place and discarded, then a frame that skips it, leave the texture as the last submitted frame drew it; and after device replacement the first frame runs the pass though its cadence would skip it. The scene's compiled graph lists the pass as a render pass ahead of the Sun passes and forward, and differs from the graph compiled without it by that pass and its texture alone. Guard: a small Metal test in `thrum-render`, since only a device shows what a render pass's clear, load and blend leave in a texture and which of two passes ran first.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render -E 'test(/simulate_draw_gpu/)' --no-tests=fail",
+          "ask": "Are the expected texels written from the script's places and never read from the engine? Would the test fail if forward sampled the texture before the pass ran, or if the executor loaded where the pass declared a clear? Is the scene's executor the only code that begins the pass and chooses its load and store, with the effect handed an open render pass and no encoder of its own in `simulate`?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP7.3",
+          "statement": "In Chrome the V1 game's diagnostic effect clears one layer of a 16-bit float array texture of its own in `simulate` and draws two overlapping shapes into it, each adding 1 by additive blending, at a place that follows the tick. Read back by the page's qualification after a submitted frame, the layer holds 2 where the shapes overlap, 1 where one covers and 0 elsewhere, exactly, at that frame's place, on two frames at different places, and the page reports no validation error. Guard: one browser case, since only Chrome shows that WebGPU accepts a layer of an effect's array as a blended colour attachment.",
+          "check": "node scripts/check_v1_browser.mjs --case effect-simulate-draw",
+          "lock": "chrome",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
     }
   ]
 }

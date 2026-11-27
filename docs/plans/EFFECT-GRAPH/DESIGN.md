@@ -15,7 +15,9 @@ states every rule about a frame's time as one set, with display time on the worl
 that a query recorded with a view waits for the next view the frame host admits. Revised again that day after
 that revision's review ([review](../../../.orchestrate/evidence/EFFECT-GRAPH/design-review.md)): who may submit
 a tick pass and when its caller asks for one, whose world an answer comes from, when an answer is delivered,
-and two declarations the stage refuses.
+and two declarations the stage refuses. Revised 27 November 2026: a seventh work package lets
+[a `simulate` pass draw](#a-simulate-pass-that-draws-wp7), after `WATERS` WP16 found that the stage gives an
+effect a compute pass and nothing else.
 
 ## The request
 
@@ -66,6 +68,22 @@ itself. How a module declares a pass, and when the host records it, is this modu
 `runtime.rs` and `runtime/tokens.rs`, `thrum-water`'s `query/gpu.rs` on main and at `3110457e6`, the running
 test at that commit and [its record](../../../.orchestrate/evidence/WATERS/WP19/surf-running.json).
 
+The lead's planning task of 27 November 2026, after `WATERS` WP16's builder ended `BLOCKED needs_dependency`:
+
+> WATERS WP16 needs something no plan provides yet. The builder wrote: WP16 needs a planner-approved
+> EFFECT-GRAPH change that lets the caustic field draw with additive blending before opaque shading.
+
+The builder's handoff (`.orchestrate/evidence/WATERS/WP16-handoff.md`, work on `build/waters` at
+`e67b55584b0c`) found that `simulate` hands an effect a compute pass, that `opaque` and `shadow` have the
+scene's attachments bound and `after-opaque` runs after the receivers have been shaded, and that a draw
+recorded from a readback callback would leave its attachment and its time undeclared. It offered two ways
+out: a draw the graph declares ahead of forward, or a compute producer of the same field. Which kinds of pass
+a stage admits is this module's seam, so the change is [WP7](#a-simulate-pass-that-draws-wp7) here, in this
+module's own files. [Research and selection](#research-and-selection) says why the draw is kept. Read for it:
+`contribution.rs` and `contribution/graph.rs`, `synthetic/contributed.rs`, the pass kinds and the render
+pass's begin in `graph.rs`, `sprite/graph.rs`, wgpu 30.0.1's table of guaranteed format features, and
+[the water's light under water](../WATERS/DESIGN.md#light-under-water-caustics-shafts-and-the-meter).
+
 This design reconciles the code on main; it is not a blind study. Read for it: `graph.rs`, `graph_record.rs`,
 `contribution.rs`, `synthetic/{scene_graph,contributed}.rs`, `atmosphere/graph.rs`, the [SEA](../SEA/BRIEF.md) and
 [CLOUDS](../CLOUDS/BRIEF.md) briefs, and the designs of the three modules whose files it shares. For the revision
@@ -78,7 +96,7 @@ An engine module that lives outside `thrum-render`, such as `SEA` or `CLOUDS`, d
 drawing passes and its own persistent GPU state, and the one executor orders, allocates, times and submits them
 with everything else. It replaces what Broadsides did with private pass lists and target pools.
 
-**Consumers:** `SEA`, `CLOUDS`, and `ATMOSPHERE` if it later has a measured reason to move. `RENDER-2D` declares
+**Consumers:** `SEA`, `WATERS`, `CLOUDS`, and `ATMOSPHERE` if it later has a measured reason to move. `RENDER-2D` declares
 its passes through the same seam after V1; a second way to declare passes is never built.
 
 **What exists today.** The graph declares buffers and 2D textures with layers and mips, in transient, imported,
@@ -106,6 +124,7 @@ existing passes or descriptors (they keep their exact output); real async-comput
 | **N7 Cost nothing when absent** | Every existing scene and variant | A seam that adds an empty pass or a copy. Rejected by identical compiled pass lists and the exact baselines |
 | **N8 Show motion that is a function of time at the display's time** (WP4) | Consumed targets up to 50 ms ahead of the observation; expired and clamped platform targets; a display faster or slower than the tick; a tick whose commit lands late; a frame on a world on its own thread that polls after a tick due later than its observation was committed, once or frame after frame; a clock that starts at any host time on any tick; pause, overload, the hold after a resume, queued ticks and a rewind, each of which leaves stopped time out of display time; capture frames | The interpolation alpha, which stops at the committed tick: the motion then takes a short step and a long one in turn. Rejected by display times worked out from scripted observations and leads, across a tick's commit and on frames whose alpha is 1. Or a phase taken at the platform target while alpha is taken at the consumed one. Rejected by alpha being the phase held to 1 in every frame, and by a frame whose target had expired. Or a tick due after the frame's observation, which no phase from 0 up describes. Rejected by a delayed frame's display time, and by a run of delayed polls that must keep advancing. Or display time written as a host's time, which holds until the clock first stops. Rejected by frames after a pause partway through a tick, held to due times a script gives |
 | **N9 Answer a game's question every tick, from the state frames have left** (WP6) | An advance that submits a view; one whose view is skipped for want of a frame slot or a drawable; a caller that waits for a frame slot before it advances; a frame dropped before it is recorded; a recording discarded; several ticks in one advance, with a question on each; a pause; a host that may not touch the device; a caller whose platform has taken away its right to submit; a world restored or replaced since the last submitted frame; device replacement | A pass in the frame, which waits for the next admitted view. Rejected by answers a game drains from advances that submit no view. Or a pass that reads what a discarded recording staged. Rejected by exact comparison with the last submitted frame's state after a discard. Or a contribution that submits for itself. Rejected by C06 and the reviewer's question. Or an answer for the new world read from the old world's state. Rejected by the first answer after a restore, which must say it had no state. Or one answer for an advance of two ticks. Rejected by two questions with different use ticks |
+| **N10 Draw into its own textures before the scene is shaded** (WP7) | Colour attachments on the effect's own persistent or transient 2D and 2D-array textures, one mip of one layer each; cleared or loaded; every frame or skippable; blended or not; Metal and Chrome; a frame discarded, a pass skipped, a replaced device | A draw recorded outside the graph, from a callback that holds the encoder: its attachment's hazard, its load and store and its time are undeclared. Rejected by the reviewer's question on who begins the pass. Or a draw in `after-opaque`, which the receivers read a frame late. Rejected by a product that moves every frame and the scene colour the same frame stored. Or a pass that loads where it declared a clear, so last frame's light stays. Rejected by exact texels after two frames at different places |
 
 This is internal work: its outcomes are properties measured through the diagnostic effect, with inspected items
 where a picture is the evidence.
@@ -138,6 +157,21 @@ this module does not wait for that reconstructor.
   stage, the view dimensions a storage binding accepts and the one-mip-per-binding rule were not re-read from the
   specification today; WP1 records them from the device's capability record in Chrome and the graph validates
   against the record, never against this paragraph.
+- **A field made by scattering is drawn.** `WATERS`' caustic field carries each cell of the surface along the
+  refracted Sun to a level plane and adds its light where it lands
+  ([its design](../WATERS/DESIGN.md#light-under-water-caustics-shafts-and-the-meter)). That is a scatter: many
+  cells write one texel, a cell covers an area, and where sheets cross their light adds. A rasteriser with
+  additive blending makes that sum in any order, in fixed hardware, on both native recipes and in Chrome. In
+  compute there are two ways to the same field and neither is as good. A scatter needs an atomic add for every
+  texel a cell covers, and WGSL has atomics only for integers in a storage buffer, so the field becomes fixed
+  point with a resolve pass after it, and the shader rasterises each cell's footprint itself. A gather asks,
+  for each texel, which cells land on it, which is the inverse of the refraction map, and that is not a
+  function where sheets cross, which is where a caustic is brightest. So the producer stays a draw, and
+  [the stage admits one](#a-simulate-pass-that-draws-wp7). It is drawn ahead of forward and not in
+  `after-opaque`, because the receivers are shaded in forward and a field made after them is a frame old on a
+  window that follows the lens. What would change it: `WATERS` WP16.12's record showing the rungs' cost on a
+  tile GPU in the passes' own boundaries and not in their vertices. A compute scatter is then `WATERS`' to
+  design, and this stage's rule stands.
 - **What would change the selection.** If the cadence rules cannot keep readers defined for some consumer, that
   consumer's pass gets prepared graph variants (as day and night have) and the rule narrows. If a second consumer
   needs a stage this design lacks, the stage list grows here, with its consumers, before anyone builds it.
@@ -179,14 +213,14 @@ ordered set:
 | Stage | Kind | Where in the frame | Status |
 |---|---|---|---|
 | `upload` | Copy | Before anything reads the effect's inputs | Exists |
-| `simulate` | Compute | After upload, before the Sun passes and forward | Generalises the one compute slot |
+| `simulate` | Compute, or a draw into the effect's own textures | After upload, before the Sun passes and forward | Generalises the one compute slot; the draw is new (WP7), [below](#a-simulate-pass-that-draws-wp7) |
 | `shadow` | Draw | Inside the Sun cascade passes | Exists |
 | `opaque` | Draw | End of the forward opaque pass | Exists |
 | `after-opaque` | Render or compute | After opaque geometry, sky and stars; before the pre-tone input | New (WP3) |
 | `tick` | Compute | Not in the frame: in a submission of its own, after the world advances and before any view of that advance is recorded, and before a caller's wait for a frame slot | New (WP6), [below](#the-tick-stage-wp6) |
 
-Compute in `simulate` therefore always precedes the fragment passes that read it, by graph order, not by
-convention. All of an effect's pipelines are prepared in `rebuild`, before readiness. Its passes are timed under
+Work in `simulate`, compute or a draw, therefore always precedes the fragment passes that read it, by graph
+order, not by convention. All of an effect's pipelines are prepared in `rebuild`, before readiness. Its passes are timed under
 their own names.
 
 ### State, time and the tentative frame (WP2)
@@ -664,6 +698,66 @@ A `simulate` pass may declare itself eligible. The compiler checks that it is co
 surface, and the compiled graph lists eligible passes. Nothing is scheduled differently: wgpu exposes no second
 queue on Metal or WebGPU. The flag exists so a later recipe can use it without changing a consumer.
 
+### A `simulate` pass that draws (WP7)
+
+**What was missing.** `simulate` gave an effect a compute pass and nothing else. The graph has always taken
+attachments on declared textures ([resource kinds](#resource-kinds-wp1)), and `after-opaque` hands an effect
+an open render pass, but that pass is the scene's: colour, motion and reactive coverage. An effect had no
+place to draw into a texture of its own, and none ahead of forward. `WATERS`' caustic field needs both
+([why it is a draw](#research-and-selection)).
+
+**The rule.** A `simulate` pass is compute, or it draws. One that draws is declared as every `simulate` pass
+is, by name, cadence and accesses, and what makes it a draw is that its accesses hold attachments.
+
+1. **Its attachments are its effect's own.** One or more colour attachments, each one mip of one layer of a
+   2D or 2D-array texture the effect declares, in the persistent or the transient scope. Its accesses name
+   only the effect's own resources, as every `simulate` pass's do, so it cannot attach scene colour, scene
+   depth, motion, reactive coverage, a Sun cascade or the surface. It has no depth attachment and attaches no
+   history side: nothing asks for either, and each is refused until a consumer here does.
+2. **The executor begins the pass** (C06). Each attachment is declared cleared, to a value the declaration
+   gives, or loaded. The executor derives the load and the store from the compiled graph, as it does for
+   every attachment, opens the render pass under the pass's name and hands it to the effect, which records
+   its draws and nothing else. The effect is given no encoder in which to begin a render pass of its own.
+   The effect prepares its attachments' views in `rebuild`, with its pipelines and bindings, so nothing is
+   created in a frame.
+3. **The pipeline is the effect's.** Blending, vertex data and shaders are its own, prepared in `rebuild`.
+   The seam needs one fact about it: the declaration says, for each attachment, whether the pipeline blends
+   into it. An effect chooses the format by asking the capability record which formats its recipe allows as
+   a colour attachment and as a blended one, and never probes the device.
+4. **Order is the graph's.** A pass that samples what a drawing pass attached is ordered after it: a later
+   `simulate` pass, compute or a draw, and forward through the effect's opaque reads. List order breaks a
+   tie, as elsewhere. So forward shades with the field this frame drew.
+5. **Cadence.** A drawing pass runs every frame or is skippable. [The cadence rules](#cadence) hold as
+   written: a skippable one attaches only persistent textures and clears them, so a reader on a skipped
+   frame sees what the last run drew, and the first frame of an epoch runs it whatever its cadence. A
+   time-sliced drawing pass is refused: a draw's part of its output is not a declared range.
+6. **Tentative, as every pass is.** A discarded recording executes nothing, so a persistent attachment holds
+   what the last submitted frame drew. What the effect keeps about a draw, such as the place its window was
+   drawn at, commits in `submitted`.
+7. **Never async-eligible.** [The eligibility check](#async-compute-eligibility) already refuses a pass with
+   an attachment.
+8. **Timed by name.** The pass's GPU time is reported under its own name, and a skipped one as not run.
+9. **Absent, nothing.** A scene whose effects declare no drawing pass compiles the passes and the storage it
+   compiles today.
+10. **Not in a 2D scene.** A 2D scene refuses a drawing `simulate` pass at preparation, as it refuses a tick
+    pass, until `RENDER-2D` needs one.
+
+The compiler refuses, at preparation and by name: a drawing pass that is time-sliced; one that is skippable
+and loads an attachment or attaches a transient; one declared async-eligible; one that attaches a history
+side; one with a depth attachment; one that attaches a 3D texture; an attachment whose format the
+generation's capability record does not allow as a colour attachment; a pass that says it blends into a
+format the record does not allow blending into; more colour attachments in one pass than the record's limit;
+and a drawing pass in a 2D scene.
+
+**Where it sits, and what it costs a tile GPU.** A drawing pass lies ahead of the Sun passes and forward,
+so it ends no pass of the scene's and adds no copy. It is a render pass of its own, and its attachment is
+stored, because its reader is another pass. An effect that draws many small passes, as the caustic field's
+rungs are, pays for each boundary, and its owner records that with the pass times.
+
+**What `WATERS` takes.** WP7 changes nothing in `thrum-water`, which builds and passes its tests unchanged.
+`WATERS` WP16 declares the caustic field's draws on the stage in its own crate and waits for WP7 and for
+nothing else of this module.
+
 ### The tick stage (WP6)
 
 A pass in the frame cannot answer a game on time. `WATERS`' body query was a `simulate` pass: recorded with a
@@ -889,6 +983,15 @@ query computes, what a marked answer holds, its mailbox and how late its answers
   texel back after the first frame of an epoch and after a reset.
 - **Portable limits.** Ping-pong removes the need for read-write float storage. The remaining limits are counts,
   which the compiler checks from the record.
+- **A draw in `simulate`.** The graph already classes a pass with an attachment as a render pass, derives
+  its load and store, and times a render pass by name, and the effect graph's checks already hold the
+  cadence rule for an attachment and refuse an async-eligible pass that has one. What is missing is small
+  and in one place: the scene's executor opens a compute pass for every `simulate` pass, so one with an
+  attachment fails as a mismatch between the graph and its recording, and the effect has no way to hand over
+  its attachments' views. WebGPU's guaranteed formats give the portable recipe what a blended field needs
+  with no optional feature: wgpu 30.0.1's table has `R16Float`, `Rg16Float` and `Rgba16Float` renderable and
+  blendable, and `R32Float` renderable and blendable only with `float32-blendable`. The same table, read
+  with the generation's features, answers the compiler's two format questions without a device.
 - **A submission beside the frame's.** wgpu maps a buffer when the last submission that used it has completed.
   A readback buffer used only by a tick submission therefore resolves when that submission does, and does not
   wait for a frame submitted after it. The frame host already makes submissions that are not frames: the timing
@@ -955,7 +1058,10 @@ CPU can reproduce exactly: a wrapping ping-pong field, stepped every tick, in wh
 that spreads and fades; a second ping-pong field derived from the first at a runtime cadence; a consumer pass that
 reads both results into a persistent texture the tests read back; a 3D volume rewritten time-sliced in place; a
 mipped array at a runtime cadence; a cube; and in WP3 a slab drawn after opaque that samples them, refracts the
-scene behind it and reports motion.
+scene behind it and reports motion. In WP7 it gains one small texture of its own that a `simulate` pass draws
+two overlapping shapes into with additive blending, for the browser's case. Only the qualification's readback
+reads that texture: no field, no slab and no forward draw of the diagnostic samples it, so the registered
+`effect-state` and `effect-after-opaque` images keep their bytes.
 
 ## Shared files and exact baselines
 
@@ -985,6 +1091,11 @@ handed its tick's endpoint beside what it is given today. `examples/water` is no
 unchanged. `advance_without_rendering` keeps its contract, and the tests that hold
 it there keep passing.
 
+WP7 edits `contribution.rs` and `contribution/graph.rs`, the scene's executor in
+`synthetic/{contributed,scene_graph}.rs`, the 2D scene's preparation check, and the V1 game's diagnostic
+effect with its browser qualification. All are this module's own. `thrum-water`, `thrum-sea` and
+`examples/water` are not edited.
+
 [The module list](../ARCHITECTURE.md#exact-baselines) says how a change that alters another module's exact images
 is caught. This module must move none, on the Mac or in Chrome: with no effect attached, every existing scene
 compiles to the same passes and storage and draws the same bytes. Exact images are verified on main after a
@@ -1011,6 +1122,9 @@ run that misses any test is rule 1's: the builder stops, writes the proposal in 
 - **Memory:** an effect's own resources, reported per effect from their descriptors.
 - **The tick stage:** absent, nothing: no encoder, no submission, no storage. Present, one asking for each
   effect in an advance, and one small encoder and one submission in an advance with work.
+- **A drawing `simulate` pass:** absent, nothing. Present, one render pass ahead of forward for each, with
+  its attachment stored. No scene pass is ended and nothing is copied. The cost of many small ones is the
+  consumer's to record: `WATERS` WP16.12 for the caustic field's rungs.
 
 Recorded as tripwires, never gates: per-pass GPU time by name, bytes per effect, and about 25% paired regression
 on the valley route with no effect attached.
@@ -1048,6 +1162,9 @@ on the valley route with no effect attached.
     lasts as long as the run. Early sign: a consumer's fallback count after a restore. It is the same wait
     the effect's own state has for its reset, and stepping or resetting state with no frame drawn is the
     need this stage does not build.
+11. **Many small drawing passes cost a tile GPU more in their boundaries than in their draws.** Early sign:
+    `WATERS` WP16.12's record of the caustic field's rungs. The remedies are the consumer's and need
+    nothing here: fewer rungs, a cadence, or coarser grids for the deep rungs.
 
 ## Proof and builder handoff
 
@@ -1086,6 +1203,15 @@ on the valley route with no effect attached.
   each answer is WP6.3's, with a test permission. No WP6 item runs the iPhone simulator: no scene the
   iPhone app runs declares a tick pass yet. The sky world's endpoint is a CPU test through `SkyGame`'s
   public route, with no device.
+- **WP7.** `mac-metal`, and one function case in Chrome. What a drawing pass may declare is CPU tests of
+  the declaration checks. What the executor does with it needs a device and is one small Metal test of a
+  test effect, which also reads the prepared scene's compiled graph for the pass's place and for what the
+  pass added: only a device shows what a render pass's clear, load and blend leave in a texture and which of
+  two passes ran first. Its expected texels are written from the script's places, small whole numbers a
+  16-bit float holds exactly, and none is read from the engine. Chrome gets one case on the diagnostic
+  effect, because only a browser shows that WebGPU accepts a layer of an effect's array as a blended colour
+  attachment. No item is inspected: the product is a test pattern, and how a caustic net looks is `WATERS`
+  WP16's. No timing is taken here.
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/effect-graph-<work-package>/`; selected evidence
   in `.orchestrate/evidence/EFFECT-GRAPH/`.
 - **Maturity.** A ledger row for the seam is added at WP3, with implementation, correctness and device results kept

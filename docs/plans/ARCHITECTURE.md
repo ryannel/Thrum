@@ -16,7 +16,7 @@
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | Nothing for its WP4; APPLE-PRESENTATION WP2 and WP3, EFFECT-GRAPH WP2, CULLING WP3 |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP WP2 and CULLING WP3 to start; ATMOSPHERE WP10 for the populated valley's motion review; APPLE-TILE WP12, APPLE-PRESENTATION WP11, ATMOSPHERE WP6 (which closes G3s) and CONTENT-LOOP WP3 and WP6 for the three rows from one command; PLATFORM-RUNTIME-MAC WP3, CREATOR WP3 and APPLE-PRESENTATION WP17 as well to close |
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH WP2 for the field on the GPU |
-| 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA WP1 to start; SEA WP2, EFFECT-GRAPH WP3, ATMOSPHERE WP5 and WP9 and CREATOR WP1 for its first frame; CONTENT-LOOP WP1 for foam; APPLE-PRESENTATION WP3 for the whole range in motion; SCENE-VIEWS WP3 for mirrored scenery; EFFECT-GRAPH WP6 for floats in the surf with the game running; APPLE-PRESENTATION's governor and MetalFX work packages to close |
+| 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA WP1 to start; SEA WP2, EFFECT-GRAPH WP3, ATMOSPHERE WP5 and WP9 and CREATOR WP1 for its first frame; CONTENT-LOOP WP1 for foam; APPLE-PRESENTATION WP3 for the whole range in motion; SCENE-VIEWS WP3 for mirrored scenery; EFFECT-GRAPH WP6 for floats in the surf with the game running; EFFECT-GRAPH WP7 for the Sun's net and shafts under water; APPLE-PRESENTATION's governor and MetalFX work packages to close |
 | 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING WP1, ATMOSPHERE WP5 and EFFECT-GRAPH WP3 |
 | 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH WP2 and WP4 and ATMOSPHERE WP5 for its shade; EFFECT-GRAPH WP3 for its first frame; CONTENT-LOOP WP1 for placed volumes, and DEAD-TOOLS WP5 for the record of the library it copies; APPLE-PRESENTATION WP3 and CREATOR WP1 for controls and motion; ATMOSPHERE WP8 for mist and fog; WATERS WP8 for the sea; APPLE-PRESENTATION's governor and MetalFX work packages to close |
 | 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS WP1 for its flow on the CPU; WATERS WP9 for its first running stream; WATERS WP10 and WP16 to close |
@@ -256,7 +256,7 @@ interface by itself: a builder writes a proposal in its module's log and a plann
 | Tick page, committed and previous endpoints, tick-derived time | core → every simulated effect | C02 |
 | Capability registry, recipes, quality values | `APPLE-TILE` (selection), `APPLE-PRESENTATION` (governor) → all GPU modules | C04, [hardware-native decision](../design/decisions/HARDWARE-NATIVE-ENGINE.md) |
 | Graph declaration, GPU lifetime, device generations | `APPLE-TILE` → all GPU modules | C06, [graph decision](../design/decisions/G3-EXECUTING-RENDER-GRAPH.md) |
-| **Effect passes and resources**: a contribution declares its own compute and render passes at five named frame stages, with 3D, cube and mipped storage-array textures, persistent, ping-pong and world-anchored wrapping state stepped by the tick and committed only with a submitted frame, a runtime cadence, and quality knobs. A scene holds an ordered list of contributions | `EFFECT-GRAPH` → `SEA`, `WATERS`, `CLOUDS`, `ATMOSPHERE`; `RENDER-2D` later | [EFFECT-GRAPH](EFFECT-GRAPH/DESIGN.md#mechanisms) |
+| **Effect passes and resources**: a contribution declares its own compute and render passes at five named frame stages, with 3D, cube and mipped storage-array textures, persistent, ping-pong and world-anchored wrapping state stepped by the tick and committed only with a submitted frame, a runtime cadence, and quality knobs. A scene holds an ordered list of contributions. From `EFFECT-GRAPH:WP7` a pass in the `simulate` stage may draw into its effect's own textures ahead of forward, with the executor beginning the pass | `EFFECT-GRAPH` → `SEA`, `WATERS`, `CLOUDS`, `ATMOSPHERE`; `RENDER-2D` later; the draw in `simulate` → `WATERS`' caustic field from its WP16 | [EFFECT-GRAPH](EFFECT-GRAPH/DESIGN.md#mechanisms), [the ruling below](#seam-ruling-for-effect-graph-wp7) |
 | **Tick passes**: a contribution declares compute in a sixth stage, `tick`, outside the frame. In every advance that reaches the device the frame host asks for it, records it and submits it by itself, ahead of that advance's view and whether or not a view is drawn, up to a declared bound with a counted refusal. A tick pass reads the state the last submitted frame left and writes only its effect's own resources, its readback completes with its own submission, and nothing waits on the GPU. A host that may not touch the device runs none | `EFFECT-GRAPH:WP6` (the frame host submits, by [the ruling below](#seam-ruling-for-effect-graph-wp6)) → `WATERS`' body query from its WP19; any later query a game reads from GPU state | C02, C06, C09, [EFFECT-GRAPH](EFFECT-GRAPH/DESIGN.md#the-tick-stage-wp6) |
 | **Display phase**: with the tick, the tick duration and the interpolation alpha, each frame gives every effect where its consumed target lies in ticks after the previous committed tick, with no stop at the committed one and at most 50 ms past it. The consumed target is the time the frame's host observed plus its bounded lead toward the platform's target, and is where alpha is taken today. A frame's display time is its tick less one plus the phase. It is a time of the world's, not of the host's clock: the world time of the tick before the frame's, plus the host time from the frame's tick falling due to the consumed target. So it holds none of the time a clock was paused or overloaded, equal intervals between consumed targets are equal steps of it while the clock runs, and an interpolating frame's record carries its tick's due time. An effect is given no host time. Alpha is the phase held to 1 and is the same function as before; sampling never advances authority; the tick a frame shows was due at or before its observation, so a world on its own thread shows a delayed frame an earlier pair; a quantity shown past the committed tick is a presentation-only prediction from committed state, carried a tick at a time by its own step | The world's clock in core and the frame host, built in `EFFECT-GRAPH:WP4` → `CLOUDS` from its WP2; `SEA`, `WATERS`, `RENDER-2D` and games when their owners plan it | C02, [EFFECT-GRAPH](EFFECT-GRAPH/DESIGN.md#the-timing-model), [the ruling below](#seam-ruling-for-effect-graph-m4) |
 | **Entity visibility**: an entity drawn through the instance field is culled per instance and draws a whole mesh row from the scene's mesh selection; a cooked placement is culled per meshlet; nothing is in both. Cooked meshes reach entities as mesh rows, and an edited mesh replaces its row's geometry while the game runs, switching in the frame the content publication names | `CULLING` (the route and its culling), `CONTENT-LOOP:WP2` (cooked meshes as rows, by the ruling below) → `SHOWCASE` | [CULLING](CULLING/DESIGN.md#one-visibility-authority-per-entity), [CONTENT-LOOP](CONTENT-LOOP/DESIGN.md#cooked-mesh-rows-wp2) |
@@ -493,6 +493,24 @@ the frame runtime and the stage to `EFFECT-GRAPH`'s seam: later work there keeps
 handoff, a path that draws the same scene and still meets the query's age, is not taken: a view is optional
 by C02, and a gale's frame costs more than a tick on a busy machine.
 
+<a id="seam-ruling-for-effect-graph-wp7"></a>
+**Seam ruling for `EFFECT-GRAPH` WP7.** `WATERS` WP16 found that its caustic field, which is drawn with
+additive blending and read by forward in the same frame, has no stage: `simulate` hands an effect a compute
+pass, and every stage that draws has the scene's attachments bound or runs after the receivers are shaded.
+Which kinds of pass a stage admits is `EFFECT-GRAPH`'s interface, so
+[a `simulate` pass that draws](EFFECT-GRAPH/DESIGN.md#a-simulate-pass-that-draws-wp7) is `EFFECT-GRAPH` WP7,
+built by that builder in the seam's own files (`contribution.rs`, `contribution/graph.rs`,
+`synthetic/{contributed,scene_graph}.rs`, the 2D scene's preparation check) and the V1 game's diagnostic
+effect with its browser qualification. It is not a fourth ruling for the `WATERS` WP16 builder to build
+beside [rulings 5 to 7](#seam-rulings-for-waters): those add a reader to another module's pass, and this
+changes what a stage hands every effect, with rules of its own to refuse and to prove. The executor begins
+the pass and derives its load and store (C06), and the effect attaches only its own textures. No item of
+another module changes and no exact baseline moves: a scene with no drawing pass compiles the passes and the
+storage it compiles today, and `thrum-water` builds unchanged until `WATERS` WP16 declares its draws. The
+other route in the builder's handoff, a compute producer of the same field, is not taken:
+[the design](EFFECT-GRAPH/DESIGN.md#research-and-selection) says why. Once built, the draw belongs to
+`EFFECT-GRAPH`'s seam, and later work there keeps its tests passing.
+
 <a id="seam-rulings-for-sea"></a>
 
 ### Seam rulings for WATERS
@@ -555,6 +573,9 @@ medium factor composes the shader text and draws the bytes it does today.
 Once built, rulings 1 and 2 belong to `EFFECT-GRAPH`'s seam, ruling 3 to the shell's owners, rulings 5 and 6
 to `ATMOSPHERE` and ruling 7 to `APPLE-PRESENTATION`: later work there
 keeps their tests passing, and `CLOUDS` uses the same accesses and adds none.
+
+The stage the caustic field is drawn in is not among these. `EFFECT-GRAPH` WP7 builds it, by
+[its own ruling](#seam-ruling-for-effect-graph-wp7), and `WATERS` WP16 waits for it.
 
 ### Seam rulings for RIVERS
 
@@ -1557,7 +1578,8 @@ needs the closing work packages it builds on, and since 26 November 2026 `CONTEN
 ### EFFECT-GRAPH (track 2 foundation)
 
 Planned on 11 November 2026: [design](EFFECT-GRAPH/DESIGN.md), [plan](EFFECT-GRAPH/PLAN.md). The first sea or
-cloud frame needs its last work package, WP3.
+cloud frame needs WP3. WP4, WP6 and WP7 were each added for a consumer that met a gap: the display phase for
+`CLOUDS`, the tick stage for `WATERS`' query, and a draw in `simulate` for `WATERS`' caustic field.
 
 ### SEA, WATERS and CLOUDS
 
@@ -3696,3 +3718,8 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   [the planning note](#apple-presentation-m4m11-g4) follow. `REVIEW-RENDER`'s plan still parks M31 in its own
   words, and `GAME-UI` is not re-planned for an interface over a scaled 3D picture. No other module's item
   changed.
+- 2026-11-27 `WATERS` WP16's builder ended `BLOCKED needs_dependency`: its caustic field is drawn, and
+  `simulate` gave an effect a compute pass only. `EFFECT-GRAPH` gained WP7, a `simulate` pass that draws into
+  its effect's own textures, under [a seam ruling](#seam-ruling-for-effect-graph-wp7), and `WATERS` WP16 now
+  waits for it. The effect-passes interface row and the module table's row 15 follow. `WATERS`' design and
+  items, every contract's words, every Done item and every exact baseline stand.
