@@ -22,7 +22,10 @@ that day for [the requested frame rate at full screen](#the-requested-frame-rate
 [the WP11 builder's handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11-handoff.md) measured that
 the full-screen route misses the display's 120 Hz at the governor's floor, and a fourth time after
 [that revision's design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md), which
-asked that 60 Hz at full screen not be taken for the bar. It answers the three independent reviews of revision 1
+asked that 60 Hz at full screen not be taken for the bar. Revised 27 November for
+[the output scale](#the-output-scale-wp18) and [the full refresh at full screen](#reaching-the-full-refresh-at-full-screen-wp17),
+after the owner answered the question
+[the WP17 planner's record](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP17-plan/README.md) put. It answers the three independent reviews of revision 1
 (`86ec3b6b`) and the re-reviews of revision 2 (`c507ad3d`) recorded in [the log](LOG.md). Interface and path names below are
 proposals.
 
@@ -37,6 +40,12 @@ done-when items and plans so they can be built, with honest dependencies. Do not
 which a builder holds."
 [The module list](../ARCHITECTURE.md) places this module and settles seams 1–9 below; every work package is in
 [the done-when file](DONE.json).
+
+**The owner's answer on full screen, 27 November 2026.** Asked how V1 should run at full screen on the built-in
+display, where the route cannot hold 120 Hz at the panel's pixel size, the owner said, word for word: "So the
+120 upscale for full screen." At full screen V1 presents at the display's full 120 Hz, with the picture
+reconstructed below the panel's pixel size and scaled up to the panel by the display.
+[The output scale](#the-output-scale-wp18) is that decision's mechanism, and WP18 and WP17 build it.
 
 **What a design approval covers.** A Design Approved result for this revision approves the whole module. WP1–WP3
 are as the 11 November review approved them and are not changed. For WP4 to WP12 the review reads
@@ -54,12 +63,18 @@ WP11 proves about the whole path in motion, and names WP17. It changes nothing W
 window that is not full screen asks for the display's full refresh, as before. The fourth revision of that day
 answers that revision's design review in the same two sections. It makes 60 Hz at full screen an interim rate
 with the full refresh owed by WP17, judges pacing by the Mac host's refresh account, and describes the 120 Hz
-retake as it was taken. It changes no mechanism but the judge of pacing.
+retake as it was taken. It changes no mechanism but the judge of pacing. The 27 November revision adds
+[the output scale](#the-output-scale-wp18), which WP18 builds, rewrites
+[what WP17 does](#reaching-the-full-refresh-at-full-screen-wp17), and lets a quality knob hold one value with
+the governor off and another at its first tier ([the governor's knobs](#the-governors-knobs-and-state-wp7)).
+It changes nothing WP1 to WP16 built or proved: until WP17 is Done a window resolves the extent and the frame
+rate it resolves today.
 
 ## Purpose and scope
 
 The V1 valley should:
-- look sharp and stable at the display's full resolution;
+- look sharp and stable at the window's full backing resolution, and at full screen on a fast display at the
+  largest [output scale](#the-output-scale-wp18) that holds the display's refresh;
 - use the Mac's EDR headroom for the Sun, sky and lights;
 - hold the display's frame rate as load changes;
 - do all this without a hitch, a compile during play or any change to the simulation.
@@ -69,6 +84,7 @@ G4 adds:
 - EDR output;
 - a quality governor over render scale, effect quality and cadence;
 - prepared generation transitions for resizes and display changes;
+- an output scale for full screen on a fast display, scaled to the panel by the display's layer;
 - native pipeline preparation through G3t's backend boundary.
 
 Consumers are the V1 game on macOS and in Chrome, the iOS shell (function only in the simulator), G7's showcase route
@@ -112,6 +128,8 @@ here.
   - Under pans they do not smear or ghost.
   - Stars and the Sun disk stay steady under jitter and leave no trails.
   - Newly revealed surfaces, behind a moving prop or after a spawn or teleport, show no ghost of what was there.
+  - At full screen at an output scale below 100%, the layer's scaling adds no band and no moiré, and thin
+    props still read. Everything above holds in the frames the surface is given.
 - **Correct after a cut.** The first frame after a cut or generation switch shows no history from before it.
 - **Exposure changes cleanly.** While time-of-day scrubbing or entering shade changes exposure, the image shows no
   brightness lag or ghost.
@@ -121,7 +139,8 @@ here.
   - Mid-tones are unchanged.
   - With headroom at 1, or without EDR, the image matches the SDR path.
 - **Holds rate.** Under forced load the governor lowers scale within a few frames, without visible oscillation, and
-  recovers slowly when the load lifts. The simulation is identical with the governor on or off.
+  recovers slowly when the load lifts. The simulation is identical with the governor on or off. At full screen
+  on the built-in display the route holds the display's full 120 Hz.
 - **No hitch on change.** Changing scale or headroom never creates a texture or pipeline. Resizing the window, changing
   the backing scale, replacing the surface or rejecting a provider or archive keeps presenting frames while the new
   generation is prepared off the render thread.
@@ -438,7 +457,8 @@ Put new native proof arms in `scripts/apple_presentation.py` and browser cases i
 ### Extent on three targets (WP4)
 
 The render extent is the surface's backing size on the Mac, the oriented surface's on iOS and the canvas's
-backing size in Chrome. A host is still created at an extent its caller names, so offscreen runs, engine capture
+backing size in Chrome. From WP18 the Mac's is the backing size times
+[the output scale](#the-output-scale-wp18), which is 100% wherever this section's work packages proved it. A host is still created at an extent its caller names, so offscreen runs, engine capture
 and every exact baseline keep the extent they were retained at: WP4 moves no retained image. Chrome has one
 thread, so there a new extent is prepared between two frames as it is today, and the page records the gap. iOS
 prepares between two frames too, in its render owner, because its lease lets it present nothing meanwhile
@@ -448,7 +468,7 @@ render thread, and the lifecycle below is the Mac's.
 ### The lifecycle of a generation build (WP4)
 
 A **request** is what a generation is built for: the backing extent, the display mode (EDR float or 8-bit) and
-the device generation. The frame host holds the latest request, and one build at most.
+the device generation, and from WP18 [the output scale](#the-output-scale-wp18). The frame host holds the latest request, and one build at most.
 
 | State | Entered when | What the render thread does |
 |---|---|---|
@@ -618,6 +638,16 @@ cadence as the first, in the atmosphere files under [seam 7's ruling](../ARCHITE
 lowers scale first and effect knobs by tier after it, and a thermal state above nominal lowers the tier. The
 governor's state, which is scale, tier, each knob's value and the reason for the last change, is in the frame
 record and readable by the game.
+
+**A knob's value with the governor off, from `ATMOSPHERE` WP12.** A knob that the governor steps declares three
+values, one for each tier. WP7 required the first to be the knob's own default. From `ATMOSPHERE` WP12 a knob
+may also declare an **ungoverned value** that differs from its first tier's. A host with the governor off holds
+the ungoverned value, which is every offscreen run and every capture that does not enable the governor. A host
+with the governor on holds the tier's value from its first frame. Such a knob is for work that costs nothing
+to see and is worth spreading only when frames are presented in real time: the atmosphere's
+[chart cadence](../ATMOSPHERE/DESIGN.md#the-chart-cadence-wp12) is the first, at 1 ungoverned and 4, 6 and 8 by
+tier. A knob that declares no ungoverned value behaves as WP7 built it. The policy's order is unchanged: scale
+first, then tiers.
 
 ### Timestamp query sets and Metal's limit (WP16)
 
@@ -937,7 +967,10 @@ them as they are.
 ### The requested frame rate at full screen (WP11)
 
 Added 26 November 2026, and revised that day after
-[its design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md). WP11's builder
+[its design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md). This section is how
+WP11 closed. The owner answered on 27 November 2026, and the 60 Hz rule below ends when
+[WP17](#reaching-the-full-refresh-at-full-screen-wp17) is Done. The refresh account, the cue windows and what a
+served interval is stay as this section defines them, and WP17 uses them. WP11's builder
 measured the full-screen route on the built-in 3456×2234 display with capture off: Apple tile, MetalFX, EDR and
 the governor at its 50% floor (1728×1117). That build asked the display link for 60 to 120 Hz with 120
 preferred, as every window did then, and the link ran at 8.33 ms. Its fastest take spent 10.85 ms of GPU time
@@ -1059,49 +1092,168 @@ workload or more throughput and forbids a smaller image or fewer sampled frames:
 Capture adds the SDR tone encode and the copies, so a captured take may miss refresh intervals that the
 capture-off take serves. That cost is shown apart and decides nothing about pacing.
 
+### The output scale (WP18)
+
+Added 27 November 2026. The WP17 planner measured the full-screen frame before writing any item
+([the record](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP17-plan/README.md)): four capture-off takes
+on the built-in display, the governor at its 50% floor in each. The frame's GPU span fits
+`4.3 ms + 0.39 ms × output Mpx + 1.0 ms × drawn Mpx`. MetalFX and the EDR present pass both run at the
+drawable's size, and at the panel's 7.72 Mpx they took about 3.2 ms together, which the render scale does not
+touch. Against a 120 Hz interval of 8.33 ms, no render scale holds the route at the panel's pixel size.
+
+**The owner's decision, 27 November 2026:** "So the 120 upscale for full screen." At full screen on the
+built-in display V1 presents at the display's full 120 Hz, and the picture is reconstructed at an
+**output scale** below the panel's pixel size and scaled to the panel by the display's layer, as shipped Mac
+games run on this display. Nothing in V1 works toward 120 Hz at the panel's pixel size. The output scale
+returns toward 100% as the performance phase after V1 takes work out of the frame.
+
+**The mechanism.** The output scale is one of the five prepared steps the render scale already uses, 100, 85,
+75, 67 and 50%, with the same rounding. It is part of
+[the request](#the-lifecycle-of-a-generation-build-wp4): a generation is built for the backing extent, the
+output scale, the display mode and the device generation, and its **output extent** is the backing extent times
+the output scale.
+
+- **Everything a generation owns is sized from the output extent.** The reconstruction output, the history
+  key, the EDR and SDR targets and the drawable have the output extent, and the forward targets have the output
+  extent times the governor's render scale, as now. The present pass stays one pixel to one drawable pixel.
+  Below 100% no pass of the frame runs at the backing size, and that is the whole saving. The request is the
+  one authority for the extent: nothing reads the window's backing size to size a target or a viewport.
+- **The surface is configured at the output extent, in the switch.** Core Animation scales the drawable to the
+  layer's bounds with linear filtering, which is the behaviour
+  [the surface across a transition](#the-surface-across-a-transition-wp4) already relies on while a window is
+  resized. At full screen the layer's bounds have the drawable's aspect, so the scaling neither stretches the
+  picture nor leaves a band. The host adds no scaled present path, no second upscaler and no sharpening pass:
+  each would run at the backing size and bring the cost back.
+- **A change of output scale is a change of request**, so it is an ordinary generation transition. It is built
+  off the render thread and starts at once, the surface is reconfigured once in the switch, history and
+  reconstruction reset there, and nothing is created on the render thread. Entering or leaving full screen
+  changes the backing extent and may change the output scale, and both arrive as one request and one build. The
+  governor holds through the build as through any other, and afterwards its render scale applies inside the new
+  output extent.
+- **What resolves it.** The platform resolves the output scale with the request, on the main thread, where it
+  reads the window and the display record, as it does the requested frame rate:
+  - a window that is not full screen resolves 100%;
+  - a full-screen window on a display that refreshes at 60 Hz or slower resolves 100%;
+  - a full-screen window on a faster display resolves the capability registry's full-screen output scale for
+    the device. That value is 100% until [WP17](#reaching-the-full-refresh-at-full-screen-wp17) promotes a
+    lower step by measurement, under [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md);
+  - a host whose scene is 2D resolves 100% in every case. It has no reconstruction, and
+    [the same decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md) draws it at its output's own pixel size;
+  - a launch setting forces any of the five steps, in a window or at full screen. A value that is not one of
+    the five is refused by name at launch.
+
+  The iPhone shell and Chrome resolve 100% and read no setting.
+- **One value for the device.** The registry holds one full-screen output scale for this Mac. WP17 measures it
+  on the Apple recipe, which is the row the claim is made for. The portable recipe on the same Mac resolves the
+  same value, so that `SHOWCASE`'s rows compare at one extent, and what it holds there is recorded and not
+  claimed. The value is measured on the built-in panel. On another fast display it applies unmeasured, and the
+  external-display row stays owed.
+- **The record.** The frame record and the display record the game reads name the backing extent, the output
+  scale, the output extent and whether a launch setting forced the scale. Engine capture taps the drawable, so
+  a captured frame has the output extent. A review that needs the picture at the panel's size resamples
+  captured frames with a linear filter and labels the result a stand-in for the layer's scaling. No agent sees
+  the panel, and engine pixels are never offered as what it showed.
+- **Positions in the window.** Anything that maps a position in the window to the picture divides by the
+  layer's bounds, never by the drawable's size.
+- **The launch setting** is read by the game and passed in the app's configuration, as the frame-rate setting
+  is. No engine library reads the environment.
+
+**What WP18 and WP17 do not do.** They commission no change to the forward pass, MetalFX, the EDR transform or
+the shadow passes, which is the performance phase's work. They add no interface drawn at the backing size: V1
+has none in the frame, and an interface a later game draws over a 3D scene at a reduced output scale is scaled
+with the picture until its module proposes otherwise.
+
 ### Reaching the full refresh at full screen (WP17)
 
-Added 26 November 2026, as the work package that owes the full refresh after the shortfall above, and revised
-that day after [its design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md). It
-comes after WP11, so that the paired proof and `SHOWCASE`'s assembly do not wait for work on the frame graph.
-Its mechanisms and items are not planned yet: a planner settles them, with a design review, before a builder
-starts.
+Added 26 November 2026 as the work package that owes the full refresh, and rewritten on 27 November after
+[the owner's decision above](#the-output-scale-wp18). WP17 reaches the display's full refresh at full screen:
+it promotes an output scale by measurement and removes the 60 Hz rule.
 
-- **Where it starts.** At the 50% floor the fastest take's GPU span was 10.85 ms against a 7.08 ms budget. The
-  largest passes at the median were forward opaque at 3.08 ms, the float surface present at 1.90 ms and the
-  MetalFX segment at 1.71 ms, and the temporal exposure texture reached 3.83 ms at the 95th percentile. Pass
-  times overlap and were taken under heavy host load.
-- **What it is for.** Those three passes at the display's pixel size, until the route holds 120 Hz at full
-  screen.
-- **When it is Done.** A full-screen window asks for the display's full refresh without a launch setting, and
-  every 120 Hz refresh interval of the route is served in each of two capture-off takes, by
-  [the definitions above](#the-requested-frame-rate-at-full-screen-wp11). The 60 Hz rule for full screen is
-  then gone, and the ledger's owed row is answered. Its items are written to that outcome. A record of what
-  remains and why does not finish it.
-- **If it cannot be reached.** Accepting less than the full refresh at full screen changes the vision's bar,
-  which is the owner's. The planner or builder who finds the route cannot hold 120 Hz there ends
-  `NEEDS_CONTEXT` with the record, and the lead takes the question to the owner. WP17 stays open until the
-  owner answers.
-- **What decides the request.** A full-screen window asks for the full refresh only once a capture-off record
-  shows it held, under [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md):
-  promotion by measured win. Until then the 60 Hz rule stays.
+**What it needs first.** [The output scale](#the-output-scale-wp18), which WP18 builds, and `ATMOSPHERE` WP12,
+which spreads the rebuild of the sky's charts over several frames under the governor
+([its design](../ATMOSPHERE/DESIGN.md#the-chart-cadence-wp12)). On the measured route those charts were rebuilt
+on nearly every frame, at about 1.3 ms, the largest cut that asks nothing of the picture. The planner's fit,
+with the governor at its floor, puts the route's median where every interval is served near an 80% output
+scale with that cut and near 62% without it. The fit is where to start looking and decides nothing.
+
+**What changes.**
+
+- The registry's full-screen output scale for this Mac becomes the step the sitting below chooses.
+- The 60 Hz rule goes. A full-screen window asks the display link for the display's full refresh, as a window
+  that is not full screen does. The launch setting still forces 60 or 120 Hz, and the record still says when it
+  did.
+- Nothing else. The governor's policy, its 85% budget and its steps are as WP7 built them.
+
+**The full-refresh sitting.** Whether every 120 Hz interval is served is a claim about the game on this Mac,
+and a busy host misses intervals the game did not cause: in the planner's takes the display link sent no
+callback for five of 721 intervals at a load of 4, and sent none or a late one for six of 720 at a load of 22.
+So the takes that decide are made in one sitting with the other builders paused, which
+[the settings](../../../ORCHESTRATE.md#targets) allow where a design asks for it by name because smoothness at
+1x is judged in it. This is that sitting. The builder builds and proves everything else first, then ends
+`BLOCKED` asking the lead for it. A take made while builders work is a witness and decides nothing.
+
+- **A take** runs the capture-off release game at full screen on the built-in display: the Apple recipe,
+  MetalFX, EDR, the governor on, and a requested frame rate of 120 Hz that no launch setting forced. It is
+  judged by the refresh account, with interval, served and missed as
+  [defined above](#the-requested-frame-rate-at-full-screen-wp11), at a 120 Hz period.
+- **Two routes.** The valley route WP11 used, and the exit flythrough on the exit configuration's Apple recipe
+  row, launched as `SHOWCASE` WP7 launches it, from its first tick to its last. The second is the populated
+  scene the owner will see, and a value promoted on the bare valley alone could fail there.
+- **A step holds** when, on each route, two takes at it serve every refresh interval from the route's first
+  tick to its last, and no take made at it in the sitting misses an interval for a cause in the frame: both
+  frame slots occupied, no drawable acquired, or a present call that came late or shared its interval. A take
+  that misses only because the display link sent a callback late or not at all is the host's. It is kept,
+  listed and made again.
+- **The step chosen is the largest that holds.** While steps are tried, the launch setting forces the step and
+  the record says so. The record also holds, for the next larger step, a take that missed for a cause in the
+  frame, so the choice is shown to be the largest that holds and not merely one that does. No such take is
+  owed when 100% is chosen.
+- **The closing takes.** With the registry's value set to the chosen step and no launch setting at all, two
+  takes on each route serve every interval. These four are what D17.2 judges, and they are made in the sitting
+  on the build that merges.
+- **Every take of the sitting is kept** and listed with its route, its step, whether a setting forced it, the
+  host's load, the governor's trace and each missed interval's cause, so two that hold are not two chosen from
+  many without that being seen.
+- **If no step from 67% up holds**, the builder ends `NEEDS_CONTEXT` with the record. The owner chose from a
+  measurement that pointed to about 75%, and a picture reconstructed at half the panel's size on each axis was
+  not what was put to them. The lead takes it to the owner, and WP17 stays open until they answer.
+
+What the sitting proves is that the engine made one present call in every 120 Hz refresh interval. When a frame
+reached the panel is `SHOWCASE` WP8.6's to witness, from OS-reported presented intervals.
+
+**The picture at the chosen scale.** D11.6's four cue windows are captured again, complete, at the chosen
+step's output extent and 120 Hz, and read as [the evidence conventions](#evidence-conventions) say. The same
+frames are also read resampled to the panel's size with a linear filter, labelled a stand-in for the layer's
+scaling. Capture costs frames, so these takes decide nothing about pacing.
+
+**The ledger and the milestone.** The maturity ledger's owed row is answered with what was held: one present
+call in every 120 Hz refresh interval at full screen, at the output scale and output extent named, on the two
+routes. Nothing in the ledger, the evidence page or the code still says that full screen asks for 60 Hz, and
+nothing says the picture is drawn at the panel's pixel size. The milestone, Apple reconstruction, is reached
+when WP17 is Done.
+
+**The owner's observation.** No agent sees the panel, so how the scaled picture looks on it is the owner's
+observation, as the look of EDR is ([below](#what-closes-g4-and-what-the-owner-observes-wp11)). WP17's evidence
+page asks for it and says how to see the chosen step beside 100% with the launch setting. It gates nothing.
+
+**The cost on record.** The pass table of the planner's record is taken again at the chosen step, on both
+routes, as a tripwire: each pass's GPU time, the timed span against 8.33 ms, the governor's render scale and
+tier, and the host's load. It sets no budget.
 
 **The V1 exit.** The exit is reached through its milestones, and this one is reached at WP17, so the exit rests
 on WP17 as it rests on WP11. `SHOWCASE` judges the exit's motion at the same bar, "smooth at the display's full
-refresh" on the built-in panel ([its cue S5](../SHOWCASE/DESIGN.md#cues)), and nothing here changes that bar. A
-full-screen run before WP17 presents at 60 Hz, which is not the display's full refresh. A window that is not
-full screen asks for the full refresh today. `SHOWCASE` WP7 needs only WP11, the paired proof. The list of work
-packages the exit rests on is `SHOWCASE` WP8's: WP8 depends on `APPLE-PRESENTATION:WP17`, and its item WP8.12
-names WP17 in its statement and its check, so an open WP17 keeps the exit open
-([`SHOWCASE`'s design](../SHOWCASE/DESIGN.md#the-exit-record)). Taking WP17 out of the exit is the owner's
-decision, and no plan makes it for them.
+refresh" on the built-in panel ([its cue S5](../SHOWCASE/DESIGN.md#cues)), on the populated flythrough at the
+output extent the game resolves. `SHOWCASE` WP7 needs only WP11. `SHOWCASE` WP8 depends on
+`APPLE-PRESENTATION:WP17`, and its item WP8.12 names WP17 in its statement and its check, so an open WP17 keeps
+the exit open ([`SHOWCASE`'s design](../SHOWCASE/DESIGN.md#the-exit-record)). WP17 in turn waits for WP18 and
+for `ATMOSPHERE` WP12, so both are on the road to the exit.
 
 ### What closes G4, and what the owner observes (WP11)
 
 G4 closes on evidence agents and the device produce. WP11 proves the brief's sentence clause by clause, as the
 table says. The last row is the vision's bar for motion and not a clause of the sentence: the milestone is
 reached when [WP17](#reaching-the-full-refresh-at-full-screen-wp17) has shown the display's full refresh held
-at full screen.
+at full screen, at [the output scale](#the-output-scale-wp18) its sitting chooses.
 
 | The brief's clause | Proved by | What that evidence is |
 |---|---|---|
@@ -1112,7 +1264,7 @@ at full screen.
 | Apple tile compared with portable, with image tolerance and counters | D11.1, D11.4 | Paired rows on this Mac |
 | No pipeline compilation during play | D9.2–D9.4, D11.2 | Creation counters by thread and phase |
 | The whole path in motion | D11.6, D11.7 | Agents' review of realtime engine capture, and on the Mac the capture-off record of present calls in refresh intervals at [the requested frame rate](#the-requested-frame-rate-at-full-screen-wp11), 60 Hz at full screen as an interim rate |
-| Smooth at the display's full refresh, at full screen | WP17 | Owed when WP11 ends, and recorded as owed by D11.5 |
+| Smooth at the display's full refresh, at full screen | D17.2, D17.3 | Owed when WP11 ends, and recorded as owed by D11.5. Answered by WP17: the capture-off record of one present call in every 120 Hz refresh interval, at the output scale the record names, and agents' review of the cue windows at that scale. The picture is reconstructed below the panel's pixel size and scaled by the layer, by the owner's decision of 27 November |
 
 Engine capture proves the values the surface was given, never the light the panel emits, and no agent can see
 the panel. So the look of EDR on the built-in display is the owner's **observation**: experienced quality under
@@ -1176,6 +1328,7 @@ The physical iPhone and external-display rows stay owed in the same way.
   the frame is dropped and history resets. Each outcome is
   counted in the proof.
 - *Resize or backing-scale change:* a generation transition.
+- *Output scale change, entering or leaving full screen included:* a generation transition.
 - *Refresh change:* governor budget only.
 - *Requested frame rate change:* governor budget only, with an empty sample window, as after a hold.
 - *Headroom change or a move to an SDR display:* H only.
@@ -1210,6 +1363,12 @@ pixels of the window, which is why the governor exists before the paired proof.
   costed normalising pre-pass.
 - **Transitions stall the render thread.** Early sign: render-thread frame time spikes during a resize. Guard:
   counters by thread; a resize sequence; the reconfigure's wait on record at each switch.
+- **The layer's scaling shows.** Early sign: a band at an edge, moiré on fine regular detail, or thin props
+  that break up at full screen below 100%. Guard: the layer's bounds, gravity and filter on record (D18.3), and
+  the resampled stand-in beside the captured frames (D17.3). The owner's look at the panel is an observation.
+- **Something still sizes itself from the backing extent.** Early sign: a pass whose time does not fall with
+  the output scale, or a picture drawn into a corner of the drawable. Guard: D18.3's extents and D18.4.
+- **The promoted step holds the bare valley and not the showcase.** Guard: the sitting's second route.
 - **The governor oscillates or hides regressions.** Guard: hysteresis plus a minimum period. Tripwires compare at a
   replayed scale trace.
 - **EDR changes SDR appearance.** Guard: the H = 1 identity (D6.3) and the agents' inspection of the float
@@ -1262,7 +1421,9 @@ The module list accepted seams 1–4 on 10 November and settled seams 5–9 on 1
    - G5, asset and atmosphere owners review.
 4. **Sky motion at infinity.** `atmosphere/sky.wgsl` and the star pass write motion with the retained celestial and
    solar phase (atmosphere owner).
-5. **Render extent and transitions.** The extent comes from the surface backing size times s, replacing 640×360. A
+5. **Render extent and transitions.** The extent comes from the surface backing size times s, replacing 640×360.
+   From WP18 the backing size is first multiplied by [the output scale](#the-output-scale-wp18), under the
+   same ruling. A
    preparation thread builds generations. This fixes G3b's iOS band and moiré defects (frame runtime and G3b owners).
 6. **Platform display record and EDR layer ownership.** The platform keeps a retained layer reference and sets EDR
    properties on the main thread. Headroom, refresh and backing scale are per surface (platform owner).
@@ -1297,8 +1458,9 @@ In the V1 game on this M3 Max:
 - stars, the Sun and reveals are stable;
 - EDR highlights appear on the built-in XDR display within its headroom;
 - the governor holds the display rate under forced load without oscillation;
-- at full screen on the built-in display the game presents a steady 60 Hz as an interim rate, until WP17 holds
-  the display's full 120 Hz there;
+- at full screen on the built-in display the game holds the display's full 120 Hz, with the picture
+  reconstructed at the output scale WP17 measures and scaled to the panel by the layer. Until WP17 is Done it
+  presents a steady 60 Hz there as an interim rate;
 - the simulation is unchanged;
 - scale, headroom and cut changes create nothing during play;
 - resizes and backing-scale changes keep presenting while the new generation builds off the render thread.
@@ -1346,6 +1508,7 @@ Moved from the module plan on 11 November 2026, when the plans took the orchestr
 | History protocol | G4, with the C07 owner's review (seam 1) | `history.rs`, `runtime.rs` | The existing drop contract; G3t WP10–WP11 for native frames |
 | Reconstruction | G4 | new `reconstruction/{mod,taau,jitter,exposure,reference}.rs`, `taau.wgsl` | Pre-tone linear input (G3t WP3) |
 | Render extent and transitions | G4, with the frame-runtime and G3b owners' review (seam 5) | `runtime.rs:39`, `runtime/preparation.rs`, `render_actor.rs`, `examples/v1-game-ios/src/ios/render.rs:24` | G3t WP11 provider rebuild |
+| Output scale | G4, under seam 5's ruling | The request and its resolution in `thrum-app/src/app/` (`app.rs`, `display_link.rs`, `render_actor.rs`), `runtime/extent.rs` and `runtime/extent_transition.rs`, the capability registry's row, the game's launch setting | Every reader of the generation's extent; engine capture's tap; `SHOWCASE`'s rows |
 | EDR present | G4 | `present.rs`, `present.wgsl` | G3t WP3 pre-tone input; G4 owns EDR display math |
 | Platform display record, EDR layer, thermal | G4, with the platform owner's review (seam 6) | `thrum-app/src/app/device.rs`, `app.rs`, `display_link.rs`; iOS `ios.rs`, `ios/render.rs` | G3b lease (untouched) |
 | Governor and missed ticks | G4 (seam 7) | new `governor.rs`; `runtime.rs` (missed-tick count, value commit) | C04 |
@@ -1382,9 +1545,12 @@ Moved from the module plan on 11 November 2026, when the plans took the orchestr
 | WP10 offline metallibs, pre-warm | D9.1 | WP2–WP9 (own files) |
 | WP12 local archive | WP10 (the pinned backend) | none |
 | WP11 paired proof | WP1–WP10 and WP12, G3t WP12 | none |
+| WP18 output scale | WP11 | `ATMOSPHERE` WP12 (its own files, and the knob registry) |
+| WP17 full refresh at full screen | WP18, `ATMOSPHERE` WP12, `SHOWCASE` WP7 | none: its closing takes are a sitting with the other builders paused |
 
 The loop runs this module's work packages one at a time in [plan order](PLAN.md). The done-when file records
-the outside waits: WP8 on `APPLE-TILE:WP11` and `APPLE-TILE:WP13`, and WP11 on `APPLE-TILE:WP12`.
+the outside waits: WP8 on `APPLE-TILE:WP11` and `APPLE-TILE:WP13`, WP11 on `APPLE-TILE:WP12`, and WP17 on
+`ATMOSPHERE:WP12` and `SHOWCASE:WP7`.
 
 **Handoffs from G3t**, with their contracts in [G3t's plan](../APPLE-TILE/DESIGN.md#sequence-and-dependencies):
 - *G3t M0 → all checks.*

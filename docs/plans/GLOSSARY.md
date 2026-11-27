@@ -184,3 +184,16 @@ reads it.
 - **Source** — the field's term (Unreal's input mapping context, Unity's action map switching).
 
 Proposed: the planner chose it for the game SDK.
+
+### Output scale
+
+At full screen on a fast display, the share of the display's pixel size, on each axis, at which the engine
+reconstructs and presents the picture: one of 100, 85, 75, 67 and 50%. The display scales that picture up to
+fill the panel. The **output extent** is the pixel size it gives. It is not the render scale, which is the
+governor's and sets how many pixels are drawn inside the output extent before reconstruction. Defined in
+[APPLE-PRESENTATION's design](APPLE-PRESENTATION/DESIGN.md#the-output-scale-wp18).
+
+- **Source** — the owner's "the 120 upscale for full screen", 27 November 2026; the field's terms are output
+  resolution and render resolution.
+
+Proposed: the planner chose the name.

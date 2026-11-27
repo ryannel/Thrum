@@ -6,6 +6,7 @@
 
 - Assumption: WP3 ends with a CPU diagnosis. The authored-spur replay and an in-game correction remain open under G3s. A later proposal needs the original inputs and the fixed and realtime captures specified in the design.
 - Assumption: WP4 compares the reconstructed geometry cases in one bounded CPU trial. The original ray inputs and exact finite-disk match remain open under G3s.
+- Assumption: under the governor the sky's charts are rebuilt over four frames even at the top quality tier, so the sky's light on the ground and its reflection may trail the Sun by up to six frames in every governed run. The owner can ask for the top tier to rebuild them in every frame, which gives back about 1.3 ms a frame for no visible gain and makes `APPLE-PRESENTATION` WP17 choose a smaller output scale.
 
 ## WP5 Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once
 
@@ -31,3 +32,12 @@ The [fixed authored-spur screen](DESIGN.md#fixed-witness-and-motion) defines the
 ## WP4 A renderer developer can locate finite-disk shadow errors on reproducible terrain and caster cases
 
 Run the [bounded CPU trial](DESIGN.md#wp4-finite-disk-shadow-diagnostic) on the reconstructed cases.
+
+## WP12 The sky's charts are rebuilt over several frames under the governor, so they cost each frame a fraction of what they did and nothing in the sky is seen to update
+
+Read [the chart cadence](DESIGN.md#the-chart-cadence-wp12) first. The knob registry is `APPLE-PRESENTATION`'s:
+build the ungoverned value in the governor's files under
+[the module list's ruling](../ARCHITECTURE.md#seam-ruling-for-atmosphere-wp12), keep the aerial knob and the
+tests of `APPLE-PRESENTATION` D7.5 as they are, and merge one after the other with `APPLE-PRESENTATION` WP18,
+which is built beside this in the frame host. Capture WP12.4 in a window: full screen is not this work
+package's.

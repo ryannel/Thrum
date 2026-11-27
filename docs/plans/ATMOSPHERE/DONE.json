@@ -725,6 +725,77 @@
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0
+    },
+    {
+      "id": "WP12",
+      "name": "The sky's charts are rebuilt over several frames under the governor, so they cost each frame a fraction of what they did and nothing in the sky is seen to update",
+      "status": "not_started",
+      "depends_on": [
+        "APPLE-PRESENTATION:WP7"
+      ],
+      "quality_bar": "Time of day as in Red Dead Redemption 2 or Horizon Forbidden West, which is this module's bar for the sky since WP6: colour that moves continuously through afternoon, sunset, twilight and night, with the sky, its light on the ground and its reflection changing together. The spreading of the work is held to Unreal Engine's time-sliced sky light capture in a shipped game: no viewer can point to a frame where the sky updated.",
+      "items": [
+        {
+          "id": "WP12.1",
+          "statement": "Driven by scripted frames with no device, the chart schedule does each of these. 1. At a cadence of 1, a frame whose Sun direction or camera altitude changed runs all nine stages, and a frame where neither changed runs none. 2. At cadences of 4, 6 and 8, with the Sun moving a little in every frame, each of the nine stages runs exactly once in every 4, 6 or 8 submitted frames, in the order sky view, diffuse irradiance, reflection levels 0 to 6, and no frame runs more than 3, 2 or 2 of them. 3. A frame that is not submitted advances nothing, and its stages are due again in the next frame. 4. Every stage of a refresh is given the inputs of that refresh's first frame. 5. At a cadence of 8, each of these runs all nine stages in its own frame and abandons the refresh under way: a history reset, a change of the profile epoch, a change of aerosol, a change of the night selection, and a Sun that moved more than 2° since the last submitted frame. 6. A change of the knob's value takes effect when the next refresh starts and resets nothing. 7. When the inputs stop changing, the refresh under way completes, one more runs if the inputs changed during it, and then no stage runs. Guard: tests on the CPU.",
+          "check": "cargo nextest run --locked --offline -p thrum-render --lib -E 'test(/chart_schedule/)' --no-tests=fail",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP12.2",
+          "statement": "On a device, a refresh spread over four frames while the Sun moves in every frame leaves each of the nine charts' texels equal to those a host at a cadence of 1 builds from the refresh's first-frame inputs. A change of the knob's value creates no texture, view, bind group or pipeline. A host with the governor enabled holds a cadence of 4 at the first tier, 6 at the second and 8 at the third, and a host without it holds 1; the aerial cadence knob holds 1, 2 and 4 by tier and 1 without the governor, as before. Guard: a device test on the small probes WP11 left, because only a device shows that a later stage computed from the refresh's own inputs.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --lib -E 'test(/chart_cadence_gpu/)' --no-tests=fail",
+          "lock": "gpu",
+          "ask": "Read the test. Does the Sun move between the frames of the spread refresh, so that a stage reading the current frame's inputs would fail it? Is the comparison a host at a cadence of 1 given the first frame's inputs, and not the same host read twice?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP12.3",
+          "statement": "On the valley route on the Mac, the summed GPU time of the nine chart stages in a frame is on record with the governor off and with it on at the first tier, paired in one session with the host's load: the median, the 95th percentile, and the largest number of chart stages run in any one frame. It fails only where a measurement is missing or the governed median is not below the ungoverned one. Record: a tripwire, with no budget.",
+          "check": "python3 scripts/atmosphere_cost.py chart-cadence --scene route",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP12.4",
+          "statement": "In real time on the Mac with the governor on, the sky, the sky's light on the ground and the sky's reflection follow the Sun and the camera with nothing to show that their charts are rebuilt over several frames: through the route's time-of-day scrub from afternoon into night, a climb from the valley floor to the lookout's height, and a jump of the hour.",
+          "inspect": "Capture the three cues in a window on the Mac with T2 engine capture in `realtime` mode at 120 Hz with the governor on, and again with the governor off as the comparison, with capture's own cost shown apart. Read consecutive frames at native size across each cue, in captured order and timing, none retimed or dropped, and say which frames you read. 1. The frame record shows the chart cadence at 4 in the governed take and at 1 in the comparison. 2. Through the scrub from afternoon into night, the sky's brightness and colour change from frame to frame, with no frame where the whole sky steps while the frames either side of it hold. 3. Through the same scrub, sky-lit shade on the ground does not step or flicker, and beside the comparison frame at the same captured time it is not visibly brighter or darker. 4. Through the climb, the horizon's haze and the sky's gradient change smoothly, with no band that jumps. 5. The most reflective surface in view shows a sky that agrees in colour and brightness with the sky beside it, in every frame read. 6. In the first frame after the jump of the hour, the sky, the ground's light and the reflection are all the new hour's, with no frame of the old sky over newly lit ground.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP12.5",
+          "statement": "In real time in Chrome with the governor on, where a refresh of the charts completes 15 times a second, the sky, the sky's light on the ground and the sky's reflection follow the Sun and the camera with nothing to show that their charts are rebuilt over several frames: through the route's time-of-day scrub from afternoon into night, a climb from the valley floor to the lookout's height, and a jump of the hour.",
+          "inspect": "Capture the three cues in Chrome with T2 engine capture in `realtime` mode with the governor on, and again with the governor off as the comparison. Read consecutive frames at native size across each cue, in captured order and timing, none retimed or dropped, and say which frames you read. 1. The frame record shows the chart cadence at 4 in the governed take and at 1 in the comparison. 2. Through the scrub from afternoon into night, the sky's brightness and colour change from frame to frame, with no frame where the whole sky steps while the frames either side of it hold. 3. Through the same scrub, sky-lit shade on the ground does not step or flicker, and beside the comparison frame at the same captured time it is not visibly brighter or darker. 4. Through the climb, the horizon's haze and the sky's gradient change smoothly, with no band that jumps. 5. The most reflective surface in view shows a sky that agrees in colour and brightness with the sky beside it, in every frame read. 6. In the first frame after the jump of the hour, the sky, the ground's light and the reflection are all the new hour's, with no frame of the old sky over newly lit ground.",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP12.6",
+          "statement": "No registered exact image taken without the governor changes. A registered set that a governed capture draws with a moving Sun or camera, where it moves, is refreshed in this landing under the refresh procedure, and the module's log lists each such set with the capture that draws it. Guard: the reference guard.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "ask": "Does the log list every set this landing refreshed? Is each one drawn by a capture that enables the governor, with the Sun or the camera moving between its frames? Did any set taken without the governor change?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
     }
   ]
 }

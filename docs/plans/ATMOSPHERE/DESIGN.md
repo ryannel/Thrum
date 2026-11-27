@@ -20,6 +20,8 @@ corrects the aerial product where the view meets the ground, which every scene a
 defect `SHOWCASE` WP5 found on the populated valley. WP10 is built before WP6 and waits on nothing.
 [Closing G3s](#closing-g3s) was revised on 19 November, after WP6's builder traced two of its list's entries to
 the authored valley: `SHOWCASE` WP9 fixes them, and WP6 waits for it.
+[The chart cadence](#the-chart-cadence-wp12) governs WP12, added on 27 November for `APPLE-PRESENTATION` WP17,
+which holds the display's full 120 Hz at full screen and waits for it.
 
 **The owner's bar, 17 November 2026:** "Ok let's lower the bar." Thrum is a game engine, and the aim is the most
 plausible result as fast as possible, not physical accuracy. Rendering work is judged against its inspection list at
@@ -1421,3 +1423,151 @@ arithmetic and the analytic reference on the CPU where possible. Keep real Metal
 production H4 decode and diffuse irradiance shaders. The H4 witnesses must still reject each wrong lookup
 and cover the live and known fields, depth interpolation and clamp. Keep the analytic direction, colour
 and physical-unit witnesses and their bounds.
+
+## The chart cadence (WP12)
+
+Added 27 November 2026. **The owner's words that day,** on full screen on the built-in display: "So the 120
+upscale for full screen." V1 holds the display's full 120 Hz there with the picture reconstructed below the
+panel's pixel size ([`APPLE-PRESENTATION`'s design](../APPLE-PRESENTATION/DESIGN.md#the-output-scale-wp18)).
+The sky's charts are the largest cost in that frame that asks nothing of the picture, and
+`APPLE-PRESENTATION` WP17 waits for this work package.
+
+### Cues
+
+| Cue | Where it must hold | Bar |
+|---|---|---|
+| C1 The sky, the sky's light on the ground and the sky's reflection follow the Sun and the camera with no step, flicker or flash while their charts are rebuilt over several frames | The valley route's time-of-day scrub, a climb from the valley floor to the lookout's height and a jump of the hour, with the governor on: the Mac at 120 Hz and Chrome at 60 Hz | Time of day as in Red Dead Redemption 2 or Horizon Forbidden West, which is [WP6's bar](#closing-g3s): colour that moves continuously, and no frame where the sky can be seen to update |
+| C2 With the governor off, nothing changes | Every offscreen run, every capture that does not enable the governor, every exact baseline taken without it | Identical work in each frame and identical pixels |
+
+### What is wrong today
+
+Three products follow the Sun and the camera's altitude: the sky view, the diffuse irradiance and the
+reflection cube's seven levels. That is nine stages. A stage is due when the Sun's direction or the camera's
+altitude differs from the last frame's by one bit, so a running clock or a moving camera rebuilds all nine in
+every frame. In [the WP17 planner's full-screen takes](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP17-plan/README.md)
+they ran in 434 to 444 of every 438 to 470 frames, and their median times sum to about 1.3 ms of an 8.33 ms
+interval: about 0.1 ms for the sky view, 0.3 ms for the diffuse irradiance and 0.8 ms for the seven levels. The code review's finding M31 is the same fault, and
+[`REVIEW-RENDER`](../REVIEW-RENDER/DESIGN.md) left it for the governor's cadence controls. Nothing in a sky
+changes in 8 ms that an eye can see.
+
+### Research
+
+Hillaire's method rebuilds the sky view each frame because at his size it is cheap, and that holds here: the
+sky view is a tenth of a millisecond. The cost is the filtering that follows it. Unreal Engine's real-time sky
+light capture has the same shape, a sky captured and filtered into a mip chain for reflections and into
+diffuse light, and by default it spreads the capture and the filtering over several frames
+(`r.SkyLight.RealTimeReflectionCapture.TimeSlice`). That is shipped practice for exactly these products, and it
+is the mechanism below.
+
+### Mechanism
+
+**The Sun-following charts** are the sky view, the diffuse irradiance and the reflection cube's levels 0 to 6.
+Nothing else changes: transmittance, multiple scattering and the split-sum table are rebuilt only when the air
+changes, the ground chart and the view volume keep their rules, and the aerial lookup keeps its own cadence
+knob.
+
+**A refresh** is one pass over the nine stages in dependency order: sky view, diffuse irradiance, then
+reflection levels 0 to 6.
+
+- **It takes its inputs once.** The Sun's direction, illuminance and colour, the camera's altitude and whatever
+  else the nine stages read are taken at the refresh's first frame, and every stage of the refresh computes
+  from them in whichever frame it runs. A completed refresh is therefore the set of charts that today's code
+  would have built in that first frame.
+- **It is spread by a knob.** `atmosphere.chart cadence` is the number of submitted frames a refresh takes.
+  At 1 every due stage runs in the frame, which is today's work and today's pixels. At N the nine stages are
+  divided among N consecutive submitted frames, in order, so that no frame runs more than ⌈9/N⌉ of them: three
+  at 4, two at 6 and at 8. Within that bound the builder may weigh the division by each stage's measured cost.
+- **Only a submitted frame advances it.** A frame that is not submitted leaves its stages due in the next, as
+  history advances only with submitted frames.
+- **It starts when the inputs have moved.** A refresh starts at a frame where none is under way and the inputs
+  differ from those of the last one completed. While the inputs keep changing, refreshes follow one another.
+  When they stop, the refresh under way completes, one more runs if the inputs changed during it, and then no
+  stage runs, as today. So under a cadence of N no chart's inputs are two refreshes old: the sky view's are at
+  most N − 1 frames old, and the last reflection level's at most 2N − 2.
+- **A jump runs whole.** All nine stages run in one frame, whatever the knob, and a refresh under way is
+  abandoned, when the charts hold nothing yet, when the view's history resets (a cut or a generation switch),
+  when the air changes (the profile epoch, the aerosol or the night selection), and when the Sun's direction
+  has moved more than 2° since the last submitted frame, which is a jump of the hour and not a scrub. A scrub
+  at 90° of Sun a second moves 0.75° a frame at 120 Hz and 1.5° at 60 Hz, and stays spread.
+- **Another module's sky overlay is an input like the rest.** When `CLOUDS`' overlay is written, the diffuse
+  irradiance and the reflection levels are due, and each takes the overlay as it stands in the frame the stage
+  runs.
+- **A change of the knob's value** takes effect when the next refresh starts. It creates nothing and resets no
+  chart: its declared history invalidation is age.
+
+**Every chart is whole in every frame.** A stage rebuilds its chart completely inside one frame, ahead of every
+reader in the graph's order, so nothing reads a chart half written. Charts of two refreshes stand side by side
+while one is under way: a material between two reflection levels may blend a level from this refresh with one
+from the last. The Sun moves far less in one refresh than an eye resolves, and a jump takes the whole-frame
+path, so no second set of charts is kept to swap in.
+
+**The knob's values.** With the governor off the knob holds 1. Under the governor it holds 4 at the first
+tier, 6 at the second and 8 at the third. The registry lets a knob hold one value ungoverned and another at
+the first tier from this work package on
+([`APPLE-PRESENTATION`'s design](../APPLE-PRESENTATION/DESIGN.md#the-governors-knobs-and-state-wp7)); the
+aerial knob does not use it and is unchanged.
+
+- *Why 4 at the first tier.* The governor lowers render scale before it lowers a tier. A cadence that waited
+  for the second tier would be reached only with the picture already at half scale, and the cheapest saving
+  would come last. At 4 the charts complete a refresh 30 times a second at 120 Hz and 15 times at 60 Hz. Both
+  are far faster than a sky changes and inside what shipped engines do by default.
+- *Why 1 with the governor off.* Spreading the work helps only where frames are presented against a display's
+  interval. Everywhere else it would move pixels for nothing: every offscreen run, test and exact baseline
+  taken without the governor stays as it is, to the byte.
+
+**What a consumer may assume.** The environment identity is unchanged: the true Sun is this frame's, and a
+refresh moves no epoch. Direct sunlight and the aerial `(T,S)` are not spread. A lent sky radiance, incident
+diffuse or environment reflection is whole, and under the governor it may come from inputs up to two refreshes
+old. No consumer today needs this frame's sky to the bit. One that does proposes it through
+[the module list](../ARCHITECTURE.md#interfaces).
+
+**Exact baselines.** A registered set taken without the governor does not move. A set that a governed capture
+draws with a moving Sun or camera may move by the lag above. It is refreshed in this landing under
+[the refresh procedure](../../../CONTRIBUTING.md#exact-image-baselines-and-the-reference-guard), and the log
+lists each such set.
+
+### Alternatives considered
+
+- **Rebuild all nine every Nth frame**, as the aerial knob does for its one stage. It lowers the mean and leaves
+  every Nth frame at the full cost, and a held refresh is decided by the worst frames.
+- **Skip a rebuild until the Sun or the camera has moved by a tolerance.** It saves nothing while the clock
+  runs or the camera climbs, which is the route, and a tolerance loose enough to save would step the sky at
+  twilight, where brightness changes fastest.
+- **Spread the work with the governor off as well.** One behaviour everywhere, at the price of moving every
+  exact image and fixed capture that has motion in it, where no frame is presented against a display.
+- **A second set of charts, swapped in when a refresh completes.** Every reader would see one age. It costs a
+  second sky view, diffuse product and cube, and a rebinding in every consumer's group at each swap, to remove
+  a difference smaller than an eye resolves. C1's inspection reopens it if mixed ages show.
+- **Smaller charts.** That changes the picture, which nobody asked for.
+
+### Check that it can work
+
+Each stage is already its own graph pass with a validity bit, and a stage whose bit is set returns before it
+encodes, so a stage that is not due costs no pass and no timestamp today. The aerial knob shows the path from
+a registered knob to a per-frame decision in `atmosphere/gpu.rs`. Two things have to change shape. The seven
+reflection levels share one validity bit and need one each. And the nine stages read one uniform record that
+is rewritten every frame, so the refresh's inputs need a record of their own that stays still while it runs.
+
+### How it is proved
+
+The schedule is a decision a CPU can make, so it is tested with scripted frames and no device (WP12.1). A
+device shows one thing a CPU cannot: that the later stages of a spread refresh computed from the first frame's
+inputs, by comparing each chart with the one a cadence of 1 builds from those inputs (WP12.2). The cost is a
+tripwire record on the route, paired with the cadence at 1 (WP12.3). C1 is judged from realtime engine capture
+on the Mac and in Chrome, against the same takes with the governor off (WP12.4, WP12.5). C2 is the reference
+guard (WP12.6).
+
+### Risks
+
+| Risk | Early sign | Wrong substitute to refuse |
+|---|---|---|
+| The worst frame is not lowered | The 95th percentile of the summed chart time stays where the median was | Reporting the mean alone |
+| A later stage reads this frame's inputs | A seam in the reflected sky, or reflection and sky that disagree in azimuth, while the Sun moves | Testing a still Sun |
+| The sky steps where it changes fastest | At twilight in Chrome, the whole sky's brightness changes every fourth frame and holds between | Judging a noon scrub only |
+| A jump shows the old sky | Up to six frames of the old hour's sky over newly lit ground after the hour is set | Lowering the cadence's value to hide it |
+| The governor-off path changed | An exact image taken without the governor moves | Refreshing it |
+
+### Cost
+
+Nine stages that summed to about 1.3 ms in every frame become at most three a frame at the first tier. The
+record gives the median, the 95th percentile and the largest count in a frame; no figure is a budget.

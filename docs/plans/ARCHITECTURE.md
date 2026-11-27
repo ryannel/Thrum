@@ -8,8 +8,8 @@
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS WP7 |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE WP0 and WP1, PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE WP3 |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13 |
-| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6 |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13; ATMOSPHERE WP12 and SHOWCASE WP7 for its WP17 |
+| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6; APPLE-PRESENTATION WP7 for its WP12 |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it | |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame, and answer a game's questions every tick even when a frame is skipped | APPLE-TILE WP2 and WP3, APPLE-PRESENTATION WP2, BASELINE-GUARD WP1 |
@@ -138,7 +138,7 @@ above as `PLATFORM-RUNTIME-WEB` when work on it is next planned.
 
 | Exit clause | Closed by |
 |---|---|
-| One engine powers `examples/v1-game` on this M3 Max and its 120 Hz display, and the same scene in Chrome | `SHOWCASE` WP7 and WP8; `PLATFORM-RUNTIME-MAC` WP2 and WP3; `APPLE-PRESENTATION` WP17 for the display's full 120 Hz at full screen |
+| One engine powers `examples/v1-game` on this M3 Max and its 120 Hz display, and the same scene in Chrome | `SHOWCASE` WP7 and WP8; `PLATFORM-RUNTIME-MAC` WP2 and WP3; `APPLE-PRESENTATION` WP17 for the display's full 120 Hz at full screen, at the output scale it promotes, with its WP18 and `ATMOSPHERE` WP12 before it |
 | Physical sky, Sun and aerial perspective with time controls | `ATMOSPHERE` WP6 |
 | Cooked meshes and textures; hot reload | `CONTENT-LOOP` WP3; `CREATOR` |
 | Live camera, lights and cascaded shadows | G3a, closed before the loop; shadow quality on the route in `ATMOSPHERE` WP6; the far ground under the exit scene's balloons in `ATMOSPHERE` WP10 |
@@ -198,8 +198,9 @@ reasoning behind those entries. The project settings allow one Codex builder, so
    (leases) starts earlier, after `APPLE-PRESENTATION:WP2`, and its WP2 (cooked mesh rows) after `CULLING:WP3`.
 7. **The exit.** `SHOWCASE` WP5 and WP6 (the populated valley and its culling) start once `CONTENT-LOOP:WP2` is
    Done, beside the work of step 6. `APPLE-TILE` WP12 and `APPLE-PRESENTATION` WP11 (paired proof) come next, then
-   `SHOWCASE` WP7. `APPLE-PRESENTATION` WP17 (the display's full 120 Hz at full screen) follows WP11 and can be
-   built beside WP7. `SHOWCASE` WP8 comes last, after WP17.
+   `SHOWCASE` WP7. `APPLE-PRESENTATION` WP18 (the output scale) and `ATMOSPHERE` WP12 (the chart cadence) follow
+   WP11 and are built side by side. `APPLE-PRESENTATION` WP17 (the display's full 120 Hz at full screen)
+   follows both and `SHOWCASE` WP7. `SHOWCASE` WP8 comes last, after WP17.
 8. **Track 2.** `SEA`, `WATERS` and `CLOUDS` each start with a CPU work package that needs nothing from the renderer:
    `SEA` WP1 (the wave model), `WATERS` WP1 (where water lies, after `SEA:WP1`) and `CLOUDS` WP1 (the weather). `SEA`
    WP2 (the wave field on the GPU, on `EFFECT-GRAPH:WP2`) and `CLOUDS` WP2 (shade with no cloud drawn, on
@@ -262,7 +263,7 @@ interface by itself: a builder writes a proposal in its module's log and a plann
 | Pre-tone scene-linear input with matching exposure, extent and sample identity | `APPLE-TILE:WP3` → `APPLE-PRESENTATION` | [APPLE-TILE](APPLE-TILE/DESIGN.md) |
 | **Native provider**: a feature records raw Metal commands for one frame, and a portable twin, through `NativeProvider`. The native segment keeps the candidate frame, the reset decision, the choice of native or twin, the encoder split inside the one submission, completion, retention and the counters, for every provider alike | `APPLE-TILE:WP13` → `APPLE-PRESENTATION:WP8` (MetalFX) | C06, [APPLE-TILE](APPLE-TILE/DESIGN.md#the-native-segment-and-its-providers-wp13) |
 | **Temporal contribution**: every drawer writes motion from unjittered positions, marks invalid history, writes the reactive target, and honours the frame's reset flag | `APPLE-PRESENTATION` WP1–WP2 → `ATMOSPHERE`, `CONTENT-LOOP`, `CULLING`, `WATERS`, `CLOUDS` | C07, [APPLE-PRESENTATION](APPLE-PRESENTATION/DESIGN.md#seams-for-thrum-core-proposals) seams 1–4 |
-| **Environment identity and products**: source epoch and time, the true Sun (direction, raw illuminance, radius), and read-only sky, transmittance, aerial and reflection products with their WGSL lookups | `ATMOSPHERE:WP5` → forward contributors, `WATERS`, `CLOUDS` | [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products), C08 |
+| **Environment identity and products**: source epoch and time, the true Sun (direction, raw illuminance, radius), and read-only sky, transmittance, aerial and reflection products with their WGSL lookups. From `ATMOSPHERE:WP12`, under the governor a lent sky radiance, incident diffuse or environment reflection is whole in every frame and may come from inputs up to two refreshes old (six frames at the first tier); the true Sun, direct sunlight and aerial `(T,S)` are this frame's | `ATMOSPHERE:WP5` → forward contributors, `WATERS`, `CLOUDS` | [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products), [the chart cadence](ATMOSPHERE/DESIGN.md#the-chart-cadence-wp12), C08 |
 | **Sun-path optical depth**: one provider's `tau` toward the Sun; V3 applies `exp(-tau)` once on each direct-Sun receiver. A provider may add a **ground band** that holds the whole path to the Sun: a receiver inside it reads the band at its own position in place of the field, so land inside fog loses its Sun and an upper cloud is counted once ([ruling 7](#seam-rulings-for-clouds)). The field is CPU bytes or, by [ruling 1](#seam-rulings-for-clouds), a texture the provider writes on the GPU, read along a path direction the provider keeps continuous at every Sun elevation, and fading across a border to a far value for receivers outside its region | `CLOUDS` from its WP2, the ground band from its WP14 (diagnostic stand-ins in `ATMOSPHERE:WP5` and `WP8`) → `ATMOSPHERE` receivers and its view volume, `WATERS` | C08, [ENVIRONMENT](../design/modules/ENVIRONMENT.md), [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products), [CLOUDS](CLOUDS/DESIGN.md#the-suns-path-one-optical-depth-product) |
 | **Sky overlay and haze scale**: a cube of cloud `(S,T)` around the camera, which `ATMOSPHERE` composes over the sky before it filters its reflection and diffuse products, and, in a scene without the view volume, one number a frame that scales the air's solar in-scatter. So ambient light, reflections and haze follow the clouds, and the sea reflects them through the environment reflection product | `CLOUDS:WP8` → `ATMOSPHERE`'s products, and through them the forward pass and `WATERS` | C08, [CLOUDS](CLOUDS/DESIGN.md#the-sky-the-world-sees), [rulings 3 and 4](#seam-rulings-for-clouds) |
 | Ordered medium segments `(T,S)` and the reflection provider. Condensate is split along a view ray by distance, at a handover: nearer, it is in `ATMOSPHERE`'s view volume, integrated jointly with the air; beyond, it is the trace's segment, which stops at the scene's depth and is composed with the air once ([CLOUDS](CLOUDS/DESIGN.md#the-visible-layer)). The two shares sum to one. Water composes its own air, surface and water segments in its one pass and **writes scene depth**, so a medium drawn after it stops at the water; `WATERS` precedes `CLOUDS` in a scene's contribution list | `WATERS`, `CLOUDS` → V3 composition in `ATMOSPHERE` and the forward pass | C08, [WATERS](WATERS/DESIGN.md#optics) |
@@ -285,7 +286,8 @@ interface by itself: a builder writes a proposal in its module's log and a plann
 | **Impulse records**: a place, a vertical impulse, a radius, a tick and a stable ID, which raise interaction waves on any water; refused over capacity in ID order and counted. A footfall in a puddle is one; a raindrop is not, since rain's rings are [wave layers](PUDDLES/DESIGN.md#rain-rings) | games, `RIVERS` (a fall's plunge) → `WATERS` | [WATERS](WATERS/DESIGN.md#interaction-waves) |
 | **Rain record**: the rain's flux and the drying rate, in kilograms a square metre a second, uniform over a scene and held over a tick, which a game sets in its tick page, and the flux of each tick of the last second, which the rain state keeps and the rain bands read; with it a game's shelters, each a set of triangles with the share of rain it lets through, as prepared content, up to two in a column. `CLOUDS` may set the record once it has rain | games → `PUDDLES`, and through it `WATERS`' rain bands | C09, [PUDDLES](PUDDLES/DESIGN.md#rain-and-what-it-reaches) |
 | **Ground wetness**: the pores' fill and the surface water with its cover at a world point, one function in f64 and in WGSL of prepared fields (exposure, slope, relief) and the rain state a game steps, reading no camera. A forward surface reads it before it is lit, composed as the cloud factor is; with no provider a scene compiles the shader text and draws the bytes it does today | `PUDDLES:WP2` (the function), `PUDDLES:WP5` (the provider) → the scene's shader and the cooked material, `WATERS`' film, games | C09, [PUDDLES](PUDDLES/DESIGN.md#wet-ground), [ruling 5](#seam-rulings-for-puddles) |
-| **Quality knobs**: each cadence and step budget is a runtime value with a declared history invalidation. None changes a physical profile or what a query returns | `WATERS`, `CLOUDS`, `ATMOSPHERE` → the governor in `APPLE-PRESENTATION:WP7` | C04, port decision, [WATERS](WATERS/DESIGN.md#capabilities-recipes-limits-and-knobs) |
+| **Quality knobs**: each cadence and step budget is a runtime value with a declared history invalidation. None changes a physical profile or what a query returns. From `ATMOSPHERE:WP12` a knob may hold one value with the governor off and another at the governor's first tier; a knob that declares no such value is as `APPLE-PRESENTATION:WP7` built it | `WATERS`, `CLOUDS`, `ATMOSPHERE` → the governor in `APPLE-PRESENTATION:WP7` | C04, port decision, [WATERS](WATERS/DESIGN.md#capabilities-recipes-limits-and-knobs), [APPLE-PRESENTATION](APPLE-PRESENTATION/DESIGN.md#the-governors-knobs-and-state-wp7) |
+| **Output scale**: on the Mac a generation's output extent is the window's backing extent times an output scale, one of 100, 85, 75, 67 and 50%, and the display's layer scales the drawable to the window. It is 100% except at full screen on a display faster than 60 Hz, where a 3D scene resolves the capability registry's value for the device, and a launch setting forces any step. The frame record and the display record a game reads name the backing extent, the output scale, the output extent and whether a setting forced it. Engine capture's frames have the output extent. A 2D scene, the iPhone shell and Chrome always resolve 100% | `APPLE-PRESENTATION:WP18` (the value for this Mac from its WP17) → games, `SHOWCASE`, `T2-CAPTURE`'s tap, `PLATFORM-RUNTIME-MAC`'s render actor | [APPLE-PRESENTATION](APPLE-PRESENTATION/DESIGN.md#the-output-scale-wp18), [the hardware-native decision](../design/decisions/HARDWARE-NATIVE-ENGINE.md) |
 | Typed controls, parameter files, the scene shell on Mac and web | `CREATOR` → `SHOWCASE`, demo scenes for `WATERS` and `CLOUDS` | C11, [G6 decision](../design/decisions/G6-CREATOR-EXPERIENCE.md), [CREATOR](CREATOR/DESIGN.md) |
 | **Frame timing feed**: completed frame samples with pass-name GPU timing, and one timing-demand switch on the frame host (on by default; off writes no timestamps and the sample says GPU time was not requested) | The frame runtime (`APPLE-TILE:WP3` for pass names; the switch by the ruling below) → `CREATOR`'s profiler, frames reports, Mac qualification, capture | C12, [CREATOR](CREATOR/DESIGN.md#the-frame-timing-feed) |
 | Engine capture modes and evidence, and a realtime capture's admission policy: `omit` by default, `wait` for a sequence that must keep every submitted frame | `T2-CAPTURE` → every visual work package | C12, [T2 capture](T2-CAPTURE/DESIGN.md) |
@@ -355,6 +357,38 @@ or a ray build probe: a module that needs a timestamp query set in `thrum-render
 `thrum-render` offers the call site to tests and crates outside it. `SEA`'s test harness
 (`crates/thrum-sea/tests/support.rs`) creates its own directly, in test binaries that prepare no timed frame
 host and install no probe, and does not change.
+
+<a id="seam-ruling-for-the-output-scale"></a>
+
+**Seam ruling for the output scale (`APPLE-PRESENTATION` WP18 and WP17), 27 November 2026.** The owner chose
+120 Hz at full screen on the built-in display with the picture reconstructed below the panel's pixel size:
+"So the 120 upscale for full screen."
+[The output scale](APPLE-PRESENTATION/DESIGN.md#the-output-scale-wp18) is built by the `APPLE-PRESENTATION`
+builder under seam 5's terms, inside state other modules own: the request and its resolution in
+`PLATFORM-RUNTIME-MAC`'s platform files and render actor, the frame runtime's extent and transition files, and
+the capability registry's row for the device. Engine capture's tap is not changed: it reads the drawable, whose
+extent is now the output extent. No item of `PLATFORM-RUNTIME-MAC`, `T2-CAPTURE` or `APPLE-TILE` changes, no
+exact comparison is loosened, and a host that resolves 100% draws what it drew. A 2D scene always resolves
+100%, so no item of `RENDER-2D` or `GAME-UI` changes; an interface drawn in the frame of a 3D game at full
+screen is scaled with the picture, and a module that needs it at the panel's pixel size proposes that here.
+WP17's sitting runs `SHOWCASE`'s exit flythrough beside its own route to choose the registry's value, by the
+engine's refresh account. Its builder drives the exit configuration's Apple recipe row through `SHOWCASE`'s
+launcher or its own proof script, and changes no row, route or content of `SHOWCASE`. [Who judges frame cadence](#who-judges-frame-cadence) is unchanged: `SHOWCASE` WP8.6
+judges the showcase, by presented time.
+
+<a id="seam-ruling-for-atmosphere-wp12"></a>
+
+**Seam ruling for `ATMOSPHERE` WP12, 27 November 2026.**
+[The chart cadence](ATMOSPHERE/DESIGN.md#the-chart-cadence-wp12) is a knob in the governor's registry, which
+`APPLE-PRESENTATION` owns. Its builder changes the registry in the governor's files, `thrum-render`'s
+`contribution/quality.rs` and `runtime/governor.rs`, in one respect: a knob may declare a value it holds with
+the governor off that differs from its first tier's
+([the governor's knobs](APPLE-PRESENTATION/DESIGN.md#the-governors-knobs-and-state-wp7)). The aerial knob,
+`WATERS`' and `CLOUDS`' knobs and the behaviour `APPLE-PRESENTATION` D7.5 proved are unchanged, and the
+policy's order stays scale first, then tiers. Once built, the change belongs to the registry's owner.
+`CLOUDS`' sky overlay is read by the diffuse and reflection stages in the frame each runs, so under the
+governor a cloud's reflection may trail the cloud by up to two refreshes; no item of `CLOUDS` or `WATERS`
+changes. It answers the code review's M31.
 
 **Seam ruling for `CREATOR` WP2.** The profiler needs the frame host to stop timing frames while it is off, which
 no interface offered. The timing-demand switch and the "not requested" reason are built in `thrum-render`'s
@@ -1477,6 +1511,18 @@ reconstruction milestone as reached then and not at WP11. The V1 exit rests on b
 WP7 waits only for `APPLE-PRESENTATION:WP11`, `SHOWCASE` WP8 waits for `APPLE-PRESENTATION:WP17` as well, and
 WP8.12 lists both, so an open WP17 keeps the exit open. Taking WP17 out of the exit is the owner's decision.
 
+**The owner's answer, 27 November 2026.** WP17's planner measured the full-screen frame, found that no render
+scale holds 120 Hz at the panel's pixel size, and put three options to the owner
+([record](../../.orchestrate/evidence/APPLE-PRESENTATION/WP17-plan/README.md)). The owner: "So the 120 upscale
+for full screen." So WP17 stays in the exit and holds 120 Hz with the picture reconstructed at an output scale
+below the panel's pixel size and scaled up by the display. Three work packages carry it: `APPLE-PRESENTATION`
+WP18 builds the output scale behind a launch setting; `ATMOSPHERE` WP12 spreads the rebuild of the sky's charts
+over several frames under the governor, the largest cut in that frame that asks nothing of the picture; and
+WP17 then promotes the largest scale that holds on the valley route and the exit flythrough, in one sitting
+with the other builders paused, and removes the 60 Hz rule. `SHOWCASE` WP8.6 and WP8.14 record the output scale
+and the drawable extent it gives. [The rulings](#seam-ruling-for-the-output-scale) say what each builder
+changes in another module's files.
+
 ### CULLING (G3c)
 
 Planned on 11 November 2026: [design](CULLING/DESIGN.md), [plan](CULLING/PLAN.md). Its planner settled the open
@@ -2124,7 +2170,7 @@ there keeps its tests passing.
 | T12 cost | H16 and H18: `REVIEW-ENGINE` WP2 and WP3. M52, M67, M64: `REVIEW-ENGINE` WP5. M40, M38: `REVIEW-RENDER` WP5. M01: `HOST` WP3 |
 | T9 and T10 names and splits | `REPO-RULES` WP3, one landing |
 | T13 hygiene | `REPO-RULES` WP2 (bulk files, H03) and WP4 |
-| Not scheduled | T7 (shader source), T8 (configuration by environment variable, beyond a rule that stops new reads in libraries) and T11 (mechanisms built several times) are not in the review's order of attack. M24, M71 and M58 wait for the performance phase the vision and scope document puts after the exit, and M31 for the governor's cadence controls. Each is an assumption in the owning plan |
+| Not scheduled | T7 (shader source), T8 (configuration by environment variable, beyond a rule that stops new reads in libraries) and T11 (mechanisms built several times) are not in the review's order of attack. M24, M71 and M58 wait for the performance phase the vision and scope document puts after the exit. M31 waited for the governor's cadence controls and is planned as `ATMOSPHERE` WP12 since 27 November 2026. Each is an assumption in the owning plan |
 
 ### What starts at once, and what waits
 
@@ -3627,3 +3673,12 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   and a resize in which no contribution needs more is as it was. The `CLOUDS` builder had added the hook without
   a ruling, and three reviews each found a regression in another resize
   ([the log](CLOUDS/LOG.md#wp15-diagnosis)). No other module's item changed.
+- 2026-11-27 The owner answered `APPLE-PRESENTATION` WP17's question on full screen: "So the 120 upscale for
+  full screen." `APPLE-PRESENTATION` gained WP18 (the output scale) before WP17, and WP17 its items;
+  `ATMOSPHERE` gained WP12 (the chart cadence), which WP17 waits for, with `SHOWCASE:WP7`; `SHOWCASE` WP8.6,
+  WP8.14 and WP8.12 were reworded to the output scale. The interfaces gained the output scale, and the
+  environment products and quality knobs rows say what changes from `ATMOSPHERE:WP12`. Two seam rulings, the
+  module table's rows 7 and 8, the exit coverage table, step 7 of the build order and
+  [the planning note](#apple-presentation-m4m11-g4) follow. `REVIEW-RENDER`'s plan still parks M31 in its own
+  words, and `GAME-UI` is not re-planned for an interface over a scaled 3D picture. No other module's item
+  changed.

@@ -754,3 +754,17 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
 - 2026-11-26 U1 review repair. The briefing now gives the libraries-only default as 44 stage loads across five
   threads. The D12.4 process log confirms 31 events on the main thread and 13 across the four workers.
   The publication audit also includes the Guardian auto-review child.
+- 2026-11-27 WP17 planning stopped for the owner. The planner measured the full-screen frame before writing
+  items: at the panel's pixel size MetalFX and the EDR present pass alone take about 3.2 ms of the 8.33 ms
+  interval, and no render scale holds the route at 120 Hz. It put three options to the owner and changed no
+  plan file. [Measurements, options and a draft](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP17-plan/README.md)
+- 2026-11-27 Owner, on full screen on the built-in display for V1: "So the 120 upscale for full screen." That
+  is option 1 of the record above: the display's full 120 Hz, with the picture reconstructed below the panel's
+  pixel size and scaled up by the display. It answers the plan's assumption that the full refresh holds at
+  full screen "at its pixel size", which is deleted. 60 Hz at the panel's pixel size stays only as the interim
+  rate until WP17 is Done, and nothing in V1 works toward 120 Hz at the panel's pixel size.
+- 2026-11-27 Planned against that answer. WP18, new and before WP17, builds
+  [the output scale](DESIGN.md#the-output-scale-wp18) behind a launch setting. WP17 promotes the largest step
+  that holds 120 Hz and removes the 60 Hz rule, and now waits for `ATMOSPHERE` WP12 and `SHOWCASE` WP7. Three
+  assumptions are new in the plan.
+  [What changed, in full](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP17-plan/PLANNED-2026-11-27.md)

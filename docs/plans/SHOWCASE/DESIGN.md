@@ -23,7 +23,11 @@ publication's, from `CONTENT-LOOP` WP6, and
 [what the three rows are held to](#what-the-three-rows-are-held-to-wp75) replaces one fixed threshold for
 every stop and every pair of rows. Revised that day for the design review of that revision: WP7.5's review
 judges [each stop by what the route gives it to show](#what-each-stop-must-show), and the median is credited
-only with what it can see.
+only with what it can see. Revised on 27 November 2026 for the owner's answer on full screen, "So the 120
+upscale for full screen.": WP8.6 and WP8.14 record
+[the output scale](../APPLE-PRESENTATION/DESIGN.md#the-output-scale-wp18) and the drawable extent it gives, in
+place of a drawable of the panel's pixel extent
+([the full refresh at full screen](#the-full-refresh-at-full-screen-on-the-populated-exit)).
 
 ## The request
 
@@ -91,7 +95,7 @@ the exit.
 | **S2 Things move** | A held view and the flythrough, tick by tick, and in real time at the close | 1,500 movers; a run of hours; pause and resume | Movers that drift out of the valley after ten minutes, or sit too far off to read. Rejected by an hour stepped in a test, a capture of every tick, and WP8's real-time review |
 | **S3 One scene, three rows** | Each stop on each row | Apple and portable recipes; Chrome | A row that quietly ran a fallback or drew another store, a comparison that cannot see a missing prop, one so loose that a row with a wrong exposure passes, or three rows that agree because all lack what a stop is there to show. Rejected by the game's own report of what it drew, a no-entities control, a median held at one code and a review of each stop against what the route gives it to show |
 | **S4 Culling is never seen** | The flythrough with movers moving | Frustum and Occlusion; both recipes; Chrome | Equality on a scene with nothing hidden. Rejected by a non-empty prepass and hidden slots in the rows |
-| **S5 Smooth** | The built-in 120 Hz panel, at full screen on the Apple recipe; Chrome's window on it | The flythrough, a full day cycle, startup | A smooth offline movie, or 120 Hz held in a small window or on the bare valley. Rejected by capture-off frame records, and by OS-reported presented intervals of the populated flythrough with the drawable extent and cooked root the game resolved |
+| **S5 Smooth** | The built-in 120 Hz panel, at full screen on the Apple recipe; Chrome's window on it | The flythrough, a full day cycle, startup | A smooth offline movie, or 120 Hz held in a small window or on the bare valley. Rejected by capture-off frame records, and by OS-reported presented intervals of the populated flythrough with the output scale, drawable extent and cooked root the game resolved |
 | **S6 One picture** | Stops and motion on each row | Low Sun, noon, night; fast yaw | Props lit or hazed differently from the terrain. Rejected by a clean-context review of crops |
 
 The bar is a shipped high-end game's vista: scatter as in Red Dead Redemption 2's New Austin or Horizon Forbidden
@@ -514,20 +518,30 @@ whose cooked root is the one the claimed commit cooks, and WP8.8 asks for that.
 
 Added 26 November 2026, after [a design review](../../../.orchestrate/evidence/SHOWCASE/design-review-8.md), and
 its rule for a missed refresh after [the next](../../../.orchestrate/evidence/SHOWCASE/design-review.md).
-`APPLE-PRESENTATION` WP17 holds the display's full 120 Hz at full screen on its own route, and its full-screen
-driver runs the bare valley over `moving-v1.json`. The exit scene is another cooked root with 10,000 props on
-it, and its route file declares a 1280×720 render extent for the route check. So WP17 Done and a smooth exit
-flythrough in a window would not together show the populated showcase smooth at full screen. WP8.6 claims that
-directly, in the sitting WP8 already takes with the other builders paused.
+`APPLE-PRESENTATION` WP17 holds the display's full 120 Hz at full screen, and what it proves is that the engine
+made a present call in every refresh interval. WP8.6 claims what the showcase needs beyond that: frames of the
+populated flythrough reaching the panel in every refresh, by the OS's own report, in the sitting WP8 already
+takes with the other builders paused.
+
+**The owner's answer, 27 November 2026:** "So the 120 upscale for full screen." At full screen on the built-in
+display the picture is reconstructed below the panel's pixel size and scaled to the panel by the display's
+layer, at [the output scale](../APPLE-PRESENTATION/DESIGN.md#the-output-scale-wp18) `APPLE-PRESENTATION` WP17
+promotes. WP17 chooses that scale as the largest that holds on the bare valley route and on this module's exit
+flythrough, so the value WP8.6 runs at has already held the populated scene by the engine's refresh account.
+No take here is held to a drawable of the panel's pixel extent.
 
 - **The run.** The exit configuration's Apple recipe row, launched as WP7 launches it, with the window at full
   screen and nothing else changed: capture off, the release game, the exit flythrough from its first tick to its
   last. The route file's render extent is for the route check's captures and sizes no frame of this run: the
   governor chooses the render scale, as the row's entry says.
 - **What each take records, from what the game resolved and never from the request.** The scene's cooked root,
-  which is the exit's. The drawable's pixel extent, which is the panel's. The
+  which is the exit's. The backing extent, which is the panel's pixel extent. The output scale, which is the
+  full-screen value WP17 promoted, with no launch setting forcing it. The drawable's extent, which is the
+  backing extent times that scale. The
   [requested frame rate](../APPLE-PRESENTATION/DESIGN.md#the-requested-frame-rate-at-full-screen-wp11), which is
-  the panel's 120 Hz with no launch setting forcing it, as it is once WP17 is Done. Where the Mac host does not
+  the panel's 120 Hz with no launch setting forcing it, as it is once WP17 is Done. `APPLE-PRESENTATION` WP18
+  puts the output scale and both extents in the record the game reads, and the launcher's report of a row
+  prints them beside the display mode. Where the Mac host does not
   yet tell the game one of these, that is a proposal to its owning module, as for
   [the exit configuration](#the-exit-configuration-one-file-three-rows-reported-and-not-echoed).
 - **The judge.** The presented-time witness `PLATFORM-RUNTIME-MAC` qualified: an OS-reported presented interval
@@ -548,12 +562,15 @@ directly, in the sitting WP8 already takes with the other builders paused.
   and listed with the host's load, so two that hold are not two chosen from many without that being seen.
 - **If it does not hold.** The first remedy is content, by regenerating, as for
   [risk 1](#risks). A cause in another module's code is handled as
-  [defects found in another module's code](#defects-found-in-another-modules-code) says. Accepting less than the
+  [defects found in another module's code](#defects-found-in-another-modules-code) says. The output scale is
+  `APPLE-PRESENTATION`'s registry value: this module forces no other, and a smaller one is a proposal to that
+  module with the record. Accepting less than the
   full refresh at full screen changes the vision's bar, which is the owner's: the builder ends `NEEDS_CONTEXT`
   with the record, and WP8.6 stays open.
 - **The portable recipe and startup (WP8.14).** The portable row runs the same flythrough at full screen with
-  the same record and witness. It is the Mac's fallback recipe and no work package brings it to 120 Hz at the
-  panel's pixel extent, so its record says what it held, and each missed refresh, classified the same way,
+  the same record and witness. It resolves the same output scale as the Apple row, so the two compare at one
+  extent. It is the Mac's fallback recipe and no work package brings it to 120 Hz at full screen, so its record
+  says what it held, and each missed refresh, classified the same way,
   is listed with a cause that is
   fixed, proposed to its owning module, or shown to lie outside the game. Startup to the first exit-scene frame
   is recorded windowed on both recipes, apart from the full-screen takes, so neither waits on the other.
@@ -660,12 +677,14 @@ owner's page and is not edited.
 
 **What the exit waits for from `APPLE-PRESENTATION`.** Its WP11 ends with a full-screen window on the built-in
 display presenting at a steady 60 Hz, an interim rate, and its WP17 is Done when that window holds the display's
-full 120 Hz ([its design](../APPLE-PRESENTATION/DESIGN.md#reaching-the-full-refresh-at-full-screen-wp17)). The
+full 120 Hz at the output scale it promotes
+([its design](../APPLE-PRESENTATION/DESIGN.md#reaching-the-full-refresh-at-full-screen-wp17)). The
 exit is judged "smooth at the display's full refresh" on that display, so WP8 depends on WP17 and starts after
-it, and WP8.12 lists WP17 among the work packages the exit rests on. An open WP17 keeps the exit open. Taking
-WP17 out of the exit changes the exit, which is the owner's call. WP17 proves the rate on the bare valley, so the
-exit record's claim for the showcase cites WP8.6's two takes of the populated flythrough, with their drawable
-extent, and not WP17 alone
+it, and WP8.12 lists WP17 among the work packages the exit rests on. An open WP17 keeps the exit open. WP17
+waits in turn for `APPLE-PRESENTATION` WP18 and `ATMOSPHERE` WP12, so it covers both. WP17 proves present calls
+in refresh intervals, so the exit record's claim for the showcase cites WP8.6's two takes of the populated
+flythrough, with their output scale and drawable extent, and not WP17 alone. The record says in plain words
+that the full-screen picture is reconstructed below the panel's pixel size and scaled to it
 ([the full refresh at full screen](#the-full-refresh-at-full-screen-on-the-populated-exit)).
 
 ### Check that it can work

@@ -223,3 +223,12 @@
   full day cycle. Their longest lower bounds were 64.9 ms and 80.4 ms under recorded load. Attribution for those
   gaps remains open for WP8.13. All ten item checks passed on their named targets.
   [WP7 target evidence and timing audit](../../../.orchestrate/evidence/SHOWCASE/WP7/chrome-present-gaps/README.md)
+- 2026-11-27 Owner, on full screen on the built-in display for V1: "So the 120 upscale for full screen." It
+  answers the assumption that the exit's "smooth at the display's full refresh" holds at full screen, which is
+  deleted: it holds there, at 120 Hz, with the picture reconstructed below the panel's pixel size and scaled
+  up by the display.
+- 2026-11-27 WP8.6 and WP8.14 reworded to match. A take records the backing extent, the output scale
+  `APPLE-PRESENTATION` WP17 promoted and the drawable extent it gives, where WP8.6 asked for a drawable of the
+  panel's pixel extent. WP8.12 says that WP17 covers `APPLE-PRESENTATION` WP18 and `ATMOSPHERE` WP12; its list
+  of twelve and its check are unchanged. WP17 now chooses its scale on the exit flythrough as well as the bare
+  valley, by the engine's refresh account, and WP8.6 still witnesses presented time.

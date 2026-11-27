@@ -789,3 +789,12 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   All 233 reconstructed queries finished under the cap with zero common-sample omissions and overcoverage.
   The close-umbra case cost 5.12% more counted work, so the candidate was parked. The original ray inputs
   and exact finite-disk match remain open under G3s. [Builder evidence](../../../.orchestrate/evidence/ATMOSPHERE/WP4/README.md#wp41)
+- 2026-11-27 Owner, on full screen on the built-in display for V1: "So the 120 upscale for full screen." The
+  full-screen frame was measured first: the sky view, the diffuse irradiance and the seven reflection levels
+  were rebuilt in nearly every frame of the route, at about 1.3 ms of an 8.33 ms interval.
+  [Measurements](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP17-plan/README.md)
+- 2026-11-27 WP12 planned for it: [the chart cadence](DESIGN.md#the-chart-cadence-wp12). A refresh of those
+  nine stages takes its inputs once and is spread over the frames a governor knob names, 1 with the governor
+  off and 4, 6 and 8 by tier, with a jump of the hour, a cut and a change of air run whole. It answers the
+  code review's M31. `APPLE-PRESENTATION` WP17 waits for it. The assumption that the top tier already spreads
+  the charts is in the plan.

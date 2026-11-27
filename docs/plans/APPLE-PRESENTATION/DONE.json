@@ -1239,6 +1239,113 @@
       "quality_bar": "The whole presentation path at the level of a shipped high-end Mac game: sharp and stable at the display's full resolution, highlights above SDR white in the frame the XDR display's surface is given, no hitch or compile during play, and smooth at the display's full refresh, with the Apple path's win over the portable one measured and not assumed. At full screen this work package is judged at a steady, evenly paced 60 Hz, which is an interim rate and not the bar: the display's full 120 Hz there stays part of the bar, is recorded as owed, and is WP17's to reach."
     },
     {
+      "id": "WP18",
+      "name": "A launch setting draws the valley below the window's pixel size and the display scales it to fill, with no hitch at the change",
+      "status": "not_started",
+      "depends_on": [],
+      "quality_bar": "A shipped high-end Mac game set to an output resolution below the panel's own at full screen, such as Resident Evil Village with MetalFX: the picture fills the display edge to edge with no band and no stretch, and changing the output resolution never hitches or compiles. This work package builds the mechanism and holds it to that; the look of the scaled picture is judged in WP17, at the scale that is chosen there.",
+      "items": [
+        {
+          "id": "D18.1",
+          "statement": "The output scale a request resolves, and the output extent it gives, are right in each of these cases. A window that is not full screen resolves 100%. A full-screen window on a 60 Hz display resolves 100%. A full-screen window on a 120 Hz display resolves the registry's full-screen value, shown with a value of 75% given to the resolver. A host whose scene is 2D resolves 100% at full screen on a 120 Hz display with that same 75% given. A forced value of each of the five steps is resolved in a window and at full screen, and the resolved record says it was forced. The registry's full-screen value for this Mac is 100% in this work package. A 3456×2234 backing gives 3456×2234, 2938×1899, 2592×1676, 2316×1497 and 1728×1117 at the five steps, by the render scale's own rounding. Guard: tests on the CPU, with no device.",
+          "check": "cargo nextest run --locked --offline -p thrum-app -E 'test(/output_scale/)' --no-tests=fail",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "D18.2",
+          "statement": "Through the frame host's own calls, a change of output scale is taken as one generation transition. With a generation at 100% presenting, a request for 75% is built off the render thread while the old generation goes on presenting at its own extent. The switch configures the surface once, at the new output extent. The reconstruction output, the history key and the drawable then have that extent, and the forward targets that extent times the render scale. History and reconstruction reset in the switch, and the creation counters show no texture, view, bind group or pipeline made on the render thread. The same holds from 75% back to 100%. Guard: a device test on the smallest target that shows it, because only a device shows the surface's configure and the counters by thread.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test generation_transition -E 'test(/output_scale/)' --no-tests=fail",
+          "lock": "gpu",
+          "ask": "Read the test. Is the change made through the host's request and frame calls, as D4.4's resize is, and not by setting a generation's extent directly? Does a control in which one target is sized from the backing extent fail it?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "D18.3",
+          "statement": "In the release game at full screen on the built-in display, on each of the Mac's two recipes, three launches behave as follows. With the launch setting at 75%, the game's own record names a backing extent of 3456×2234, an output scale of 75% that a setting forced and an output extent of 2592×1676; the drawable, the reconstruction output, the viewport and engine capture's frame all have the output extent; and the layer's bounds times its contents scale equal the backing extent, with the gravity that fills the bounds and a linear magnification filter. With no setting, the record names 100%, not forced, and a 3456×2234 drawable. With the setting at 80%, the launch ends with an error that names the setting. Record: the launches' records, kept as this work package's evidence.",
+          "check": "python3 scripts/apple_presentation.py output-scale --target mac-metal",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "D18.4",
+          "statement": "The request is the one authority for a generation's extent, on every path the output scale reaches, and nothing changes where it resolves 100%.",
+          "ask": "Read the change, and answer each. 1. Does anything size a target, a viewport, a scissor or a capture from the window's backing size, other than the request's own resolution of the output extent? 2. Does anything that maps a position in the window to the picture divide by the drawable's size? 3. Is the launch setting read by the game and passed in the app's configuration, with no engine library reading the environment? 4. Do the iPhone shell and Chrome resolve 100% with no setting read? 5. When the output scale is below 100%, does any pass, upscaler or sharpening step run at the backing size?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
+      "id": "WP17",
+      "name": "The valley holds the display's full 120 Hz at full screen on the built-in display",
+      "status": "not_started",
+      "depends_on": [
+        "ATMOSPHERE:WP12",
+        "SHOWCASE:WP7"
+      ],
+      "quality_bar": "A shipped high-end Mac game at full screen on this ProMotion panel, such as Resident Evil Village with MetalFX upscaling to an output below the panel's own resolution: motion at the display's full 120 Hz with no held frame, and a picture that fills the panel with clean edges and steady fine detail, where nothing betrays the scaling but a slight softness. Judged in words from the engine's own records and captured frames; the look on the panel itself is the owner's observation and gates nothing.",
+      "items": [
+        {
+          "id": "D17.1",
+          "statement": "The requested frame rate resolves right in each of these cases, with the 60 Hz rule for full screen gone. A full-screen window on a 120 Hz display asks for 120 Hz, not forced. A window that is not full screen on that display asks for 120 Hz, not forced. Either window on a 60 Hz display asks for 60 Hz. The launch setting forces 60 Hz and 120 Hz in a window and at full screen, and the record says forced. Guard: tests on the CPU, with no device.",
+          "check": "cargo nextest run --locked --offline -p thrum-app -E 'test(/full_refresh/)' --no-tests=fail",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "D17.2",
+          "statement": "At full screen on the built-in display, on the Mac's Apple recipe with MetalFX, EDR and the governor on, the game holds the display's full 120 Hz at the output scale the registry resolves, on the valley route and on the exit flythrough. In each of the four closing takes of the full-refresh sitting, two on each route, the game requests 120 Hz and resolves the registry's output scale with no launch setting forcing either, and every 120 Hz refresh interval from the route's first tick to its last is served, with refresh interval, served and missed as the design defines them. The registry's value is the largest step that holds, as the design defines holds: the sitting's record lists every take made, and unless the value is 100% it holds a take at the next larger step that missed an interval for a cause in the frame. The value is 67% or larger. Record: the sitting's takes, with their refresh accounts.",
+          "inspect": "Read the full-refresh sitting's record from the build that merged: the list of every take, each with its route, its output scale, whether a setting forced the scale or the rate, the host's load, the governor's trace and the cause of each missed interval; and the raw refresh account of each of the four closing takes. 1. The record shows that the other builders were paused for the sitting, and gives the host's load for each take. 2. In each closing take the requested frame rate is 120 Hz and the output scale is the registry's, neither forced, and the governor's display interval is 8.33 ms. 3. Each closing take's account has one interval for each 8.33 ms of its route from its first tick to its last, so a target that brought no callback is a row and not a gap. 4. Every one of those intervals holds exactly one present call, made inside it, and none is missed for any cause. 5. The two exit takes ran the exit configuration's Apple recipe row on the exit's cooked root, from the flythrough's first tick to its last. 6. No take in the list at the chosen step missed an interval for occupied frame slots, a missing drawable or a late or shared present call. 7. Unless the chosen step is 100%, a listed take at the next larger step missed an interval for one of those causes. 8. The chosen step is 67% or larger, and it is the value the registry holds in the merged code.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "D17.3",
+          "statement": "At the registry's output scale and 120 Hz the full-screen route is sharp and stable in the frames the surface is given, and stays so when scaled to the panel's size. In a complete cue window of consecutive captured frames for each of the four cues D11.6 names: clean edges on the terrain silhouette and on thin props, steady stars, no ghost behind a moving prop, and no brightness lag through the time-of-day scrub. The same frames resampled to 3456×2234 with a linear filter, as a stand-in for the layer's scaling, show no band along any edge and no moiré, and thin props that still read.",
+          "inspect": "Read the T2 engine capture in `realtime` mode at full screen from the merge candidate, at the registry's output scale and a requested 120 Hz, with capture's own cost shown apart, and say which frames you read for each cue. Read each cue window's frames at their own size, in captured order and timing. 1. Each of the four windows is complete, with an image for every presented submission and no omission by the tap or the writer, and every image has the output extent the game recorded. 2. Edges on the terrain silhouette and on thin props hold from frame to frame as the camera moves. 3. Stars stay steady with the camera held and as it pans. 4. No copy or trail stays behind the moving prop. 5. Brightness through the time-of-day scrub does not trail the comparison capture at the same captured time. Then read the frames the builder resampled to 3456×2234 with a linear filter, which the evidence labels a stand-in for the layer's scaling and not what the panel showed. 6. No band of uncovered or repeated pixels lies along any edge. 7. No moiré shows on the terrain's fine detail or on the grid fixture. 8. Thin props are unbroken along their length, as they are in the frames at their own size.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "D17.4",
+          "statement": "The maturity ledger's owed row for the full refresh at full screen is answered with what was held: one present call in every 120 Hz refresh interval at full screen on the built-in display, at the output scale and output extent the registry resolves, on the valley route and the exit flythrough, as what the engine did and not what the panel showed. The milestone is recorded as reached. Nothing in the ledger, in WP17's evidence page or in the engine's and the game's code says that a full-screen window asks for 60 Hz by itself, and nothing says the full-screen picture is drawn at the panel's pixel size. The owner's look at the scaled picture on the panel is asked for in the evidence page, with how to see the chosen step beside 100%, and its status is in the ledger as an observation that gates nothing.",
+          "ask": "Read the ledger, WP17's evidence page and the change, and answer each. 1. Does the ledger answer the owed row with present calls in refresh intervals at the named output scale and extent, and nowhere with frames shown on the panel? 2. Does the ledger, the evidence page, or a comment or a name in the code still say that full screen asks for 60 Hz unless forced, or that the full-screen picture has the panel's pixel size? 3. Does the code hold any rule for a full-screen window's frame rate other than the display's full refresh and the launch setting? 4. Does the evidence page carry the request for the owner's look and say how to compare the chosen step with 100%, and is its status in the ledger apart from what agents proved? 5. Does any sentence make WP17's close or the milestone wait for the owner?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "D17.5",
+          "statement": "The frame's cost at the registry's output scale is on record for the valley route and the exit flythrough at full screen, taken while other builders work: each pass's GPU time at the median and the 95th percentile, the timed span against 8.33 ms, the governor's render scale and tier through the route, the summed time of the atmosphere's chart stages, and the host's load, beside the planner's table of 27 November. It sets no budget and fails only where a measurement is missing. Record: a tripwire.",
+          "check": "python3 scripts/apple_presentation.py full-refresh-cost --target mac-metal",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
       "id": "U1",
       "name": "The owner can read, in one reviewed document, what Thrum's Metal pipeline cache would offer wgpu and what to settle there first",
       "status": "done",
