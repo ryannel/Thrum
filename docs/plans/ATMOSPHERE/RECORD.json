@@ -910,12 +910,12 @@
       }
     },
     "WP12": {
-      "definitions": "f82412cb954d47936f6204b4eab98d85d28058f798c199a20f1710816f0f2033",
+      "definitions": "ebd629cd2c8af7a417bb1f1d21c5c4bd08ed554e51bd66c0681f72bb8a769b80",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "ATMOSPHERE WP12 is Blocked on WP12.5: at cadence 8 in Chrome the twilight sky visibly catches up at each chart refresh. ",
-        "at": "2026-11-27T06:42:59Z"
+        "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 4 Must ",
+        "at": "2026-11-27T06:59:24Z"
       },
       "ends_stretch": true
     }
@@ -1028,11 +1028,15 @@
     {
       "task": "ATMOSPHERE WP12 is Blocked on WP12.5: at cadence 8 in Chrome the twilight sky visibly catches up at each chart refresh. The builder's handoff is .orchestrate/evidence/ATMOSPHERE/WP12-handoff.md; its verified checkpoint is 286a34491 on build/atmosphere (Metal held cadence 4 and cut chart GPU time p50 from 1.18 to 0.31 ms). Lead's view: the take moves the Sun 1.5 degrees per submission, a time-of-day scrub, not play. Shipped games rebuild sky lighting at a cadence set by how fast the lighting changes, so make the cadence adaptive: the governor chooses it from the Sun's motion (and other sky inputs) per refresh, dropping to every frame when they move fast, as in a scrub or the sharpest twilight, and stretching out when they're still. Prefer that over cross-fading two chart sets, which costs storage and GPU time and still lags. Keep the bar at what a player sees: no visible catch-up step at matched poses in motion, on Metal and in Chrome. Keep the builder's finished work and its scheduler and trace as controls.",
       "at": "2026-11-27T06:42:59Z"
+    },
+    {
+      "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 4 Must Fix findings.",
+      "at": "2026-11-27T06:59:24Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T06:42:59Z"
+    "at": "2026-11-27T06:59:24Z"
   },
   "design_history": [
     {
