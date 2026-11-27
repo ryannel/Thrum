@@ -575,6 +575,7 @@ pub(super) fn new(
         tidal_grid,
         rain.is_some(),
         flow,
+        falls.is_some(),
         (wet_ground, standing_film),
     );
     let lens_cut = lens_buffers
@@ -758,6 +759,7 @@ fn surface_pipelines(
     tidal_grid: bool,
     rain: bool,
     flow: Option<(thrum_water_model::FlowBandsProfile, u32)>,
+    falls: bool,
     (wet_ground, standing_film): (Option<&thrum_render::wetness::PreparedWetness>, bool),
 ) -> (
     SurfacePipelines,
@@ -777,6 +779,7 @@ fn surface_pipelines(
             optics,
             rain,
             flow.is_some(),
+            falls,
         )
     };
     let mut suffix = Cache::source(cache, tidal_grid);
@@ -951,6 +954,7 @@ fn shader_source(
     optics: ShaderOptics,
     rain: bool,
     flow: bool,
+    falls: bool,
 ) -> String {
     let gather = matches!(optics, ShaderOptics::Surface);
     let sun = if surface.sun_optical_depth {
@@ -1055,6 +1059,7 @@ fn shader_source(
             + include_str!("surface_lighting.wgsl")
             + if flow { include_str!("foam/river_contact.wgsl") } else { "" }
             + include_str!("surface/radiance.wgsl")
+            + if falls && gather { include_str!("falls/pool_light.wgsl") } else { "" }
             + if has_hollows && gather {
                 include_str!("map_gpu/hollows_transport.wgsl")
             } else {

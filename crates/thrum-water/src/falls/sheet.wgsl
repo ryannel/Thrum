@@ -41,17 +41,12 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let rank = 0.43 * coarse + 0.17 * fine + 0.40 * grouped;
     let pixel = max(length(dpdx(xy)), length(dpdy(xy)));
     let width = max(0.025, min(0.27, 0.10 * pixel));
-    let world_dx = dpdx(point);
-    let world_dy = dpdy(point);
     let tangent = normalize(input.velocity_along.xyz + vec3(1e-8, -1e-8, 0.0));
     let normal = normalize(cross(input.across_fraction.xyz, tangent));
-    let facet = normalize(cross(world_dx, world_dy));
-    let aligned = select(-facet, facet, dot(facet, normal) >= 0.0);
-    let contour = normalize(mix(normal, aligned, 0.68 * smoothstep(0.012, 0.12, input.discharge.w)));
-    var face = select(-contour, contour, dot(contour, look) >= 0.0);
+    var face = select(-normal, normal, dot(normal, look) >= 0.0);
     let breakout = input.discharge.y;
-    let broken = smoothstep(rank - 0.14 - width, rank + 0.06 + width, breakout);
-    let white = mix(pow(breakout, 1.35), broken, 0.65);
+    let broken = smoothstep(rank - 0.24 - width, rank + 0.09 + width, breakout);
+    let white = mix(pow(breakout, 1.18), broken, 0.74);
     let clear = 1.0 - white;
     let tear = 0.68 * coarse + 0.32 * fine;
     let threshold = mix(tear, 0.5, smoothstep(1.0, 3.0, pixel));
@@ -60,10 +55,12 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
         discard;
     }
     let seam = smoothstep(0.0, 0.05, input.world_time.w);
-    let streak = sheet_noise(xy, span, vec2(4.5, 0.62), vec2(0.0)) - 0.5;
+    let streak = sheet_noise(xy + vec2(0.11 * (coarse - fine), 0.0), span,
+        vec2(4.0, 0.82), vec2(0.0)) - 0.5;
     let spray = sheet_noise(xy, span, vec2(13.1, 1.65), vec2(23.9)) - 0.5;
     let grain = mix(0.68 * streak + 0.32 * spray, 0.0, smoothstep(0.65, 2.8, pixel));
-    face = normalize(face + 0.72 * grain * cross(tangent, face) + 0.16 * spray * tangent);
+    face = normalize(face + (0.92 * grain + 0.38 * (coarse - fine)) * cross(tangent, face)
+        + 0.26 * spray * tangent);
     let nv = max(0.0, dot(face, look));
     let fresnel = 0.02 + 0.98 * pow(1.0 - nv, 5.0);
     let mirror = environment_reflection(reflect(-look, face), mix(0.055, 0.39, white), nv).radiance;
@@ -79,8 +76,8 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let aerial = environment_aerial(point, uv);
     let colour = (mix(glass, churn, white) * aerial.transmission + aerial.scatter) * environment_storage_scale();
     let spread = sheet_noise(xy, span, vec2(0.71, 0.5), vec2(12.0, 7.0));
-    let contact = 0.80 + 0.09 * spread;
-    let foot = mix(1.0, 0.12, smoothstep(contact, 1.0, input.across_fraction.w));
+    let contact = 0.67 + 0.22 * spread;
+    let foot = 1.0 - smoothstep(contact, 1.0, input.across_fraction.w);
     let opacity = (clear * min(0.88, fresnel + 0.07 + 1.7 * input.discharge.w + 0.35 * breakout) + white * (0.90 + 0.18 * grain))
         * presence * mix(0.62, 1.0, seam) * foot;
     let displacement = input.velocity_along.xyz * sheet_clock.y;
