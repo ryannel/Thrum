@@ -116,7 +116,8 @@ struct FallOutput {
 fn splash_shade(input: SheetVertex) -> FallOutput {
     let phase = input.across_fraction.w;
     let corner = input.across_fraction.xz;
-    let support = 1.0 - smoothstep(0.1, 1.0, dot(corner, corner));
+    let lobes = 0.82 + 0.18 * noise_hash(floor(corner * 4.0 + input.discharge.xx * 29.0));
+    let support = 1.0 - smoothstep(0.06, lobes, dot(corner, corner));
     let alive = smoothstep(0.0, 0.15, phase) * (1.0 - smoothstep(0.69, 1.0, phase));
     let alpha = input.discharge.z * support * alive
         * mix(0.32, 0.92, input.discharge.x) * mix(1.0, 0.66, input.discharge.w);
@@ -186,8 +187,8 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let feather = 1.0 - breaks_apart * smoothstep(0.50 + 0.19 * fine, 1.0, input.edge);
     let presence = select(sheet_presence * feather, strand_presence, is_filament);
     let spread = mix(0.63 * coarse + 0.37 * grouped, 0.5, smoothstep(0.9, 3.0, pixel));
-    let contact = 0.72 + 0.10 * spread;
-    let foot = 1.0 - smoothstep(contact, 0.95 + 0.05 * spread, input.across_fraction.w);
+    let contact = 0.85 + 0.055 * spread;
+    let foot = 1.0 - smoothstep(contact, 0.98 + 0.02 * spread, input.across_fraction.w);
     let contact_cover = mix(0.035 * (1.0 - thinness), 1.0, foot)
         * mix(1.0, smoothstep(0.18, 0.71, tear + 0.54 * fine),
         smoothstep(0.51, 0.90, input.across_fraction.w));
@@ -215,10 +216,11 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let glass = mirror * (0.18 + 0.82 * fresnel) + glint;
     let uv = input.clip.xy * view_aux.viewport_inv_viewport.zw;
     let aerial = environment_aerial(point, uv);
-    let mixing = smoothstep(0.63, 1.0, input.across_fraction.w);
-    let aerated = (diffuse + 0.56 * direct) * vec3(0.33, 0.39, 0.39);
+    let mixing = smoothstep(0.72, 0.99, input.across_fraction.w);
+    let aerated = (environment_diffuse(vec3(0.0, 1.0, 0.0)) + direct * max(0.0, light.y))
+        * vec3(0.84, 0.90, 0.89) / 3.14159265;
     let sheet_colour = mix(glass, churn, white);
-    let spray_light = mix(sheet_colour, aerated, mixing * white * (0.55 + 0.38 * fine));
+    let spray_light = mix(sheet_colour, aerated, mixing * (1.0 - thinness) * (0.70 + 0.25 * fine));
     let colour = (spray_light * aerial.transmission + aerial.scatter) * environment_storage_scale();
     let opacity = (clear * min(0.88, fresnel + 0.07 + 1.7 * input.discharge.w + 0.35 * breakout) + white * (0.90 + 0.18 * grain))
         * presence * mix(0.62, 1.0, seam) * contact_cover;
