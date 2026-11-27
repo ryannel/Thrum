@@ -14,33 +14,36 @@ and [the seam rulings](../ARCHITECTURE.md#seam-rulings-for-game-sdk) before any 
 
 ## Open for the user
 
-- Assumption: with multiplayer in for 2D and 3D games, the rest of your first-release scope stands until you answer [the design's ten open scope questions](DESIGN.md#scope-questions-for-the-owner).
-- Assumption: SDK work packages start once you approve the design, and take a builder only when no V1 work package is waiting for one.
+- Assumption: with multiplayer in for 2D and 3D games, the rest of your first-release scope stands until you answer [the design's open scope questions](DESIGN.md#scope-questions-for-the-owner).
+- Assumption: SDK work packages start once you approve the design, and never take a builder a V1 work package is waiting for.
 - Assumption: the crate is named `thrum`, a game is run with `cargo play`, and the design's fifteen words are the SDK's vocabulary, proposed in the glossary.
-- Assumption: the core changes in [the design's table](DESIGN.md#decisions) stand, such as a save that resumes its phase and a `Player` that names one stay in a seat.
+- Assumption: the core changes in [the design's table](DESIGN.md#decisions) stand, such as a save that resumes its phase.
 - Assumption: a scene is a type whose fields are what it is entered with, such as `GameOver { dodged }`.
 - Assumption: a player's default keys are written on the action map, beside each action, and a player can change their own.
-- Assumption: a control function may read anything a rule may. With multiplayer on, one that reads what a match cannot run ahead must say `.unpredicted()`.
+- Assumption: a control function may read anything a rule may. Online, one that reads what cannot be run ahead must say `.unpredicted()`.
 - Assumption: in a 3D scene the first release's 2D colliders lie on the ground plane.
-- Assumption: "2D queries" includes rectangles, a level's fixed collision, tile maps and a character move that slides. Nothing pushes anything.
+- Assumption: "2D queries" includes rectangles, a level's fixed collision, tile maps and a sliding character move. Nothing pushes anything.
 - Assumption: in a match, a saved resource and a saved run are the host's, until you answer scope question 11.
-- Assumption: a one-file game runs with its rules unchecked and is told so, and needs a `rules` module before it can turn multiplayer on.
+- Assumption: a one-file game runs with its rules unchecked and is told so. It needs a `rules` module before it can go online, record a run or replay one.
 - Assumption: a rule that panics stops the game in Chrome, with the message shown. Elsewhere it is reported with the world intact.
-- Assumption: the starter, stones and the lighthouse are rewritten on the SDK and the sky kit is then removed.
+- Assumption: the starter, stones and the lighthouse are rewritten on the SDK, and the sky kit is then removed.
 - Assumption: three fresh agents prove the documentation, one each for a 2D, a 3D and an online game.
-- Assumption: models that turn, scale or carry a texture as they move wait for the V1 work packages that hold the engine's 3D drawing.
-- Assumption: a tick makes one change of scene or of phase, and the one asked for first stands.
-- Assumption: a person who joins a game that bots have filled takes a bot's seat and starts with a new character, not the bot's.
-- Assumption: a pause is the same alone and in a match: the game's clock stands while a menu's own command, a save and a rule marked for it still work.
-- Assumption: a game declares its prefab names in `prefabs!` blocks that no line of the game lists, and a name with no definition is found when the game starts.
-- Assumption: one key can mean one thing in play and another in a menu through named input contexts, one active at a time on each screen.
-- Assumption: a content record holds no plain float. A save brought into a running match is at most 64 KiB unless the game says otherwise.
-- Assumption: a press made while the presser's own screen shows a pause is never read as play, and one made in play that reaches a paused match is read when the pause ends.
-- Assumption: a match of fewer than four players is kept to its number by the SDK, and a newcomer with no seat to take is told the match is full.
-- Assumption: a thing attached so that it keeps its place in the world keeps it within [the design's bound](DESIGN.md#2-the-world-entities-components-resources-and-prefabs), and is refused under a parent scaled outside it.
+- Assumption: models that turn, scale or carry a texture wait for the V1 work packages that hold the engine's 3D drawing.
+- Assumption: a tick makes one change of scene or of phase, and the first asked for stands. A scene has one set of phases; a mode beside them is a resource.
+- Assumption: a person who joins a game bots have filled takes a bot's seat, with a new character.
+- Assumption: a pause is the same alone and in a match: the clock stands while a menu's command, a save and a rule marked for it still work. A marked rule runs only when input arrives.
+- Assumption: a game declares prefab names in `prefabs!` blocks, and content IDs its code names in `ids!` blocks. A name with nothing behind it is found when the game starts.
+- Assumption: one key can mean one thing in play and another in a menu, through named input contexts.
+- Assumption: a content record holds no plain float. A save brought into a match is at most 64 KiB unless the game says otherwise.
+- Assumption: a press made while the presser's screen shows a pause is never read as play. One made in play is read when the pause ends.
+- Assumption: the SDK keeps a match of fewer than four players to its number, and a newcomer with no seat is told the match is full.
+- Assumption: a thing attached so that it keeps its place in the world keeps it within [the design's bound](DESIGN.md#2-the-world-entities-components-resources-and-prefabs), and is refused past it.
 - Assumption: the 3D starter's first page ends with a ball the player rolls, which passes through the rock.
-- Assumption: a 3D match is proved twice: rehearsed with no window in WP5, and on screen with the 3D starter in WP14.
+- Assumption: a 3D match is proved twice: with no window in WP5, and on screen in WP14.
 - Assumption: sheets, clips and tiles are cooked from a source image and a small file beside it, in WP3.
+- Assumption: a player has one character at a time. Anything else they own, such as a drone, is an ordinary entity a rule moves.
+- Assumption: every type a game is handed is the SDK's own: `thrum` re-exports no engine type.
+- Assumption: in [the extension map](DESIGN.md#the-extension-map), a predicted shot is one the control function fires, a data pack adds no prefab names, and a guest's saved progress travels as commands.
 
 ## WP1 An agent writes a game's scenes, phases and rules in plain Rust against one crate, in the order they run, and proves them in an ordinary test with no window
 
@@ -64,7 +67,7 @@ which need none of WP2's angle maths; WP2.3 proves `keep_world` under any other 
 
 Start WP11.3 with the `prefabs!` block that nothing in the game's description names: it shows whether
 [the program's list of blocks](DESIGN.md#2-the-world-entities-components-resources-and-prefabs) works
-([risk 10](DESIGN.md#risks)). Looks arrive with WP3 and WP4.
+([risk 10](DESIGN.md#risks)).
 
 ## WP2 A crowd of 10,000 written on the SDK, steered by four players, steps identically on the Mac, in Chrome and on the iPhone simulator, and costs what the hand-written crowd does
 
@@ -82,10 +85,9 @@ included, is yours to choose and document, and WP2.4 holds one set that must fit
 function so that WP5 can hand it to `SESSION`'s predicted controller unchanged.
 
 Every package under `examples/crowd-sdk` names `thrum` and no other engine crate, because
-[WP8's guard](DESIGN.md#1-a-game-one-crate-one-package-one-value) will cover it. The conformance runner takes
-Chrome's lock and the simulator's turns itself, so run WP2.6 and WP2.7 under no lock. For WP2.10,
+[WP8's guard](DESIGN.md#1-a-game-one-crate-one-package-one-value) will cover it. For WP2.10,
 `scripts/test_game_rules.py` is yours to write, on scratch games outside the checkout as
-`scripts/test_game_gate.py` makes one. It also runs each scratch game's own test, for the startup refusals.
+`scripts/test_game_gate.py` makes one.
 
 ## WP12 A platformer's hero runs, jumps and lands on a level loaded from a file, proved with no window
 

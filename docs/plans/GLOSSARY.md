@@ -185,6 +185,17 @@ reads it.
 
 Proposed: the planner chose it for the game SDK.
 
+### Pause
+
+In a game written on the game SDK, the game's clock standing for everyone in it, as world state: timers and
+rules wait while ticks still commit. Asking for one and ending one are input, so a pause is the same alone and
+in a match. It is not a menu: the key that asks for a pause is a local action, and a menu a player opens
+without one is their own screen's and stops nothing.
+
+- **Source** — the field's term, narrowed to the shared state.
+
+Proposed: the planner chose this meaning, to keep a paused game apart from one player's open menu.
+
 ### Extension map
 
 The part of [the game SDK's design](GAME-SDK/DESIGN.md#the-extension-map) that says how each feature the SDK

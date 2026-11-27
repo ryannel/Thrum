@@ -257,3 +257,66 @@
   command changed. No other module's file changed; the module list's track 7 names WP14 and the decision.
 - 2026-11-27 The vision and scope document does not yet carry the owner's words of 27 November. Adding them is
   the lead's.
+- 2026-11-27 Design review of the revision asked for changes, with 17 Must Fix findings
+  ([the review](../../../.orchestrate/evidence/GAME-SDK/design-review.md)). Each is settled below. Shape
+  questions are fixed in the core, and findings on features the first release does not build are settled in
+  their entries of the extension map, in the fewest words that keep the shape sound. `SESSION` is used as
+  built, and no other module's file changed.
+- 2026-11-27 Finding 1 (replay from a one-file game): a game with no `rules` module is offered nothing that
+  rests on the check. `--record`, `--replay` and `play_recording` refuse it as `Game::multiplayer` does, each
+  naming the one step, so every recording has checked rules behind it and D1 stands as the owner wrote it
+  (sections 1, 13 and 14, the mistakes table). Carried into WP13.
+- 2026-11-27 Finding 2 (a phase's length, and old saves): the checked routes are every function that runs in a
+  tick or whose answer enters the world, and now name the function given to `lasts` and a save's capture. A
+  `Save` type and its chain of older types are in the `rules` module, because every machine runs the
+  conversion when a restore lands and the derive calls it (sections 1, 4 and 10; extension point 5). WP2.10
+  refuses a `lasts` function outside the module, and WP13 carries the capture and the conversion.
+- 2026-11-27 Finding 3 (two accesses to one resource): a resource has no entity to tell them apart, so two
+  accesses with a writer are refused at startup, through a `Params` struct too, and each of the SDK's writing
+  parameters is taken once (section 3, the mistakes table). WP1.4 holds three cases and a control.
+- 2026-11-27 Finding 4 (which character): a player has one character at a time, as world state. `character`,
+  `Me::character`, `of_player`, the following camera, `respawn` and prediction all mean it. A scene has one
+  `players().spawn`, further control lines only `.during` other phases, and a drone is an ordinary entity
+  that `possess` can make the character (section 5). WP2.1 and WP2.4.
+- 2026-11-27 Finding 5 (two players' dust in one tick): a predicted emission is named by its player, tick,
+  type and ordinal in that player's step (section 9, the state table). Carried into WP5.
+- 2026-11-27 Finding 6 (predicted contact): a move is told who is moving, with `.except(me)` on `Move2d`, in
+  the core. In the entry, `.against` names every layer of colliders the function may ask, the level needs no
+  naming, and another layer refuses the tick on the host. The example excludes its own craft. Carried into
+  WP12 for the core's part.
+- 2026-11-27 Finding 7 (an existing firing rule): stated plainly. Depth 2 predicts what the control function
+  launches and nothing else, so a separate firing rule moves into it, and no rule that judges a hit changes
+  (section 11's depths, the entry).
+- 2026-11-27 Finding 8 (which picture a shot is judged against): input carries the view, a tick and how far
+  between the pair, as a latest-value action. The world keeps each seat's view as a lag behind the present,
+  so it moves on through a held frame, and a player who has left is given the present (the entry).
+- 2026-11-27 Finding 9 (skipped paused ticks): a paused tick changes the world only by the input it admits. A
+  rule marked `.even_when_paused()` runs in a paused tick that admits input and in no other, and the digest
+  counts the game's ticks, so skipping an empty one is the same world alone, in a test and in a match
+  (section 4, cost). Carried into WP3 and WP5.
+- 2026-11-27 Finding 10 (a second phase machine): a scene has one, and a second `scene.phases` is refused at
+  startup. The entry is now a mode kept in a resource or a component, in the core already (section 4, the
+  smaller entries). WP1.4.
+- 2026-11-27 Finding 11 (authored IDs and pack variants): an ID written in Rust is declared in an `ids!`
+  block that registers itself as a `prefabs!` block does, and `Id::new` is gone, so startup knows every one.
+  A pack adds records and declares no prefab name: a new kind is a record that names a declared base
+  (section 10, example D, the data packs entry, risk 10). Carried into WP12.
+- 2026-11-27 Finding 12 (a guest's progress on a bad link): its pieces travel as the guest's ordered commands,
+  which `SESSION` admits in sequence, and a stalled transfer ends by the seat's grace (the entry).
+- 2026-11-27 Finding 13 (the save example): `ValeSave::placed` is a `List<Id<RelicDef>, 32>`.
+- 2026-11-27 Finding 14 (3D or planar): example B's online page gives the ball a hop that leaves the ground
+  and tilts, and WP5's rehearsed match and WP14 are proved on it, with height and rotation read back.
+- 2026-11-27 Finding 15 (the renderer's turn): WP4 is judged on the rock turned by the rule `turn`, between
+  two different tick turns, with the decorative turn proved apart.
+- 2026-11-27 Finding 16 (proofs before their surface): WP2.10 no longer speaks of a frame function. WP3
+  carries a registered frame function with float arithmetic in an outside game and a 2D rig's damping, and
+  WP4 the orbiting rig's distance.
+- 2026-11-27 Finding 17 (the type a caller receives): every type a game is handed is defined in `thrum` or its
+  derive crate, judged as it resolves. WP1.5 says so and adds controls the surface check must fail, and its
+  check command runs them (section 1).
+- 2026-11-27 Suggestions. Taken: `TestGame::offer`'s return type, `Setup` as the game's own type, and
+  `host().start()` pressing the real *Start* (K10); a glossary entry for pause, proposed. Not taken: splitting
+  WP1.1 and WP2.1, which are already grouped by labelled outcome and would prove nothing more split.
+- 2026-11-27 Items changed: WP1.4, WP1.5 (and its check command), WP2.1, WP2.4 and WP2.10. Planner's choices
+  in this revision, each for the owner to overturn, are the plan's four new assumptions and the three it
+  extended.
