@@ -1113,14 +1113,23 @@ fn lend_shore_support(source: &str) -> String {
     const SUPPORT: &str = "let reach = 0.175 * row.swash;\n    let above = row.bed - row.level;";
     let (before, after) = source.split_once(SUPPORT).expect("shore film support");
     format!(
-        "{before}let authored = wet_shore(ground.xz);
-    let reach = select(0.175 * row.swash, wet_shore_edge(authored) - row.level, authored.w > 0.0);
-    let above = select(row.bed, ground.y, authored.w > 0.0) - row.level;{after}"
+        "{before}let exposed = wet_sea_film(ground, answer.body == map.size_count_sea.w);
+    let reach = select(0.175 * row.swash, row.swash, exposed);
+    let above = select(row.bed, ground.y, exposed) - row.level;{after}"
     )
 }
 
 fn compose_shore_support(source: &str, wet: &thrum_render::wetness::PreparedWetness) -> String {
-    lend_shore_support(source) + &wet.shader(3, WET_GROUND_BINDING)
+    lend_shore_support(source) + &mapped_film_wetness(wet)
+}
+
+fn mapped_film_wetness(wet: &thrum_render::wetness::PreparedWetness) -> String {
+    // The map source has already declared the shared bed reach test.
+    let source = wet.shader(3, WET_GROUND_BINDING);
+    let (binding, body) = source
+        .split_once(crate::wet_ground::BED_REACHES)
+        .expect("known ground wetness source");
+    binding.to_owned() + body
 }
 
 fn compose_rain_film(
@@ -1154,7 +1163,7 @@ fn compose_rain_film(
         source.push_str(STANDING_WATER);
         source.push_str("    discard;\n    return Output(vec4(0.0), vec2(0.0), 0.0);\n}\n");
     }
-    source.push_str(&wet.shader(3, WET_GROUND_BINDING));
+    source.push_str(&mapped_film_wetness(wet));
     writeln!(
         source,
         "const FILM_REFLECTION_REACH: f32 = {};",

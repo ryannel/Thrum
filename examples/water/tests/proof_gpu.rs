@@ -221,6 +221,15 @@ fn driver(gpu: &thrum_test_support::Gpu) {
     let mode = std::env::var("THRUM_WATER_PROOF").expect("mode");
     let directory = PathBuf::from(std::env::var("THRUM_WATER_OUTPUT").expect("output"));
     std::fs::create_dir_all(&directory).expect("output folder");
+    if mode == "lake-film" {
+        std::fs::write(
+            directory.join("fixed.json"),
+            serde_json::to_vec_pretty(&ground_inspection::lake_film(gpu, &directory))
+                .expect("lake checkpoints JSON"),
+        )
+        .expect("lake film record");
+        return;
+    }
     if mode == "rain-ground-cost" {
         std::fs::write(
             directory.join("rain-ground-cost.json"),

@@ -2,7 +2,10 @@
 //! Simulation owns every store and hollow row. The texture is just their render projection.
 
 use thrum_render::wetness::WetnessProvider;
-use thrum_water_model::{CanopyGrid, NO_HOLLOW};
+use thrum_water_model::{CanopyGrid, Map, NO_HOLLOW};
+
+mod shore;
+use shore::ShoreLayout;
 
 const ROW_WIDTH: u32 = 256;
 const MAX_CLASSES: usize = 8;
@@ -11,7 +14,11 @@ const CLASS_TEXELS: usize = 4;
 const HOLLOW_START: usize = HEADER + MAX_CLASSES * CLASS_TEXELS;
 const ADMISSION_ROW: usize = HEADER + 3;
 
-pub(super) const SOURCE: &str = include_str!("wet_ground.wgsl");
+pub(super) const BED_REACHES: &str = include_str!("bed_reaches.wgsl");
+pub(super) const SOURCE: &str = concat!(
+    include_str!("bed_reaches.wgsl"),
+    include_str!("wet_ground.wgsl"),
+);
 
 /// One authored, repeating relief texture, mapped to world X/Z.
 #[derive(Clone, Copy, Debug)]
@@ -118,6 +125,8 @@ pub struct WetGround {
     ground_classes: u8,
     relief_addresses: [u32; MAX_CLASSES],
     hollow_pits: Vec<f32>,
+    shore_layout: Option<ShoreLayout>,
+    shore_revision: Option<u64>,
 }
 
 impl WetGround {
@@ -130,12 +139,55 @@ impl WetGround {
         classes: &[GroundClass],
         hollow_count: usize,
     ) -> Option<Self> {
+        Self::prepare(canopy, ground, classes, hollow_count, None)
+    }
+
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "prepared shore lattice uses GPU metres"
+    )]
+    fn prepare(
+        canopy: Option<CanopyGrid>,
+        ground: Option<HollowsGround>,
+        classes: &[GroundClass],
+        hollow_count: usize,
+        shore: Option<(&Map, [f32; 4])>,
+    ) -> Option<Self> {
         let width = ROW_WIDTH as usize;
         if classes.is_empty() || classes.len() > MAX_CLASSES || hollow_count >= 1 << 24 {
             return None;
         }
-        let mut rows = vec![[0.0; 4]; (HOLLOW_START + hollow_count).next_multiple_of(width)];
+        let shore_layout = shore.map(|(map, wave_heights)| ShoreLayout {
+            dynamic: HOLLOW_START + hollow_count,
+            cells: map.bed().heights().len(),
+            wave_heights,
+        });
+        let rows_end =
+            HOLLOW_START + hollow_count + shore_layout.as_ref().map_or(0, ShoreLayout::row_count);
+        let mut rows = vec![[0.0; 4]; rows_end.next_multiple_of(width)];
         let mut static_rows = Vec::new();
+        if let Some(((map, _), layout)) = shore.zip(shore_layout.as_ref()) {
+            let (origin, spacing, size) = map.bed().lattice();
+            rows[4] = [
+                origin[0] as f32,
+                origin[1] as f32,
+                spacing as f32,
+                size[0] as f32,
+            ];
+            rows[5] = [
+                size[1] as f32,
+                layout.dynamic as f32,
+                rows.len() as f32,
+                2.0,
+            ];
+            static_rows.extend(map.bed().heights().chunks(4).map(|chunk| {
+                let mut pack = [0.0; 4];
+                for (slot, &height) in pack.iter_mut().zip(chunk) {
+                    *slot = height as f32;
+                }
+                pack
+            }));
+        }
         let mut ground_classes = 0;
         let mut hollow_pits = vec![f32::INFINITY; hollow_count];
         if let Some(canopy) = canopy {
@@ -196,6 +248,8 @@ impl WetGround {
             ground_classes,
             relief_addresses,
             hollow_pits,
+            shore_layout,
+            shore_revision: None,
         };
         let dry = vec![[[0.0; 2]; 3]; classes.len()];
         let hollows = vec![HollowWetness::default(); hollow_count];
@@ -208,7 +262,8 @@ impl WetGround {
         self.provider.clone()
     }
 
-    /// Set or clear the paired shore field before publishing the tick.
+    /// Set or clear a rectangular shore on a field prepared with [Self::new]
+    /// before publishing the tick.
     pub fn set_shore(&mut self, shore: Option<ShoreWetness>) {
         let (bounds, stage) = shore.map_or(([0.0; 4], [0.0; 4]), |shore| {
             let [[xmin, zmin], [xmax, zmax]] = shore.bounds;

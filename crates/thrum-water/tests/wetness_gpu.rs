@@ -409,3 +409,133 @@ fn wetness_tracks_model_at_scattered_points() {
     };
     run(&opened);
 }
+
+#[test]
+fn mapped_shores_use_the_water_maps_ownership_on_metal() {
+    let Some(opened) = thrum_test_support::open(
+        "mapped shore wetness",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    ) else {
+        return;
+    };
+    run_mapped_shores(&opened);
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::print_stderr,
+    reason = "Metal shore sample positions use GPU metres and the proof reports body coverage"
+)]
+fn run_mapped_shores(opened: &thrum_test_support::Opened) {
+    use thrum_sea_model::{Cascade, Component, LongWaves, Spectrum};
+    use thrum_water_model::{Bed, Body, BodyKind, Field, Map, Profile, Stage};
+
+    // The last depression is low enough to appear wet if level alone is
+    // used, but separated from the other water by high, continuous ridges.
+    let section = [
+        -1.0, -0.5, 0.5, 4.0, 4.0, 2.0, 2.0, 4.0, 6.0, 4.5, 4.5, 6.0, 2.0, 2.0, 7.0,
+    ];
+    let rim = section.map(|height| if height < -0.9 { height } else { 8.0 });
+    let bed = Bed::new(
+        [0.0; 2],
+        1.0,
+        [section.len(), 5],
+        [rim, section, section, section, rim].concat(),
+    )
+    .expect("lake and pond ridges");
+    let bodies = [
+        ("sea", BodyKind::Sea, 0.0, 1.0),
+        ("lake", BodyKind::Basin { seed: [5.0, 2.0] }, 2.5, 0.6),
+        ("pond", BodyKind::Basin { seed: [9.0, 2.0] }, 5.0, 0.25),
+    ]
+    .map(|(name, kind, level, gain)| Body {
+        name: name.into(),
+        kind,
+        level,
+        fetch: 1.0,
+        gains: [gain, 0.0, 0.0, 0.0],
+        stage: Stage {
+            min: -0.1,
+            max: 0.1,
+            value: 0.0,
+        },
+    });
+    let mut map = Map::prepare(
+        bed,
+        bodies.into(),
+        Profile {
+            margin_height: 1.5,
+            swash_ratio: 0.5,
+        },
+    )
+    .expect("disconnected water bodies");
+    let long = vec![Component {
+        wave_vector: [0.04, 0.0],
+        amplitude: 0.2,
+        phase: 0.0,
+    }];
+    let spectrum = Spectrum {
+        long: long.clone(),
+        cascades: [32.0, 16.0, 8.0].map(|length| Cascade::new(length, &[]).expect("empty cascade")),
+        tail_slope_variance: 0.0,
+    };
+    let waves = Field {
+        layers: [long, vec![], vec![], vec![]]
+            .map(|modes| LongWaves::new(modes, 0.0).expect("waves")),
+    };
+    let class = gpu_ground::GroundClass {
+        share: 0.69,
+        porosity: 0.96,
+        film_roughness: 0.13,
+        ..Default::default()
+    };
+    let mut wet = WetGround::new_mapped_shore(&map, &spectrum, class).expect("shore projection");
+    let mut prepared = PreparedWetness::new(&opened.device, &opened.queue, &wet.provider())
+        .expect("prepared shore");
+    let points: Vec<_> = (1..1400)
+        .map(|i| {
+            let x = f64::from(i) / 100.0;
+            let bed = map.bed().height([x, 2.1]).expect("inside bed");
+            [[x as f32, bed as f32, 2.1, 0.0], [0.0, 1.0, 0.0, 0.0]]
+        })
+        .collect();
+    for (stages, margins) in [([0.0; 3], [0.0; 3]), ([-0.1, 0.1, -0.1], [0.2, 0.09, 0.12])] {
+        for (id, stage) in stages.into_iter().enumerate() {
+            map.set_stage(id, stage).expect("bounded stage");
+        }
+        assert!(wet.publish_mapped_shore(&map, &margins, class));
+        prepared.upload(&opened.queue);
+        let result = probe(opened, &prepared, &points);
+        let mut swash_samples = [0; 3];
+        let mut band_samples = [0; 3];
+        for (point, [ground, _, shaded]) in points.iter().zip(result) {
+            let xz = [f64::from(point[0][0]), f64::from(point[0][2])];
+            let cpu = thrum_rain_model::shore_fill(&map, &waves, xz, &margins);
+            assert!(
+                (f64::from(ground[0]) - cpu).abs() < FILL_TOLERANCE,
+                "{xz:?}, stages={stages:?}: Metal {ground:?}, model {cpu}"
+            );
+            let dark = 0.98 * (1.0 - 0.69) * 0.4 / (1.0 - 0.69 * 0.4);
+            assert!(
+                (f64::from(shaded[0]) - (0.4 + (dark - 0.4) * cpu * 0.96)).abs() < FILL_TOLERANCE
+            );
+            if let Some(support) = map.wave_support(&waves, xz) {
+                if support.depth < 0.0 && support.inside() {
+                    swash_samples[support.body] += 1;
+                }
+                if cpu > 0.0 && cpu < 1.0 {
+                    band_samples[support.body] += 1;
+                }
+            }
+        }
+        assert!(swash_samples.iter().all(|&n| n > 0), "{swash_samples:?}");
+        if margins[0] > 0.0 {
+            assert!(band_samples.iter().all(|&n| n > 0), "{band_samples:?}");
+        }
+        eprintln!(
+            "Metal sea/lake/pond swash samples {swash_samples:?}, damp-band samples {band_samples:?}"
+        );
+    }
+}

@@ -780,7 +780,8 @@ try {
         await drive(1000/60);
       }
     };
-    const source=await fs.readFile('crates/thrum-water/src/wet_ground.wgsl','utf8');
+    const source=(await Promise.all(['bed_reaches.wgsl','wet_ground.wgsl']
+      .map(file=>fs.readFile('crates/thrum-water/src/'+file,'utf8')))).join('\n');
     // Read the production ground function against the texture bound for the captured render.
     const evaluator=await fs.readFile('scripts/wet_ground_browser.wgsl','utf8');
     const sample=()=>evaluate(`(async()=>{

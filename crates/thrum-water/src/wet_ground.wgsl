@@ -72,11 +72,70 @@ fn wet_band(above: f32, margin: f32) -> f32 {
     return max(0.0, 1.0 - above / max(margin, 1e-20));
 }
 
-fn wet_shore(point: vec2<f32>) -> vec4<f32> {
+fn shore_corner(index: u32, start: u32) -> f32 {
+    return wet_load(start + index / 4u)[index % 4u];
+}
+
+fn mapped_wet_shore(point: vec3<f32>, field: vec4<f32>) -> vec4<f32> {
+    let start = u32(field.y);
+    let header = wet_load(start);
+    if point.y > header.w { return vec4(0.0); }
+    let lattice = wet_load(4u);
+    let last = vec2(lattice.w, field.x) - 1.0;
+    let grid = (point.xz - lattice.xy) / lattice.z;
+    if any(grid < vec2(0.0)) || any(grid > last) { return vec4(0.0); }
+    let first = min(floor(grid), last - 1.0);
+    let uv = grid - first;
+    let weights = vec4((1.0-uv.x)*(1.0-uv.y), uv.x*(1.0-uv.y), (1.0-uv.x)*uv.y, uv.x*uv.y);
+    let stride = u32(lattice.w);
+    let lower = u32(first.y) * stride + u32(first.x);
+    let corners = lower + vec4(0u, 1u, stride, stride + 1u);
+    let heights = vec4(shore_corner(corners.x, u32(field.z)), shore_corner(corners.y, u32(field.z)),
+        shore_corner(corners.z, u32(field.z)), shore_corner(corners.w, u32(field.z)));
+    let bed = dot(heights, weights);
+    // As in the film, the depth must belong to the bed.
+    if abs(point.y - bed) > 0.06 { return vec4(0.0); }
+    let masks_at = u32(header.z);
+    let masks = vec4<u32>(vec4(shore_corner(corners.x, masks_at), shore_corner(corners.y, masks_at),
+        shore_corner(corners.z, masks_at), shore_corner(corners.w, masks_at)));
+    let candidates = masks.x | masks.y | masks.z | masks.w;
+    // Resolve ownership with the same rank and corner reach as map_sample.
+    var best = vec4(0.0);
+    for (var id = 0u; id < u32(header.x); id++) {
+        let bit = 1u << id;
+        if (candidates & bit) == 0u { continue; }
+        let row = wet_load(start + 1u + id);
+        if bed > row.x + header.y { continue; }
+        let both_margin = bed >= max(row.x, best.x);
+        let wins = select(row.w > best.w || (row.w == best.w && row.x > best.x),
+            row.x > best.x, both_margin);
+        if best.w > 0.0 && !wins { continue; }
+        for (var k = 0u; k < 4u; k++) {
+            if weights[k] > 0.0 && (masks[k] & bit) != 0u &&
+                bed_reaches(heights, bed, uv, k, row.x, row.w == 2.0 && bed < row.x) {
+                best = row;
+                break;
+            }
+        }
+    }
+    return best;
+}
+
+fn wet_shore(point: vec3<f32>) -> vec4<f32> {
     let shore = wet_load(5u);
     if shore.w == 0.0 { return shore; }
+    if shore.w == 2.0 { return mapped_wet_shore(point, shore); }
     let bounds = wet_load(4u);
-    return select(vec4(0.0), shore, all(point >= bounds.xy) && all(point <= bounds.zw));
+    return select(vec4(0.0), shore, all(point.xz >= bounds.xy) && all(point.xz <= bounds.zw));
+}
+
+// The film already has the owning map row. Apply the exposed sea treatment
+// to that row alone, retaining the existing WATERS sheen on inland shores.
+fn wet_sea_film(point: vec3<f32>, sea: bool) -> bool {
+    if !sea { return false; }
+    let shore = wet_load(5u);
+    if shore.w == 2.0 { return true; }
+    return wet_shore(point).w > 0.0;
 }
 
 fn wet_shore_edge(shore: vec4<f32>) -> f32 {
@@ -132,7 +191,7 @@ fn ground_wetness_footprint(point: vec3<f32>, normal: vec3<f32>, footprint: f32)
     }
     var pores = store.y;
     if !ground && up > 0.05 {
-        let shore = wet_shore(point.xz);
+        let shore = wet_shore(point);
         if shore.w > 0.0 {
             pores = max(pores, wet_band(point.y - wet_shore_edge(shore), shore.z));
         }

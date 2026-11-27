@@ -458,6 +458,7 @@ fn map_source(group: u32, hollows: bool, rivers: bool, flow: bool) -> String {
             } else {
                 include_str!("map_gpu/map_record.wgsl")
             }
+            + include_str!("bed_reaches.wgsl")
             + include_str!("map.wgsl"),
         include_str!("map_gpu/map_cell_body.wgsl"),
         include_str!("gains.wgsl"),

@@ -434,69 +434,59 @@ pub fn build_surf(wind: Wind, draw_water: bool) -> Result<FoamScene, Box<dyn Err
     build_surf_paired(wind, draw_water, true)
 }
 
-/// Run the exposed shore with the beach wetness field following the water's tide.
+/// Run the island with the shore field following each body's stage.
 ///
 /// # Errors
-/// Returns invalid controls, content or water declarations.
+/// Returns invalid controls, content, water declarations or shore field.
 ///
 /// # Panics
-/// Panics if the already-prepared water map loses its sea row.
-#[expect(
-    clippy::cast_possible_truncation,
-    reason = "shore shader uses f32 metres"
-)]
+/// Panics if the island map lock is poisoned or the prepared field stops accepting the map.
 pub fn build_wet_shore(wind: Wind, draw_water: bool) -> Result<FoamScene, Box<dyn Error>> {
-    use thrum_water::wet_ground::{GroundClass, ShoreWetness, WetGround};
+    use thrum_water::wet_ground::{GroundClass, WetGround};
 
     let (game, report, map, probes) = build_surf(wind, draw_water)?;
-    let profile = map_profile(true);
-    let swash = (profile.swash_ratio
-        * surf_spectrum(wind, &wind.surf_forcing())?.significant_height())
-    .min(profile.margin_height);
-    let classes = [GroundClass {
+    let spectrum = surf_spectrum(wind, &wind.surf_forcing())?;
+    let class = GroundClass {
         steepest: 1.0,
         share: 0.69,
         porosity: 0.96,
         film_roughness: 0.13,
         ..GroundClass::default()
-    }];
-    let dry = [[[0.0; 2]; 3]];
-    let mut ground = WetGround::new(None, None, &classes, 0).ok_or("wet shore field")?;
-    let wetness = move |level: f64, margin: f64| ShoreWetness {
-        bounds: [[-500.0, -500.0], [500.0, 500.0]],
-        level: level as f32,
-        swash: swash as f32,
-        margin: margin as f32,
     };
-    ground.set_shore(Some(wetness(0.0, 0.0)));
-    assert!(ground.publish(&classes, &dry, &[]));
+    let island = map.lock().expect("island shore");
+    let mut ground =
+        WetGround::new_mapped_shore(&island, &spectrum, class).ok_or("island shore field")?;
+    let mut levels: Vec<_> = shore_levels(&island).collect();
+    let mut margins = vec![0.0; levels.len()];
+    drop(island);
     let stage_map = Arc::clone(&map);
-    let mut before = 0.0;
-    let mut margin = 0.0;
     let game = game
         .with_wetness(ground.provider())
         .with_fixed_update_endpoint(move |_, step| {
-            let level = {
-                let map = stage_map.lock().expect("island tide");
-                let sea = map.body(0).expect("sea");
-                sea.level + sea.stage.value
-            };
-            // This inspection route scales drying so the ebb band
-            // recedes over a short take.
-            margin = thrum_rain_model::band_step(
-                margin,
-                before,
-                level,
-                step.as_secs_f64(),
-                0.24,
-                0.0015,
-                1.0,
-            );
-            before = level;
-            ground.set_shore(Some(wetness(level, margin)));
-            assert!(ground.publish(&classes, &dry, &[]));
+            let map = stage_map.lock().expect("island shore");
+            for ((before, margin), level) in
+                levels.iter_mut().zip(&mut margins).zip(shore_levels(&map))
+            {
+                // The inspection route scales drying so the ebb band
+                // recedes over a short take.
+                *margin = thrum_rain_model::band_step(
+                    *margin,
+                    *before,
+                    level,
+                    step.as_secs_f64(),
+                    0.24,
+                    0.0015,
+                    1.0,
+                );
+                *before = level;
+            }
+            assert!(ground.publish_mapped_shore(&map, &margins, class));
         });
     Ok((game, report, map, probes))
+}
+
+fn shore_levels(map: &Map) -> impl Iterator<Item = f64> + '_ {
+    (0..).map_while(|id| map.body(id).map(|body| body.level + body.stage.value))
 }
 
 /// Build a same-view, same-forcing arm with or without the surf capability.

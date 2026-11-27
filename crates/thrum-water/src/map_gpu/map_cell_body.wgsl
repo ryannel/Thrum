@@ -9,24 +9,7 @@
 }
 
 fn map_reaches(cell: Cell, k: u32, level: f32, wet: bool) -> bool {
-    let h = cell.heights;
-    let corner = vec2<f32>(CORNERS[k]);
-    let uv = cell.uv - corner;
-    let cross = h.w - h.z - h.y + h.x;
-    let a = h[k];
-    let b = uv.x * (h.y - h.x + cross * corner.y);
-    let c = uv.y * (h.z - h.x + cross * corner.x);
-    let d = cross * uv.x * uv.y;
-    let descending = b + d < 0.0 && c + d < 0.0;
-    let saddle = descending && b > 0.0 && c > 0.0;
-    if wet {
-        return a < level && cell.bed < level && !(saddle && a - b*c/d >= level);
-    }
-    let end = a + b + c + d;
-    if max(end, level) < max(a, level) || (a > level && b < 0.0 && c < 0.0) {
-        return false;
-    }
-    return !(descending && end > level) && !(saddle && a - b*c/d > level);
+    return bed_reaches(cell.heights, cell.bed, cell.uv, k, level, wet);
 }
 
 fn chart_row(
