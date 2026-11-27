@@ -72,6 +72,7 @@ pub(super) enum ExposurePolicy {
         max_ev100: f32,
         /// Render dim scenes below mid-grey, as an incompletely adapted eye sees them.
         low_light_key: bool,
+        medium_factor: [f32; 3],
     },
 }
 
@@ -96,6 +97,7 @@ impl ExposurePolicy {
             min_ev100,
             max_ev100,
             low_light_key: false,
+            medium_factor: [1.0; 3],
         })
     }
 
@@ -107,13 +109,14 @@ impl ExposurePolicy {
         overlay: DisplayOverlay,
         forced_storage_scale: Option<f32>,
     ) -> [u8; size_of::<crate::records::Policy>()] {
-        let (inverse, compensation, min, max, mode) = match self {
-            Self::Fixed { inverse } => (inverse, 0.0, 0.0, 0.0, 0),
+        let (inverse, compensation, min, max, mode, factor) = match self {
+            Self::Fixed { inverse } => (inverse, 0.0, 0.0, 0.0, 0, [1.0; 3]),
             Self::IncidentHorizontal {
                 compensation_ev,
                 min_ev100,
                 max_ev100,
                 low_light_key,
+                medium_factor,
             } => (
                 fallback_inverse,
                 compensation_ev,
@@ -124,6 +127,7 @@ impl ExposurePolicy {
                 } else {
                     EXPOSURE_INCIDENT
                 },
+                medium_factor,
             ),
         };
         bytemuck::cast(crate::records::Policy {
@@ -133,6 +137,7 @@ impl ExposurePolicy {
             pre_exposure: forced_storage_scale.map_or(PRE_EXPOSURE, |scale| -scale),
             atmosphere: u32::from(atmosphere),
             display_selectors: display_selectors(tone_map, overlay),
+            medium_factor: [factor[0], factor[1], factor[2], 0.0],
         })
     }
 }

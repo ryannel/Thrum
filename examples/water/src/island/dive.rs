@@ -8,14 +8,18 @@ use std::{
     time::Duration,
 };
 use thrum_app::sky::{Camera, ContentStatus, Controls, CookedMaterial, MeshPlacement, SkyGame};
-use thrum_sea_model::{Cascade, Spectrum};
+use thrum_sea_model::{Cascade, LongWaves, Spectrum};
 use thrum_water::{Optics, Water};
+use thrum_water_model::Field;
 
 // Keep the inspection camera in the sky shell's altitude range while retaining
 // the island's relative sea, seabed and camera elevations.
 const SEA_LEVEL: f32 = 16.0;
 const LAKE_LEVEL: f32 = 12.0;
 const HIGH_LAKE_STAGE: f32 = 2.75;
+const STEP_SECONDS: f64 = 1.0 / 60.0;
+const ADAPTATION_SHARE: f64 = 0.75;
+const SURFACE_TRANSMISSION: f64 = 0.96;
 
 /// An island waterline the inspection camera can cross.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -199,6 +203,19 @@ fn build(
     }
     profile.optics = Some(optics);
     profile.underwater = true;
+    let meter_field = if draw_water && draw_craft {
+        let [outer, middle, inner] = &spectrum.cascades;
+        Some(Field {
+            layers: [
+                LongWaves::new(spectrum.long.clone(), profile.waves.choppiness)?,
+                LongWaves::new(outer.components().to_vec(), 0.0)?,
+                LongWaves::new(middle.components().to_vec(), 0.0)?,
+                LongWaves::new(inner.components().to_vec(), 0.0)?,
+            ],
+        })
+    } else {
+        None
+    };
     let mut water = Water::mapped(Arc::clone(&map), spectrum, profile)?;
     if wind != Wind::Calm && (!lake || draw_craft) {
         water.enable_foam(surface_wind.velocity())?;
@@ -218,6 +235,7 @@ fn build(
         .slider("sun.elevation", "Sun elevation", -8.0..=80.0)
         .default(60.0)
         .add()?;
+    let step = Duration::from_secs_f64(STEP_SECONDS);
     let game = SkyGame::new(
         controls,
         camera(eye_at_surface, initial_depth, 45.0),
@@ -230,7 +248,31 @@ fn build(
     )
     .with_ground(None)
     .with_temporal_sampling(cfg!(target_arch = "wasm32"))
-    .with_tick_duration(Duration::from_secs_f64(1.0 / 60.0))?;
+    .with_tick_duration(step)?;
+    let game = if let Some(field) = meter_field {
+        let map = Arc::clone(&map);
+        let downwelling = optics.downwelling.map(f64::from);
+        game.with_meter_medium(move |camera, source, alpha| {
+            let [x, y, z] = camera.position.map(f64::from);
+            let time = display_time(source.tick, alpha, step);
+            let Some(surface) = map
+                .lock()
+                .ok()
+                .and_then(|map| map.surface(&field, [x, z], time).ok())
+                .filter(|surface| surface.wet)
+            else {
+                return [1.0; 3];
+            };
+            thrum_water_model::meter_light_factor(
+                surface.sample.height - y,
+                downwelling,
+                SURFACE_TRANSMISSION,
+            )
+            .map(adapt_transmission)
+        })
+    } else {
+        game
+    };
     let mut meshes = placements(&map, lake, vertical_offset);
     let [x, level, z] = eye_at_surface;
     if !surf {
@@ -274,4 +316,20 @@ fn build(
         game
     };
     Ok((game, report))
+}
+
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "the display clock converts ticks to interpolated seconds"
+)]
+fn display_time(tick: u64, alpha: f32, step: Duration) -> f64 {
+    (tick as f64 - 1.0 + f64::from(alpha)) * step.as_secs_f64()
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "the camera request carries rounded f32 transmissions"
+)]
+fn adapt_transmission(factor: f64) -> f32 {
+    factor.powf(ADAPTATION_SHARE) as f32
 }

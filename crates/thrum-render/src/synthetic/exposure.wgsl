@@ -7,6 +7,7 @@ struct Policy {
     atmosphere: u32,
     // SDR tone map in bits 0-7, display overlay in bits 8-15.
     display_selectors: u32,
+    medium_factor: vec4<f32>,
 }
 @group(0) @binding(0) var<uniform> policy: Policy;
 @group(0) @binding(1) var<uniform> directional: DirectionalLight;
@@ -43,7 +44,10 @@ fn resolve() {
         flags = INVALID | NOT_METERED;
         if policy.atmosphere != 0u && finite(directional.direction_to_light.y)
             && valid_rgb(directional.irradiance.rgb) && valid_rgb(environment_light.horizontal_irradiance.rgb) {
-            let incident = environment_light.horizontal_irradiance.rgb + directional.irradiance.rgb * max(directional.direction_to_light.y, 0.0) * incident_sun_factor();
+            var incident = environment_light.horizontal_irradiance.rgb + directional.irradiance.rgb * max(directional.direction_to_light.y, 0.0) * incident_sun_factor();
+            if any(policy.medium_factor.rgb != vec3(1.0)) {
+                incident *= policy.medium_factor.rgb;
+            }
             let measured = dot(incident, REC709_LUMA);
             if finite(measured) && measured >= 0.0 {
                 lux = measured;

@@ -57,7 +57,7 @@ fn resolve(
     queue: &wgpu::Queue,
     exposure: &ExposureResolve,
     [directional, environment_light]: [&wgpu::Buffer; 2],
-    policy: [u8; 32],
+    policy: [u8; size_of::<crate::records::Policy>()],
     values: [f32; 16],
 ) -> Sample {
     let directional_light = DirectionalLight {
@@ -101,6 +101,7 @@ fn assert_night_policy(
         compensation_ev: 0.0,
         max_ev100: 18.0,
         low_light_key: true,
+        medium_factor: [1.0; 3],
     };
     for (lux, expected, flags) in [(0.0, -12.0, 3), (0.000_671, -6.757, 0)] {
         let sample = resolve(
@@ -340,6 +341,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
             min_ev100,
             max_ev100,
             low_light_key: true,
+            medium_factor: [1.0; 3],
         };
         for (direct, stops) in [
             (100_000.0, 0.0),

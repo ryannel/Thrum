@@ -7,6 +7,7 @@ mod fall;
 mod flow;
 mod hollows;
 mod map;
+mod meter;
 mod pyramid;
 mod rain;
 mod river;
@@ -26,6 +27,7 @@ pub use fall::{
 pub use flow::{FlowBands, FlowBandsProfile, flow_frequency};
 pub use hollows::{HollowOptics, Hollows, HollowsProfile, NO_HOLLOW};
 pub use map::{BRINK, Body, BodyKind, Chart, End, Map, MapSample, Profile, Row, Stage};
+pub use meter::meter_light_factor;
 pub use pyramid::BedPyramid;
 pub use rain::{
     CanopyGrid, Drop, Exposure, OpenSky, RainBands, RainBandsProfile, RainQuery, RateHistory,

@@ -307,6 +307,25 @@ impl SyntheticView {
         Ok(self)
     }
 
+    /// Multiply the incident light at the lens by an RGB medium transmission.
+    /// The default factor is one in each channel.
+    /// # Errors
+    /// Refuses a view without an incident meter or a factor outside zero through one.
+    pub fn with_meter_medium_factor(mut self, factor: [f32; 3]) -> Result<Self, RenderError> {
+        if !factor
+            .into_iter()
+            .all(|channel| (0.0..=1.0).contains(&channel))
+        {
+            return Err(RenderError::InvalidExposure);
+        }
+        let Some(ExposurePolicy::IncidentHorizontal { medium_factor, .. }) = &mut self.exposure
+        else {
+            return Err(RenderError::InvalidExposure);
+        };
+        *medium_factor = factor;
+        Ok(self)
+    }
+
     /// Darken the incident meter's target below daylight, following the
     /// Krawczyk et al. (2005) key-value curve, so twilight reads dim rather
     /// than metered back to mid-grey. A smooth shoulder moderates additional
@@ -362,11 +381,13 @@ impl SyntheticView {
         let Some(ExposurePolicy::IncidentHorizontal {
             compensation_ev,
             max_ev100,
+            medium_factor,
             ..
         }) = self.exposure
         else {
             return None;
         };
+        let direct_lux = direct_lux * medium_factor.into_iter().fold(1.0, f32::min);
         if self.sdr_tone_map != SdrToneMap::NeutralHighlights
             || self.display_overlay != DisplayOverlay::Off
             || direct_lux < ADAPTED_LUX

@@ -517,6 +517,7 @@ pub struct SkyScene {
     presentation_camera: Option<PresentationCamera>,
     #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
     render_control: Option<(f32, RenderControlUpdate)>,
+    meter_medium: Option<MeterMedium>,
     ground: bool,
     nightglow: bool,
     overlay_medium: Option<thrum_render::atmosphere::Aerosol>,
@@ -546,6 +547,14 @@ impl std::fmt::Debug for RenderControlUpdate {
     }
 }
 
+struct MeterMedium(Box<dyn Fn(Camera, SourceTick, f32) -> [f32; 3] + Send>);
+
+impl std::fmt::Debug for MeterMedium {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MeterMedium").finish_non_exhaustive()
+    }
+}
+
 impl SceneSource<SourceTick> for SkyScene {
     fn extract(&self, into: &mut RenderExtractor, page: &SourceTick) -> ExtractReport {
         // The still world's only instance is the ground slab in slot 0; other content comes
@@ -560,7 +569,7 @@ impl SceneSource<SourceTick> for SkyScene {
 
     fn frame(
         &self,
-        _source: SourceTick,
+        source: SourceTick,
         alpha: f32,
         extent: [u32; 2],
         lighting: Option<FrameLighting>,
@@ -599,7 +608,12 @@ impl SceneSource<SourceTick> for SkyScene {
                     if self.nightglow { -12.0 } else { 0.0 },
                     18.0,
                 )
-                .and_then(SyntheticView::with_low_light_adaptation),
+                .and_then(SyntheticView::with_low_light_adaptation)
+                .and_then(|view| {
+                    self.meter_medium.as_ref().map_or(Ok(view), |medium| {
+                        view.with_meter_medium_factor((medium.0)(camera, source, alpha))
+                    })
+                }),
             FrameLighting::Diagnostic(_) | FrameLighting::Photometric(_) => {
                 view.with_exposure(FALLBACK_EXPOSURE)
             }
@@ -679,6 +693,7 @@ pub struct SkyGame {
     tick_duration: Option<Duration>,
     fixed_update: Option<FixedUpdate>,
     presentation_camera: Option<PresentationCamera>,
+    meter_medium: Option<MeterMedium>,
     temporal_sampling: bool,
     nightglow: bool,
     overlay: DisplayOverlay,
@@ -772,6 +787,7 @@ impl SkyGame {
             tick_duration: None,
             fixed_update: None,
             presentation_camera: None,
+            meter_medium: None,
             temporal_sampling: false,
             nightglow: false,
             overlay: DisplayOverlay::Off,
@@ -936,6 +952,17 @@ impl SkyGame {
         camera: impl Fn(f32) -> Camera + Send + 'static,
     ) -> Self {
         self.presentation_camera = Some(PresentationCamera(Box::new(camera)));
+        self
+    }
+
+    /// Sample the incident meter's RGB medium factor at the presentation camera
+    /// and world endpoint, using the frame's interpolation fraction.
+    #[must_use]
+    pub fn with_meter_medium(
+        mut self,
+        sample: impl Fn(Camera, SourceTick, f32) -> [f32; 3] + Send + 'static,
+    ) -> Self {
+        self.meter_medium = Some(MeterMedium(Box::new(sample)));
         self
     }
 
@@ -1295,6 +1322,7 @@ impl SkyGame {
                 sky: self.sky,
                 presentation_camera: self.presentation_camera.take(),
                 render_control,
+                meter_medium: self.meter_medium.take(),
                 ground: self.ground.is_some(),
                 nightglow: self.nightglow,
                 overlay_medium: self.overlay_medium,

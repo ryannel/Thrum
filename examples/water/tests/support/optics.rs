@@ -250,6 +250,11 @@ impl Rig {
     }
 
     pub(crate) fn scene_colour_with_sample(&mut self) -> (FrameSample, f32, Vec<[f32; 3]>) {
+        let (sample, exposure, rgb) = self.scene_colour_with_exposure();
+        (sample, f32::from_bits(exposure[0]), rgb)
+    }
+
+    pub(crate) fn scene_colour_with_exposure(&mut self) -> (FrameSample, [u32; 8], Vec<[f32; 3]>) {
         let limits = CaptureLimits {
             staging_slots: 1,
             cpu_buffers: 1,
@@ -265,7 +270,7 @@ impl Rig {
                 self.host.try_submitted_image().expect("image")
             });
         assert_eq!(sample.submission_order, image.sample.submission_order);
-        let scale = f32::from_bits(image.exposure_gpu_words.expect("exposure provenance")[0]);
+        let exposure = image.exposure_gpu_words.expect("exposure provenance");
         let rgb = image
             .rgba
             .as_chunks::<8>()
@@ -279,7 +284,7 @@ impl Rig {
             .collect();
         self.host.recycle_submitted_image(image);
         self.host.disable_submitted_capture();
-        (sample, scale, rgb)
+        (sample, exposure, rgb)
     }
 }
 

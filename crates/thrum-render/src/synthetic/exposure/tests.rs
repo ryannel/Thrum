@@ -57,7 +57,14 @@ fn policy_shader_layouts_validate_without_a_device() {
     for (source, expected) in [
         (
             SHADER,
-            &[("Policy", 32), ("ExposureSample", 32), ("Serials", 32)][..],
+            &[
+                (
+                    "Policy",
+                    u32::try_from(size_of::<crate::records::Policy>()).unwrap(),
+                ),
+                ("ExposureSample", 32),
+                ("Serials", 32),
+            ][..],
         ),
         (
             crate::synthetic::display::SHADER,
@@ -78,10 +85,20 @@ fn policy_shader_layouts_validate_without_a_device() {
                 .find(|(_, ty)| ty.name.as_deref() == Some(name))
                 .unwrap()
                 .1;
-            let wgpu::naga::TypeInner::Struct { span, .. } = ty.inner else {
+            let wgpu::naga::TypeInner::Struct { span, ref members } = ty.inner else {
                 panic!("expected struct");
             };
             assert_eq!(span, expected_span, "{name}");
+            if name == "Policy" {
+                let member = members
+                    .iter()
+                    .find(|member| member.name.as_deref() == Some("medium_factor"))
+                    .unwrap();
+                assert_eq!(
+                    usize::try_from(member.offset).unwrap(),
+                    std::mem::offset_of!(crate::records::Policy, medium_factor)
+                );
+            }
         }
     }
 }
