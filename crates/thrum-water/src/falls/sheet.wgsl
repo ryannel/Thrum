@@ -9,7 +9,6 @@ struct SheetVertex {
     @location(4) edge: f32,
     @location(5) receiving: vec3<f32>,
     @location(6) foam: vec2<f32>,
-    @location(7) strand_motion: vec3<f32>,
 }
 
 fn sheet_age(age: f32) -> f32 { return age - floor(age / FALL_LOOP) * FALL_LOOP; }
@@ -24,27 +23,6 @@ fn sheet_fold(lip: f32, birth: f32, across: vec2<f32>) -> vec3<f32> {
     let parcel = sheet_noise(vec2(lip, birth), FALL_LOOP, vec2(1.15, 1.75), vec2(8.4, 0.0));
     let fold = 0.24 * (parcel * 2.0 - 1.0);
     return fold * vec3(-across.y, 0.0, across.x);
-}
-
-// Each strand shares a departure sample across its width. The shape stretches
-// down the path with that parcel, and its lower end is free to move along the pool.
-fn strand_offset(parcels: vec2<f32>, fraction: f32, white: f32, offset: f32, edge: f32,
-    across: vec2<f32>, velocity: vec3<f32>) -> vec3<f32> {
-    let split = smoothstep(0.23 + 0.24 * parcels.x, 0.93, fraction);
-    let breakup = split * smoothstep(0.61, 0.93, white);
-    let axis = vec3(across.x, 0.0, across.y);
-    let face = vec3(-across.y, 0.0, across.x);
-    let outward = select(-face, face, dot(face, velocity) >= 0.0);
-    let width = mix(0.25, 0.80, parcels.y);
-    let separation = mix(0.06, 0.59, parcels.x * parcels.x) * (1.0 - 0.22 * edge);
-    return breakup * (outward * separation + axis * ((parcels.y - 0.5) * 0.12 - width * offset));
-}
-
-fn strand_parcels(lip: f32, birth: f32) -> vec2<f32> {
-    let parcel = vec2(lip, birth);
-    return vec2(
-        sheet_noise(parcel, FALL_LOOP, vec2(2.9, 3.4), vec2(3.1, 0.0)),
-        sheet_noise(parcel, FALL_LOOP, vec2(5.6, 5.1), vec2(41.0, 0.0)));
 }
 
 fn splash_vertex(world_time: vec4<f32>, velocity_along: vec4<f32>, discharge: vec4<f32>,
@@ -63,38 +41,30 @@ fn splash_vertex(world_time: vec4<f32>, velocity_along: vec4<f32>, discharge: ve
     let face = vec3(-axis.y, 0.0, axis.x);
     let flow = velocity_along.xyz * vec3(1.0, 0.0, 1.0);
     let outward = select(-face, face, dot(face, flow) >= 0.0);
-    let birth = sheet_age(sheet_clock.x - world_time.w - phase / frequency);
-    let parcels = strand_parcels(velocity_along.w, birth);
-    let contact = strand_offset(parcels, 1.0, discharge.y, 0.0, 0.0, axis, flow);
-    let source = world_time.xyz + contact + outward * select(0.0, 0.14, impact);
+    let source = world_time.xyz + outward * select(0.0, 0.14, impact);
     let foam = fall_foam(source.xz);
     let strength = max(smoothstep(0.005, 0.047, discharge.w),
         select(0.0, 0.72 * smoothstep(0.08, 0.48, foam.x + foam.y), impact));
     let drift = outward * mix(0.13, 0.59, kick) * select(1.0, 0.56, impact)
         + across * (random - 0.5) * 0.54;
-    let mist = select(0.0, smoothstep(0.61, 0.93, discharge.y), impact);
     let loft = select(mix(0.034, 0.39, kick * kick), mix(0.037, 0.13, kick), impact)
-        + mix(0.15, 0.32, random) * mist;
-    let rise = loft
         * mix(0.30, 1.0, strength);
     let pool_height = clamp(wake_at(source.xz, 0.0).x, -0.42, 0.42);
     let centre = source + drift * phase + vec3(0.0, pool_height, 0.0)
-        + vec3(0.0, 4.0 * rise * phase * (1.0 - phase), 0.0);
+        + vec3(0.0, 4.0 * loft * phase * (1.0 - phase), 0.0);
     let eye = normalize(view.camera_xyz_time.xyz - centre);
-    let climb = drift + vec3(0.0, 4.0 * rise * (1.0 - 2.0 * phase), 0.0);
+    let climb = drift + vec3(0.0, 4.0 * loft * (1.0 - 2.0 * phase), 0.0);
     let right = normalize(cross(eye, climb) + vec3(1e-6, 0.0, 0.0));
     let up = cross(right, eye);
     let index = u32(across_fraction.w);
     let corner = vec2(f32(index & 1u), f32(index >> 1u)) * 2.0 - 1.0;
     let radius = select(mix(0.018, 0.089, random * random), mix(0.11, 0.23, random), impact)
-        + mix(0.06, 0.17, kick) * mist;
-    let size = radius
         * mix(0.45, 1.0, strength);
-    let point = centre + size * (right * corner.x + up * corner.y * (1.0 + 1.3 * kick));
+    let point = centre + radius * (right * corner.x + up * corner.y * (1.0 + 1.3 * kick));
     let world = vec4(point, phase);
     return SheetVertex(view.view_proj * vec4(point, 1.0), world, velocity_along,
         vec4(random, kick, strength, select(0.0, 1.0, impact)),
-        vec4(corner.x, -1.0, corner.y, phase), 0.0, vec3(0.0), foam, vec3(0.0));
+        vec4(corner.x, -1.0, corner.y, phase), 0.0, vec3(0.0), foam);
 }
 
 fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<f32>,
@@ -116,7 +86,7 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
     @location(1) velocity_along: vec4<f32>,
     @location(2) discharge: vec4<f32>,
     @location(3) across_fraction: vec4<f32>,
-    @location(4) edge_receiver: vec4<f32>,
+    @location(4) edge_receiver: vec3<f32>,
 ) -> SheetVertex {
     let is_splash = across_fraction.y < 0.0 && across_fraction.y > -1.5;
     if is_splash { return splash_vertex(world_time, velocity_along, discharge, across_fraction); }
@@ -125,21 +95,7 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
     let weight = fold_weight(across_fraction.w) * select(1.0, 0.18, is_filament);
     let fold = sheet_fold(velocity_along.w, birth, across_fraction.xz) * weight;
     var position = world_time.xyz + fold;
-    var strand_motion = vec3(0.0);
-    if is_filament {
-        position += strand_swelling(birth, velocity_along, across_fraction, edge_receiver.x);
-    } else if across_fraction.w > 0.23 {
-        let parcels = strand_parcels(edge_receiver.w, birth);
-        let offset = velocity_along.w - edge_receiver.w;
-        let current = strand_offset(parcels, across_fraction.w, discharge.y,
-            offset, edge_receiver.x, across_fraction.xz, velocity_along.xyz);
-        let last_fraction = across_fraction.w - length(velocity_along.xyz) * sheet_clock.y
-            / max(0.001, across_fraction.y);
-        let previous = strand_offset(parcels, last_fraction, discharge.y,
-            offset, edge_receiver.x, across_fraction.xz, velocity_along.xyz);
-        position += current;
-        strand_motion = current - previous;
-    }
+    if is_filament { position += strand_swelling(birth, velocity_along, across_fraction, edge_receiver.x); }
     var receiving_motion = 0.0;
     var receiving_level = edge_receiver.y;
     var foam = vec2(0.0);
@@ -156,8 +112,7 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
     }
     let world = vec4(position, world_time.w);
     return SheetVertex(view.view_proj * vec4(world.xyz, 1.0), world, velocity_along, discharge,
-        across_fraction, edge_receiver.x, vec3(receiving_motion, position.y - receiving_level, edge_receiver.z),
-        foam, strand_motion);
+        across_fraction, edge_receiver.x, vec3(receiving_motion, position.y - receiving_level, edge_receiver.z), foam);
 }
 
 struct FallOutput {
@@ -246,11 +201,9 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let side = input.edge * input.edge;
     let rounding = select((0.018 + 0.13 * side) * (0.72 + 0.56 * fine), 0.0, is_filament);
     let contact_foam = smoothstep(0.10, 0.68, input.foam.x + 0.64 * input.foam.y);
-    let feathered_foot = smoothstep(rounding - 0.065 * contact_foam,
+    let plunge_foot = smoothstep(rounding - 0.065 * contact_foam,
         rounding + select(0.17 + 0.21 * contact_foam, 0.06, is_filament),
         input.receiving.y);
-    let split = select(smoothstep(0.72, 0.93, breakout), 0.0, is_filament);
-    let plunge_foot = mix(feathered_foot, smoothstep(-0.04, 0.13, input.receiving.y), split);
     let meets_pool = input.receiving.z > 1.5;
     let foot = select(path_foot, plunge_foot, meets_pool);
     let contact_cover = foot
@@ -296,7 +249,7 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let fold_delta = (fold_weight(input.across_fraction.w) - fold_weight(last_fraction))
         * select(1.0, 0.18, is_filament);
     let displacement = input.velocity_along.xyz * sheet_clock.y
-        + fold_delta * sheet_fold(lip, birth, across) + input.strand_motion + vec3(0.0, input.receiving.x, 0.0);
+        + fold_delta * sheet_fold(lip, birth, across) + vec3(0.0, input.receiving.x, 0.0);
     let previous = view.previous_view_proj * vec4(point - displacement, 1.0);
     let current = view.unjittered_view_proj * vec4(point, 1.0);
     let motion = (previous.xy / previous.w - current.xy / current.w)

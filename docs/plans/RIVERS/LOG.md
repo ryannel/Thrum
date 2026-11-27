@@ -494,3 +494,71 @@
   time: the drawn foot at the display's time, births and impulses at the committed tick, a clump's motion from
   the last presentation. WP11.1 is written again, and WP11.4 gained two proofs on a pool rising through one
   tick ([each change](../../../.orchestrate/evidence/RIVERS/WP11/design-review-18-changes.md)).
+
+- 2026-11-27 WP6. The waterfall selection uses its own keyed spring samples, from a closed spring
+  through a trickle and two running levels. The late sheet supplies the same depth and colour read by
+  the pool's gather. The sheet's runtime spacing is listed as `river.fall_path_spacing` in
+  millimetres with no history invalidation. Plunge power feeds the shared foam stocks and its
+  departure-time pattern drives interaction impulses. The scene uses a wave share of 0.75.
+
+- 2026-11-27 WP6. Metal carriage trials put each of the two ring sets within 0.33 m after five
+  seconds. Fivefold riffle forcing moved the pool centre by at most 0.024 m. The blend retained
+  98.5% of the still-water ring energy on the straight and 77.6% on the bend. Those five-second
+  trials run in the main tier. The smaller budget and uniform-current comparisons run at merge.
+
+- 2026-11-27 WP6. The Metal plunge readback showed 56 mm at the first Lake station and 11 mm
+  another 6 m downstream. The overhead Sun glint take shows the same class of crest crossing the
+  pool and fading into the shallows. Hardware Chrome also reads the sheet's submitted motion and
+  pool foam. Wet 1440p completion brackets ranged from about 300 to 390 ms under shared load.
+  [Target evidence](../../../.orchestrate/evidence/RIVERS/WP6/README.md)
+
+- 2026-11-27 WP6. The sheet samples the receiving pool's interaction height and foam stocks.
+  At the bank it follows the prepared path down the rock and keeps the splash at the pool level.
+  The authored mid-gauge paths first encounter water on the chart's upstream grid row at
+  z = −25 m, where the map moves from dry to 1.6–2.1 m deep. Extending the lake receiver up to
+  the cliff solved all three wet gauges, but the map refused the basin meeting the chart away
+  from a joined end. The two visual checks remain open.
+  [Target evidence](../../../.orchestrate/evidence/RIVERS/WP6/README.md)
+
+- 2026-11-27 WP6 planner proposal. Allow a basin to follow the plunge bed below a brink while
+  the brink remains a chart boundary with its own unmixed row. The fall-scene receiver test
+  solved the three wet gauges and produced intersections at the actual pool level. The map
+  refused the basin because it borders the brink without a joined end. A planner ruling on
+  basin support below a brink would let the visual proof compare a continuous shoreline
+  against the current grid-row jump. The flood silhouette still needs a strand-breakup pass.
+  [Receiver experiment and Metal takes](../../../.orchestrate/evidence/RIVERS/WP6/README.md)
+
+- 2026-11-27 WP6.12. Basin fill may touch a brink from below. A receiving chart banks against the
+  brink and carries its level and shore margin onto the rock. The bank uses the lower chart's
+  prepared support without assigning its row to the upper chart's brink cells. The fall guard uses
+  the map's joined row to bound the receiving level across stage and gauge ranges, subdividing a
+  range when a mouth can hide a maximum between its endpoints. The four refusal cases and twins
+  passed. In the interior case the sampled levels were 2.771, 2.862 and 2.859 m, with a 2.860 m lip.
+  The old `falls` guard's blanket exclusion of the cliff from every chart now tests that the
+  upper chart ends at the brink and the lower chart can extend its shore margin onto the rock.
+  The `brink_end` case with no receiver still checks ground with no body.
+  [CPU and Metal results](../../../.orchestrate/evidence/RIVERS/WP6/README.md#wp612-receiving-water)
+
+- 2026-11-27 WP6. The receiving water now follows both ends of the brink. At the middle gauge
+  all five paths meet the island's 12 m pool along their prepared trajectories. The former
+  two-metre jump is gone, and the bank keeps its waterline when the lip closes. The island's
+  sheet uses a whitening coefficient of 3.75, a discharge exponent of 0.20 and a tear thickness
+  of 28 mm. These start whitening the short high-discharge sheet earlier and separate thinner
+  water on the middle gauge. The flood is 0.973–0.994 white at its foot in the sheet model.
+  The Metal captures still show nearly fixed scallops from 5 m and a hard edge above the boil.
+  The review follows a crest outward under glint but cannot follow it to a bank. WP6.4 and WP6.5
+  remain open. The revised plan sends the remaining curtain cue to the lead.
+  [Contact audit, automated checks and Metal takes](../../../.orchestrate/evidence/RIVERS/WP6/README.md#revised-sheet-and-pool)
+
+- 2026-11-27 WP6. The island transport test now expects the plunge reach continuously from the
+  cliff to the pool. Its previous dry-under-fall assertion was the old brink rule. The corrected
+  Metal test reports the same reach and 12.5 m level at both stations, and both floats complete
+  their routes in calm and trade winds.
+  [Metal island query and transport](../../../.orchestrate/evidence/RIVERS/WP6/revised-island-query.log)
+
+- 2026-11-27 WP6 bounded flood trial. Departure-time samples separated the lower sheet into
+  moving strands with individually displaced pool contacts and spray. In the Metal side take the
+  silhouette still reads as a curtain with a comb of long tongues. The bank take shows hard ends
+  through the pale boil. The trial also missed one expected sheet-depth pixel in the existing Metal
+  fall guard. The branch restores the previous rendering. WP6.4 and WP6.5 remain open for the lead's
+  decision. [Trial evidence and handoff](../../../.orchestrate/evidence/RIVERS/WP6-handoff.md)
