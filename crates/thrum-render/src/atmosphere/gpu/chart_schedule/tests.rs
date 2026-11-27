@@ -90,10 +90,10 @@ fn spread_submissions_latch_inputs_retry_and_drain() {
             assert_eq!(submitted.whole_update, None);
             assert_eq!(submitted.written.submission, 1);
             assert!(submitted.writes.count_ones() <= 9_u32.div_ceil(cadence));
-            for index in 0..STAGES {
+            for (index, source) in schedule.sources.iter().enumerate() {
                 if submitted.writes & (1 << index) != 0 {
                     assert_eq!(index, next_stage);
-                    let source = schedule.sources[index].unwrap();
+                    let source = source.unwrap();
                     assert_eq!(source.submission, 1);
                     assert_eq!(source.inputs, sun(0.5));
                     next_stage += 1;

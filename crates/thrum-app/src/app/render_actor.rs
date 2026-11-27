@@ -496,7 +496,7 @@ impl<G: Game> Actor<G> {
             && self.transition.surface.usable()
             && !self.surface_lease.refused(request.surface_generation)
             && !self.surface_lease.pending();
-        self.observe_governor_display(request);
+        self.observe_governor_display(request)?;
         if ready && !self.host.has_free_slot() {
             // A callback can arrive while an older packet is retiring. Give
             // it the part of this opportunity that encoding can spare.
@@ -535,15 +535,6 @@ impl<G: Game> Actor<G> {
         }
         if let Some(proof) = &mut self.transition_proof {
             proof.stage("advancing the world and polling GPU completions");
-        }
-        if let Some(cadence) = self
-            .transition_proof
-            .as_ref()
-            .and_then(|proof| proof.chart_cadence)
-        {
-            self.host
-                .set_quality_knob("atmosphere.chart cadence", cadence)
-                .map_err(|error| FrameError::Scene(error.to_string()))?;
         }
         let mut advanced = self.host.advance(observation)?;
         if !advanced.can_acquire_serial() {
@@ -670,7 +661,10 @@ impl<G: Game> Actor<G> {
         Ok(report)
     }
 
-    fn observe_governor_display(&mut self, request: &FrameRequest<G::Edits>) {
+    fn observe_governor_display(
+        &mut self,
+        request: &FrameRequest<G::Edits>,
+    ) -> Result<(), FrameError> {
         let now = self.origin.elapsed();
         let observed = request.platform.governor_display;
         let display = self.transition_proof.as_ref().map_or(observed, |proof| {
@@ -680,6 +674,16 @@ impl<G: Game> Actor<G> {
             .governor_display(display, self.transition.holds_governor());
         self.host
             .governor_display_tick(now, request.platform.display_tick);
+        if let Some(cadence) = self
+            .transition_proof
+            .as_ref()
+            .and_then(|proof| proof.chart_cadence)
+        {
+            self.host
+                .set_quality_knob("atmosphere.chart cadence", cadence)
+                .map_err(|error| FrameError::Scene(error.to_string()))?;
+        }
+        Ok(())
     }
 
     fn present(&mut self, frame: wgpu::SurfaceTexture) -> (f64, u64) {
