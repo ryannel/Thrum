@@ -21,7 +21,11 @@
       "output": 2881,
       "turns": 1
     },
-    "at": "2026-11-26T14:20:05Z"
+    "at": "2026-11-26T14:20:05Z",
+    "items_owed": [
+      "WP17",
+      "WP18"
+    ]
   },
   "work_packages": {
     "WP1": {
@@ -2112,6 +2116,24 @@
         "at": "2026-11-26T13:01:01Z"
       },
       "ends_stretch": true
+    },
+    "WP18": {
+      "definitions": "6daea2c8c3640c7d44f6124660b346b6ab7b128106900bedd92d43e262353de5",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner answered the APPLE-PRESENTATION WP17 planner's question (full screen on the built-in display for V1). The owne",
+        "at": "2026-11-27T03:41:07Z"
+      }
+    },
+    "WP17": {
+      "definitions": "bff85046361275a563914591fe2c9015149c9454c9301065d64590d165640323",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner answered the APPLE-PRESENTATION WP17 planner's question (full screen on the built-in display for V1). The owne",
+        "at": "2026-11-27T03:41:07Z"
+      }
     }
   },
   "tasks": [
@@ -2206,11 +2228,15 @@
     {
       "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, with its 3 Must Fix findings.",
       "at": "2026-11-26T14:06:02Z"
+    },
+    {
+      "task": "The owner answered the APPLE-PRESENTATION WP17 planner's question (full screen on the built-in display for V1). The owner's words: \"So the 120 upscale for full screen.\" That is option 1: 120 Hz with the picture reconstructed below the panel's pixel size and scaled up by the display. Record the answer in APPLE-PRESENTATION's log in the owner's words, then plan APPLE-PRESENTATION's next work packages up to WP17 against it, add the ATMOSPHERE work package that lets it rebuild its charts on a governor cadence, and reword SHOWCASE WP8.6 to match. The earlier planner's measurements, the three options and a draft of WP17 for option 1 are in .orchestrate/evidence/APPLE-PRESENTATION/WP17-plan/README.md.",
+      "at": "2026-11-27T03:41:07Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T14:06:02Z"
+    "at": "2026-11-27T03:41:07Z"
   },
   "design_history": [
     {

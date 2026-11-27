@@ -737,7 +737,7 @@
       "items": [
         {
           "id": "WP12.1",
-          "statement": "Driven by scripted frames with no device, the chart schedule does each of these. 1. At a cadence of 1, a frame whose Sun direction or camera altitude changed runs all nine stages, and a frame where neither changed runs none. 2. At cadences of 4, 6 and 8, with the Sun moving a little in every frame, each of the nine stages runs exactly once in every 4, 6 or 8 submitted frames, in the order sky view, diffuse irradiance, reflection levels 0 to 6, and no frame runs more than 3, 2 or 2 of them. 3. A frame that is not submitted advances nothing, and its stages are due again in the next frame. 4. Every stage of a refresh is given the inputs of that refresh's first frame. 5. At a cadence of 8, each of these runs all nine stages in its own frame and abandons the refresh under way: a history reset, a change of the profile epoch, a change of aerosol, a change of the night selection, and a Sun that moved more than 2° since the last submitted frame. 6. A change of the knob's value takes effect when the next refresh starts and resets nothing. 7. When the inputs stop changing, the refresh under way completes, one more runs if the inputs changed during it, and then no stage runs. Guard: tests on the CPU.",
+          "statement": "Driven by scripted frames with no device, the chart schedule does each of these. 1. At a cadence of 1, a frame whose Sun direction or camera altitude changed runs all nine stages, and a frame where neither changed runs none. 2. At cadences of 4, 6 and 8, with the Sun moving a little in every frame, each of the nine stages runs exactly once in every 4, 6 or 8 submitted frames, in the order sky view, diffuse irradiance, reflection levels 0 to 6, and no frame runs more than 3, 2 or 2 of them. 3. A frame that is not submitted advances nothing, and its stages are due again in the next frame. 4. Every stage of a refresh is given the inputs of that refresh's first frame. 5. At a cadence of 8, each of these runs all nine stages in its own frame and abandons the refresh under way: a history reset, a change of the profile epoch, a change of aerosol, a change of the night selection, and a Sun that moved more than 2\u00b0 since the last submitted frame. 6. A change of the knob's value takes effect when the next refresh starts and resets nothing. 7. When the inputs stop changing, the refresh under way completes, one more runs if the inputs changed during it, and then no stage runs. Guard: tests on the CPU.",
           "check": "cargo nextest run --locked --offline -p thrum-render --lib -E 'test(/chart_schedule/)' --no-tests=fail",
           "target": "mac-metal",
           "builder_result": "open",
@@ -795,7 +795,9 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
     }
   ]
 }

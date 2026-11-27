@@ -1247,7 +1247,7 @@
       "items": [
         {
           "id": "D18.1",
-          "statement": "The output scale a request resolves, and the output extent it gives, are right in each of these cases. A window that is not full screen resolves 100%. A full-screen window on a 60 Hz display resolves 100%. A full-screen window on a 120 Hz display resolves the registry's full-screen value, shown with a value of 75% given to the resolver. A host whose scene is 2D resolves 100% at full screen on a 120 Hz display with that same 75% given. A forced value of each of the five steps is resolved in a window and at full screen, and the resolved record says it was forced. The registry's full-screen value for this Mac is 100% in this work package. A 3456×2234 backing gives 3456×2234, 2938×1899, 2592×1676, 2316×1497 and 1728×1117 at the five steps, by the render scale's own rounding. Guard: tests on the CPU, with no device.",
+          "statement": "The output scale a request resolves, and the output extent it gives, are right in each of these cases. A window that is not full screen resolves 100%. A full-screen window on a 60 Hz display resolves 100%. A full-screen window on a 120 Hz display resolves the registry's full-screen value, shown with a value of 75% given to the resolver. A host whose scene is 2D resolves 100% at full screen on a 120 Hz display with that same 75% given. A forced value of each of the five steps is resolved in a window and at full screen, and the resolved record says it was forced. The registry's full-screen value for this Mac is 100% in this work package. A 3456\u00d72234 backing gives 3456\u00d72234, 2938\u00d71899, 2592\u00d71676, 2316\u00d71497 and 1728\u00d71117 at the five steps, by the render scale's own rounding. Guard: tests on the CPU, with no device.",
           "check": "cargo nextest run --locked --offline -p thrum-app -E 'test(/output_scale/)' --no-tests=fail",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1267,7 +1267,7 @@
         },
         {
           "id": "D18.3",
-          "statement": "In the release game at full screen on the built-in display, on each of the Mac's two recipes, three launches behave as follows. With the launch setting at 75%, the game's own record names a backing extent of 3456×2234, an output scale of 75% that a setting forced and an output extent of 2592×1676; the drawable, the reconstruction output, the viewport and engine capture's frame all have the output extent; and the layer's bounds times its contents scale equal the backing extent, with the gravity that fills the bounds and a linear magnification filter. With no setting, the record names 100%, not forced, and a 3456×2234 drawable. With the setting at 80%, the launch ends with an error that names the setting. Record: the launches' records, kept as this work package's evidence.",
+          "statement": "In the release game at full screen on the built-in display, on each of the Mac's two recipes, three launches behave as follows. With the launch setting at 75%, the game's own record names a backing extent of 3456\u00d72234, an output scale of 75% that a setting forced and an output extent of 2592\u00d71676; the drawable, the reconstruction output, the viewport and engine capture's frame all have the output extent; and the layer's bounds times its contents scale equal the backing extent, with the gravity that fills the bounds and a linear magnification filter. With no setting, the record names 100%, not forced, and a 3456\u00d72234 drawable. With the setting at 80%, the launch ends with an error that names the setting. Record: the launches' records, kept as this work package's evidence.",
           "check": "python3 scripts/apple_presentation.py output-scale --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
@@ -1284,7 +1284,9 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
     },
     {
       "id": "WP17",
@@ -1316,8 +1318,8 @@
         },
         {
           "id": "D17.3",
-          "statement": "At the registry's output scale and 120 Hz the full-screen route is sharp and stable in the frames the surface is given, and stays so when scaled to the panel's size. In a complete cue window of consecutive captured frames for each of the four cues D11.6 names: clean edges on the terrain silhouette and on thin props, steady stars, no ghost behind a moving prop, and no brightness lag through the time-of-day scrub. The same frames resampled to 3456×2234 with a linear filter, as a stand-in for the layer's scaling, show no band along any edge and no moiré, and thin props that still read.",
-          "inspect": "Read the T2 engine capture in `realtime` mode at full screen from the merge candidate, at the registry's output scale and a requested 120 Hz, with capture's own cost shown apart, and say which frames you read for each cue. Read each cue window's frames at their own size, in captured order and timing. 1. Each of the four windows is complete, with an image for every presented submission and no omission by the tap or the writer, and every image has the output extent the game recorded. 2. Edges on the terrain silhouette and on thin props hold from frame to frame as the camera moves. 3. Stars stay steady with the camera held and as it pans. 4. No copy or trail stays behind the moving prop. 5. Brightness through the time-of-day scrub does not trail the comparison capture at the same captured time. Then read the frames the builder resampled to 3456×2234 with a linear filter, which the evidence labels a stand-in for the layer's scaling and not what the panel showed. 6. No band of uncovered or repeated pixels lies along any edge. 7. No moiré shows on the terrain's fine detail or on the grid fixture. 8. Thin props are unbroken along their length, as they are in the frames at their own size.",
+          "statement": "At the registry's output scale and 120 Hz the full-screen route is sharp and stable in the frames the surface is given, and stays so when scaled to the panel's size. In a complete cue window of consecutive captured frames for each of the four cues D11.6 names: clean edges on the terrain silhouette and on thin props, steady stars, no ghost behind a moving prop, and no brightness lag through the time-of-day scrub. The same frames resampled to 3456\u00d72234 with a linear filter, as a stand-in for the layer's scaling, show no band along any edge and no moir\u00e9, and thin props that still read.",
+          "inspect": "Read the T2 engine capture in `realtime` mode at full screen from the merge candidate, at the registry's output scale and a requested 120 Hz, with capture's own cost shown apart, and say which frames you read for each cue. Read each cue window's frames at their own size, in captured order and timing. 1. Each of the four windows is complete, with an image for every presented submission and no omission by the tap or the writer, and every image has the output extent the game recorded. 2. Edges on the terrain silhouette and on thin props hold from frame to frame as the camera moves. 3. Stars stay steady with the camera held and as it pans. 4. No copy or trail stays behind the moving prop. 5. Brightness through the time-of-day scrub does not trail the comparison capture at the same captured time. Then read the frames the builder resampled to 3456\u00d72234 with a linear filter, which the evidence labels a stand-in for the layer's scaling and not what the panel showed. 6. No band of uncovered or repeated pixels lies along any edge. 7. No moir\u00e9 shows on the terrain's fine detail or on the grid fixture. 8. Thin props are unbroken along their length, as they are in the frames at their own size.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1343,7 +1345,9 @@
           "builder_result": "open",
           "evidence": ""
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
     },
     {
       "id": "U1",
