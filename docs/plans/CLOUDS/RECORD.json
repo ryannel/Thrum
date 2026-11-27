@@ -1577,6 +1577,32 @@
         "by": "plan",
         "task": "The main-branch check cross-target fails on ff10e3295 (last pass 20227abd8) for x86_64-pc-windows-msvc: examples/v1-game",
         "at": "2026-11-27T13:14:27Z"
+      },
+      "ready_for_review": {
+        "commit": "2425092e16b95b10be1a8a5e4d048e7f6feff1b1",
+        "checked": "b16ad9aa7e45698ea91e5c3811d29a05d6924ecc",
+        "at": "2026-11-27T14:49:37Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "headless",
+        "usage": {
+          "input": 801238,
+          "cached": 94577152,
+          "output": 140835,
+          "turns": 2
+        },
+        "session_usage": {
+          "input": 801238,
+          "cached": 94577152,
+          "output": 140835,
+          "turns": 2
+        }
       }
     },
     "WP12": {
