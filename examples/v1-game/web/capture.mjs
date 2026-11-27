@@ -368,7 +368,7 @@ async function runCapture() {
           hours = 16.9 + scrubFrame * 0.1;
           phase = 'scrub';
         } else if (chartTake === 'fast' && scrubFrame === 16) {
-          game.set_paused(false, timestamp - 1000 / 60);
+          game.set_paused(false, timestamp);
         } else if (chartTake === 'scrub') {
           hours = seconds >= 5.6 ? 12 : 17.7;
           phase = seconds >= 5.6 ? 'jump' : 'climb';
