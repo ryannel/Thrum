@@ -29,9 +29,14 @@ fn sheet_fold(lip: f32, birth: f32, across: vec2<f32>) -> vec3<f32> {
     @location(3) across_fraction: vec4<f32>,
 ) -> SheetVertex {
     let birth = sheet_age(sheet_clock.x - world_time.w);
-    let weight = select(fold_weight(across_fraction.w), 0.0, across_fraction.y < 0.0);
+    let is_splash = across_fraction.y < 0.0 && across_fraction.y > -1.5;
+    let is_filament = across_fraction.y <= -2.0;
+    let weight = fold_weight(across_fraction.w) * select(1.0, 0.18, is_filament);
     let fold = sheet_fold(velocity_along.w, birth, across_fraction.xz) * weight;
-    let world = vec4(world_time.xyz + fold, world_time.w);
+    let churning = sheet_noise(vec2(velocity_along.w * 1.7, birth), FALL_LOOP,
+        vec2(1.8, 3.0), vec2(3.6, 0.0));
+    let crown = vec3(0.0, 0.13 * churning * (1.0 - across_fraction.w), 0.0);
+    let world = vec4(world_time.xyz + select(fold, crown, is_splash), world_time.w);
     return SheetVertex(view.view_proj * vec4(world.xyz, 1.0), world, velocity_along, discharge, across_fraction);
 }
 
@@ -77,14 +82,17 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let fine = sheet_noise(xy, span, vec2(8.7), vec2(0.0));
     let rank = 0.28 * coarse + 0.10 * fine + 0.62 * grouped;
     let pixel = max(length(dpdx(xy)), length(dpdy(xy)));
-    if input.across_fraction.y < 0.0 {
+    let geometry_normal = normalize(cross(dpdx(point), dpdy(point)));
+    if input.across_fraction.y < 0.0 && input.across_fraction.y > -1.5 {
         return splash_shade(input, birth, solid);
     }
     let width = max(0.025, min(0.27, 0.10 * pixel));
     let tangent = normalize(input.velocity_along.xyz + vec3(1e-8, -1e-8, 0.0));
     let across = input.across_fraction.xz;
+    let is_filament = input.across_fraction.y <= -2.0;
     let normal = normalize(cross(vec3(across.x, 0.0, across.y), tangent));
-    var face = select(-normal, normal, dot(normal, look) >= 0.0);
+    let contour = select(normal, geometry_normal, is_filament);
+    var face = select(-contour, contour, dot(contour, look) >= 0.0);
     let breakout = input.discharge.y;
     let broken = smoothstep(rank - 0.24 - width, rank + 0.09 + width, breakout);
     let white = mix(pow(breakout, 1.18), broken, 0.74);
@@ -97,8 +105,10 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let thinness = 1.0 - smoothstep(0.12, 0.45, input.discharge.z);
     let tip = 0.73 + 0.24 * fine;
     let taper = smoothstep(tip - 0.25, tip, input.across_fraction.w);
-    let presence = smoothstep(threshold - width, threshold + width,
+    let sheet_presence = smoothstep(threshold - width, threshold + width,
         input.discharge.z * (1.0 - 0.88 * thinness * taper));
+    let strand_presence = 1.0 - smoothstep(0.73, 1.0, input.across_fraction.w);
+    let presence = select(sheet_presence, strand_presence, is_filament);
     let spread = mix(0.63 * coarse + 0.37 * grouped, 0.5, smoothstep(0.9, 3.0, pixel));
     let contact = 0.56 + 0.24 * spread;
     let foot = 1.0 - smoothstep(contact, 0.91 + 0.09 * spread, input.across_fraction.w);
@@ -133,9 +143,11 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let colour = (spray_light * aerial.transmission + aerial.scatter) * environment_storage_scale();
     let opacity = (clear * min(0.88, fresnel + 0.07 + 1.7 * input.discharge.w + 0.35 * breakout) + white * (0.90 + 0.18 * grain))
         * presence * mix(0.62, 1.0, seam) * contact_cover;
+    let path_distance = select(input.across_fraction.y, -input.across_fraction.y - 2.0, is_filament);
     let last_fraction = input.across_fraction.w - length(input.velocity_along.xyz) * sheet_clock.y
-        / max(0.001, input.across_fraction.y);
-    let fold_delta = fold_weight(input.across_fraction.w) - fold_weight(last_fraction);
+        / max(0.001, path_distance);
+    let fold_delta = (fold_weight(input.across_fraction.w) - fold_weight(last_fraction))
+        * select(1.0, 0.18, is_filament);
     let displacement = input.velocity_along.xyz * sheet_clock.y + fold_delta * sheet_fold(lip, birth, across);
     let previous = view.previous_view_proj * vec4(point - displacement, 1.0);
     let current = view.unjittered_view_proj * vec4(point, 1.0);
