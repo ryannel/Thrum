@@ -446,7 +446,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
                 footfall_edit_time = Some(elapsed);
                 deadline = interval + elapsed;
             }
-        } else if wet_yard && route == "wet-dry" && elapsed >= 16.0 && applied != "finish dry" {
+        } else if wet_yard && route == "wet-dry" && elapsed >= 18.0 && applied != "finish dry" {
             let change = r#"{"rain.rate":0,"rain.drying":100,"rain.time_scale":240}"#;
             runtime
                 .parameters(change)
@@ -455,7 +455,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             applied = "finish dry";
         } else if wet_yard
             && route == "wet-dry"
-            && (7.0..16.0).contains(&elapsed)
+            && (7.0..18.0).contains(&elapsed)
             && applied != "margin"
         {
             let change = r#"{"rain.rate":0,"rain.drying":100,"rain.time_scale":45}"#;
