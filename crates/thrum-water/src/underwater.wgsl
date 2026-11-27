@@ -33,9 +33,12 @@ fn water_path_integral(length_m: f32, start_depth: f32, end_depth: f32) -> vec3<
     return length_m * exp(-min(first, last)) * select(exact, small, delta < vec3(0.01));
 }
 
+fn under_sun(point: vec3<f32>) -> vec3<f32> {
+    return water_sun(point) * max(0.0, environment_sun_direction().y);
+}
+
 fn under_incident(point: vec3<f32>) -> vec3<f32> {
-    return environment_diffuse(vec3(0.0, 1.0, 0.0))
-        + water_sun(point) * max(0.0, environment_sun_direction().y);
+    return environment_diffuse(vec3(0.0, 1.0, 0.0)) + under_sun(point);
 }
 
 fn water_path(
@@ -45,6 +48,18 @@ fn water_path(
     let scatter = incident * water.scatter.rgb * c / 3.14159265;
     return light * exp(-c * length_m)
         + scatter * water_path_integral(length_m, start_depth, end_depth);
+}
+
+fn combine_underwater_light(
+    path_light: vec3<f32>, shaft_light: vec3<f32>, sun_point: vec3<f32>,
+    length_m: f32, start_depth: f32, end_depth: f32,
+) -> vec3<f32> {
+    if all(shaft_light >= vec3(0.0)) { return path_light + shaft_light; }
+    // The reduced-resolution march can span farther than this pixel at a
+    // silhouette. Its signed correction can remove only this path's Sun.
+    let scatter = under_sun(sun_point) * water.scatter.rgb * optics.extinction_sight.xyz / 3.14159265;
+    let sun_path = scatter * water_path_integral(length_m, start_depth, end_depth);
+    return path_light + max(shaft_light, -sun_path);
 }
 
 // The derivative measures the height change per pixel across the line.
@@ -75,9 +90,10 @@ fn water_to_gather(eye: LensPoint, uv: vec2<f32>) -> vec3<f32> {
     if hit.distance > 0.0 {
         body = hit_light(hit) * exp(-optics.downwelling_mirror.xyz * end_depth);
     }
-    let light = under_incident(vec3(eye.point.x, eye.surface, eye.point.z));
-    return water_path(body, light, length_m, start_depth, end_depth)
-        + shaft_scattering(uv, eye.surface, ray, length_m, start_depth, end_depth);
+    let surface = vec3(eye.point.x, eye.surface, eye.point.z);
+    let light = water_path(body, under_incident(surface), length_m, start_depth, end_depth);
+    let shaft_light = shaft_scattering(uv, eye.surface, ray, length_m, start_depth, end_depth);
+    return combine_underwater_light(light, shaft_light, surface, length_m, start_depth, end_depth);
 }
 
 @fragment fn underwater_fragment(@builtin(position) clip: vec4<f32>) -> Output {
@@ -174,8 +190,9 @@ fn underside_light(world: vec3<f32>, n: vec3<f32>, v: vec3<f32>, variance: f32,
     let camera = view.camera_xyz_time.xyz;
     let length_m = length(world - camera);
     let start_depth = max(0.0, eye.surface - camera.y);
-    return water_path(mix(light, ceiling, foam), incident, length_m, start_depth, 0.0)
-        + shaft_scattering(optics_project(world).xy, eye.surface, -v, length_m, start_depth, 0.0);
+    let path_light = water_path(mix(light, ceiling, foam), incident, length_m, start_depth, 0.0);
+    let shaft_light = shaft_scattering(optics_project(world).xy, eye.surface, -v, length_m, start_depth, 0.0);
+    return combine_underwater_light(path_light, shaft_light, world, length_m, start_depth, 0.0);
 }
 
 fn refracted_air_hit(background: vec3<f32>, hit: GatherHit, world: vec3<f32>) -> vec3<f32> {
