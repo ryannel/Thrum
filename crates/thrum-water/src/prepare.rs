@@ -947,9 +947,15 @@ fn surface_pipelines(
         let lens = if shafts {
             shafts::shader(surface)
         } else {
-            include_str!("underwater.wgsl").into()
+            include_str!("caustics/no_shafts.wgsl").into()
         };
-        module(source + include_str!("underwater/cut_gpu.wgsl") + sheet + &lens)
+        module(
+            source
+                + include_str!("underwater/cut_gpu.wgsl")
+                + sheet
+                + include_str!("underwater.wgsl")
+                + &lens,
+        )
     });
     let underwater = shader.as_ref().map(|shader| UnderwaterPipelines {
         surface: create_pipeline(surface, layout, environment, shader, sheet),

@@ -275,21 +275,12 @@ impl Shafts {
 }
 
 pub(crate) fn shader(surface: &SceneSurface<'_>) -> String {
-    include_str!("../underwater.wgsl")
-        .replace(
-            "return water_path(body, light, length_m, start_depth, end_depth);",
-            "return water_path(body, light, length_m, start_depth, end_depth)
-                + shaft_scattering(uv, eye.surface, ray, length_m, start_depth, end_depth);",
-        )
-        .replace(
-            "max(0.0, eye.surface - view.camera_xyz_time.y), 0.0);",
-            "max(0.0, eye.surface - view.camera_xyz_time.y), 0.0)
-            + shaft_scattering(optics_project(world).xy, eye.surface, -v, length(world - view.camera_xyz_time.xyz),
-                max(0.0, eye.surface - view.camera_xyz_time.y), 0.0);",
-        )
-        + include_str!("refraction.wgsl")
-        + include_str!("sampling.wgsl")
-        + include_str!("shaft_transport.wgsl")
-        + include_str!("shafts.wgsl")
-        + surface.sun_path_visibility_shader()
+    [
+        include_str!("refraction.wgsl"),
+        include_str!("sampling.wgsl"),
+        include_str!("shaft_transport.wgsl"),
+        include_str!("shafts.wgsl"),
+        surface.sun_path_visibility_shader(),
+    ]
+    .concat()
 }

@@ -12,7 +12,8 @@ pub(crate) const FIELD_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16
 pub(crate) const COLUMN_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba32Float;
 
 /// Description of a GPU-written Sun-path field. Its shader defines
-/// `sun_path(point, toward_sun)` returning `vec4(visibility_point, direct_factor)`.
+/// `sun_path(point, toward_sun)` returning the visibility point, direct
+/// factor and transition weight in a `SunPathSample`.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SunPathProvider {
     pub(crate) source: &'static str,
@@ -174,19 +175,7 @@ pub(crate) fn compose(mut scene: String, provider: Option<&str>, shadowed: bool)
     let Some(source) = provider else {
         return scene;
     };
-    scene = scene.replace(
-        "var sun_factor = 1.0;",
-        "let path = sun_path(input.world_position, light.direction_to_light.xyz);\n    var sun_factor = path.w;",
-    );
     if shadowed {
-        scene = scene.replace(
-            "sun_factor = sun_visibility(input,receiver);",
-            "if path.y > input.world_position.y {
-                sun_factor *= point_sun_visibility(path.xyz);
-            } else {
-                sun_factor *= sun_visibility(input,receiver);
-            }",
-        );
         scene.push_str(crate::shaders::wgsl!("synthetic/forward/point_sun.wgsl"));
     }
     write!(
@@ -194,6 +183,7 @@ pub(crate) fn compose(mut scene: String, provider: Option<&str>, shadowed: bool)
         "\n@group(1) @binding({FIELD}) var sun_path_field: texture_2d_array<f32>;
 @group(1) @binding({COLUMNS}) var sun_path_columns: texture_2d<f32>;
 @group(1) @binding({SAMPLER}) var sun_path_sampler: sampler;
+struct SunPathSample {{ exit: vec3<f32>, factor: f32, weight: f32 }}
 struct SunPathMapping {{ window: vec4<f32>, sun: vec4<f32>, quality: vec4<u32> }}
 @group(1) @binding({MAPPING}) var<uniform> sun_path_mapping: SunPathMapping;
 {source}",

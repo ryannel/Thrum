@@ -1686,7 +1686,9 @@ try {
         ...(site==='deep-sea'?[['bed-20m',20,-35,90],['level-20m',20,0,90]]:[]),
       ];
       checkpoints=views.map(([name,depth,pitch,bearing])=>[name,{
-        'camera.depth':depth,'camera.pitch':pitch,'camera.bearing':bearing,'sun.elevation':60,
+        'camera.depth':depth,'camera.pitch':name.startsWith('away-')?22:pitch,
+        'camera.bearing':name.startsWith('away-')?228:bearing,
+        'camera.fov':/^(shaft|away)-/.test(name)?55:105,'sun.elevation':60,
       }]);
     }else if(routeParams.has('dive')){
       checkpoints=[
@@ -1761,20 +1763,22 @@ try {
     const diveHold=process.env.THRUM_WATER_DIVE_HOLD?.split(',').map(Number);
     const diveBearing=Number(process.env.THRUM_WATER_DIVE_BEARING??90);
     const diveSun=Number(process.env.THRUM_WATER_DIVE_SUN??60);
+    const diveFov=Number(process.env.THRUM_WATER_DIVE_FOV??105);
     const diveTravel=Number(process.env.THRUM_WATER_DIVE_TRAVEL??diveDepth);
     const diveView=dive?(diveHold??new Map([
       ['dive-up-1m',[1,89.99]],['dive-inclined-1m',[1,45]],
       ['dive-up-5m',[5,89.99]],['dive-inclined-5m',[5,45]],['dive-hold',[0,0]],
     ]).get(process.env.THRUM_WATER_ROUTE)):undefined;
     const sweepDive=dive&&!diveView;
-    const duration=cloudMotion?20500:offshore?22000:surfInspection?12000:dive?5000:1000;
-    const spacing=cloudMotion?200:offshore?200:surfInspection?100:dive?50:0;
+    const depthTour=dive&&Number.isFinite(Number(process.env.THRUM_WATER_DIVE_TRAVEL));
+    const duration=cloudMotion?20500:offshore?22000:surfInspection||depthTour?12000:dive?5000:1000;
+    const spacing=cloudMotion?200:offshore?200:depthTour?125:surfInspection?100:dive?50:0;
     if(dive){
       const [depth,pitch]=diveView??[-diveDepth,0];
       result.dive_camera=diveView?{depth,pitch,bearing:diveBearing,sun:diveSun}:
         {sweep_depth:diveDepth,maximum_depth:diveTravel,pitch,bearing:diveBearing,sun:diveSun};
       await evaluate(`game.edit_control('camera.pitch',${pitch});game.edit_control('camera.depth',${depth});
-        game.edit_control('camera.bearing',${diveBearing});game.edit_control('sun.elevation',${diveSun})`);
+        game.edit_control('camera.bearing',${diveBearing});game.edit_control('camera.fov',${diveFov});game.edit_control('sun.elevation',${diveSun})`);
       await until(async()=>{
         const status=await evaluate('game.frame(performance.now());game.report()');
         return /^Cooked generation [0-9]+ drawn/.test(status);
@@ -1822,7 +1826,13 @@ try {
       const loop=timestamp=>{
         __start??=timestamp;const elapsed=timestamp-__start;
         __intervals.push(timestamp);collect();
-        if(${sweepDive})game.edit_control('camera.depth',${-diveDepth}+(${diveTravel+diveDepth})*0.5*(1-Math.cos(2*Math.PI*elapsed/${duration})));
+        if(${sweepDive}){
+          const down=Math.max(0,Math.min(elapsed,${duration}-elapsed));
+          const depth=${depthTour}?(down<2000?${diveDepth}*(down/1000-1):
+            ${diveDepth}+${diveTravel-diveDepth}*0.5*(1-Math.cos(Math.PI*(down-2000)/4000))):
+            ${-diveDepth}*Math.cos(2*Math.PI*elapsed/${duration});
+          game.edit_control('camera.depth',depth);
+        }
         else if(!${dive}&&!${surfInspection}&&!${cloudMotion})game.edit_control('camera.bearing',90+elapsed*0.012);
         if(${handoffCut}&&elapsed>=5000&&__cameraCut===null){
           game.edit_control('camera.island',8);

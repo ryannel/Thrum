@@ -111,7 +111,10 @@ fn proof_game(water: bool) -> (thrum_app::sky::SkyGame, water_scene::SharedRepor
             (game, report)
         }
         Settings::Dive(wind, site) => {
-            if std::env::var("THRUM_WATER_DIVE_SHADE").as_deref() == Ok("1") {
+            if std::env::var("THRUM_WATER_DIVE_LIGHT").as_deref() == Ok("off") {
+                water_scene::island::build_dive_light_cost(wind, site, false)
+                    .expect("dive comparison")
+            } else if std::env::var("THRUM_WATER_DIVE_SHADE").as_deref() == Ok("1") {
                 water_scene::island::build_dive_shade(wind, site).expect("shaded dive scene")
             } else {
                 water_scene::island::build_dive(wind, site, water).expect("dive scene")
@@ -978,9 +981,16 @@ fn under_light_checkpoints(site: DiveSite) -> Vec<(String, String, f64)> {
     };
     [("noon", 60), ("low", 15), ("night", -17)].into_iter()
         .flat_map(|(light, sun)| views.iter().map(move |&(view, depth, pitch, bearing)| {
-            let pitch = if sun == 15 && (view.starts_with("shaft-") || view.starts_with("away-")) { 43.0 } else { pitch };
+            let aimed = view.starts_with("shaft-");
+            let off_sun = view.starts_with("away-");
+            let beam_pitch = if sun == 15 { 43.0 } else { 67.0 };
+            let (pitch, bearing, fov) = if aimed || off_sun {
+                (if aimed { beam_pitch } else { beam_pitch - 45.0 }, 228.0, 55.0)
+            } else {
+                (pitch, bearing, 105.0)
+            };
             (format!("{light}-{view}"), format!(
-                r#"{{"camera.depth":{depth},"camera.pitch":{pitch},"camera.bearing":{bearing},"sun.elevation":{sun}}}"#,
+                r#"{{"camera.depth":{depth},"camera.pitch":{pitch},"camera.bearing":{bearing},"camera.fov":{fov},"sun.elevation":{sun}}}"#,
             ), 10.0)
         })).collect()
 }

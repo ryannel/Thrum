@@ -106,15 +106,25 @@ macro_rules! wgsl {
         )
     };
     ("synthetic.wgsl") => {
-        $crate::shaders::wgsl!(@opaque_forward
+        $crate::shaders::wgsl!(@opaque_forward $crate::shaders::wgsl!(@bytes "synthetic/forward/default_sun.wgsl"),
             "        + indirect_radiance(surface_base,metalness,roughness,n,v,orm.r,input.world_position,input.position)\n")
     };
     (@ambient_opaque_forward) => {
-        $crate::shaders::wgsl!(@opaque_forward
+        $crate::shaders::wgsl!(@opaque_forward $crate::shaders::wgsl!(@bytes "synthetic/forward/default_sun.wgsl"),
             "        + ambient_indirect(surface_base,metalness,roughness,n,v,orm.r,input.world_position,input.position,ambient_contact(input))\n")
     };
-    // One opaque surface body, specialized only at the indirect term.
-    (@opaque_forward $indirect:literal) => {
+    (@sun_path_opaque_forward $sun:expr, default) => {
+        $crate::shaders::wgsl!(@opaque_forward $sun,
+            "        + indirect_radiance(surface_base,metalness,roughness,n,v,orm.r,input.world_position,input.position)
+")
+    };
+    (@sun_path_opaque_forward $sun:expr, ambient) => {
+        $crate::shaders::wgsl!(@opaque_forward $sun,
+            "        + ambient_indirect(surface_base,metalness,roughness,n,v,orm.r,input.world_position,input.position,ambient_contact(input))
+")
+    };
+    // One opaque surface body with explicit direct and indirect lighting slots.
+    (@opaque_forward $sun:expr, $indirect:literal) => {
         concat!(
             $crate::shaders::wgsl!(@lighting_constants),
             include_str!(concat!(env!("OUT_DIR"), "/cluster.wgsl")),
@@ -129,6 +139,8 @@ macro_rules! wgsl {
             $crate::shaders::wgsl!(@file "records/cluster_head.wgsl"),
             "\n// thrum-wgsl-source: synthetic.wgsl\n",
             $crate::shaders::wgsl!(@bytes "synthetic.wgsl"),
+            $sun,
+            $crate::shaders::wgsl!(@bytes "synthetic/forward/material_lighting.wgsl"),
             $indirect,
             $crate::shaders::wgsl!(@bytes "synthetic/forward/opaque_output.wgsl"),
             "\n// thrum-wgsl-end\n",

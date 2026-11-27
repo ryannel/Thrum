@@ -180,17 +180,27 @@ fn compose_with_lighting(
     compose_aerial(
         atmosphere,
         &air_shadow::aerial_source(atmosphere, air_shadow, lighting),
-        ambient,
+        surface_source(ambient, None),
         lighting,
     )
 }
 
-fn compose_aerial(atmosphere: bool, aerial: &str, ambient: bool, lighting: Lighting) -> String {
-    let surface = if ambient {
-        wgsl!(@ambient_opaque_forward)
-    } else {
-        wgsl!("synthetic.wgsl")
-    };
+pub(super) fn surface_source(ambient: bool, sun_path: Option<SunShadows>) -> &'static str {
+    match (ambient, sun_path) {
+        (false, None) => wgsl!("synthetic.wgsl"),
+        (true, None) => wgsl!(@ambient_opaque_forward),
+        (false, Some(SunShadows::Disabled)) => wgsl!(@sun_path_opaque_forward
+            wgsl!(@bytes "synthetic/forward/water_sun_unshadowed.wgsl"), default),
+        (false, Some(SunShadows::Enabled)) => wgsl!(@sun_path_opaque_forward
+            wgsl!(@bytes "synthetic/forward/water_sun.wgsl"), default),
+        (true, Some(SunShadows::Disabled)) => wgsl!(@sun_path_opaque_forward
+            wgsl!(@bytes "synthetic/forward/water_sun_unshadowed.wgsl"), ambient),
+        (true, Some(SunShadows::Enabled)) => wgsl!(@sun_path_opaque_forward
+            wgsl!(@bytes "synthetic/forward/water_sun.wgsl"), ambient),
+    }
+}
+
+fn compose_aerial(atmosphere: bool, aerial: &str, surface: &str, lighting: Lighting) -> String {
     let environment = if atmosphere {
         format!(
             "{}\n{}\n{}",
@@ -229,7 +239,14 @@ pub(super) fn secondary(
     cloud: bool,
     shadows: SunShadows,
 ) -> String {
-    secondary_with_lighting(atmosphere, shadowed_air, cloud, shadows, Lighting::Clear)
+    secondary_with_lighting(
+        atmosphere,
+        shadowed_air,
+        cloud,
+        shadows,
+        Lighting::Clear,
+        surface_source(false, None),
+    )
 }
 
 pub(super) fn secondary_with_lighting(
@@ -238,6 +255,7 @@ pub(super) fn secondary_with_lighting(
     cloud: bool,
     shadows: SunShadows,
     lighting: Lighting,
+    surface: &str,
 ) -> String {
     let aerial = match (atmosphere, shadowed_air) {
         (true, true) => concat!(
@@ -280,7 +298,7 @@ pub(super) fn secondary_with_lighting(
         aerial
     };
     let source = apply_providers(
-        compose_aerial(atmosphere, aerial, false, lighting),
+        compose_aerial(atmosphere, aerial, surface, lighting),
         cloud,
         shadows,
     );
@@ -300,6 +318,9 @@ pub(super) fn secondary_with_lighting(
 }
 
 pub(crate) fn main_source(variant: crate::shaders::SceneVariant) -> String {
+    let atmosphere = variant.atmosphere.present();
+    let air_shadow = variant.atmosphere.air_shadow();
+    let surface = surface_source(variant.ambient, variant.sun_path.map(|_| variant.shadows));
     let source = if matches!(
         variant.atmosphere,
         crate::shaders::AtmosphereVariant::ViewVolume
@@ -309,33 +330,18 @@ pub(crate) fn main_source(variant: crate::shaders::SceneVariant) -> String {
             crate::atmosphere::gpu::view_volume::aerial_source(),
             wgsl!("synthetic_aerial_clear.wgsl"),
         );
-        apply_providers(
-            compose_aerial(true, &aerial, variant.ambient, variant.lighting),
-            variant.cloud.present(),
-            variant.shadows,
-        )
-    } else if variant.lighting == Lighting::Clear {
-        apply_providers(
-            compose(
-                variant.atmosphere.present(),
-                variant.atmosphere.air_shadow(),
-                variant.ambient,
-            ),
-            variant.cloud.present(),
-            variant.shadows,
-        )
+        compose_aerial(true, &aerial, surface, variant.lighting)
+    } else if variant.sun_path.is_none() && variant.lighting == Lighting::Clear {
+        compose(atmosphere, air_shadow, variant.ambient)
     } else {
-        apply_providers(
-            compose_with_lighting(
-                variant.atmosphere.present(),
-                variant.atmosphere.air_shadow(),
-                variant.ambient,
-                variant.lighting,
-            ),
-            variant.cloud.present(),
-            variant.shadows,
+        compose_aerial(
+            atmosphere,
+            &air_shadow::aerial_source(atmosphere, air_shadow, variant.lighting),
+            surface,
+            variant.lighting,
         )
     };
+    let source = apply_providers(source, variant.cloud.present(), variant.shadows);
     let source = if variant.ambient {
         let closure = if variant.atmosphere.present() {
             overlay::forward_environment(variant.lighting, true)

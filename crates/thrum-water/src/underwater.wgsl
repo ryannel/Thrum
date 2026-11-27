@@ -76,7 +76,8 @@ fn water_to_gather(eye: LensPoint, uv: vec2<f32>) -> vec3<f32> {
         body = hit_light(hit) * exp(-optics.downwelling_mirror.xyz * end_depth);
     }
     let light = under_incident(vec3(eye.point.x, eye.surface, eye.point.z));
-    return water_path(body, light, length_m, start_depth, end_depth);
+    return water_path(body, light, length_m, start_depth, end_depth)
+        + shaft_scattering(uv, eye.surface, ray, length_m, start_depth, end_depth);
 }
 
 @fragment fn underwater_fragment(@builtin(position) clip: vec4<f32>) -> Output {
@@ -165,8 +166,11 @@ fn underside_light(world: vec3<f32>, n: vec3<f32>, v: vec3<f32>, variance: f32,
     }
     let light = mix(reflected_light, transmitted, transmission);
     let ceiling = incident * vec3(0.72, 0.83, 0.85) / 3.14159265;
-    return water_path(mix(light, ceiling, foam), incident, length(world - view.camera_xyz_time.xyz),
-        max(0.0, eye.surface - view.camera_xyz_time.y), 0.0);
+    let camera = view.camera_xyz_time.xyz;
+    let length_m = length(world - camera);
+    let start_depth = max(0.0, eye.surface - camera.y);
+    return water_path(mix(light, ceiling, foam), incident, length_m, start_depth, 0.0)
+        + shaft_scattering(optics_project(world).xy, eye.surface, -v, length_m, start_depth, 0.0);
 }
 
 fn water_underside(input: VertexOut, n: vec3<f32>, v: vec3<f32>, variance: f32, foam: f32) -> vec4<f32> {

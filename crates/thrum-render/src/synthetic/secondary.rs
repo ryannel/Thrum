@@ -1005,7 +1005,9 @@ pub(crate) fn composed_source(variant: crate::shaders::SceneVariant) -> String {
     let atmosphere = variant.atmosphere.present();
     let shadowed_air = variant.atmosphere.air_shadow();
     let cloud = variant.cloud.present();
-    let scene = if variant.lighting == crate::atmosphere::overlay::Lighting::Clear {
+    let scene = if variant.sun_path.is_none()
+        && variant.lighting == crate::atmosphere::overlay::Lighting::Clear
+    {
         super::scene_source::secondary(atmosphere, shadowed_air, cloud, variant.shadows)
     } else {
         super::scene_source::secondary_with_lighting(
@@ -1014,6 +1016,7 @@ pub(crate) fn composed_source(variant: crate::shaders::SceneVariant) -> String {
             cloud,
             variant.shadows,
             variant.lighting,
+            super::scene_source::surface_source(false, variant.sun_path.map(|_| variant.shadows)),
         )
     };
     let source = super::scene_source::cloud_variant(shader_source(&scene), variant.cloud);

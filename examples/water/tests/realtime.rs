@@ -148,6 +148,10 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         .ok()
         .and_then(|value| value.parse::<f64>().ok())
         .unwrap_or(90.0);
+    let dive_fov = std::env::var("THRUM_WATER_DIVE_FOV")
+        .ok()
+        .and_then(|value| value.parse::<f64>().ok())
+        .unwrap_or(105.0);
     let optics_height = std::env::var("THRUM_WATER_OPTICS_HEIGHT").unwrap_or_else(|_| "2".into());
     let river_sequence = river && route == "flow-inspection";
     let river_start = river_inspection.as_ref().map(|shot| shot.start);
@@ -216,6 +220,8 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         ([1280, 720], 9.0, 16.0, CHANNEL_SUBMISSIONS)
     } else if yard {
         ([1280, 720], 20.0, 9.0, CHANNEL_SUBMISSIONS)
+    } else if dive && dive_travel.is_some() {
+        ([1280, 720], 12.0, 9.0, MAX_SUBMISSIONS)
     } else if dive {
         ([1280, 720], 5.0, 20.0, MAX_SUBMISSIONS)
     } else if surf && island_view == "2" {
@@ -263,7 +269,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         let (depth, pitch) = held_dive.unwrap_or((-site.crossing_depth(), 0.0));
         runtime
             .parameters(&format!(
-                r#"{{"camera.depth":{depth},"camera.pitch":{pitch},"camera.bearing":{dive_bearing},"sun.elevation":{dive_light}}}"#
+                r#"{{"camera.depth":{depth},"camera.pitch":{pitch},"camera.bearing":{dive_bearing},"camera.fov":{dive_fov},"sun.elevation":{dive_light}}}"#
             ))
             .expect("initial dive view");
     }
@@ -523,10 +529,20 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         if let Some((_, site)) = dive_site
             && held_dive.is_none()
         {
-            let crest = -site.crossing_depth();
-            let trough = dive_travel.unwrap_or_else(|| site.crossing_depth());
-            let phase = (elapsed * std::f64::consts::TAU / interval).cos();
-            let depth = (trough - crest).mul_add(0.5 * (1.0 - phase), crest);
+            let crossing = site.crossing_depth();
+            let depth = if let Some(maximum) = dive_travel {
+                let way_down = elapsed.min(interval - elapsed).max(0.0);
+                let crossing_time = 2.0;
+                if way_down < crossing_time {
+                    crossing * (2.0 * way_down / crossing_time - 1.0)
+                } else {
+                    let progress = (way_down - crossing_time) / (0.5 * interval - crossing_time);
+                    let eased = 0.5 * (1.0 - (progress * std::f64::consts::PI).cos());
+                    (maximum - crossing).mul_add(eased, crossing)
+                }
+            } else {
+                -crossing * (elapsed * std::f64::consts::TAU / interval).cos()
+            };
             runtime
                 .parameters(&format!(r#"{{"camera.depth":{depth:.4}}}"#))
                 .expect("lower and raise the lens");
@@ -776,6 +792,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         );
         record["sun_elevation"] = json!(dive_light);
         record["bearing"] = json!(dive_bearing);
+        record["fov"] = json!(dive_fov);
         record
     });
     json!({"schema":1,"target":"mac-metal","mode":"realtime","commit":std::env::var("THRUM_WATER_COMMIT").unwrap_or_else(|_|"working tree diagnostic".into()),"extent":extent,"vertices":prepared.vertices,"resources":prepared.resources,"wind":island.or(floating.map(|f| f.wind)).or(dive_site.map(|(wind,_)| wind)).map(|w| format!("{w:?}")),"dive_site":dive_site.map(|(_,site)|site.name()),"dive_camera":dive_camera,"island_view":(yard || island.is_some()).then_some(&island_view),"weather_edits":weather_edits,"ground_route":(wet_yard || shore_ebb).then_some(&route),"footfall_route":footfall.then_some(&route),"footfall_sun":footfall_sun,"footfall_steps":footfall_steps,"yard_levels":yard_levels,"camera_cut":cut,"channel_view":channel.then_some(channel_view),"channel_route":channel.then_some(&route),"river_view":river.then_some(river_view),"river_inspection":river_inspection.map(|shot| json!({"name":shot.name,"start":river_start.unwrap_or(shot.start),"continuous":river_warmup.is_some(),"preroll_submissions":river_preroll_submissions,"position":shot.camera.position,"target":shot.camera.target})),"river_route":river.then_some(&route),"floating_view":floating.map(|f| f.wake.map_or_else(|| if f.chase {"chase".into()} else {String::new()}, |wake| format!("{:?}", wake.view).to_lowercase())),"craft_speed":floating.map(|f| f.speed),"clock":if late_channel {"ordinary submits at 60 seconds plus actual elapsed time"} else if footfall {"ordinary submits on monotonic elapsed time after the dry yard preroll"} else {"ordinary Offscreen::step on actual monotonic world time; asynchronous in-flight frames"},"opportunities_hz":opportunities,"frames":frames,"hashes":written.frame_hashes,"encoding":format!("{encoding:?}"),"omissions":runtime.omissions(),"capture_limits":{"interval_seconds":interval,"max_submissions":max_submissions,"gpu_staging_slots":6,"cpu_image_leases":cpu_leases,"pixel_byte_allowance":PIXEL_ALLOWANCE,"writer_queue":writer_queue,"raw_spool_allowance":6_u64*1024*1024*1024},"writer_seconds":written.write_time.as_secs_f64(),"body_tick_poses":poses,"query":fleet.map(|(_,mailbox)|format!("{:?}",mailbox.stats())), "wake_route": (wake || whitewater).then_some(route), "interaction":prepared.interaction.map(|wake| format!("{wake:?}")), "foam":prepared.foam.map(|foam| format!("{foam:?}")), "foam_pattern":prepared.foam_pattern})

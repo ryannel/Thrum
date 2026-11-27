@@ -20,7 +20,7 @@ const LAKE_LEVEL: f32 = 12.0;
 const POND_LEVEL: f32 = 10.6;
 const HIGH_LAKE_STAGE: f32 = 2.75;
 const STEP_SECONDS: f64 = 1.0 / 60.0;
-const ADAPTATION_SHARE: f64 = 0.75;
+const ADAPTATION_SHARE: f64 = 0.68;
 const SURFACE_TRANSMISSION: f64 = 0.96;
 
 /// An island waterline the inspection camera can cross.
@@ -64,7 +64,7 @@ impl DiveSite {
     }
 }
 
-fn camera([x, level, z]: [f32; 3], depth: f32, pitch: f32, bearing: f32) -> Camera {
+fn camera([x, level, z]: [f32; 3], depth: f32, pitch: f32, bearing: f32, fov: f32) -> Camera {
     let y = level - depth;
     let (rise, forward) = pitch.to_radians().sin_cos();
     let (east, south) = bearing.to_radians().sin_cos();
@@ -75,7 +75,7 @@ fn camera([x, level, z]: [f32; 3], depth: f32, pitch: f32, bearing: f32) -> Came
             y + 10.0 * rise,
             z - 10.0 * forward * south,
         ],
-        105.0,
+        fov,
     )
 }
 
@@ -296,6 +296,10 @@ fn build(
         .slider("camera.bearing", "Camera bearing", 0.0..=360.0)
         .default(90.0)
         .add()?;
+    let fov = controls
+        .slider("camera.fov", "Camera field of view", 42.0..=105.0)
+        .default(105.0)
+        .add()?;
     let sun = controls
         .slider("sun.elevation", "Sun elevation", -18.0..=80.0)
         .default(60.0)
@@ -303,13 +307,14 @@ fn build(
     let step = Duration::from_secs_f64(STEP_SECONDS);
     let game = SkyGame::new(
         controls,
-        camera(eye_at_surface, initial_depth, 45.0, 90.0),
+        camera(eye_at_surface, initial_depth, 45.0, 90.0, 105.0),
         move |controls, sky| {
             sky.camera = camera(
                 eye_at_surface,
                 controls.get(depth),
                 controls.get(pitch),
                 controls.get(bearing),
+                controls.get(fov),
             );
             sky.sun_elevation_degrees = controls.get(sun);
             sky.sun_azimuth_degrees = 228.0;
@@ -387,8 +392,25 @@ fn dive_meshes(
         meshes.push(
             MeshPlacement::new("meshes/float", "textures/white")
                 .at([x + 2.5, level - 1.8, z])
-                .scale(0.38),
+                .scale(0.58),
         );
+    }
+    if site == DiveSite::DeepSea {
+        let map = map.lock().expect("dive map");
+        for (forward, across, scale) in [(5.0, 0.8, 1.4), (10.5, -3.1, 2.2), (18.0, 3.0, 2.9)] {
+            let world = [x + forward, z + across];
+            if let Some(bed) = map
+                .sample(world.map(f64::from))
+                .and_then(|column| column.bed)
+            {
+                meshes.push(
+                    MeshPlacement::new("meshes/rock", "textures/white")
+                        .at([world[0], bed_for_placement(bed), world[1]])
+                        .scale(scale)
+                        .on_ground(),
+                );
+            }
+        }
     }
     if site == DiveSite::Sea && !draw_craft {
         meshes.push(
@@ -403,6 +425,14 @@ fn dive_meshes(
         );
     }
     meshes
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "cooked placements use f32 world positions"
+)]
+fn bed_for_placement(height: f64) -> f32 {
+    height as f32
 }
 
 #[expect(
