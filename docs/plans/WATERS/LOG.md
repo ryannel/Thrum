@@ -1965,3 +1965,16 @@
   portable shade route submits at 1440p without validation errors.
   [Inspection records](../../../.orchestrate/evidence/WATERS/WP16/inspection-round-4/README.md)
   · [Chrome shade](../../../.orchestrate/evidence/WATERS/WP16/shadow-comparison/lake-shade.json).
+
+- Three 2560×1440 Metal looks at the noon sea from 1 m in a breeze
+  still leave WP16.7 open. The focal blur (`75f2e98a4`) shows a soft
+  glow. The contiguous blur at the 0.90 phase (`70a563bdd`) still shows
+  a glow in the tighter view. Widening the phase to 0.83 (`c94575d7a`)
+  reveals transient streaks, while standing beams remain indistinct.
+  The design's three-look rule stops tuning here. The planner needs to
+  decide how to deliver the shallow breeze cue before the next build.
+  WP16.6 still lacks a readable net on the float and low-Sun hull,
+  WP16.8 still shows a discontinuity across the hull during the split-lens
+  crossing, and WP16.11 depends on the open visual lists.
+  [Metal frames and receipts](../../../.orchestrate/evidence/WATERS/WP16/noon-breeze-checkpoint/)
+  · [Handoff](../../../.orchestrate/evidence/WATERS/WP16-handoff.md).
