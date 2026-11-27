@@ -1900,7 +1900,7 @@
       }
     },
     "WP15": {
-      "definitions": "09add238291a53c2ea5166c4b62666a28cb56ccff05dcc6755247697e3a78a6c",
+      "definitions": "4e1d1f0e6247c8c9cb2a88e8df148ce8ad25f4f673fc772a63b35abe2274967d",
       "reviews": [
         {
           "verdict": "fail",
@@ -2112,8 +2112,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "Diagnose CLOUDS WP15. It has failed review 4 times, 3 of them on an item or a finding an earlier review had failed, so t",
-        "at": "2026-11-27T02:25:43Z"
+        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 6 Must Fix find",
+        "at": "2026-11-27T02:42:14Z"
       }
     },
     "WP16": {
@@ -2593,11 +2593,15 @@
     {
       "task": "Diagnose CLOUDS WP15. It has failed review 4 times, 3 of them on an item or a finding an earlier review had failed, so the same items keep failing: the fixes aren't holding, or each fix meets a new defect in an item that may ask for more than the vision and scope document does. Its reviews, oldest first: .orchestrate/evidence/CLOUDS/WP15-review-1.md, .orchestrate/evidence/CLOUDS/WP15-review-2.md, .orchestrate/evidence/CLOUDS/WP15-review-3.md, .orchestrate/evidence/CLOUDS/WP15-review.md. What failed in each review: review 1 (2026-11-26): Ground mist opens a clear hole in nearby upper cloud (outside the items), new; Growing the scene leaves too few surface stops (WP15.1), new; A low deck hides placed volumes from the trace and sky overlay (outside the items), new; Ground accepts a layer scale it does not apply (outside the items), new; The paired mist cost record omits the current clouds-off arm (WP15.10), new; The mist-far check skips validation of the retained record (WP15.10), new; The ledger overstates per-pixel depth coverage after resize (WP15.11), new | review 2 (2026-11-26): Clear ground rows drop depth stops for directed clouds (WP15.1), new; Growing Ground rebuilds pipelines on the Mac render thread (outside the items), new | review 3 (2026-11-27): Clear Ground changes the composed bytes of elevated cloud (WP15.1), new; SceneContributions drops the public secondary resize hook (outside the items), new | review 4 (2026-11-27): Clear Ground changes the composed bytes of elevated cloud (WP15.1), repeated; Clear Ground sky pixels compose a neighbouring foreground stop inside cloud (WP15.1), new; A secondary slot with no private replacement blocks frame-host resize (outside the items), new. A plan you keep ends with `KEEP CLOUDS WP15: ...`.",
       "at": "2026-11-27T02:25:43Z"
+    },
+    {
+      "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 6 Must Fix findings.",
+      "at": "2026-11-27T02:42:14Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T02:25:43Z"
+    "at": "2026-11-27T02:42:14Z"
   },
   "design_history": [
     {
