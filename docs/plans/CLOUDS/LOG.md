@@ -1218,3 +1218,25 @@ forwards both resize hooks and slices the replacement handles in member order.
 - The suggestion is taken as point 2 of WP15.16's list: the fair cloud's lobes and base keep their relief
   in the stills already captured.
 - PLAN.md gains one assumption: from inside upper cloud only the mist toggle is inspected.
+
+## Second design review after the WP15 diagnosis
+
+- 2026-11-27 Planner, after [the design review at `abb6dc027`](../../../.orchestrate/evidence/CLOUDS/design-review.md),
+  which resolved five of the six earlier findings and asked for two changes to WP15.18. Both are settled in
+  the files, and neither changed the scope. This was the last round, so each fix was checked against its
+  finding here.
+- Must Fix 1, a cut could not show the cloud's reset write: on a cut the sky writes 1 and the mask takes the
+  larger value. WP15.18 now reads every case in a frame with no cut, where the sky writes none. Case 2 resets
+  the layer's history alone and reads a pixel whose opacity is between 0.25 and 0.75, so a missing write reads
+  0, a write of 1 reads 1 and neither is the opacity. The design says the mask is the larger of the two and
+  that the sky's write on a cut stays.
+- Must Fix 2, a resolve that compared the same screen position and wrote 1 for any difference passed all three
+  cases. Case 3 now holds the coverage to the opacity times the size of the move, below the opacity. Case 4 is
+  new: an unchanged cloud's edge carried by the wind writes under half of what the same position's difference
+  would. The question asks which history the resolve reads and how it weights the difference.
+  [Reactive coverage of a sky stop](DESIGN.md#the-visible-layer) states the product, where the history is
+  read, and the review's 0.2, 0.8 and 0.6 beside a partial change of 0.12.
+- WP15.18 before: "[...] writes reactive coverage only where the cloud changed. Three cases [...] (2) At the
+  same pixel in the first frame after a cut, it is the cloud's opacity there. (3) At a sky pixel where the
+  cloud's transmittance has moved from the history's by more than the test's stated step, with the camera
+  still and the history valid, it is above case 1's tolerance." The review made no suggestions.

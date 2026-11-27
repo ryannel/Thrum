@@ -943,13 +943,24 @@ beside a cloud's edge, sky taps of 0.2 and 0.8 at weights ¾ and ¼ compose 0.35
 traced 0.2. WP15.14 holds the composed pixel to the interpolation of the sky stops alone.
 
 **Reactive coverage of a sky stop.** A stop that ended in the sky keeps the frame contract below. A Ground
-profile may trace every texel in every frame, and that alone is no reason to call the cloud changed: such a stop
-writes reactive coverage where the cloud changed beyond what its motion explains, measured against the layer's
-history, as a profile without Ground does in a frame whose history is valid. So a cloud that stands unchanged
-before a still camera writes none, however opaque it is, and the reconstructor keeps its history there. In the
-first frame after a reset the same cloud writes its opacity, and where its transmittance has moved from the
-history's it writes in proportion (WP15.18). Opacity written in every frame would have the reconstructor drop
-its history over every cloud in every frame.
+profile may trace every texel in every frame, and that alone is no reason to call the cloud changed. Such a stop
+writes what a profile without Ground writes in a frame whose history is valid: the cloud's opacity times the
+size of the difference between its transmittance and the layer's history. The history is read where the cloud's
+own motion carried it from, by the resolve's reprojection through the cloud's front point and wind drift, and
+never at the same screen position. Three results follow. A cloud that stands unchanged before a still camera
+writes none, however opaque it is. An unchanged cloud that the wind carries across the screen writes none
+either: at an edge moved one texel, with a transmittance of 0.2 now, 0.8 at the same screen position a frame
+before and 0.2 where the cloud's motion points, the coverage is zero, where the same position's difference of
+0.6 would write 0.8 × 0.6 = 0.48 and have the reconstructor drop its history along every drifting edge. A
+cloud that did change writes a part and not the whole: one whose transmittance moved from 0.6 to 0.4 writes
+0.6 × 0.2 = 0.12. In the first frame after the layer's history is marked invalid, the cloud writes its opacity.
+
+The reconstructor reads one mask, the larger of the cloud's coverage and what the sky behind it wrote. On a cut
+the sky writes 1 over itself, and that stays: the mask reads 1 there whatever the cloud wrote. The cloud's own
+write is the mask's value only in a frame with no cut, where the sky writes none. A cause that marks the
+layer's history invalid and leaves the view's alone gives such a frame after a reset, as a knob that declares
+the effect's history does, and WP15.18 reads the cloud's reset write there. Opacity written in every frame
+would have the reconstructor drop its history over every cloud in every frame.
 
 **The scene's extent.** A profile without Ground keeps the layer it was prepared with and is sampled at any
 render extent. With a stop for each pixel the layer is addressed by render pixel, so it follows the scene's
