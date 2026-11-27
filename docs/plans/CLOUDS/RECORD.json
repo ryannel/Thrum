@@ -8,7 +8,11 @@
       ".orchestrate/evidence/CLOUDS/design-review-29.md",
       ".orchestrate/evidence/CLOUDS/design-review.md"
     ],
-    "at": "2026-11-27T02:50:44Z"
+    "at": "2026-11-27T02:50:44Z",
+    "items_owed": [
+      "WP23",
+      "WP24"
+    ]
   },
   "work_packages": {
     "WP1": {
@@ -2709,12 +2713,12 @@
       }
     },
     "WP17": {
-      "definitions": "86faa8f12b7807695ba9c0aa8d25e8555a5a51e3a8d0fe2d7d19bc27f85bd4bc",
+      "definitions": "ce8bbcbe9504a7331d21f90959840cf82d01ec1d15ff642b463f6628b5f0d3a8",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
-        "at": "2026-11-24T22:06:49Z"
+        "task": "Unblock CLOUDS WP17. The builder wrote: The lead needs to reopen the cloud-form design using the separate findings for o",
+        "at": "2026-11-27T23:46:49Z"
       }
     },
     "WP18": {
@@ -3018,6 +3022,24 @@
         "at": "2026-11-26T17:09:40Z"
       },
       "ends_stretch": true
+    },
+    "WP23": {
+      "definitions": "6049982d3ac9dde18836c82124f0c92b5ba65860d003e4e0c57c12309a4ca3fa",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Unblock CLOUDS WP17. The builder wrote: The lead needs to reopen the cloud-form design using the separate findings for o",
+        "at": "2026-11-27T23:46:49Z"
+      }
+    },
+    "WP24": {
+      "definitions": "7db88f7779eb76e43c6f988f12e3331fad7c6da5943e0d1e5e2f6f24e77df4f2",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Unblock CLOUDS WP17. The builder wrote: The lead needs to reopen the cloud-form design using the separate findings for o",
+        "at": "2026-11-27T23:46:49Z"
+      }
     }
   },
   "tasks": [
@@ -3188,11 +3210,15 @@
     {
       "task": "The main-branch check cross-target fails on ff10e3295 (last pass 20227abd8) for x86_64-pc-windows-msvc: examples/v1-game/examples/cloud_cost.rs:292 calls host.set_cost_solar_sweep, which examples/v1-game/src/host.rs:977 and :1078 declare only under #[cfg(all(target_os = \"macos\", feature = \"proving\"))]. Introduced by CLOUDS WP16 commit dd16512b7. Plan the fix in CLOUDS (its next work package or the current one), small: gate the call or the example consistently so every cross target compiles, and add the cross-target check to that work package items.",
       "at": "2026-11-27T13:14:27Z"
+    },
+    {
+      "task": "Unblock CLOUDS WP17. The builder wrote: The lead needs to reopen the cloud-form design using the separate findings for overlapping cells and isolated cloud shape. The builder's handoff, .orchestrate/evidence/CLOUDS/WP17-handoff.md, says what is finished, what was tried and what to do first; its cell-isolation follow-up is in .orchestrate/evidence/CLOUDS/WP17/cell-isolation/README.md. Its work is on branch build/clouds at aeb56f582db0, which isn't merged; read it with git show. Three looks failed on form (smooth domes and caps, folded rims, repeated pointed tops on level skirts, a notch between hanging flaps), so another tuning round is not the answer. Before choosing a replacement form, research how current shipped real-time volumetric cloud systems build cloud shape (modern state of the art, not older techniques just because code for them exists), judge which fits Thrum's shared point density for query, view and Sun path, and reopen the cloud-form design accordingly. Keep the existing weather and Sun-path tests as acceptance gates. The bar is shipped high-end game clouds, judged by an inspection list. Decide whether WP17 needs to split so the passing weather-map work can merge on its own.",
+      "at": "2026-11-27T23:46:49Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T13:14:27Z"
+    "at": "2026-11-27T23:46:49Z"
   },
   "design_history": [
     {

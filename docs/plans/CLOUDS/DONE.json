@@ -1972,7 +1972,9 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
     },
     {
       "id": "WP24",
@@ -2028,12 +2030,14 @@
           "builder_result": "open",
           "evidence": ""
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
     },
     {
       "id": "WP17",
       "name": "Each fair-weather cloud holds up on its own: a cluster of heaps of different heights, with no shelf, fold or repeated outline",
-      "status": "blocked",
+      "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -2087,19 +2091,11 @@
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
-      ],
-      "blocked": {
-        "reason": "needs_context",
-        "what": "The lead needs to reopen the cloud-form design using the separate findings for overlapping cells and isolated cloud shape.",
-        "work": {
-          "commit": "aeb56f582db077729d4f13fedf79cd923d80e614",
-          "branch": "build/clouds",
-          "pushed": false
-        },
-        "handoff": ".orchestrate/evidence/CLOUDS/WP17-handoff.md"
-      }
+      ]
     },
     {
       "id": "WP12",
