@@ -431,6 +431,37 @@ fn authored_clock_and_scrub_steps_anchor_the_tuning() {
 }
 
 #[test]
+fn clock_remains_fresh_through_darkening_after_a_scrub() {
+    let mut schedule = ChartSchedule::default();
+    submit(&mut schedule, sun(-4.2), 8, false, false);
+    for step in 1_u16..=280 {
+        let frame = submit(
+            &mut schedule,
+            sun(-4.2 - f32::from(step) * 0.02),
+            8,
+            false,
+            false,
+        );
+        assert_eq!(frame.position, Some((1, 0)));
+        assert_eq!(frame.writes, ALL);
+    }
+
+    let mut night = ChartSchedule::default();
+    submit(&mut night, sun(-13.0), 8, false, false);
+    for step in 1_u16..=16 {
+        let frame = submit(
+            &mut night,
+            sun(-13.0 - f32::from(step) * 0.02),
+            8,
+            false,
+            false,
+        );
+        assert_eq!(frame.position, Some((8, u32::from((step - 1) % 8))));
+        assert_source_bound(&night);
+    }
+}
+
+#[test]
 fn tighter_sun_tolerance_shortens_a_new_refresh_or_cuts_a_running_one() {
     let widest = Tuning {
         twilight: None,

@@ -100,8 +100,8 @@ impl Default for Tuning {
             altitude: 10.0,
             light: 0.01,
             twilight: Some(Twilight {
-                tight_band: [-5.5_f32, 6.0].map(|degrees| degrees.to_radians().sin()),
-                widest_at: [-7.0_f32, 10.0].map(|degrees| degrees.to_radians().sin()),
+                tight_band: [-10.0_f32, 6.0].map(|degrees| degrees.to_radians().sin()),
+                widest_at: [-12.0_f32, 10.0].map(|degrees| degrees.to_radians().sin()),
                 sun: 0.009_f32.to_radians(),
             }),
         }
