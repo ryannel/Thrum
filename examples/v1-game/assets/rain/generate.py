@@ -11,7 +11,7 @@ SIZE = (72, 56)
 SPACING = 0.125
 
 
-def relief(x, z):
+def relief(x, z, ground):
     edge = ((x - 4.5) / 4.32)**4 + ((z - 3.5 + 0.08 * math.cos(2.7 * x)) / 3.4)**4
     irregular = 0.06 * math.cos(2.8 * x + 2.1 * z) * math.sin(1.3 * z - 2.0 * x)
     skirt = min(1, max(0, (1 - edge + irregular) / 0.64))
@@ -23,14 +23,15 @@ def relief(x, z):
         border = 1 + 0.1 * math.sin(6 * dx + 4 * dz)
         return depth * min(1, max(0, 1 - (r / border)**2))
 
-    return (239.80 + 0.21 * shoulder
-            - bowl(3.0, 2.8, 1.65, 0.98, 0.065)
-            - bowl(6.1, 4.35, 1.32, 1.05, 0.056)
-            + shoulder * (0.002 * math.cos(2.8 * x + 4.1 * z)
-                          + 0.001 * math.sin(7.2 * z - 3.3 * x)))
+    rim = (240.01 - bowl(3.0, 2.8, 1.65, 0.98, 0.065)
+           - bowl(6.1, 4.35, 1.32, 1.05, 0.056)
+           + 0.002 * math.cos(2.8 * x + 4.1 * z)
+           + 0.001 * math.sin(7.2 * z - 3.3 * x))
+    bed, _ = ground(ORIGIN[0] + x, ORIGIN[1] + z)
+    return bed + shoulder * max(0.005, rim - bed) - 0.0015
 
 
-def ground_uv():
+def terrain_sample():
     recipe = json.loads((HERE.parent / 'showcase/terrain.gltf').read_text())
     terrain = (HERE.parent / 'showcase/terrain.bin').read_bytes()
 
@@ -45,8 +46,8 @@ def ground_uv():
     for indices in read(3, '<3H'):
         vertices = [positions[i] for i in indices]
         xs, _, zs = zip(*vertices)
-        if (min(xs) > ORIGIN[0] + SIZE[0] * SPACING or max(xs) < ORIGIN[0]
-                or min(zs) > ORIGIN[1] + SIZE[1] * SPACING or max(zs) < ORIGIN[1]):
+        if (min(xs) > ORIGIN[0] + (SIZE[0] + 1) * SPACING or max(xs) < ORIGIN[0] - SPACING
+                or min(zs) > ORIGIN[1] + (SIZE[1] + 1) * SPACING or max(zs) < ORIGIN[1] - SPACING):
             continue
         (ax, _, az), (bx, _, bz), (cx, _, cz) = vertices
         det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz)
@@ -59,28 +60,31 @@ def ground_uv():
             b = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / det
             c = 1 - a - b
             if min(a, b, c) >= -1e-6:
-                if a * ay + b * by + c * cy < 230:
+                y = a * ay + b * by + c * cy
+                if y < 230:
                     continue
-                return [sum(v * weight for v, weight in zip(axis, (a, b, c))) for axis in zip(*texels)]
+                weights = (a, b, c)
+                texture = [sum(v * weight for v, weight in zip(axis, weights)) for axis in zip(*texels)]
+                return y, texture
         raise ValueError(f'No terrain UV at {x}, {z}')
 
     return interpolate
 
 
 def generate():
-    texcoord = ground_uv()
+    ground = terrain_sample()
     width, height = SIZE
     positions, normals, uv, indices = [], [], [], []
     for row in range(height + 1):
         for col in range(width + 1):
             x, z = col * SPACING, row * SPACING
-            position = [ORIGIN[0] + x, relief(x, z), ORIGIN[1] + z]
-            dx = (relief(x + SPACING, z) - relief(x - SPACING, z)) / (2 * SPACING)
-            dz = (relief(x, z + SPACING) - relief(x, z - SPACING)) / (2 * SPACING)
+            position = [ORIGIN[0] + x, relief(x, z, ground), ORIGIN[1] + z]
+            dx = (relief(x + SPACING, z, ground) - relief(x - SPACING, z, ground)) / (2 * SPACING)
+            dz = (relief(x, z + SPACING, ground) - relief(x, z - SPACING, ground)) / (2 * SPACING)
             scale = math.sqrt(1 + dx**2 + dz**2)
             positions.append(position)
             normals.append([-dx / scale, 1 / scale, -dz / scale])
-            uv.append(texcoord(position[0], position[2]))
+            uv.append(ground(position[0], position[2])[1])
             if row < height and col < width:
                 a = row * (width + 1) + col
                 b, c = a + 1, a + width + 1
