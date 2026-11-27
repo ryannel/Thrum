@@ -51,7 +51,7 @@ pub(super) fn walk_camera(marker: &crate::floating::YardFloat) -> Camera {
     } else {
         PITS[0][0]
     } as f32;
-    Camera::look_at([x, 19.74, 68.37], [x + 0.15, 18.04, 66.15], 68.0)
+    Camera::look_at([x, 19.74, 67.95], [x + 0.15, 18.04, 66.15], 74.0)
 }
 
 pub(super) fn placements() -> [MeshPlacement; 5] {
