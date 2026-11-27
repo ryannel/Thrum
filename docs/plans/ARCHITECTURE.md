@@ -500,8 +500,9 @@ pass, and every stage that draws has the scene's attachments bound or runs after
 Which kinds of pass a stage admits is `EFFECT-GRAPH`'s interface, so
 [a `simulate` pass that draws](EFFECT-GRAPH/DESIGN.md#a-simulate-pass-that-draws-wp7) is `EFFECT-GRAPH` WP7,
 built by that builder in the seam's own files (`contribution.rs`, `contribution/graph.rs`,
-`synthetic/{contributed,scene_graph}.rs`, the 2D scene's preparation check) and the V1 game's diagnostic
-effect with its browser qualification. It is not a fourth ruling for the `WATERS` WP16 builder to build
+`contribution/list.rs`, through which a water scene reaches the stage, `synthetic/{contributed,scene_graph}.rs`,
+the 2D scene's preparation check) and the V1 game's diagnostic effect with its browser qualification. It is
+not a fourth ruling for the `WATERS` WP16 builder to build
 beside [rulings 5 to 7](#seam-rulings-for-waters): those add a reader to another module's pass, and this
 changes what a stage hands every effect, with rules of its own to refuse and to prove. The executor begins
 the pass and derives its load and store (C06), and the effect attaches only its own textures. No item of

@@ -290,3 +290,10 @@
   [a `simulate` pass may draw](DESIGN.md#a-simulate-pass-that-draws-wp7) into its effect's own textures, with
   the executor beginning the pass. The draw is kept over a compute producer, which would be a fixed-point
   atomic scatter or a gather that fails where sheets cross. No Done item, contract or exact baseline changes.
+- 2026-11-27 Planner. [The design review](../../../.orchestrate/evidence/EFFECT-GRAPH/design-review.md) of WP7
+  asked for five changes, all made in [the stage's rules](DESIGN.md#a-simulate-pass-that-draws-wp7) and WP7's
+  items. A drawing pass has one cleared colour attachment and is its only writer (findings 2, 3 and 5), the
+  contribution list joins WP7's files with a new item, WP7.4 (finding 1), and Chrome and Metal read two
+  layers in the scene colour of the frame that drew them (finding 4). Loading another pass's draw is left
+  out, as an assumption in the plan.
+  [Finding by finding](../../../.orchestrate/evidence/EFFECT-GRAPH/WP7-design-revision.md)

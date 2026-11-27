@@ -24,6 +24,7 @@ Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exact-baselin
 - Assumption: after a restore, a new world or a replaced device, an effect's answers to a game say they had no state to answer from, or do not come, until the first frame of that world is drawn. While frames are being skipped that lasts as long as the skipping. The other choice resets an effect's state with no frame drawn, which is the same work as stepping it there and which nothing has asked for.
 - Assumption: on the iPhone a question's pass is held to the rule a frame is held to when the app leaves the foreground. None starts after the app is told to step back, and one already under way is stopped at its last check before it reaches the GPU. One that has passed that check still goes, at most one for each time the app steps back, as one frame can today. The other choice makes the app's main thread wait for the renderer, which the iPhone shell's design rules out.
 - Assumption: WP6 proves the iPhone's part, that no tick pass is submitted outside the foreground lease, by tests of the lease that run on the Mac and a reviewer's reading of the render owner. It does not run a tick pass on the iPhone simulator, because no scene the iPhone app runs has one yet. The other choice adds a simulator route with a backgrounding step to WP6.
+- Assumption: a `simulate` pass that draws clears one colour attachment, one mip of one layer of a single-sample texture, and is that layer's only writer. A pass that loads what another pass drew, a pass with several colour attachments and a multisampled attachment are refused, because the water's caustic field needs none of them: each rung is one cleared layer. The other choice builds them now, with rules for which pass a reader is given, what a skipped pass leaves and which attachments may share a pass, for no consumer.
 - Assumption: after a pause or an overload, the first moving frame steps display time forward once, by the time its tick took to arrive plus the lead: 38 ms in the planner's run with a 30 ms lead. Alpha has always waited for the first tick after a resume, and WP4 leaves that. The other choice interpolates through that wait, which changes when every reader of alpha starts moving after a pause.
 
 ## WP1 An engine module can declare volume, cube and mipped-array textures in the frame, and wrong declarations are refused: done
@@ -50,13 +51,16 @@ Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exact-baselin
 for this work package and for nothing else: its caustic field is drawn this way, in its own crate, after you
 land.
 
-Every file is this module's own. A `simulate` pass that computes is declared, recorded and timed as it is
-today, so `thrum-sea`, `thrum-water`, `thrum-clouds` and `examples/water` build and pass their tests
-unchanged when you land: leave them alone.
+Every file is this module's own, and [the design](DESIGN.md#shared-files-and-exact-baselines) lists them.
+The contribution list, `contribution/list.rs`, is one: the water is a member of its scene's list, so a draw
+that works for an effect attached alone and does not arrive through the list is not done. `graph.rs` needs
+no change. A `simulate` pass that computes is declared, recorded and timed as it is today, so `thrum-sea`,
+`thrum-water`, `thrum-clouds` and `examples/water` build and pass their tests unchanged when you land:
+leave them alone.
 
-The diagnostic effect's new texture is read by its qualification and by nothing the game draws, so the
-registered `effect-state` and `effect-after-opaque` images keep their bytes. The checks find their tests by
-name, so put the tests in test binaries that exist.
+The diagnostic effect's drawn field is behind a selection of its own, off in every registered scene, so
+the registered `effect-state` and `effect-after-opaque` images keep their bytes. The checks find their
+tests by name, so put the tests in test binaries that exist.
 
 `contribution.rs`'s module documentation says what a `simulate` pass is given, and the seam's row in the
 maturity ledger says what the seam offers: bring both up to date. If a rule of the stage cannot be built as
