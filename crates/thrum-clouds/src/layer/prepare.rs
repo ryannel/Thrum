@@ -252,6 +252,10 @@ impl Layer {
             )
         });
         let trace = trace_pipeline(device, &source, &pipeline_layout);
+        let clear_ground_trace = ground_stops.then(|| {
+            let source = trace_shader(&environment, shapes.is_some(), true, false);
+            trace_pipeline(device, &source, &pipeline_layout)
+        });
         let (field_layout, field_group) = field_bindings(
             device,
             weather,
@@ -304,6 +308,8 @@ impl Layer {
                 textures,
                 detail_noise,
                 trace,
+                clear_ground_trace,
+                stop_mode: super::StopMode::Sky,
                 compose,
                 field_pipeline,
                 field_overlay: crate::FieldOverlay::Off,
@@ -366,7 +372,9 @@ pub(super) fn trace_shader(
 ) -> String {
     let source = layer_shader(environment, TRACE_SHADER, shapes, ground, false);
     let stop_modes = super::StopMode::shader();
-    format!("{source}\n{stop_modes}\nconst SURFACE_STOPS: bool = {surface_stops};")
+    format!(
+        "{source}\n{stop_modes}\nconst GROUND_TRACE: bool = {ground};\nconst SURFACE_STOPS: bool = {surface_stops};"
+    )
 }
 
 fn layer_shader(

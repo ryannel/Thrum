@@ -65,7 +65,8 @@ fn resolve(@builtin(global_invocation_id) id:vec3<u32>) {
             let value = textureLoad(fresh, at, slot, 0);
             let metadata = textureLoad(fresh_front, at, slot, 0);
             textureStore(next, at, slot, value);
-            textureStore(next_front, at, slot, vec4(metadata.xy, metadata.y, metadata.w));
+            let opacity = select(metadata.y, 1.0 - value.a, cloud.stop_mode == CLOUD_STOP_CLEAR_GROUND);
+            textureStore(next_front, at, slot, vec4(metadata.x, opacity, opacity, metadata.w));
         }
         return;
     }

@@ -155,6 +155,8 @@ pub(crate) struct Layer {
     textures: [wgpu::Texture; 2],
     detail_noise: Noise,
     trace: wgpu::ComputePipeline,
+    clear_ground_trace: Option<wgpu::ComputePipeline>,
+    stop_mode: StopMode,
     compose: wgpu::RenderPipeline,
     field_pipeline: wgpu::RenderPipeline,
     field_overlay: crate::FieldOverlay,
@@ -430,6 +432,7 @@ impl Layer {
             }
             Some(_) => StopMode::Surface,
         };
+        self.stop_mode = stop_mode;
         self.render_extent = frame.render_extent;
         let stride = self.quality.stride;
         let active_extent = self.active_extent();
@@ -595,11 +598,14 @@ impl Layer {
             pass.set_bind_group(3, &shapes.group, &[]);
         }
         let [width, height] = self.active_extent();
-        pass.dispatch_workgroups(
-            width.div_ceil(8 * self.trace_stride),
-            height.div_ceil(8 * self.trace_stride),
-            1,
-        );
+        let dispatch = [width, height].map(|side| side.div_ceil(8 * self.trace_stride));
+        pass.dispatch_workgroups(dispatch[0], dispatch[1], 1);
+        if let StopMode::ClearGround = self.stop_mode
+            && let Some(trace) = &self.clear_ground_trace
+        {
+            pass.set_pipeline(trace);
+            pass.dispatch_workgroups(dispatch[0], dispatch[1], 1);
+        }
     }
 
     pub(crate) fn field_runs(&self) -> bool {
