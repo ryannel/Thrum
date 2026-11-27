@@ -208,7 +208,7 @@ mod tests {
         };
         let sample = |a, b| FlowSample {
             levels: vec![1.0; 4],
-            currents: vec![[a, 0.0], [b, 0.0]].repeat(2),
+            currents: [[a, 0.0], [b, 0.0]].repeat(2),
             loss: vec![0.0; 4],
             gains: vec![[0.0; 2]; 4],
         };
