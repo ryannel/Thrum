@@ -165,26 +165,6 @@ fn map_picture_point(point: [f64; 2], bounds: [u32; 2], picture: [u32; 2]) -> [f
     ]
 }
 
-#[cfg(test)]
-#[test]
-fn picture_point_uses_the_picture_still_on_screen_in_both_directions() {
-    let window = [1920, 1080];
-    let fullscreen = [3456, 2168];
-    let scaled = [2938, 1843];
-    assert_eq!(
-        map_picture_point([1728.0, 1084.0], fullscreen, window),
-        [960.0, 540.0]
-    );
-    assert_eq!(
-        map_picture_point([960.0, 540.0], window, scaled),
-        [1469.0, 921.5]
-    );
-    assert_eq!(
-        map_picture_point([96.5, 54.5], window, window),
-        [96.5, 54.5]
-    );
-}
-
 #[expect(
     unsafe_code,
     reason = "AppKit's exported NSString constant has static lifetime"
@@ -209,4 +189,28 @@ fn copy(text: &str) -> bool {
     board.clearContents();
     // SAFETY: the AppKit framework owns this immutable type constant.
     board.setString_forType(&NSString::from_str(text), unsafe { NSPasteboardTypeString })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::map_picture_point;
+
+    #[test]
+    fn picture_point_uses_the_picture_still_on_screen_in_both_directions() {
+        let window = [1920, 1080];
+        let fullscreen = [3456, 2168];
+        let scaled = [2938, 1843];
+        assert_eq!(
+            map_picture_point([1728.0, 1084.0], fullscreen, window),
+            [960.0, 540.0]
+        );
+        assert_eq!(
+            map_picture_point([960.0, 540.0], window, scaled),
+            [1469.0, 921.5]
+        );
+        assert_eq!(
+            map_picture_point([96.5, 54.5], window, window),
+            [96.5, 54.5]
+        );
+    }
 }

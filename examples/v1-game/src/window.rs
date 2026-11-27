@@ -551,6 +551,10 @@ fn fixed_capture_eye() -> Result<Option<[f32; 3]>, String> {
 
 impl WindowGame {
     #[cfg(feature = "proving")]
+    #[expect(
+        clippy::print_stderr,
+        reason = "surface proof write failures in the game log"
+    )]
     fn record_output(
         &mut self,
         source: &str,
