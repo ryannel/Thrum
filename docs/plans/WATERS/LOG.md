@@ -1622,3 +1622,25 @@
   takes the view by reference, can pass on a noon lake that is a glow all the way down. The design gives
   part S3's figure for the view.
   [The change](../../../.orchestrate/evidence/WATERS/WP16-noon-lake-beams.md).
+
+## WP16 shallow stations parked
+
+- 2026-11-27 Lead's ruling, after WP16's builder ended `BLOCKED needs_context` at the three-look limit on
+  WP16.7 a second time, six looks in all
+  ([handoff](../../../.orchestrate/evidence/WATERS/WP16-handoff.md), `build/waters` at `37bd113a3`): park
+  the two failing beam stations, keep in WP16.7 what reads, and move the two to a later work package that
+  first settles the optics mismatch by a study of shipped games, modern techniques only, then builds.
+- 2026-11-27 Planner. WP16.7 is written again without those two stations. WP16.11 is unchanged, so Must
+  Fix 1 of the design review at `2054bb2a03f9`, the lake's separate beams at noon in Chrome, moves to
+  WP26.4. WP26 is new, after WP14 and before the close, and no other module waits for it. Resume
+  `build/waters` at `37bd113a3` and tune nothing toward the two parked views.
+  [Its design](DESIGN.md#beams-in-shallow-water-wp26) ·
+  [The change](../../../.orchestrate/evidence/WATERS/WP16-parked-stations.md).
+- 2026-11-27 Planner: the assumption that only WP14 and the close wait for `SCENE-VIEWS` and
+  `APPLE-PRESENTATION` left the plan file; those dependencies are Done and `depends_on` holds them.
+- 2026-11-27 Planner, a risk for WP16's review. Part S3's share in the example's water does not tell the
+  parked stations from those that stay: the sea from 3 m at noon is 4.1% to 5.2%, below the parked lake's
+  6.2% to 7.9%, and the builder's inspection found weak separation at several stations it did not name. If
+  a review fails a kept station on this cue, the remedy is to move that station to WP26, not another look.
+  [Figures](../../../.orchestrate/evidence/WATERS/design-proof/shaft-stations-by-water.txt).
+

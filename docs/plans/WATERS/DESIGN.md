@@ -345,7 +345,8 @@ Reproductions A to G were run for the sea design and are kept with their output 
 K joins, L the swash and M foam in the swash. Parts N to Q were run for the revision and are in
 `surf_view_proof.py` there: N the shore transform, O breaking, P the mirror lookup and Q light under water. Parts R to T were run for the second revision and are in
 `under_light_proof.py` there: R caustics, S shafts and T the meter. Part S3, shafts by the lens's depth, was run on
-27 November for WP16's stop and is in `shallow_shafts_proof.py` there. Two design reviews of 14 November are kept in
+27 November for WP16's stop and is in `shallow_shafts_proof.py` there; `shaft_stations_by_water.py` there runs it again
+in the water the example draws, for [WP26](#beams-in-shallow-water-wp26). Two design reviews of 14 November are kept in
 [the evidence folder](../../../.orchestrate/evidence/WATERS/), each with its own reproduction. After the first, H was run again
 and J to L added. The second found a step at a shallow mouth and no carriage for foam up a beach: K now
 assembles the surface after its depth limit and reproduces that review's case, and M was added.
@@ -441,6 +442,7 @@ Neither stops the work packages after it.
 | W10 | **The surface's light carried down its refracted rays onto a ladder of depths, each cell spread over where it lands** | **Selected.** It conserves light by construction, crossing sheets add, it is made from the waves the surface is drawn from, and it is what Wallace's and HDRP's methods do at one depth |
 | W11 | Streaks blurred outward from the Sun's place on screen | Fails with the Sun out of frame, and knows nothing of a hull |
 | W11 | For beams from 1 m under a high Sun, where the march gives a glow (WP16's stop of 27 November): streaks drawn over the march, a field sharpened for the shafts alone, or a finer grid for the ripples under 7 cm | None taken. The water has no beams there to draw (part S3), so the first two paint a light the net on the bed does not have, and the second makes two fields of one light. A finer grid adds draws to a field [risk 25](#risks) already watches, for streaks seen through a metre of water that hides a quarter of the surface behind it |
+| W11 | For beams from 3 m under the lake at noon and from 1 m under the sea with the Sun 15° up, where WP16's march gave rays merged into a glow in the example's water (its stop of 27 November, after six looks) | Open. [WP26](#beams-in-shallow-water-wp26) chooses after its study of shipped games, inside that section's bounds |
 | W11 | The water as a medium in `ATMOSPHERE`'s view volume | Not selected. C08 gives water a declared boundary and this design composes the water's segments in its own pass; the volume's Sun path is straight where the water's bends at the surface; and a lens half under would put two media in one volume |
 | W11 | **The beam's once-scattered light, marched through the caustic field and the scene's Sun visibility in the water's own composition** | **Selected** |
 | W12 | A meter on the rendered picture | Not selected: V4's meter is a physical incident meter, and a picture meter pumps |
@@ -1933,17 +1935,19 @@ Sun 60° up, from 1 m down that path is 1.1 m long and hides a quarter of the su
 light scattered on it varies from ray to ray by 1.4% to 3.5% in winds of 1 to 8 m/s, where from 3 m it
 varies by 14% to 18% on a path that hides over half. As a share of the picture the streaks are under 1%
 from 1 m, about 10% from 3 m and about 20% from 10 m. A murky lake hides more on the same path and still
-shows under 3% from 1 m, and 13% to 19% from 3 m. So under a high Sun the lake's beams stand from 3 m as
-the sea's do, and WP16.7 inspects them there at noon, which is also the lake view of separate beams that
-Chrome is judged on. The figure is the model's: no frame of that view had been taken when it was written.
+shows under 3% from 1 m, and 13% to 19% from 3 m.
 With the Sun 15° up the light crosses the surface at a slant, the waves focus it
-sooner, and the same share from 1 m is 5% to 8% in the sea and 12% to 20% in the lake (part S3). So from
+sooner, and the same share from 1 m is 5% to 8% in the sea and 12% to 20% in the lake (part S3). Those
+figures are for part S3's water, which is more opaque than the water the example's dive draws, and in the
+example's water two of the stations they promised did not read as separate beams:
+[beams in shallow water](#beams-in-shallow-water-wp26) has the figures again and gives both stations to
+WP26. So from
 1 m under a high Sun the water round the Sun's direction is a glow, which is the direction's closed form
 with a little of the march in it, and it changes as the waves pass. That is what a swimmer just under the
 surface at noon sees too: the Sun broken up on the surface overhead with a glow round it, and the beams
 standing in the deeper water. WP16's builder found the same in the frame: three looks from 1 m at noon in
 a breeze each gave the glow, while beams stood from 3 m and 10 m and from 1 m under the lake with the Sun
-low. Nothing is added to draw beams where the water has none.
+low. Nothing is added to draw beams from 1 m under a high Sun, where the water has none.
 
 The field's own contrast does not fall with depth. It climbs to the depth where the waves focus and stays
 high below it: at 4 m/s the map's is 0.31 at 0.5 m and 0.40 at 8 m (part R2). What softens with depth is the
@@ -1957,7 +1961,7 @@ below that only soften it. Beyond the window the bed is evenly lit. A blocker sh
 light enters, so the part of a hull below the waterline shadows nothing its waterline shape does not. A
 receiver under water is shaded with the Sun's direction above the water; only where its shadow falls
 follows the bend. The Moon makes no net. Seen from above the water, the water's own light stays even: the
-net on the bed shows, shafts do not. From 1 m under a high Sun the shafts are a glow and not separate beams. The meter's depth takes the wave field and not the interaction waves.
+net on the bed shows, shafts do not. From 1 m under a high Sun the shafts are a glow and not separate beams. Until WP26, from 3 m under the lake at noon and from 1 m under the sea with a low Sun, the rays merge into a glow in the example's water. The meter's depth takes the wave field and not the interaction waves.
 
 ### Capabilities, recipes, limits and knobs
 
@@ -2111,7 +2115,8 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
   unrun; WP16 is the first look.
 - **W11.** Part S: where shafts stand, and the march against a fine integral. A section with one water
   type and no hull. Part S3: how far the beams stand out by the lens's depth, at two Suns in a clear sea and
-  a murky lake, in the same section; its lake's `c` is assumed. Under a hull the marched part is the equation's own arithmetic, negative where the
+  a murky lake, in the same section; its lake's `c` is assumed, and both its waters are more opaque than the
+  example's dive draws, where its shares about halve ([WP26](#beams-in-shallow-water-wp26)). Under a hull the marched part is the equation's own arithmetic, negative where the
   beam is blocked ([light under water](#light-under-water-caustics-shafts-and-the-meter)); WP16
   tests its place against the bed's shadow and not its size. The look, and noise under reconstruction, are
   unrun; WP16 and WP10 are the first.
@@ -2455,7 +2460,7 @@ decides nothing. [WP19](#a-surf-query-a-running-game-can-use-wp19) uses it.
   the last record for the same view. A tripped wire is investigated and written up there. It never ends a
   session `BLOCKED`.
 - **Looks.** Where a work package's inspected items judge a look that is tuned, the foam of WP7, the breaker
-  section of WP13 and the net and shafts of WP16 above all, tune it against those items with a fresh opinion before review. After three looks
+  section of WP13, the net and shafts of WP16 and the shallow beams of WP26 above all, tune it against those items with a fresh opinion before review. After three looks
   that fail the same cue, record them in the log and end `BLOCKED`.
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/waters-<work-package>/`, selected evidence in
   `.orchestrate/evidence/WATERS/`.
@@ -2512,6 +2517,7 @@ builder starts from main and proves all nine again, because WP15.3 changed.
 | Can Thrum's renderer draw a second view of the scene, and at what cost? | `SCENE-VIEWS`' planning and its first work package; WP14 records the water's share |
 | Does exposure need to know the camera is under water? | Yes: [the meter](#light-under-water-caustics-shafts-and-the-meter), in WP16 |
 | What do the caustic field and the shafts cost, and how many rungs does the look need? | WP16 records it; [risk 25](#risks) |
+| Why do the rays merge into a glow at WP26's two stations in the example's water, and what makes separate beams read there in a shipped game? | WP26.1's study; [beams in shallow water](#beams-in-shallow-water-wp26) |
 | What adaptation share reads right from the shallows to 20 m? | WP16.8; the example's 0.75 is a starting value |
 | How does a river's reach answer a change of its source's stage? | `RIVERS`' planning; here the ends follow and the reach stays as prepared |
 | How do basins that overflow into each other merge and part? | `PUDDLES`' planning, with this module |
@@ -2926,3 +2932,93 @@ The builder records the test's CPU time and its time alone, before and after, in
 default Nextest build on the Mac, excluding compilation: `/usr/bin/time -p` on the test binary with
 `--exact` gives both. [The planner's measurements](../../../.orchestrate/evidence/WATERS/WP25/workspace-timing.md)
 are the figures before.
+
+## Beams in shallow water (WP26)
+
+WP16's march draws beams where the water's own light makes them. At two stations that WP16.7 named it did
+not, after six looks in two rounds: from 3 m under the lake at noon, rays stand outside a bright core and
+merge into it, and from 1 m under the sea with the Sun 15° up the view is the surface's light and a glow
+([the looks](../../../.orchestrate/evidence/WATERS/WP16/replanned-visuals/README.md#wp167-shafts)). The
+lead's ruling of 27 November parks both stations here, so that WP16 closes on what reads
+([the log](LOG.md#wp16-shallow-stations-parked)). This section governs WP26. Nothing outside this module
+waits for WP26, and inside it only the close, WP11.
+
+**What is known.** Part S3 promised beams at both stations, in water more opaque than the example draws.
+Its lake has an extinction of 1.2 and a downwelling rate of 0.5 a metre and its sea 0.25 and 0.08. The
+example's dive draws a lake of 0.18 and 0.12 in green, and a sea of 0.105 and 0.075 in green and 0.054 and
+0.042 in blue (`examples/water/src/island/dive.rs` on `build/waters`). Part S3's share of the picture,
+across winds of 1, 4 and 8 m/s, in each water
+([output](../../../.orchestrate/evidence/WATERS/design-proof/shaft-stations-by-water.txt), after
+[the builder's run](../../../.orchestrate/evidence/WATERS/WP16/replanned-visuals/README.md#s3-visibility-sensitivity)):
+
+| Looking up toward the Sun from | Part S3's water | The example's, green | Stays in WP16.7 |
+|---|---|---|---|
+| 3 m under the lake, Sun 60° up | 12.7% to 18.8% | 6.2% to 7.9% | No: WP26 |
+| 1 m under the sea, Sun 15° up | 5.1% to 8.0% | 2.4% to 3.8% | No: WP26 |
+| 3 m under the sea, Sun 60° up | 7.8% to 10.0% | 4.1% to 5.2% | Yes |
+| 10 m under the sea, Sun 60° up | 18.7% to 25.6% | 13.6% to 18.1% | Yes |
+| 3 m under the sea, Sun 15° up | 3.0% to 8.2% | 1.7% to 4.9% | Yes |
+| 10 m under the sea, Sun 15° up | 3.9% to 8.1% | 4.4% to 8.1% | Yes |
+| 1 m under the lake, Sun 15° up | 11.9% to 20.0% | 3.9% to 6.1% | Yes |
+
+How much the scattered beam varies from ray to ray hardly moves between the two waters. What moves is how
+much of the bright surface the water hides behind the beams: 98% in part S3's lake from 3 m and 44% in
+the example's. So in clear water the beams are there and the surface outshines them. The share is a lead
+and not a cause. It is a 1D synthetic section that measures no picture, and it does not tell the two
+parked stations from those that stay: by it the sea from 3 m at noon is weaker than the parked lake, and
+its frames show rays. If a review fails a station that stays on this cue, a planner moves it here.
+
+**The study comes first (WP26.1).** Before anything is changed, the builder records:
+
+- *The cause in the frame.* Each station as shipped, and at the same camera and engine time in part S3's
+  water. Beams that separate in part S3's water and not in the example's make the example's water a
+  cause. Beams that separate in neither make the field or the march one.
+- *What shipped games show.* Frames from shallow water looking up toward the Sun in Subnautica and Sea of
+  Thieves, the games WP16's bar names, and in at least two high-end 3D games released from 2022 on: whether
+  separate beams stand, how far the water lets the eye see, and whether the beams move with the surface
+  above them. Four searches on 27 November found no published account of how a shipped game draws shafts
+  in shallow water, so the frames carry the study.
+- *Published techniques.* Accounts for engines and games from 2020 on. A technique is a candidate when a
+  current engine or game uses it, and never because code for it is at hand, in Broadsides or anywhere else.
+  Leads found by search and not read: Unity's HDRP sample for Unity 6, where volumetric fog reads the water
+  system's caustics buffer ([Unity, 2025](https://unity.com/blog/lighting-and-environments-hdrp-updates-unity-6));
+  and Ray Tracing Gems, chapter 14, on volumetric water caustics traced with DXR
+  ([2019](https://rd.springer.com/content/pdf/10.1007/978-1-4842-4427-2_14.pdf)), which is not portable and
+  shows the look.
+- *The remedy*, with the candidates not chosen and why.
+
+**What a remedy may change.** The example's water, which is the example's own and tuned by eye. How the
+march reads the field: its phase function, the contrast and blur of what the shafts read, its steps and
+its resolution. How the composition sets the beams against the surface seen through the water. The field's
+grid. Under [the owner's bar](#proof-and-builder-handoff), plausible before accurate, a beam may stand out
+more than the model's light gives it. The glow from 1 m under a high Sun is the cue there and stays.
+WP16's six looks changed the blur, the phase, the jitter and the aim, and are not repeated.
+
+**The bounds every remedy keeps.**
+
+1. *The drawn waves make the beams.* A beam stands where the surface the frame draws has gathered the
+   Sun's light, from the caustic field or the function the surface is drawn from, at the display's time. It
+   sweeps as those waves pass, and in a calm there is none. No played texture, no noise that is not the
+   waves', and no streak drawn from the Sun's place on the screen.
+2. *One Sun path.* Beams lean with the refracted Sun. The Sun's visibility is read at the point where the
+   sample's refracted ray leaves the water, by the function the receivers use, and the marched part stays
+   signed, so the water in a hull's shadow is darker than the water beside it.
+3. *The net on a receiver is not touched.* The Sun-path factor stays `1 + D(z) · (C − 1)` of the field
+   that conserves light. A remedy that strengthens the beams shapes what the shafts read from that field,
+   and makes no second pattern: a beam still stands over the bright lines of the net.
+4. *A capability with named knobs.* A profile without shafts creates none of the remedy's resources and
+   draws WP15's frame. Each knob the remedy adds has a declared invalidation. A history the remedy keeps is
+   declared with its invalidation and honours the frame's reset flag.
+5. *Both targets.* The remedy is the portable path's, and draws in Chrome what it draws on Metal.
+6. *What WP16 passed stays passed.* Its tests, WP16.7's list at its own views, and, for a body whose water
+   changed, the net of WP16.6 and the readable descent of WP16.8 to 20 m in the sea and to the lake's bed.
+
+A remedy that cannot keep a bound, or a study that finds the named games draw no separate beams from such
+views, ends `BLOCKED` with the record, and a planner decides. After the study, three looks that fail the
+same cue end `BLOCKED` as [the handoff](#proof-and-builder-handoff) says.
+
+**Proof.** WP26.1 holds the study. WP26.2 judges the two stations on Metal, with a calm, a sequence under
+temporal sampling and WP16.7's list again. WP26.3 runs WP16's tests with the remedy in. WP26.4 judges
+Chrome, at both stations and at WP16.7's noon views: this is where the lake's separate beams at noon are
+judged in Chrome, which the design review of 27 November asked of WP16.11 and WP16 no longer holds. WP26.5
+takes the paired cost record again.
