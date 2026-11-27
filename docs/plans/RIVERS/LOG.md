@@ -331,3 +331,9 @@
   Metal reads the birth rates and transported stock at all eight valley stations.
   Hardware Chrome shows the riffle, quiet pool and thinning ledge foam.
   [Target evidence](../../../.orchestrate/evidence/RIVERS/WP5/README.md)
+- 2026-11-27 WP5. The Metal inspection followed the headwater riffle, pool and narrows in
+  both winds and both Sun elevations. Aligning the right-bank rocks with the solved shoulder
+  made the stationary rise and moving ripples readable at the same point. The downstream
+  camera follows whitewater from the rock's lee into thinning lace. The gauge take shows the
+  wider foam band at the upper sample. The paired 1440p Metal record retains the WP4
+  comparison and the cost investigations. [Target evidence](../../../.orchestrate/evidence/RIVERS/WP5/README.md)
