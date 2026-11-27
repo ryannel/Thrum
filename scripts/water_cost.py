@@ -1397,16 +1397,31 @@ def rain_ground_cost():
                 completion_upper_ms=statistics.median(f['completion_upper_ms'] for f in frames),
                 investigations=[]))
     for row, baseline in zip(active['summary'], control['summary'], strict=True):
-        for name in ('synthetic forward opaque', 'water gather', 'water surface'):
+        for name in sorted(row['passes_ms'].keys() & baseline['passes_ms'].keys()):
             new = row['passes_ms'][name]
             old = baseline['passes_ms'][name]
             if new > old * 1.25:
                 cause = {
                     'synthetic forward opaque': 'Production wetness adds samplerless material field reads before lighting.',
-                    'water gather': 'The rain film requires scenery radiance and distance for reflected rays.',
-                    'water surface': 'The mapped surface retains the same sampled inputs. This difference is shared-load variation.',
-                }[name]
-                row['investigations'].append(f'{name} was {new:.3f} ms against {old:.3f} ms. {cause}')
+                    'water gather': 'Film adds the projected film reader and its bounded reflected scenery to the ordinary readers.',
+                    'water surface': 'The same water surface entry point draws both arms.',
+                    'water body query': 'Both arms use the same tick query points and report the same hollow levels.',
+                    'rain bands': 'Both arms advance the same schedules and rate history.',
+                }.get(name, 'The wet ground field is read only by forward lighting, gather admission and film.')
+                observations = []
+                for arm in (control, active):
+                    samples = [value for frame in arm['frames'] if frame['tick_frame'] == row['tick_frame']
+                               for key, value in frame['passes_ms'].items() if key.split(': ')[-1] == name]
+                    observations.append({'n': len(samples), 'min_ms': min(samples), 'max_ms': max(samples)})
+                row.setdefault('pass_tripwires', {})[name] = {
+                    'control_ms': old, 'active_ms': new, 'observations': observations,
+                    'changed_work': name in ('synthetic forward opaque', 'water gather'),
+                }
+                row['investigations'].append(
+                    f'{name} was {new:.3f} ms against {old:.3f} ms. {cause} '
+                    'The raw timings and ranges record variation under shared load. '
+                    + ('The measured pass has additional wet-ground work.' if name in ('synthetic forward opaque', 'water gather')
+                       else 'The paired record does not isolate timestamp variation from contention. Follow-up would use an exclusive device.'))
         for arm in (row, baseline):
             if max(arm['gpu_ms'], arm['completion_upper_ms']) > 1000 / 120:
                 largest = max(arm['passes_ms'], key=arm['passes_ms'].get)

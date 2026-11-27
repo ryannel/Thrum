@@ -184,6 +184,7 @@ impl PreparedSynthetic {
                 .recipe()
                 .expect("scene preparation admitted this generation's recipe"),
             shader_source: &self.surface.shader_source,
+            dry_shader_source: self.surface.dry_shader_source.as_deref(),
             pipeline_layout: &self.surface.pipeline_layout,
             view_layout: &self.view_layout,
             mesh_view_uniform: wgpu::BufferBinding {

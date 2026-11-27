@@ -713,24 +713,38 @@ impl PreparedSynthetic {
         let fail_traced_pipeline = traced_forward && capabilities.fail_traced_pipeline;
         #[cfg(not(feature = "creation-counters"))]
         let fail_traced_pipeline = false;
-        let (shader_source, shader, fragment_entry) = scene_source::prepare(
-            device,
-            if view_volume {
-                crate::shaders::AtmosphereVariant::ViewVolume
-            } else {
-                crate::shaders::AtmosphereVariant::new(atmosphere.is_some(), air_shadow.is_some())
-            },
-            scene.sun_optical_depth.as_ref(),
+        let prepare_shader = |wetness| {
+            scene_source::prepare(
+                device,
+                if view_volume {
+                    crate::shaders::AtmosphereVariant::ViewVolume
+                } else {
+                    crate::shaders::AtmosphereVariant::new(
+                        atmosphere.is_some(),
+                        air_shadow.is_some(),
+                    )
+                },
+                scene.sun_optical_depth.as_ref(),
+                wetness,
+                scene_source::SunShadows::from(shadow.is_some()),
+                shadow_selection,
+                (soft_sun.is_some(), ambient.is_some()),
+                fail_traced_pipeline,
+                atmosphere.as_ref(),
+            )
+        };
+        let (shader_source, shader, fragment_entry) = prepare_shader(
             scene
                 .wetness
                 .as_ref()
                 .map(crate::wetness::WetnessProvider::source),
-            scene_source::SunShadows::from(shadow.is_some()),
-            shadow_selection,
-            (soft_sun.is_some(), ambient.is_some()),
-            fail_traced_pipeline,
-            atmosphere.as_ref(),
         );
+        let (dry_shader_source, dry_shader) = if wetness.is_some() {
+            let (source, module, _) = prepare_shader(None);
+            (Some(source), Some(module))
+        } else {
+            (None, None)
+        };
         let vertex_entry = camera_culling::vertex_entry(camera_mode);
         let opaque_targets = [
             Some(wgpu::ColorTargetState {
@@ -754,7 +768,10 @@ impl PreparedSynthetic {
             blend: None,
             write_mask: wgpu::ColorWrites::ALL,
         })];
-        let create_route_pipeline = |vertex_entry, primitive, draw| {
+        let create_route_pipeline = |module: &crate::runtime::PipelineInput<wgpu::ShaderModule>,
+                                     vertex_entry,
+                                     primitive,
+                                     draw| {
             let receiver = draw == CameraDraw::AmbientReceiver;
             device.render(&wgpu::RenderPipelineDescriptor {
                 label: Some("prepared opaque synthetic role"),
@@ -764,7 +781,7 @@ impl PreparedSynthetic {
                     &layout
                 }),
                 vertex: wgpu::VertexState {
-                    module: &shader,
+                    module,
                     entry_point: Some(vertex_entry),
                     compilation_options: wgpu::PipelineCompilationOptions::default(),
                     buffers: &[],
@@ -785,7 +802,7 @@ impl PreparedSynthetic {
                 // The depth prepass shares the module, vertex entry, primitive
                 // and depth state, so it rasterizes the same depth.
                 fragment: (draw != CameraDraw::Depth).then_some(wgpu::FragmentState {
-                    module: &shader,
+                    module,
                     entry_point: Some(if receiver {
                         raytrace::ambient::RECEIVER_ENTRY
                     } else {
@@ -807,9 +824,14 @@ impl PreparedSynthetic {
                 cull_mode,
                 ..Default::default()
             };
-            create_route_pipeline(vertex_entry, primitive, draw)
+            let module = if draw == CameraDraw::Forward {
+                &shader
+            } else {
+                dry_shader.as_ref().unwrap_or(&shader)
+            };
+            create_route_pipeline(module, vertex_entry, primitive, draw)
         };
-        let bucket_route = meshes
+        let mut bucket_route = meshes
             .map(|selection| {
                 BucketRoute::new(
                     device,
@@ -818,11 +840,36 @@ impl PreparedSynthetic {
                     &mesh_arena,
                     &instance_upload,
                     &scene.instances,
-                    |primitive, draw| create_route_pipeline("compacted_vertex", primitive, draw),
+                    |primitive, draw| {
+                        let module = if draw == CameraDraw::Forward {
+                            &shader
+                        } else {
+                            dry_shader.as_ref().unwrap_or(&shader)
+                        };
+                        create_route_pipeline(module, "compacted_vertex", primitive, draw)
+                    },
                     (camera_mode == CullMode::Occlusion, ambient.is_some()),
                 )
             })
             .transpose()?;
+        if let (Some(route), Some(module)) = (bucket_route.as_mut(), dry_shader.as_ref()) {
+            route.prepare_dry(|primitive| {
+                create_route_pipeline(module, "compacted_vertex", primitive, CameraDraw::Forward)
+            });
+        }
+        let dry_pipelines = dry_shader.as_ref().map(|module| {
+            [Some(wgpu::Face::Back), None].map(|cull_mode| {
+                create_route_pipeline(
+                    module,
+                    vertex_entry,
+                    wgpu::PrimitiveState {
+                        cull_mode,
+                        ..Default::default()
+                    },
+                    CameraDraw::Forward,
+                )
+            })
+        });
         let visibility = camera_culling::prepare(
             device,
             queue,
@@ -1017,6 +1064,7 @@ impl PreparedSynthetic {
             key: PipelineRole::Opaque.pipeline_key(generation, SYNTHETIC_REVISION),
             pipeline,
             pipeline_two_sided,
+            dry_pipelines,
             depth_prepass,
             ambient_receiver_pipelines,
             row_updates: scene
@@ -1083,6 +1131,7 @@ impl PreparedSynthetic {
             atmosphere,
             surface: SurfaceParts {
                 shader_source,
+                dry_shader_source,
                 pipeline_layout: layout,
                 light_layout,
                 material_layout,

@@ -370,6 +370,7 @@ impl PreparedSynthetic {
                 orthographic,
                 indirect,
                 draw,
+                self.draws_dry_material(),
             );
         }
         match &target.visibility {
@@ -471,6 +472,7 @@ impl PreparedSynthetic {
                 matches!(view.projection(), super::Projection::OrthographicFixture),
                 Some(prepass.target.prepass().args()),
                 CameraDraw::Depth,
+                false,
             )?;
         } else {
             pass.draw_indexed_indirect(prepass.target.prepass().args(), 0);

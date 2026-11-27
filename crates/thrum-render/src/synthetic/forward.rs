@@ -80,6 +80,10 @@ pub(super) fn view_entries(
 }
 
 impl PreparedSynthetic {
+    pub(super) fn draws_dry_material(&self) -> bool {
+        self.wetness.as_ref().is_some_and(|field| !field.active())
+    }
+
     pub(super) fn encode_opaque(
         &self,
         encoder: &mut wgpu::CommandEncoder,
@@ -167,6 +171,10 @@ impl PreparedSynthetic {
                 .ok_or(RenderError::GraphPassMismatch)?[two_sided],
             CameraDraw::AmbientReceiver => &self
                 .ambient_receiver_pipelines
+                .as_ref()
+                .ok_or(RenderError::GraphPassMismatch)?[two_sided],
+            CameraDraw::Forward if self.draws_dry_material() => &self
+                .dry_pipelines
                 .as_ref()
                 .ok_or(RenderError::GraphPassMismatch)?[two_sided],
             CameraDraw::Forward if two_sided == 0 => &self.pipeline,

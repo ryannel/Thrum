@@ -118,6 +118,13 @@ fn film_declaration(standing_water: bool) -> AfterOpaquePass {
     }
 }
 impl Prepared {
+    pub(super) fn film_reader(&self) -> Option<optics::BodyBounds> {
+        self.wet_ground
+            .as_ref()
+            .filter(|_| self.standing_film)
+            .and_then(super::wet_ground::film_bounds)
+    }
+
     pub(super) fn render_group(&self) -> &wgpu::BindGroup {
         self.pattern
             .as_ref()
@@ -209,7 +216,7 @@ impl Prepared {
         if self.query.is_some() {
             Readback::declare(&self.ambient, &mut graph, wake.clone());
         }
-        let mut surface = declaration(self.gather.is_some());
+        let mut surface = declaration(self.gather.as_ref().is_some_and(|gather| gather.surface));
         surface.accesses = self.ambient.filtered_accesses();
         surface.accesses.extend(wake);
         let surf_cache = self
@@ -394,19 +401,18 @@ pub(super) fn new(
         .filter(|wet| wet.uses(super::wet_ground::SOURCE));
     let standing_film = mapped
         && projection.is_some()
-        && profile.optics.is_some()
         && map_gpu
             .as_ref()
             .is_some_and(|map| map.hollows_entry().is_some());
     let wet_ground = projection.filter(|_| standing_film || mapped && whitewater.is_some());
-    let gather = profile.optics.map(|optics| {
+    let gather = (profile.optics.is_some() || standing_film).then(|| {
         Gather::new(
             surface,
             &environment,
-            optics,
+            profile.optics.unwrap_or_default(),
             &library,
             profile.underwater,
-            standing_film,
+            profile.optics.is_some(),
         )
     });
     let parameters = device.create_buffer(&wgpu::BufferDescriptor {
@@ -726,13 +732,14 @@ fn surface_pipelines(
     use std::fmt::Write;
 
     let under = gather.is_some_and(|gather| gather.underwater);
+    let surface_gather = gather.filter(|gather| gather.surface);
     let mut source = shader_source(
         surface,
         library,
         map,
         interaction.is_some(),
         foam,
-        gather,
+        surface_gather,
         rain,
         flow.is_some(),
     ) + &Cache::source(cache, tidal_grid);
@@ -808,10 +815,10 @@ fn surface_pipelines(
     };
     let sheet = SurfaceDraw::Sheet {
         mapped: map.is_some(),
-        gather: gather.is_some(),
+        gather: surface_gather.is_some(),
     };
     let river = SurfaceDraw::River {
-        gather: gather.is_some(),
+        gather: surface_gather.is_some(),
     };
     let ordinary_source = source.clone() + UNUSED_UNDERSIDE;
     #[cfg(not(target_arch = "wasm32"))]
@@ -824,7 +831,12 @@ fn surface_pipelines(
         has_rivers.then(|| create_pipeline(surface, layout, environment, &ordinary, river));
     let film = if let Some(wet) = wet_ground.filter(|_| standing_film || foam.is_some() && shore) {
         let shader = if standing_film {
-            compose_rain_film(source.clone(), wet, foam.is_some(), rain)
+            let mut film_source = source.clone();
+            if surface_gather.is_none() {
+                film_source =
+                    film_source.replace(include_str!("optics/disabled.wgsl"), OPTICAL_PATHS);
+            }
+            compose_rain_film(film_source, wet, foam.is_some(), rain)
         } else {
             compose_shore_support(&source, wet)
         };
@@ -1007,10 +1019,7 @@ fn shader_source(
             }
             + include_str!("surface_composite.wgsl"),
         if gather {
-            concat!(
-                include_str!("optics/regions.wgsl"),
-                include_str!("optics/paths.wgsl")
-            )
+            OPTICAL_PATHS
         } else {
             include_str!("optics/disabled.wgsl")
         },
@@ -1081,14 +1090,22 @@ fn sampled_textures(source: &str, entry: &str) -> usize {
         .count()
 }
 
-fn compose_shore_support(source: &str, wet: &thrum_render::wetness::PreparedWetness) -> String {
+const OPTICAL_PATHS: &str = concat!(
+    include_str!("optics/regions.wgsl"),
+    include_str!("optics/paths.wgsl")
+);
+
+fn lend_shore_support(source: &str) -> String {
     const REACH: &str = "let reach = 0.175 * row.swash;";
     let (before, after) = source.split_once(REACH).expect("shore film support");
-    let field = wet.shader(3, WET_GROUND_BINDING);
     format!(
         "{before}let authored = wet_shore(ground.xz);
-    let reach = select(0.175 * row.swash, authored.y, authored.w > 0.0);{after}\n{field}"
+    let reach = select(0.175 * row.swash, wet_shore_edge(authored) - row.level, authored.w > 0.0);{after}"
     )
+}
+
+fn compose_shore_support(source: &str, wet: &thrum_render::wetness::PreparedWetness) -> String {
+    lend_shore_support(source) + &wet.shader(3, WET_GROUND_BINDING)
 }
 
 fn compose_rain_film(
@@ -1110,6 +1127,7 @@ fn compose_rain_film(
     if shore {
         let at = source.find(SHORE).expect("shore film support");
         source.insert_str(at, STANDING_WATER);
+        source = lend_shore_support(&source);
     } else {
         let (_, film) = SHORE_FILM.split_once(VERTEX).expect("film entry point");
         let (header, _) = film.split_once(SHORE).expect("film support");
@@ -1120,6 +1138,13 @@ fn compose_rain_film(
         source.push_str("    discard;\n    return Output(vec4(0.0), vec2(0.0), 0.0);\n}\n");
     }
     source.push_str(&wet.shader(3, WET_GROUND_BINDING));
+    use std::fmt::Write;
+    writeln!(
+        source,
+        "const FILM_REFLECTION_REACH: f32 = {};",
+        optics::FILM_REFLECTION_REACH
+    )
+    .expect("film reflection reach");
     source.push_str(include_str!("wet_film.wgsl"));
     source.push_str(if rain {
         include_str!("wet_film_rings.wgsl")

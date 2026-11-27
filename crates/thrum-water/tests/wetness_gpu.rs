@@ -15,6 +15,7 @@ const CELL: f64 = 0.1;
 const POINTS: usize = 4096;
 const FILL_TOLERANCE: f64 = 0.0005;
 const WATER_TOLERANCE: f64 = 0.000_001;
+type Answer = [[f32; 4]; 3];
 
 fn shelter(name: &str, low: [f64; 3], high: [f64; 3], share: f64) -> Shelter {
     let [x, y, z] = low;
@@ -69,21 +70,30 @@ fn run(opened: &thrum_test_support::Opened) {
     let tree = Tree::prepare(&ground, &canopy, &profile).expect("tree");
     let mut rain = RainState::new(&tree);
     let mut report = TickReport::default();
-    for weather in [
-        Rain {
-            flux: 12.0 / 3600.0,
-            drying: 0.0,
-        },
-        Rain {
-            flux: 0.0,
-            drying: 55.0 / 3600.0,
-        },
-        Rain {
-            flux: 8.0 / 3600.0,
-            drying: 0.0,
-        },
+    for (weather, steps) in [
+        (
+            Rain {
+                flux: 60.0 / 3600.0,
+                drying: 0.0,
+            },
+            120,
+        ),
+        (
+            Rain {
+                flux: 0.0,
+                drying: 55.0 / 3600.0,
+            },
+            8,
+        ),
+        (
+            Rain {
+                flux: 8.0 / 3600.0,
+                drying: 0.0,
+            },
+            8,
+        ),
     ] {
-        for _ in 0..8 {
+        for _ in 0..steps {
             rain.step_with(&tree, weather, &stores, 0, 11.0, 1, &mut report)
                 .expect("rain step");
             stores.step(weather, 11.0).expect("stores");
@@ -157,11 +167,23 @@ fn run(opened: &thrum_test_support::Opened) {
     let mut expected = Vec::with_capacity(POINTS);
     let mut slope_wrong = 0;
     let mut exposure_wrong = 0;
+    let mut margin_samples = 0;
+    let mut submerged_samples = 0;
     for i in 0..POINTS {
         let (x, z) = (next() * 1.59, next() * 1.59);
         let index = (z / CELL) as usize * DIM + (x / CELL) as usize;
+        let label = tree.labels()[index] as usize;
+        let margin_height = levels.get(label).and_then(|level| {
+            let y = level + 0.5 * rain.bands()[label];
+            (rain.bands()[label] > 0.0 && (y - bed[index]).abs() < 0.02).then_some(y)
+        });
         let (point, normal, on_bed) = match i % 8 {
-            0 | 1 => ([x, bed[index], z], [0.0, 1.0, 0.0], true),
+            0 => ([x, bed[index], z], [0.0, 1.0, 0.0], true),
+            1 => (
+                [x, margin_height.unwrap_or(bed[index]), z],
+                [0.0, 1.0, 0.0],
+                true,
+            ),
             2 => ([x, bed[index], z], [0.6, 0.8, 0.0], true),
             3 => ([x, 1.05, z], [0.0, 1.0, 0.0], false),
             4 => ([x, 0.63, z], [0.0, 1.0, 0.0], false),
@@ -175,6 +197,11 @@ fn run(opened: &thrum_test_support::Opened) {
         };
         let point = point.map(|v| f64::from(v as f32));
         let normal = normal.map(|v| f64::from(v as f32));
+        if on_bed && let Some(&level) = levels.get(label) {
+            margin_samples +=
+                usize::from(point[1] > level && point[1] < level + rain.bands()[label]);
+            submerged_samples += usize::from(point[1] < level);
+        }
         let sample = |normal| {
             if on_bed {
                 rain.wetness(&tree, &stores, 0, &canopy, point, normal, None)
@@ -216,6 +243,10 @@ fn run(opened: &thrum_test_support::Opened) {
     let prepared =
         PreparedWetness::new(&opened.device, &opened.queue, &field.provider()).expect("field");
     let output = probe(opened, &prepared, &points);
+    assert!(
+        margin_samples > 0 && submerged_samples > 0,
+        "active falling margin and submerged points: {margin_samples}, {submerged_samples}"
+    );
     compare(&points, &output, &expected, slope_wrong, exposure_wrong);
 }
 
@@ -225,22 +256,30 @@ fn run(opened: &thrum_test_support::Opened) {
 )]
 fn compare(
     points: &[[[f32; 4]; 2]],
-    output: &[[f32; 4]],
+    output: &[Answer],
     expected: &[thrum_rain_model::Wetness],
     slope_wrong: usize,
     exposure_wrong: usize,
 ) {
     let mut largest_fill = 0_f64;
     let mut largest_surface = 0_f64;
-    for (i, (gpu, cpu)) in output.iter().zip(expected).enumerate() {
-        let fill = (f64::from(gpu[0]) - cpu.pores).abs();
-        let surface = (f64::from(gpu[1]) - cpu.surface).abs();
-        largest_fill = largest_fill.max(fill);
-        largest_surface = largest_surface.max(surface);
+    for (i, ([material, film, shaded], cpu)) in output.iter().zip(expected).enumerate() {
+        for gpu in [material, film] {
+            let fill = (f64::from(gpu[0]) - cpu.pores).abs();
+            let surface = (f64::from(gpu[1]) - cpu.surface).abs();
+            largest_fill = largest_fill.max(fill);
+            largest_surface = largest_surface.max(surface);
+            assert!(
+                fill <= FILL_TOLERANCE && surface <= WATER_TOLERANCE,
+                "point {i}, {:?}: GPU {gpu:?}, model {cpu:?}",
+                points[i]
+            );
+        }
+        let dark = 0.98 * (1.0 - 0.55) * 0.4 / (1.0 - 0.55 * 0.4);
+        let expected_base = 0.4 + (dark - 0.4) * cpu.pores * 0.7;
         assert!(
-            fill <= FILL_TOLERANCE && surface <= WATER_TOLERANCE,
-            "point {i}, {:?}: GPU {gpu:?}, model {cpu:?}",
-            points[i]
+            (f64::from(shaded[0]) - expected_base).abs() < FILL_TOLERANCE,
+            "forward material at point {i} was {shaded:?}, expected {expected_base}"
         );
     }
     assert!(
@@ -260,11 +299,11 @@ fn probe(
     opened: &thrum_test_support::Opened,
     field: &PreparedWetness,
     points: &[[[f32; 4]; 2]],
-) -> Vec<[f32; 4]> {
+) -> Vec<Answer> {
     let device = &opened.device;
     let queue = &opened.queue;
     let stage = wgpu::ShaderStages::COMPUTE;
-    let size = (points.len() * size_of::<[f32; 4]>()) as u64;
+    let size = (points.len() * size_of::<Answer>()) as u64;
     let input = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("wetness point samples"),
         contents: bytemuck::cast_slice(points),
@@ -280,7 +319,7 @@ fn probe(
         label: Some("wetness model probe"),
         entries: &[
             binding::storage(0, stage, true, 32),
-            binding::storage(1, stage, false, 16),
+            binding::storage(1, stage, false, size_of::<Answer>() as u64),
             binding::texture(
                 2,
                 stage,
@@ -308,12 +347,15 @@ fn probe(
         + r"
         struct Point { position: vec4<f32>, normal: vec4<f32> }
         @group(0) @binding(0) var<storage, read> points: array<Point>;
-        @group(0) @binding(1) var<storage, read_write> answers: array<vec4<f32>>;
+        @group(0) @binding(1) var<storage, read_write> answers: array<array<vec4<f32>, 3>>;
         @compute @workgroup_size(64) fn probe(@builtin(global_invocation_id) id: vec3<u32>) {
             if id.x >= arrayLength(&points) { return; }
             let p = points[id.x];
             let w = ground_wetness(p.position.xyz, p.normal.xyz);
-            answers[id.x] = vec4(w.pores, w.surface, w.cover, 0.0);
+            let film = ground_wetness_footprint(p.position.xyz, p.normal.xyz, 0.02);
+            answers[id.x][0] = vec4(w.pores, w.surface, w.cover, 0.0);
+            answers[id.x][1] = vec4(film.pores, film.surface, film.cover, 0.0);
+            answers[id.x][2] = wet_material(p.position.xyz, p.normal.xyz, vec3(0.4), 0.88, 0.0);
         }
     ";
     let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {

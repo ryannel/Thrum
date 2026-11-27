@@ -375,6 +375,7 @@ impl Shallows {
         level: f64,
         displacement: [f32; 2],
         roughness: MirrorRoughness,
+        film: Option<BodyBounds>,
     ) -> Inputs {
         let extent = UVec2::from_array(frame.render_extent);
         let matrix = Mat4::from_cols_array_2d(&frame.view_proj);
@@ -450,6 +451,21 @@ impl Shallows {
                     },
                     SOURCE,
                 );
+            }
+        }
+        if let Some(film) = film
+            .map(Bounds::from)
+            .filter(|&film| view.project(film).is_some())
+        {
+            // Film reflections march a bounded ray into the visible scenery.
+            let reach = profile.reflection_reach.min(super::FILM_REFLECTION_REACH);
+            let sources = Bounds {
+                min: film.min - Vec3::new(reach, 0.0, reach),
+                max: film.max + Vec3::splat(reach),
+            };
+            if let Some(rect) = view.project(sources) {
+                packed.film_sources = [rect.low.x, rect.low.y, rect.high.x, rect.high.y];
+                mark(&mut packed.mask, view.coarse(rect), SOURCE);
             }
         }
         packed.dispatch = dispatch(&packed, &view);

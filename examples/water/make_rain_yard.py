@@ -19,6 +19,24 @@ POTHOLE = (3.2, 5.2)
 SHALLOW_DIP = (5.75, 5.35)
 ROOF = ((7.45, 6.60), (9.25, 7.45))
 POST_WIDTH = 0.13
+RELIEF_SIDE = 128
+RELIEF_SCALE = 230
+PAVING_RELIEF = (Path(__file__).resolve().parent / "assets/relief/rain-yard-paving.r8").read_bytes()
+assert len(PAVING_RELIEF) == RELIEF_SIDE ** 2
+
+
+def paving_relief(x, z):
+    """Read the same one-metre relief texture and texel centres as the film."""
+    x, z = (x % 1) * RELIEF_SIDE - 0.5, (z % 1) * RELIEF_SIDE - 0.5
+    i, j = math.floor(x), math.floor(z)
+    u, v = x - i, z - j
+
+    def texel(a, b):
+        return PAVING_RELIEF[(b % RELIEF_SIDE) * RELIEF_SIDE + a % RELIEF_SIDE] / RELIEF_SCALE
+
+    low = (1 - u) * texel(i, j) + u * texel(i + 1, j)
+    high = (1 - u) * texel(i, j + 1) + u * texel(i + 1, j + 1)
+    return (1 - v) * low + v * high
 
 
 def dip(x, z, centre, radii, depth, angle=0.0):
@@ -40,8 +58,7 @@ def paving(x, z):
     # pit concentrates the first rain into a visible column.
     floor = -0.115
     shallow = max(floor, bowl) + min(0.0, bowl - floor) * 0.012
-    joint = min(abs(math.remainder(x, 0.5)), abs(math.remainder(z, 0.5)))
-    relief = 0.002 * (1.0 - smoothstep(joint / 0.05))
+    relief = 0.002 * (1.0 - paving_relief(x, z))
     relief *= smoothstep((z - TRACK_EDGE) / 0.25) * (1.0 - smoothstep((floor - bowl) / 0.003))
     return DATUM + min(pothole + slope, shallow) - relief
 
@@ -198,9 +215,8 @@ def write_texture(path, paved):
             x, z = (i + 0.5) / side, (j + 0.5) / side
             noise = 0.5 * grain(x * 8, z * 8, 8) + 0.3 * grain(x * 32, z * 32, 32)
             noise += 0.2 * grain(i, j, side)
-            joint = min(abs(math.remainder(x, 0.5)), abs(math.remainder(z, 0.5)))
             slab = 0.025 * ((int(x * 2) ^ int(z * 2)) & 1)
-            mortar = 0.25 * (1.0 - smoothstep(joint / 0.009))
+            mortar = 0.25 * (1.0 - smoothstep(paving_relief(x, z) / 0.086)) if paved else 0
             tint = 0.84 + 0.12 * noise + slab - mortar if paved else 0.68 + 0.30 * noise
             pixels.extend([round(255 * tint)] * 3)
 

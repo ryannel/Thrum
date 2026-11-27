@@ -40,13 +40,13 @@ fn standing_film(pixel: vec2<f32>, ground: vec3<f32>, normal: vec3<f32>, wet: Gr
     let facing = clamp(dot(v, n), 0.0, 1.0);
     let fresnel = water_fresnel(facing);
     let sky = environment_sky_radiance(ray);
-    let reach = min(optics.reach_slope_scene.x, 24.0);
+    let reach = min(optics.reach_slope_scene.x, FILM_REFLECTION_REACH);
     // Near normal incidence the resolved environment supplies the sheen.
     // Reserve scenery rays for the grazing lobe, where their silhouette reads.
     let grazing = 1.0 - smoothstep(0.39, 0.76, facing);
     let clarity = grazing * (1.0 - 0.85 * r) * smoothstep(0.005, 0.09, ray.y);
     var light = sky;
-    if clarity > 0.0 && optics.reach_slope_scene.z > 0.0 {
+    if clarity > 0.0 && optics.film_sources.z > 0u {
         let origin = ground + vec3(0.0, 0.009, 0.0);
         // The opaque bed is the film's own surface. Use the upward side
         // test to find scenery above it, including the wall and roof.

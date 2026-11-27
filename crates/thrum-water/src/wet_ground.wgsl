@@ -50,11 +50,21 @@ fn wet_reach(first: vec4<f32>, quarter: vec2<f32>, exposure: f32) -> vec2<f32> {
     return quarter * (4.0 * exposure);
 }
 
-fn wet_pattern(point: vec2<f32>, period: vec2<f32>, bank: f32) -> f32 {
-    let repeats = point / max(period, vec2(1e-6));
-    let dist = abs(repeats - round(repeats)) * period;
-    let spacing = select(vec2(1e10), dist, period > vec2(0.0));
-    return smoothstep(0.0, bank, min(spacing.x, spacing.y));
+fn relief_texel(p: vec2<i32>, size: vec2<i32>, address: u32) -> f32 {
+    let texel = (p % size + size) % size;
+    let index = u32(texel.y * size.x + texel.x);
+    return wet_load(address + 2u + index / 4u)[index % 4u];
+}
+
+fn wet_pattern(point: vec2<f32>, address: u32) -> f32 {
+    let tile = wet_load(address);
+    let size = vec2<i32>(wet_load(address + 1u).xy);
+    let uv = fract((point - tile.xy) / tile.zw) * vec2<f32>(size) - 0.5;
+    let p = vec2<i32>(floor(uv));
+    let t = fract(uv);
+    let a = mix(relief_texel(p, size, address), relief_texel(p + vec2(1, 0), size, address), t.x);
+    let b = mix(relief_texel(p + vec2(0, 1), size, address), relief_texel(p + vec2(1), size, address), t.x);
+    return mix(a, b, t.y);
 }
 
 fn wet_band(above: f32, margin: f32) -> f32 {
@@ -69,8 +79,11 @@ fn wet_shore(point: vec2<f32>) -> vec4<f32> {
     return select(vec4(0.0), shore, all(point >= bounds.xy) && all(point <= bounds.zw));
 }
 
-fn ground_wetness_at(point: vec3<f32>, normal: vec3<f32>, footprint: f32,
-                     material: bool) -> GroundWetness {
+fn wet_shore_edge(shore: vec4<f32>) -> f32 {
+    return shore.x + shore.y;
+}
+
+fn ground_wetness_footprint(point: vec3<f32>, normal: vec3<f32>, footprint: f32) -> GroundWetness {
     let header = wet_load(0u);
     let lattice = wet_load(2u);
     var cell = vec4(0.0, -1.0, 0.0, 0.0);
@@ -103,14 +116,16 @@ fn ground_wetness_at(point: vec3<f32>, normal: vec3<f32>, footprint: f32,
     let surface = select(0.0, max(0.0, store.x - (class_data.x - hold)), up > 0.0);
     let share = clamp(surface / max(class_data.x, 1e-20), 0.0, 1.0);
     var cover = share;
-    if appearance.z > 0.0 && any(low.zw > vec2(0.0)) {
-        let pattern = wet_pattern(point.xz, low.zw, appearance.z);
+    if appearance.z > 0.0 {
+        let pattern = wet_pattern(point.xz, u32(appearance.z));
         // At a grazing view the footprint may cross the whole height ramp.
         // Fade the resolved boundary into the average cover over that footprint.
         let unresolved = smoothstep(0.013, 0.084, footprint);
         let half_edge = 0.11 * unresolved;
-        let detail = smoothstep(-half_edge, 0.065 + half_edge, share - 0.90 * pattern);
-        cover = select(0.0, mix(detail, share, unresolved), surface > 0.0);
+        let detail = smoothstep(-half_edge, 0.065 + half_edge, share - pattern);
+        cover = select(select(0.0, 1.0, share > pattern),
+            mix(detail, share, unresolved), footprint > 0.0);
+        cover = select(0.0, cover, surface > 0.0);
     }
     if appearance.w > class_data.w {
         cover *= 1.0 - smoothstep(class_data.w, appearance.w, point.y);
@@ -119,24 +134,12 @@ fn ground_wetness_at(point: vec3<f32>, normal: vec3<f32>, footprint: f32,
     if !ground && up > 0.05 {
         let shore = wet_shore(point.xz);
         if shore.w > 0.0 {
-            pores = max(pores, wet_band(point.y - (shore.x + shore.y), shore.z));
+            pores = max(pores, wet_band(point.y - wet_shore_edge(shore), shore.z));
         }
     }
     let open = GroundWetness(pores, surface, cover, class_index, ground);
     if cell.y < 0.0 { return open; }
     let hollow = wet_load(39u + u32(cell.y));
-    if material {
-        // Spread very shallow wetness across the bed's relief so a nearly
-        // level patch can fade as its final band drains through the relief.
-        let relief = max(0.002, class_data.x);
-        let band = max(hollow.z, relief);
-        let margin = wet_band(point.y - hollow.x, band) * min(1.0, hollow.z / band);
-        let submerged = smoothstep(0.0, relief, hollow.x - max(point.y, cell.w));
-        let held = smoothstep(-relief, relief, hollow.y - point.y) *
-            smoothstep(0.0, relief, hollow.y - cell.w);
-        let fill = mix(open.pores, hollow.w, held);
-        return GroundWetness(max(fill, max(margin, submerged)), surface, cover, class_index, ground);
-    }
     if hollow.x > cell.w && point.y < hollow.x {
         return GroundWetness(1.0, 0.0, 0.0, class_index, ground);
     }
@@ -147,17 +150,13 @@ fn ground_wetness_at(point: vec3<f32>, normal: vec3<f32>, footprint: f32,
     return GroundWetness(max(open.pores, margin), surface, cover, class_index, ground);
 }
 
-fn ground_wetness_footprint(point: vec3<f32>, normal: vec3<f32>, footprint: f32) -> GroundWetness {
-    return ground_wetness_at(point, normal, footprint, false);
-}
-
 fn ground_wetness(point: vec3<f32>, normal: vec3<f32>) -> GroundWetness {
     return ground_wetness_footprint(point, normal, 0.0);
 }
 
 fn wet_material(point: vec3<f32>, normal: vec3<f32>, base: vec3<f32>, roughness: f32,
                 metalness: f32) -> vec4<f32> {
-    let wet = ground_wetness_at(point, normal, 0.0, true);
+    let wet = ground_wetness(point, normal);
     if wet.pores <= 0.0 && (wet.hollows_ground || wet.cover <= 0.0) {
         return vec4(base, roughness);
     }

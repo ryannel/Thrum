@@ -183,6 +183,7 @@ pub(super) struct BucketRoute {
     segment_bytes: u64,
     /// Forward pipelines by class, then unflipped and flipped.
     forward: [[wgpu::RenderPipeline; 2]; 3],
+    dry_forward: Option<[[wgpu::RenderPipeline; 2]; 3]>,
     depth: Option<[[wgpu::RenderPipeline; 2]; 3]>,
     ambient_receiver: Option<[[wgpu::RenderPipeline; 2]; 3]>,
     /// Each segment's checked index range and base vertex, from the arena's
@@ -314,6 +315,7 @@ impl BucketRoute {
             table,
             segment_bytes,
             forward: pipelines(CameraDraw::Forward),
+            dry_forward: None,
             depth: occlusion.then(|| pipelines(CameraDraw::Depth)),
             ambient_receiver: ambient.then(|| pipelines(CameraDraw::AmbientReceiver)),
             ranges,
@@ -324,6 +326,15 @@ impl BucketRoute {
         route.lay_out_casters();
         route.publish(queue, upload)?;
         Ok(route)
+    }
+
+    pub(super) fn prepare_dry(
+        &mut self,
+        pipeline: impl Fn(wgpu::PrimitiveState) -> wgpu::RenderPipeline,
+    ) {
+        self.dry_forward = Some(
+            CLASSES.map(|class| [false, true].map(|flipped| pipeline(class.primitive(flipped)))),
+        );
     }
 
     fn key(mesh: MeshId, instance: &InstanceRecord) -> Option<BucketKey> {
@@ -483,8 +494,10 @@ impl BucketRoute {
         orthographic: bool,
         indirect: Option<&wgpu::Buffer>,
         draw: CameraDraw,
+        dry: bool,
     ) -> Result<(), RenderError> {
         let pipelines = match draw {
+            CameraDraw::Forward if dry => self.dry_forward.as_ref(),
             CameraDraw::Forward => Some(&self.forward),
             CameraDraw::Depth => self.depth.as_ref(),
             CameraDraw::AmbientReceiver => self.ambient_receiver.as_ref(),

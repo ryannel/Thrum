@@ -53,3 +53,40 @@ fn standing_film_is_an_optical_residual() {
     });
 }
 }
+
+thrum_test_support::macos_gpu_test! {
+fn standing_film_admits_both_optics_profiles() {
+    use thrum_app::sky::ContentStatus;
+    use thrum_sea_model::Spectrum;
+    use thrum_water::{Optics, Water};
+    use water_scene::island::{Wind, build_rain_ground};
+
+    let name = "standing_film_admits_both_optics_profiles";
+    let Some(gpu) = thrum_test_support::gpu(name, Some(wgpu::Backend::Metal)) else {
+        return;
+    };
+    support::island::with_cooked_island(name, || {
+        for optics in [None, Some(Optics::default())] {
+            let (game, _, map, _) = build_rain_ground(Wind::Calm, false, true).expect("yard");
+            let spectrum = Spectrum::build(&Wind::Calm.forcing()).expect("calm spectrum");
+            let mut profile = water_scene::profile(&spectrum);
+            profile.optics = optics;
+            let water = Water::mapped(map, spectrum, profile).expect("mapped water");
+            let report = water.report();
+            let game = game.with_contribution(Box::new(water), || ContentStatus::Drawn(1));
+            let mut f = support::Fixture::from_game(&gpu, [320, 180], game, report);
+            f.parameters(r#"{"camera.island":13,"rain.rate":0}"#);
+            f.warm_cooked();
+            f.parameters(r#"{"rain.rate":10,"rain.time_scale":600}"#);
+            for i in 0..20 {
+                f.frame_without_timings(1.0 + f64::from(i) / 60.0);
+            }
+            let sample = f.frame(1.0 + 20.0 / 60.0);
+            let passes = sample.gpu_pass_ns.as_ref().expect("Metal timestamps").passes();
+            for label in ["water surface", "water gather", "shore film"] {
+                assert!(passes.iter().any(|pass| pass.name.ends_with(label)), "missing {label} with optics {optics:?}");
+            }
+        }
+    });
+}
+}

@@ -696,6 +696,7 @@ impl SceneContribution for Water {
         let previous = self.previous.map_or(now, |(time, _, _)| time);
         let map = self.map.lock().expect("water map lock");
         let row = map.row(self.body, [0.0; 2]);
+        let film = p.film_reader();
         let displayed_map = match &mut p.map {
             Some(gpu) => {
                 let (displayed, hollow_levels) = gpu.record(&p.queue, &map, frame.time);
@@ -776,6 +777,7 @@ impl SceneContribution for Water {
                 self.offshore_displacement,
                 self.mirror_roughness.with_foam(p.foam.is_some()),
                 underwater_admitted,
+                film,
             );
         }
         if let Some(cache) = &mut p.surf_cache {

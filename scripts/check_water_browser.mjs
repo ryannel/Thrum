@@ -795,7 +795,7 @@ try {
       const layout=d.createBindGroupLayout({entries});
       const pipeline=await d.createComputePipelineAsync({layout:d.createPipelineLayout({bindGroupLayouts:[layout]}),
         compute:{module,entryPoint:'probe_wet_ground'}});
-      const size=48;
+      const size=80;
       const buffer=d.createBuffer({size,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC});
       const readback=d.createBuffer({size,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
       const bind=d.createBindGroup({layout,entries:[{binding:0,resource:{buffer}},field]});
@@ -805,7 +805,7 @@ try {
       await readback.mapAsync(GPUMapMode.READ);
       const values=Array.from(new Float32Array(readback.getMappedRange()));
       readback.unmap();readback.destroy();buffer.destroy();
-      return {joint:values.slice(0,4),face:values.slice(4,8),shelter:values.slice(8,12)};
+      return {joint:values.slice(0,4),face:values.slice(4,8),shelter:values.slice(8,12), shiftedJoint:values.slice(12,16), oldJoint:values.slice(16,20)};
     })()`);
     await steps(2);
     await capture('ground-dry',0);
@@ -821,6 +821,7 @@ try {
     assert(dry.joint[0]===0&&dry.joint[1]===0,'joint starts dry');
     assert(wet.joint[0]>0.05&&wet.joint[1]>0&&wet.joint[2]>wet.face[2],
       `wetness should darken exposed paving and reach its joints first: ${JSON.stringify(wet)}`);
+    assert(wet.shiftedJoint[2]>wet.oldJoint[2],'film follows the translated authored joint');
     assert(wet.shelter[0]===0&&wet.shelter[1]===0,'sheltered point must stay dry');
     assert(dried.joint[0]<wet.joint[0]*0.1&&dried.joint[2]===0,'film and then pores dry');
     assert(new Set(result.frames.map(frame=>frame.sha256_rgba)).size===3,'submitted ground states must differ');

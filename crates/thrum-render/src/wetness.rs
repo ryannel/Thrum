@@ -1,6 +1,9 @@
 //! Optional scene-owned inputs to the forward wetness function.
 
-use std::sync::{Arc, Mutex};
+use std::sync::{
+    Arc, Mutex,
+    atomic::{AtomicBool, Ordering},
+};
 
 const BINDING: u32 = 26;
 
@@ -19,6 +22,7 @@ pub struct WetnessProvider {
 struct State {
     rows: Vec<[f32; 4]>,
     revision: u64,
+    active: bool,
 }
 
 impl WetnessProvider {
@@ -47,6 +51,7 @@ impl WetnessProvider {
             state: Arc::new(Mutex::new(State {
                 rows: dynamic_rows,
                 revision: 0,
+                active: true,
             })),
         })
     }
@@ -57,12 +62,22 @@ impl WetnessProvider {
     /// # Panics
     /// Panics if the publication mutex is poisoned.
     pub fn publish(&self, rows: &[[f32; 4]]) -> bool {
+        self.publish_state(rows, true)
+    }
+
+    /// Publish a tick and whether its field can change forward shading.
+    /// A dry field draws with the original material pipeline.
+    ///
+    /// # Panics
+    /// Panics if the publication mutex is poisoned.
+    pub fn publish_state(&self, rows: &[[f32; 4]], active: bool) -> bool {
         let mut state = self.state.lock().expect("wetness state");
         if rows.len() != state.rows.len() {
             return false;
         }
-        if rows != state.rows {
+        if rows != state.rows || active != state.active {
             state.rows.copy_from_slice(rows);
+            state.active = active;
             state.revision = state.revision.wrapping_add(1);
         }
         true
@@ -80,6 +95,7 @@ pub struct PreparedWetness {
     texture: wgpu::Texture,
     view: wgpu::TextureView,
     revision: u64,
+    active: Arc<AtomicBool>,
 }
 
 impl PreparedWetness {
@@ -132,6 +148,7 @@ impl PreparedWetness {
             view: texture.create_view(&wgpu::TextureViewDescriptor::default()),
             texture,
             revision: state.revision,
+            active: Arc::new(AtomicBool::new(state.active)),
         })
     }
 
@@ -149,6 +166,15 @@ impl PreparedWetness {
         Arc::ptr_eq(&self.field.state, &field.state)
     }
 
+    /// Read the published tick's dynamic rows for a contribution's CPU admission.
+    ///
+    /// # Panics
+    /// Panics if the publication mutex is poisoned.
+    pub fn read_rows<T>(&self, read: impl FnOnce(&[[f32; 4]]) -> T) -> T {
+        let state = self.field.state.lock().expect("wetness state");
+        read(&state.rows)
+    }
+
     /// Upload a newly published tick to this device.
     ///
     /// # Panics
@@ -158,7 +184,14 @@ impl PreparedWetness {
         if self.revision != state.revision {
             write_rows(queue, &self.texture, 0, &state.rows);
             self.revision = state.revision;
+            self.active.store(state.active, Ordering::Release);
         }
+    }
+
+    /// Whether the uploaded field changes forward shading.
+    #[must_use]
+    pub fn active(&self) -> bool {
+        self.active.load(Ordering::Acquire)
     }
 
     /// Layout entry for reading the field at the pass's chosen binding.
@@ -236,9 +269,11 @@ pub(crate) fn compose(scene: String, source: Option<&str>) -> String {
         .expect("forward wetness material input");
     let field = field_source(source, 1, BINDING);
     format!(
-        "{before}    let metalness = material.surface.z*orm.b;
+        "{before}    let dry_base = material.base.rgb*base.rgb;
+    let metalness = material.surface.z*orm.b;
+    let dry_roughness = material.surface.y*orm.g;
     let wet = wet_material(input.world_position, normalize(input.normal),
-        material.base.rgb*base.rgb, material.surface.y*orm.g, metalness);
+        dry_base, dry_roughness, metalness);
     let surface_base = wet.rgb;
     let roughness = wet.a;{after}\n{field}"
     )

@@ -25,6 +25,7 @@ pub(crate) struct Pipelines {
     device: wgpu::Device,
     queue: wgpu::Queue,
     mesh: MeshPipelines,
+    wetness: Option<thrum_render::wetness::PreparedWetness>,
     stage_layout: Option<crate::mesh_stages::Layout>,
     stage_cull: bool,
     pub(crate) indexed_path: CookedDrawPath,
@@ -285,6 +286,10 @@ impl Pipelines {
                 Err(reason) => *fallback = Some(reason),
             }
         }
+        mesh.dry = target.dry_source.as_deref().map(|source| {
+            let cooked = cooked_source(source, surface.sun_optical_depth);
+            target.dry_mesh(&format!("{source}\n{cooked}"))
+        });
         let volume_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("cooked volume"),
             entries: &[
@@ -409,6 +414,7 @@ impl Pipelines {
             device: wgpu::Device::clone(device),
             queue: surface.queue.clone(),
             mesh,
+            wetness: surface.wetness.cloned(),
             stage_layout: target.stages.clone(),
             stage_cull: config.mesh_stage_cull,
             indexed_path,
@@ -915,13 +921,14 @@ impl Pipelines {
         view_offset: u32,
     ) {
         let pipelines = mesh.unwrap_or(&self.mesh);
-        Self::draw_meshes(
-            bound,
-            pass,
-            &pipelines.main,
-            pipelines.stages.as_ref(),
-            view_offset,
-        );
+        let (main, stages) = pipelines
+            .dry
+            .as_ref()
+            .filter(|_| self.wetness.as_ref().is_some_and(|field| !field.active()))
+            .map_or((&pipelines.main, pipelines.stages.as_ref()), |dry| {
+                (&dry.main, dry.stages.as_ref())
+            });
+        Self::draw_meshes(bound, pass, main, stages, view_offset);
         if let Some((group, _)) = &bound.volume {
             pass.set_pipeline(&self.volume);
             pass.set_bind_group(2, group, &[]);

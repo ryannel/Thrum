@@ -561,6 +561,7 @@ pub struct PreparedSynthetic {
     key: PipelineKey,
     pipeline: wgpu::RenderPipeline,
     pipeline_two_sided: wgpu::RenderPipeline,
+    dry_pipelines: Option<[wgpu::RenderPipeline; 2]>,
     /// Occlusion only: the depth-only twins of `pipeline` and
     /// `pipeline_two_sided`, for the depth prepass.
     depth_prepass: Option<[wgpu::RenderPipeline; 2]>,

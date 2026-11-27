@@ -8,8 +8,10 @@ fn probe_wet_ground() {
         vec3(145.0, 18.118, 65.0),
         vec3(145.25, 18.120, 65.25),
         vec3(152.15, 18.133, 68.025),
+        vec3(145.546875, 18.118, 65.25),
+        vec3(145.5, 18.120, 65.25),
     );
-    for (var i = 0u; i < 3u; i++) {
+    for (var i = 0u; i < 5u; i++) {
         let wet = ground_wetness(points[i], vec3(0.0, 1.0, 0.0));
         result[i] = vec4(wet.pores, wet.surface, wet.cover, f32(wet.class_index));
     }

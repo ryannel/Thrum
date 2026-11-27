@@ -308,6 +308,8 @@ pub struct SceneSurface<'a> {
     /// The composed WGSL of the scene's forward shader (lighting, materials and entry points).
     /// It holds [`material_hook_point`] exactly once.
     pub shader_source: &'a str,
+    /// Original material shader for a prepared field whose tick is dry.
+    pub dry_shader_source: Option<&'a str>,
     /// The forward pipeline layout: view, light, material and instance groups.
     pub pipeline_layout: &'a crate::runtime::PipelineInput<wgpu::PipelineLayout>,
     /// Group 0 (view) layout.
@@ -904,6 +906,7 @@ impl RayInstances<'_> {
 /// Pieces of a prepared scene that a [`SceneSurface`] lends out.
 pub(crate) struct SurfaceParts {
     pub(crate) shader_source: String,
+    pub(crate) dry_shader_source: Option<String>,
     pub(crate) pipeline_layout: crate::runtime::PipelineInput<wgpu::PipelineLayout>,
     pub(crate) light_layout: crate::runtime::PipelineInput<wgpu::BindGroupLayout>,
     pub(crate) material_layout: crate::runtime::PipelineInput<wgpu::BindGroupLayout>,

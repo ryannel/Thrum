@@ -12,14 +12,24 @@ const HOLLOW_START: usize = HEADER + MAX_CLASSES * CLASS_TEXELS;
 
 pub(super) const SOURCE: &str = include_str!("wet_ground.wgsl");
 
-/// Relief height pattern in world metres. A zero period gives unpatterned relief.
+/// One authored, repeating relief texture, mapped to world X/Z.
+#[derive(Clone, Copy, Debug)]
+pub struct ReliefTile {
+    /// World position of the texture's UV origin.
+    pub origin: [f32; 2],
+    /// World metres covered by one repeat on each axis.
+    pub period: [f32; 2],
+    /// Width and height in texels.
+    pub size: [u32; 2],
+    /// Row-major normalised heights, encoded as UNORM8.
+    pub heights: &'static [u8],
+}
+
+/// A ground class's authored relief and elevation bounds.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct ReliefPattern {
-    /// Distance between the low parts of the relief on each axis. A zero
-    /// component disables that axis.
-    pub period: [f32; 2],
-    /// Distance from a low part to the relief's full height.
-    pub bank: f32,
+    /// One texture shared with the ground's material and bed.
+    pub tile: Option<ReliefTile>,
     /// Bottom and top elevations in metres over which the authored relief
     /// loses standing-film cover. Equal bounds disable the elevation mask.
     pub elevation: [f32; 2],
@@ -104,6 +114,9 @@ pub struct WetGround {
     rows: Vec<[f32; 4]>,
     class_count: usize,
     hollow_count: usize,
+    ground_classes: u8,
+    relief_addresses: [u32; MAX_CLASSES],
+    hollow_pits: Vec<f32>,
 }
 
 impl WetGround {
@@ -120,8 +133,10 @@ impl WetGround {
         if classes.is_empty() || classes.len() > MAX_CLASSES || hollow_count >= 1 << 24 {
             return None;
         }
-        let mut rows = vec![[0.0; 4]; (HOLLOW_START + hollow_count).next_multiple_of(width)];
+        let mut rows = vec![[0.0; 4]; (HOLLOW_START + hollow_count + 1).next_multiple_of(width)];
         let mut static_rows = Vec::new();
+        let mut ground_classes = 0;
+        let mut hollow_pits = vec![f32::INFINITY; hollow_count];
         if let Some(canopy) = canopy {
             append_canopy(canopy, &mut rows, &mut static_rows)?;
         }
@@ -143,15 +158,29 @@ impl WetGround {
                 ground.size[0] as f32,
             ];
             let offset = rows.len() + static_rows.len();
-            rows[3] = [offset as f32, ground.size[1] as f32, 0.0, 0.0];
+            let (low, high) = ground
+                .cells
+                .iter()
+                .fold((f32::INFINITY, f32::NEG_INFINITY), |(lo, hi), cell| {
+                    (lo.min(cell.bed), hi.max(cell.bed))
+                });
+            rows[3] = [offset as f32, ground.size[1] as f32, low, high];
             static_rows.extend(ground.cells.into_iter().map(|cell| {
+                ground_classes |= 1 << cell.class;
                 let label = if cell.hollow == NO_HOLLOW {
                     -1.0
                 } else {
+                    hollow_pits[cell.hollow as usize] = cell.pit;
                     cell.hollow as f32
                 };
                 [cell.bed, label, f32::from(cell.class), cell.pit]
             }));
+        }
+        let mut relief_addresses = [0; MAX_CLASSES];
+        for (address, class) in relief_addresses.iter_mut().zip(classes) {
+            if let Some(tile) = class.pattern.tile {
+                *address = append_relief(tile, rows.len(), &mut static_rows)?;
+            }
         }
         if rows.len() + static_rows.len() >= 1 << 24 {
             return None;
@@ -162,6 +191,9 @@ impl WetGround {
             rows,
             class_count: classes.len(),
             hollow_count,
+            ground_classes,
+            relief_addresses,
+            hollow_pits,
         };
         let dry = vec![[[0.0; 2]; 3]; classes.len()];
         let hollows = vec![HollowWetness::default(); hollow_count];
@@ -215,18 +247,76 @@ impl WetGround {
                 [
                     class.porosity,
                     class.film_roughness,
-                    class.pattern.bank,
+                    self.relief_addresses[index] as f32,
                     class.pattern.elevation[1],
                 ],
                 [s0, p0, s1, p1],
-                [s2, p2, class.pattern.period[0], class.pattern.period[1]],
+                [s2, p2, 0.0, 0.0],
             ]);
         }
         for (row, hollow) in self.rows[HOLLOW_START..].iter_mut().zip(hollows) {
             *row = [hollow.level, hollow.mark, hollow.margin, hollow.held_fill];
         }
-        self.provider.publish(&self.rows)
+        self.rows.last_mut().expect("film admission row")[0] =
+            f32::from(u8::from(classes.iter().zip(stores).enumerate().any(
+                |(index, (class, reaches))| {
+                    self.ground_classes & (1 << index) != 0
+                        && class.relief > 0.0
+                        && reaches.iter().any(|reach| reach[0] > 0.0)
+                },
+            )));
+        let active = self.rows[5][3] > 0.0
+            || stores.iter().flatten().flatten().any(|&value| value > 0.0)
+            || hollows.iter().zip(&self.hollow_pits).any(|(hollow, &pit)| {
+                hollow.level > pit || hollow.margin > 0.0 || hollow.held_fill > 0.0
+            });
+        self.provider.publish_state(&self.rows, active)
     }
+}
+
+fn append_relief(tile: ReliefTile, base: usize, atlas: &mut Vec<[f32; 4]>) -> Option<u32> {
+    let [width, height] = tile.size.map(|v| v as usize);
+    if width == 0
+        || height == 0
+        || tile.heights.len() != width.checked_mul(height)?
+        || !tile.origin.into_iter().all(f32::is_finite)
+        || !tile.period.into_iter().all(|v| v.is_finite() && v > 0.0)
+    {
+        return None;
+    }
+    let address = u32::try_from(base + atlas.len()).ok()?;
+    atlas.push([
+        tile.origin[0],
+        tile.origin[1],
+        tile.period[0],
+        tile.period[1],
+    ]);
+    atlas.push([width as f32, height as f32, 0.0, 0.0]);
+    atlas.extend(tile.heights.chunks(4).map(|pack| {
+        let mut values = [0.0; 4];
+        for (value, height) in values.iter_mut().zip(pack) {
+            *value = f32::from(*height) / 255.0;
+        }
+        values
+    }));
+    Some(address)
+}
+
+pub(super) fn film_bounds(
+    wetness: &thrum_render::wetness::PreparedWetness,
+) -> Option<crate::optics::BodyBounds> {
+    wetness.read_rows(|rows| {
+        if rows.last()?[0] == 0.0 {
+            return None;
+        }
+        let [x, z, spacing, width] = rows[2];
+        let [_, height, low, high] = rows[3];
+        let tolerance = 0.028 + 0.5 * spacing;
+        crate::optics::BodyBounds::new(
+            [x, low - tolerance, z],
+            [x + spacing * width, high + tolerance, z + spacing * height],
+        )
+    })
 }
 
 #[expect(

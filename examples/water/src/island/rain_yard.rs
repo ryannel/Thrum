@@ -672,10 +672,13 @@ fn wet_classes(classes: &[GroundClass]) -> [thrum_water::wet_ground::GroundClass
     [PROP, 0, PAVING].map(|index| {
         let class = classes[index];
         let pattern = if index == PAVING {
-            // The opaque yard's mesh and albedo share the same half-metre joints.
             thrum_water::wet_ground::ReliefPattern {
-                period: [0.5; 2],
-                bank: 0.05,
+                tile: Some(thrum_water::wet_ground::ReliefTile {
+                    origin: [144.0, 61.0],
+                    period: [1.0, 1.0],
+                    size: [128, 128],
+                    heights: include_bytes!("../../assets/relief/rain-yard-paving.r8"),
+                }),
                 elevation: [0.0; 2],
             }
         } else if index == 0 {

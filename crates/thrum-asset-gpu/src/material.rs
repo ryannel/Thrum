@@ -242,6 +242,7 @@ pub(crate) struct Target {
     pub(crate) epoch: u64,
     pub(crate) device: thrum_render::runtime::DeviceSite,
     pub(crate) scene_source: Arc<str>,
+    pub(crate) dry_source: Option<Arc<str>>,
     pub(crate) secondary_source: Option<Arc<str>>,
     pub(crate) main: MeshSurface,
     pub(crate) receiver: Option<MeshSurface>,
@@ -305,6 +306,7 @@ impl Target {
             epoch,
             device: surface.device.clone(),
             scene_source: surface.shader_source.into(),
+            dry_source: surface.dry_shader_source.map(Into::into),
             stages: None,
             secondary_source: surface
                 .secondary_surfaces
@@ -362,9 +364,16 @@ impl Target {
 #[derive(Clone)]
 pub(crate) struct MeshPipelines {
     pub(crate) main: wgpu::RenderPipeline,
+    pub(crate) dry: Option<DryMesh>,
     pub(crate) receiver: Option<wgpu::RenderPipeline>,
     pub(crate) receiver_stages: Option<wgpu::RenderPipeline>,
     pub(crate) secondary: Vec<wgpu::RenderPipeline>,
+    pub(crate) stages: Option<wgpu::RenderPipeline>,
+}
+
+#[derive(Clone)]
+pub(crate) struct DryMesh {
+    pub(crate) main: wgpu::RenderPipeline,
     pub(crate) stages: Option<wgpu::RenderPipeline>,
 }
 
@@ -388,6 +397,7 @@ impl Target {
         });
         MeshPipelines {
             main: mesh_pipeline(&self.device, &self.main, main),
+            dry: None,
             receiver: self
                 .receiver
                 .as_ref()
@@ -395,6 +405,22 @@ impl Target {
             receiver_stages: None,
             secondary,
             stages: None,
+        }
+    }
+
+    pub(crate) fn dry_mesh(&self, source: &str) -> DryMesh {
+        let module = self
+            .device
+            .create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("cooked dry material"),
+                source: wgpu::ShaderSource::Wgsl(source.into()),
+            });
+        DryMesh {
+            main: mesh_pipeline(&self.device, &self.main, &module),
+            stages: self
+                .stages
+                .as_ref()
+                .map(|stages| stages.compile(&self.device, &self.main, source, "cooked_mesh")),
         }
     }
 }
@@ -558,10 +584,15 @@ impl Candidate {
                 .as_ref()
                 .map(|source| combine(source, &candidate.hook.source))
                 .transpose()?;
-            Ok((main, secondary))
+            let dry = target
+                .dry_source
+                .as_ref()
+                .map(|source| combine(source, &candidate.hook.source))
+                .transpose()?;
+            Ok((main, secondary, dry))
         });
         match sources {
-            Ok((combined, secondary)) => {
+            Ok((combined, secondary, dry)) => {
                 let scope = target
                     .device
                     .push_error_scope(wgpu::ErrorFilter::Validation);
@@ -575,6 +606,7 @@ impl Candidate {
                     &module,
                     secondary.as_ref().map(|source| source.text.as_str()),
                 );
+                pipelines.dry = dry.as_ref().map(|source| target.dry_mesh(&source.text));
                 if let Some(stages) = &target.stages {
                     pipelines.stages = Some(stages.compile(
                         &target.device,

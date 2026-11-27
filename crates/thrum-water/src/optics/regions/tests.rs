@@ -79,6 +79,7 @@ fn receiving_rectangles_hold_rays_whose_surface_pixel_is_outside_the_source() {
                 0.0,
                 [0.0, a],
                 MirrorRoughness::default(),
+                None,
             );
             assert_ne!(inputs.dispatch, [0; 4]);
             for z in 1_u16..320 {
@@ -143,6 +144,7 @@ fn a_raised_panel_has_separate_source_and_reflected_regions() {
         0.0,
         [0.0; 2],
         MirrorRoughness::default(),
+        None,
     );
     let eye = Vec3::from_array(frame.camera);
     for x in [low.x, high.x] {
@@ -209,7 +211,16 @@ fn see_through_admission_tracks_sight_depth_and_leaves_deep_map_tiles_uncopied()
         tail_slope_variance: 0.01,
     };
     let roughness = MirrorRoughness::new(&spectrum, 4.0, 0.0);
-    let inputs = fields.inputs(profile, &view, Some(&map), &[], 0.0, [0.0, 0.2], roughness);
+    let inputs = fields.inputs(
+        profile,
+        &view,
+        Some(&map),
+        &[],
+        0.0,
+        [0.0, 0.2],
+        roughness,
+        None,
+    );
     let wet = Vec3::new(-12.0, 0.0, 35.0);
     let deep = Vec3::new(31.0, 0.0, 42.0);
     let shallow_bits = bits(&inputs, &view, wet).expect("shallow sight point");
@@ -226,6 +237,7 @@ fn see_through_admission_tracks_sight_depth_and_leaves_deep_map_tiles_uncopied()
         0.0,
         [0.0, 0.2],
         roughness.with_foam(true),
+        None,
     );
     assert_eq!(foamy.dispatch, inputs.dispatch);
 
@@ -233,7 +245,16 @@ fn see_through_admission_tracks_sight_depth_and_leaves_deep_map_tiles_uncopied()
     // same spectrum can mirror when whitewater removes slope variance.
     spectrum.tail_slope_variance = 0.0025;
     let slight = MirrorRoughness::new(&spectrum, 4.0, 0.0);
-    let bare = fields.inputs(profile, &view, Some(&map), &[], 0.0, [0.0, 0.2], slight);
+    let bare = fields.inputs(
+        profile,
+        &view,
+        Some(&map),
+        &[],
+        0.0,
+        [0.0, 0.2],
+        slight,
+        None,
+    );
     let foam = fields.inputs(
         profile,
         &view,
@@ -242,6 +263,7 @@ fn see_through_admission_tracks_sight_depth_and_leaves_deep_map_tiles_uncopied()
         0.0,
         [0.0, 0.2],
         slight.with_foam(true),
+        None,
     );
     assert_eq!(bare.dispatch, inputs.dispatch);
     assert_eq!(foam.dispatch, [0, 0, 853, 479]);
@@ -250,7 +272,16 @@ fn see_through_admission_tracks_sight_depth_and_leaves_deep_map_tiles_uncopied()
         extinction: [0.06; 3],
         ..profile
     };
-    let clear_inputs = fields.inputs(clear, &view, Some(&map), &[], 0.0, [0.0, 0.2], roughness);
+    let clear_inputs = fields.inputs(
+        clear,
+        &view,
+        Some(&map),
+        &[],
+        0.0,
+        [0.0, 0.2],
+        roughness,
+        None,
+    );
     assert_eq!(
         bits(&clear_inputs, &view, deep).expect("depth on screen") & (SOURCE | SHALLOW),
         SOURCE | SHALLOW
@@ -258,7 +289,16 @@ fn see_through_admission_tracks_sight_depth_and_leaves_deep_map_tiles_uncopied()
     assert_eq!(clear_inputs.reach_slope_scene[2], 0.0);
 
     map.set_wave_gains(0, [0.25; 4]).expect("sheltered sea");
-    let sheltered = fields.inputs(profile, &view, Some(&map), &[], 0.0, [0.0, 0.2], roughness);
+    let sheltered = fields.inputs(
+        profile,
+        &view,
+        Some(&map),
+        &[],
+        0.0,
+        [0.0, 0.2],
+        roughness,
+        None,
+    );
     assert_eq!(sheltered.reach_slope_scene[2], 1.0);
     assert_eq!(sheltered.dispatch, [0, 0, 853, 479]);
     assert_eq!(
@@ -336,6 +376,7 @@ fn basin_mirror_admission_projects_only_tiles_that_can_mirror_at_their_depth() {
             0.0,
             [0.0, 0.2],
             roughness,
+            None,
         )
     };
     let deep = inputs(16.0, profile, rough);
@@ -508,7 +549,7 @@ fn rough_chart_and_basin_copy_only_shallow_tiles() {
             println!("{name}: declared gain {body_gain}, minimum wet gain {mixed_gain}");
         }
         let inputs =
-            Shallows::default().inputs(profile, &view, Some(&map), &[], 0.0, [0.0; 2], tail);
+            Shallows::default().inputs(profile, &view, Some(&map), &[], 0.0, [0.0; 2], tail, None);
         assert_shallow_copy(name, &inputs, &view);
     }
 
@@ -540,7 +581,16 @@ fn rough_chart_and_basin_copy_only_shallow_tiles() {
         ("high", &high, 1.0),
         ("low again", &low, 0.0),
     ] {
-        let inputs = fields.inputs(profile, &view, Some(map), &[], 0.0, [0.0; 2], roughness);
+        let inputs = fields.inputs(
+            profile,
+            &view,
+            Some(map),
+            &[],
+            0.0,
+            [0.0; 2],
+            roughness,
+            None,
+        );
         println!(
             "{name} receiving stage: mirror={}",
             inputs.reach_slope_scene[2]
@@ -610,4 +660,37 @@ fn source_clips_to_the_actual_frustum_when_the_box_straddles_near_depth() {
         .expect("view inside box");
     assert_eq!(enveloping.low, UVec2::ZERO);
     assert_eq!(enveloping.high, view.extent);
+}
+
+#[test]
+fn film_admission_preserves_ordinary_readers_when_dry_or_out_of_view() {
+    let view = frame(3.0);
+    let body = BodyBounds::new([-1.0, -0.2, 23.0], [1.0, 1.0, 25.0]).unwrap();
+    let behind = BodyBounds::new([-1.0, 0.0, -6.0], [1.0, 0.1, -4.0]).unwrap();
+    let visible = BodyBounds::new([-1.0, 0.0, 6.0], [1.0, 0.1, 8.0]).unwrap();
+    let pack = |boxes: &[BodyBounds], film| {
+        Shallows::default().inputs(
+            Optics::default(),
+            &view,
+            None,
+            boxes,
+            0.0,
+            [0.0; 2],
+            MirrorRoughness::default(),
+            film,
+        )
+    };
+    let ordinary = pack(&[body], None);
+    let offscreen = pack(&[body], Some(behind));
+    assert_eq!(ordinary.mask, offscreen.mask);
+    assert_eq!(ordinary.dispatch, offscreen.dispatch);
+    assert_eq!(pack(&[], Some(behind)).dispatch, [0; 4]);
+    let film = pack(&[], Some(visible));
+    assert_ne!(film.dispatch, [0; 4]);
+    assert_ne!(film.film_sources, [0; 4]);
+    assert_eq!(
+        film.reach_slope_scene[2].to_bits(),
+        0,
+        "film has its own reader"
+    );
 }

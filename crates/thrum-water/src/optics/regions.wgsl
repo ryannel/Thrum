@@ -7,6 +7,7 @@ struct OpticsInputs {
     downwelling_mirror: vec4<f32>,
     reach_slope_scene: vec4<f32>,
     dispatch: vec4<u32>,
+    film_sources: vec4<u32>,
     inverse_raster_view_proj: mat4x4<f32>,
     mask: array<vec4<u32>, 144>,
     bodies: array<OpticsBody, 16>,
@@ -33,6 +34,9 @@ fn optics_source(pixel: vec2<u32>) -> bool {
     let mask = optics_mask(pixel);
     if (mask & GATHER_SOURCE) == 0u { return false; }
     if (mask & (GATHER_SHALLOW | GATHER_UNDER)) != 0u || optics.reach_slope_scene.z != 0.0 {
+        return true;
+    }
+    if all(pixel >= optics.film_sources.xy) && all(pixel < optics.film_sources.zw) {
         return true;
     }
     let body_count = u32(optics.reach_slope_scene.w);

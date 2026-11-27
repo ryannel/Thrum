@@ -3,6 +3,8 @@ mod regions;
 
 use bytemuck::{Pod, Zeroable};
 use std::sync::{Arc, Mutex};
+
+pub(super) const FILM_REFLECTION_REACH: f32 = 24.0;
 use thrum_render::{
     atmosphere::EnvironmentProducts,
     binding,
@@ -178,6 +180,7 @@ struct Inputs {
     downwelling_mirror: [f32; 4],
     reach_slope_scene: [f32; 4],
     dispatch: [u32; 4],
+    film_sources: [u32; 4],
     inverse_raster_view_proj: [[f32; 4]; 4],
     mask: [[[u32; 4]; GRID_WIDTH / 4]; GRID_HEIGHT],
     bodies: [BodyBounds; BODY_CAPACITY],
@@ -191,7 +194,7 @@ pub(super) struct Gather {
     pipeline: wgpu::ComputePipeline,
     fields: regions::Shallows,
     dispatch: [u32; 2],
-    film: bool,
+    pub(super) surface: bool,
     pub(super) underwater: bool,
     pub(super) under: bool,
 }
@@ -231,7 +234,7 @@ impl Gather {
         profile: Optics,
         library: &str,
         underwater: bool,
-        film: bool,
+        surface_optics: bool,
     ) -> Self {
         let device = surface.device;
         let buffer = device.create_buffer(&wgpu::BufferDescriptor {
@@ -284,7 +287,7 @@ impl Gather {
             fields: regions::Shallows::default(),
             dispatch: [0; 2],
             underwater,
-            film,
+            surface: surface_optics,
             under: false,
         }
     }
@@ -299,16 +302,18 @@ impl Gather {
         displacement: [f32; 2],
         roughness: MirrorRoughness,
         underwater_admitted: bool,
+        film: Option<BodyBounds>,
     ) {
         let boxes = opaque.0.lock().expect("water optics bodies");
         let mut inputs = self.fields.inputs(
             self.profile,
             frame,
-            map,
-            &boxes,
+            map.filter(|_| self.surface),
+            if self.surface { &boxes } else { &[] },
             water_level,
             displacement,
             roughness,
+            film,
         );
         self.under = underwater_admitted;
         if self.under {
@@ -316,15 +321,6 @@ impl Gather {
             for row in &mut inputs.mask {
                 for cell in row.iter_mut().flatten() {
                     *cell |= SOURCE | UNDER;
-                }
-            }
-        }
-        if self.film {
-            inputs.reach_slope_scene[2] = 1.0;
-            inputs.dispatch = [0, 0, frame.render_extent[0], frame.render_extent[1]];
-            for row in &mut inputs.mask {
-                for cell in row.iter_mut().flatten() {
-                    *cell |= SOURCE;
                 }
             }
         }
