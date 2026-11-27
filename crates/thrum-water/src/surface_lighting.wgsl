@@ -59,6 +59,7 @@
     let l=environment_sun_direction();
     let sunlight=water_sun(input.world);
     let incident=environment_diffuse(vec3(0.0,1.0,0.0))+sunlight*max(l.y,0.0);
+    let low_sun = 1.0 - smoothstep(0.14, 0.46, l.y);
     if OPTICS_ENABLED {
         light+=(1.0-fresnel)*(incident*water.scatter.rgb/3.14159265*(1.0-paths.transmission)
             + paths.transmission*paths.behind);
@@ -69,13 +70,18 @@
     // crest. Its extra in-scatter is bounded and uses the same lent irradiance
     // as the body; no independent light, pattern, or geometric sharpening.
     let crest_height=max(0.0,input.world.y-row.level)/max(water.scatter.w,0.001);
-    let crest=1.0-exp(-crest_height*max(0.0,1.0-determinant));
+    var crest=1.0-exp(-crest_height*max(0.0,1.0-determinant));
+    if hollow_surface {
+        // Interaction waves displace vertically and do not contribute to
+        // the horizontal Jacobian. Use their resolved positive relief for
+        // the shallow crest's broad in-scatter at grazing light.
+        crest += 0.23 * low_sun * smoothstep(0.0003, 0.003, wake.x);
+    }
     light+=(1.0-fresnel)*incident*water.scatter.rgb*crest;
     if OPTICS_ENABLED {
         // Forward scattering is concentrated toward the observer when the
         // thin, compressed part of the crest stands between lens and Sun.
         let forward = pow(max(dot(l, -v), 0.0), 8.0);
-        let low_sun = 1.0 - smoothstep(0.14, 0.46, l.y);
         light += (1.0-fresnel) * sunlight * vec3(0.024, 0.11, 0.088)
             * (crest * forward * low_sun);
     }
@@ -86,7 +92,6 @@
     let fh=water_fresnel(max(dot(v,h),0.0));
     if OPTICS_ENABLED {
         var glint = d*gv*gl*fh/(4.0*nv+0.00001);
-        let low_sun = 1.0 - smoothstep(0.14, 0.45, l.y);
         if hollow_surface {
             // Broaden the capillary lobe at grazing illumination so it
             // resolves the curved front over several pixels.
