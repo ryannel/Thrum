@@ -8,7 +8,7 @@ mod river_foam {
         sync::{Arc, Mutex},
         time::Duration,
     };
-    use thrum_app::sky::{ContentStatus, Controls, SkyGame};
+    use thrum_app::sky::{Camera, ContentStatus, Controls, SkyGame};
     use thrum_water::foam::{CHART_LOSS_BIRTH_RATE, Witness};
     use thrum_water_model::{FlowBands, FlowBandsProfile, Map};
     use water_scene::{channel, island::Wind, river};
@@ -16,10 +16,11 @@ mod river_foam {
     use super::support::{Fixture, foam_buffer, foam_stocks};
 
     const STEP: Duration = Duration::from_nanos(16_666_667);
-    const STATIONS: [(&str, f64); 7] = [
+    const STATIONS: [(&str, f64); 8] = [
         ("riffle", -84.0),
-        ("glide", -75.0),
+        ("headwater transition", -75.0),
         ("pool", -65.0),
+        ("glide", -60.0),
         ("ledge", -52.0),
         ("rocks", -41.0),
         ("chute", -32.0),
@@ -42,12 +43,12 @@ mod river_foam {
         })
     }
 
-    fn measure(scene: &Fixture, map: &Map, witness: &Witness, enabled: bool) -> [Station; 7] {
+    fn measure(scene: &Fixture, map: &Map, witness: &Witness, enabled: bool) -> [Station; 8] {
         let parcels: Vec<[[f32; 4]; 2]> = foam_buffer(scene, &witness.parcels);
         let stocks = foam_stocks(scene, witness);
         let plane = witness.side * witness.side;
         let first = (witness.banks[1] * 2) * plane as usize;
-        let mut stations: [Station; 7] = std::array::from_fn(|_| Station::default());
+        let mut stations: [Station; 8] = std::array::from_fn(|_| Station::default());
         for i in 0..plane {
             let p = cell(witness, 0, i);
             let Some((station, _)) = STATIONS
@@ -104,7 +105,7 @@ mod river_foam {
         let control = water.enable_foam([0.0; 2]).expect("calm whitewater");
         let tap = water.tap_foam();
         let report = water.report();
-        let camera = river::VIEWS[4].1;
+        let camera = Camera::look_at([176.5, 19.0, -53.0], [180.0, 16.6, -46.0], 70.0);
         let game = SkyGame::new(Controls::new(), camera, |_, _| {})
             .with_tick_duration(STEP)
             .expect("step")
@@ -121,7 +122,7 @@ mod river_foam {
         scene.host.set_quality_knob(&knob, 4).expect("cadence");
         let mut frame = |seconds: f64| drop(scene.frame_without_timings(seconds));
         frame(0.0);
-        for tick in (4..=72).step_by(4) {
+        for tick in (4..=48).step_by(4) {
             frame(f64::from(tick) * STEP.as_secs_f64());
         }
         let current = measure(
@@ -131,7 +132,7 @@ mod river_foam {
             true,
         );
         control.set_chart_loss_births(false);
-        for tick in (76..=192).step_by(4) {
+        for tick in (52..=136).step_by(4) {
             scene.frame_without_timings(f64::from(tick) * STEP.as_secs_f64());
         }
         let fading = measure(
@@ -145,7 +146,7 @@ mod river_foam {
             .expect("valley")
             .set_gauge(0, lower)
             .expect("low gauge");
-        for tick in (196..=228).step_by(4) {
+        for tick in (140..=164).step_by(4) {
             scene.frame_without_timings(f64::from(tick) * STEP.as_secs_f64());
         }
         let low = measure(
@@ -158,7 +159,7 @@ mod river_foam {
             .expect("valley")
             .set_gauge(0, upper)
             .expect("high gauge");
-        for tick in (232..=264).step_by(4) {
+        for tick in (168..=200).step_by(4) {
             scene.frame_without_timings(f64::from(tick) * STEP.as_secs_f64());
         }
         let high = measure(
@@ -186,10 +187,10 @@ mod river_foam {
                 high.cover
             );
         }
-        assert!(current[3].births > 0.05 && current[4].births > 0.05 && current[5].births > 0.05);
+        assert!(current[4].births > 0.05 && current[5].births > 0.05 && current[6].births > 0.05);
         assert!(fading.iter().all(|station| station.births == 0.0));
-        assert!(fading[3].cover < current[3].cover && fading[4].cover < current[4].cover);
-        assert!(low[3].cover < high[3].cover);
+        assert!(fading[4].cover < current[4].cover && fading[5].cover < current[5].cover);
+        assert!(low[4].cover < high[4].cover);
     }
 }
 

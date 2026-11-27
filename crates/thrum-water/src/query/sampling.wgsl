@@ -52,4 +52,3 @@ fn cascade_wave(point: QueryPoint, motion: CascadeMotion, band: u32, gradient: C
 struct QueryWave { wave: Wave, cut_fine_nodes: u32, cut_coarse_nodes: u32, }
 
 const QUERY_WIDTH = 64u;
-

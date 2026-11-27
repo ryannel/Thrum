@@ -1,3 +1,4 @@
+
 fn river_column_level(point: vec2<f32>, spacing: f32, row: SurfaceRow) -> f32 {
     let motion = river_surface_motion(point, row);
     var height = river_swell(point, spacing, row) + wake_at(point, 0.0).x;
@@ -32,4 +33,3 @@ fn river_refinement(point: vec2<f32>, id: u32, spacing: f32) -> f32 {
     }
     return weight;
 }
-

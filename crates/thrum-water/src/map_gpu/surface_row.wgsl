@@ -1,3 +1,4 @@
+
 fn surface_row(point: vec2<f32>, cell: Cell, row: MapRow, body: u32, owned: bool) -> SurfaceRow {
     let depth = select(1e30, row.water.x - cell.bed, cell.inside);
     let gains = limit_gains(row.gains, depth, water.heights, map.swash.x, map.origin_spacing_margin.w);

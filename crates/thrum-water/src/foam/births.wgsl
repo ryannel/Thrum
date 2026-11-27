@@ -106,4 +106,3 @@ fn swash_drift(slope: vec2<f32>, upward: f32, depth: f32, swash: f32) -> vec2<f3
     let speed = min(sqrt(9.81 * swash), max(0.0, upward) / max(0.001, length(slope)));
     return -normalize(slope + vec2(1e-8)) * speed * (1.0 - smoothstep(0.0, 0.27 * swash, depth));
 }
-

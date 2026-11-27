@@ -1,3 +1,4 @@
+
 fn plain_query(point: QueryPoint, gain: f32) -> QueryWave {
     return QueryWave(long_wave(point.position - settings.origin, point.dt, gain,
         settings.lengths_chop.w, settings.components), 0u, 0u);

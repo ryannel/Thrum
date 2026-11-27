@@ -100,4 +100,3 @@ fn river_swell(point: vec2<f32>, spacing: f32, row: SurfaceRow) -> f32 {
     let fade = 1.0 - smoothstep(4000.0, 8000.0, length(rest - view.camera_xyz_time.xz));
     return height * row.gains.x * fade;
 }
-

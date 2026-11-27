@@ -1,3 +1,4 @@
+
 fn tent(distance: f32) -> f32 { return max(0.0, 1.0 - abs(distance)); }
 fn kernel(distance: f32, diffusion: f32) -> f32 {
     return (1.0 - 2.0 * diffusion) * tent(distance)

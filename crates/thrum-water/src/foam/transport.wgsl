@@ -1,3 +1,4 @@
+
 @compute @workgroup_size(8, 8)
 fn prepare_transport(@builtin(global_invocation_id) id: vec3<u32>) {
     let level = id.z;
@@ -58,4 +59,3 @@ fn prepare_transport(@builtin(global_invocation_id) id: vec3<u32>) {
     }
     parcels[foam_index(0u, level, local)] = Parcel(stocks, movement);
 }
-

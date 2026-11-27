@@ -728,6 +728,18 @@ fn surface_pipelines(
             include_str!("map_gpu/river_column.wgsl")
         });
         source.push_str(include_str!("map_gpu/river_depth_refine.wgsl"));
+        source.push_str(if flow.is_some() {
+            include_str!("map_gpu/flow_depth_steps.wgsl")
+        } else {
+            include_str!("map_gpu/river_depth_steps.wgsl")
+        });
+        source.push_str(include_str!("map_gpu/river_depth_iteration.wgsl"));
+        source.push_str(if flow.is_some() {
+            include_str!("map_gpu/flow_depth_exit.wgsl")
+        } else {
+            include_str!("map_gpu/river_depth_exit.wgsl")
+        });
+        source.push_str(include_str!("map_gpu/river_depth_bracket.wgsl"));
         source.push_str(if rain {
             "\nfn river_rain_height(point: vec2<f32>, spacing: f32, row: SurfaceRow, motion: CascadeMotion) -> f32 {
                 return rain_geometry(point, spacing, row, motion).x;

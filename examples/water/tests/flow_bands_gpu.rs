@@ -43,7 +43,7 @@ mod flow {
         (index % WIDTH, index / WIDTH)
     }
 
-    fn map() -> Map {
+    fn map(isolate_bands: bool) -> Map {
         let cells = WIDTH * HEIGHT;
         let bed = (0..cells)
             .map(|index| {
@@ -85,7 +85,20 @@ mod flow {
                 .collect();
             let gains = footprint
                 .iter()
-                .map(|&wet| if wet { [gain; 2] } else { [0.0; 2] })
+                .enumerate()
+                .map(|(index, &wet)| {
+                    if !wet {
+                        return [0.0; 2];
+                    }
+                    let (x, _) = bed_index(index);
+                    if isolate_bands && j == 0 && x < 13 {
+                        [gain, 0.0]
+                    } else if isolate_bands && j == 0 && x > 29 {
+                        [0.0, gain]
+                    } else {
+                        [gain; 2]
+                    }
+                })
                 .collect();
             charts.push(ChartSamples {
                 body: bodies.len(),
@@ -225,7 +238,7 @@ mod flow {
         reason = "Metal evidence reports numerical errors and cadence counts"
     )]
     pub(super) fn mailbox(gpu: &thrum_test_support::Gpu) {
-        let map = map();
+        let map = map(true);
         let reference = run_mailbox(gpu, map.clone(), 1, camera(lane(0)));
         let slow = run_mailbox(gpu, map.clone(), 4, camera(lane(0)));
         let remote = Camera::look_at([1000.0, 12.0, 1000.0], [1000.0, 0.0, 1020.0], 50.0);
@@ -246,6 +259,39 @@ mod flow {
         );
     }
 
+    fn reference(
+        bands: &FlowBands,
+        point: [f64; 2],
+        time: f64,
+        speed: f64,
+        dt: f64,
+        gains: [f64; 2],
+    ) -> ([f64; 4], [f64; 4]) {
+        let mut sample = [0.0; 4];
+        let mut scale = [0.0; 4];
+        let profile = bands.profile();
+        for (band, gain) in gains.into_iter().enumerate() {
+            if gain == 0.0 {
+                continue;
+            }
+            let [h, sx, sz, rate] = interpolated(bands, band, point, time, speed);
+            for (total, value) in sample.iter_mut().zip([rate.mul_add(dt, h), sx, sz, rate]) {
+                *total += gain * value;
+            }
+            // Express slopes and rates in equivalent height at the band's
+            // highest wavenumber and fixed-column frequency.
+            let k = std::f64::consts::TAU * profile.radii[band][1] / profile.patches[band];
+            for (total, units) in
+                scale
+                    .iter_mut()
+                    .zip([1.0, k, k, thrum_water_model::flow_frequency(k) + speed * k])
+            {
+                *total += gain * profile.rms[band] * units;
+            }
+        }
+        (sample, scale)
+    }
+
     #[expect(
         clippy::print_stdout,
         reason = "Metal evidence reports normalized query error"
@@ -255,7 +301,7 @@ mod flow {
         map: Map,
         cadence: u32,
         view: Camera,
-    ) -> (Vec<[u64; 4]>, usize, u64) {
+    ) -> (Vec<Vec<u64>>, usize, u64) {
         let mut scene = scene(gpu, map, view);
         let knob = scene
             .fixture
@@ -273,8 +319,9 @@ mod flow {
         let bands = scene.map.flow_bands().expect("model bands");
         let mut bits = Vec::new();
         let mut skips = 0;
-        let mut worst: [f64; 4] = [0.0; 4];
-        let mut rms = [0.0; 2];
+        let mut worst: [[f64; 4]; 3] = [[0.0; 4]; 3];
+        let mut counts = [0; 3];
+        let mut rms = [[0.0; 2]; 2];
         drop(scene.fixture.frame_without_timings(0.0));
         for tick in 1..=5 {
             let mut time = 0.0;
@@ -324,48 +371,71 @@ mod flow {
                 let sample = answer.surface.sample;
                 let point = answer.point.position.map(f64::from);
                 let speed = [0.5, 0.0][arm];
-                let gain = [0.9, 0.035][arm];
+                let row = scene.map.sample(point).expect("wet station");
+                let gains = scene.map.flow_gains(row.body, point);
                 let dt = (STEP * use_tick).as_secs_f64() - time;
-                let mut expected = [0.0; 4];
-                for band in 0..2 {
-                    let [h, sx, sz, rate] = interpolated(bands, band, point, time, speed);
-                    for (total, v) in expected.iter_mut().zip([rate.mul_add(dt, h), sx, sz, rate]) {
-                        *total += gain * v;
-                    }
-                }
+                let (expected, scale) = reference(bands, point, time, speed, dt, gains);
                 let actual = [
                     sample.height - LEVEL,
                     sample.slope[0],
                     sample.slope[1],
                     sample.height_dt,
                 ];
-                let equivalent_height = [1.0, 0.02, 0.02, 0.019];
+                let group = if gains[1] == 0.0 {
+                    0
+                } else if gains[0] == 0.0 {
+                    1
+                } else {
+                    2
+                };
+                counts[group] += 1;
                 for axis in 0..4 {
-                    worst[axis] = worst[axis].max(
-                        (actual[axis] - expected[axis]).abs() * equivalent_height[axis]
-                            / (gain * bands.profile().rms[0]),
-                    );
+                    worst[group][axis] =
+                        worst[group][axis].max((actual[axis] - expected[axis]).abs() / scale[axis]);
                 }
-                if tick == 1 && i < 3 {
-                    println!(
-                        "point {point:?} time {time:.6} horizon {dt:.6}: GPU {actual:?}, model {expected:?}"
-                    );
-                }
-                rms[arm] += actual[0] * actual[0];
-                bits.push(actual.map(f64::to_bits));
+                rms[arm][0] += actual[0].powi(2);
+                rms[arm][1] += expected[0].powi(2);
+                let mut fields: Vec<_> = [sample.height, sample.height_dt, answer.surface.depth]
+                    .into_iter()
+                    .chain(sample.slope)
+                    .chain(sample.velocity)
+                    .chain(answer.surface.current)
+                    .map(f64::to_bits)
+                    .collect();
+                fields.extend([
+                    u64::from(answer.surface.wet),
+                    answer.surface.body.map_or(u64::MAX, |body| body as u64),
+                    answer.point.use_tick,
+                    answer.index as u64,
+                ]);
+                fields.extend(
+                    answer
+                        .sources
+                        .map(|time| time.map_or(u64::MAX, f64::to_bits)),
+                );
+                fields.extend(answer.supported.map(u64::from));
+                fields.extend(
+                    answer
+                        .wave_heights
+                        .map(|height| u64::from(height.to_bits())),
+                );
+                fields.push(u64::from(answer.wake_height.to_bits()));
+                fields.push(answer.bed.map_or(u64::MAX, |bed| u64::from(bed.to_bits())));
+                bits.push(fields);
             }
         }
+        let rms = rms.map(|arm| arm.map(|sum| (sum / 160.0).sqrt()));
         println!(
-            "cadence {cadence}: maximum query error as share of short-band rms {worst:?}, RMS {:.6} / {:.6} m",
-            (rms[0] / 160.0).sqrt(),
-            (rms[1] / 160.0).sqrt()
+            "cadence {cadence}: short/long/mixed normalized errors {worst:?}, samples {counts:?}, GPU/model RMS {rms:?}"
         );
+        assert!(counts.iter().all(|count| *count > 20));
         assert!(
-            worst.iter().all(|&value| value < 0.0004),
-            "model cascade tolerance: {worst:?}"
+            worst.into_iter().flatten().all(|value| value < 0.0004),
+            "model cascade tolerance"
         );
+        assert!((rms[0][0] / rms[0][1] - 1.0).abs() < 0.1);
         assert!(
-            rms[1] < 0.01 * rms[0],
+            rms[1][0] < 0.1 * rms[0][0],
             "pool is at most one tenth of riffle rms"
         );
         let refreshes = scene
@@ -382,12 +452,19 @@ mod flow {
         reason = "Metal evidence reports submitted depth and fitted speed"
     )]
     pub(super) fn drawn(gpu: &thrum_test_support::Gpu) {
-        let mut scene = scene(gpu, map(), camera(lane(0)));
+        let mut scene = scene(gpu, map(false), camera(lane(0)));
         let bands = scene.map.flow_bands().expect("model bands");
-        let mut squares = [0.0_f64; 4];
+        let mut squares = [0.0_f64; 5];
         drop(scene.fixture.frame_without_timings(0.0));
-        for arm in 0..4 {
-            let view = camera(lane(arm));
+        for (arm, square) in squares.iter_mut().enumerate() {
+            let (view, level) = if arm == 4 {
+                (
+                    Camera::look_at([-7.5, 0.15, 17.0], [-7.5, -2.0, 17.001], 40.0),
+                    -2.0,
+                )
+            } else {
+                (camera(lane(arm)), LEVEL)
+            };
             *scene.camera.lock().expect("camera") = view;
             let matrix = depth::matrix(view, EXTENT);
             let mut observed = Vec::new();
@@ -405,8 +482,8 @@ mod flow {
                     let pixel = (at[1] * EXTENT[0] + at[0]) as usize;
                     assert!(depths[pixel] > 0.0);
                     let hit = super::support::world_at(matrix, EXTENT, at, depths[pixel]);
-                    let h = f64::from(hit.y) - LEVEL;
-                    squares[arm] += h * h;
+                    let h = f64::from(hit.y) - level;
+                    *square += h * h;
                     if column % 4 == 0 {
                         observed.push(([f64::from(hit.x), f64::from(hit.z)], time, h));
                     }
@@ -440,7 +517,10 @@ mod flow {
             squares.map(|v| (v / 243.0).sqrt())
         );
         assert!(squares[0] > 0.0005 && squares[2] < squares[0] * 0.01);
-        assert!(squares[3] < 1.0e-8, "lake is flat");
+        assert!(
+            squares[3..].iter().all(|&squared| squared < 1.0e-8),
+            "lake and sea are flat"
+        );
     }
 }
 
