@@ -1684,3 +1684,28 @@
 - 2026-11-27 Planner, the review's suggestion taken: WP26.5 passes on its check alone, as the project's
   proof policy has a tripwire record pass, and its reviewer question is gone. A pass the remedy adds is
   marked absent at the starting revision and counts in the shafts' passes taken together.
+
+## WP16 hull and float net parked
+
+- 2026-11-27 Lead's ruling, after WP16's builder ended `BLOCKED needs_context` at the three-look limit on
+  WP16.6 ([handoff](../../../.orchestrate/evidence/WATERS/WP16-handoff.md), `build/waters` at
+  `d072eb924`): park the joined net on the hull and the float, as the shallow beams were. Keep in WP16.6
+  what reads, and move the hull's and the float's net to WP26 with the beams, as one study of underwater
+  light on receivers and in shafts that researches shipped high-end games, modern techniques only, before
+  building. `SHOWCASE` does not wait for it.
+- 2026-11-27 Planner. WP16.6 is written again: the bed's net, moving light on the hull's sunlit side and
+  the float with its shape not judged, none in a calm, at night, under cloud shade or in the hull's shadow,
+  no repeat, no swim and no window edge, as nine numbered questions. WP16's name and bar say the same.
+  WP16.11 is unchanged and takes the new list by reference. Resume `build/waters` at `d072eb924`.
+- 2026-11-27 Planner. WP26 takes the joined net: WP26.6 is its part of the study and WP26.7 judges it on
+  Metal, WP26.4 at noon in Chrome, and WP26.1's remedy is one for both cues.
+  [Its design](DESIGN.md#light-under-water-that-wp16-left-wp26) has the beams' section under a new heading
+  with [the net's](DESIGN.md#the-net-on-the-hull-and-a-sunk-float), three leads for the study, and the six
+  bounds written for both cues. WP26.3 and WP26.5 are unchanged.
+- 2026-11-27 Planner. Bound 6 lost its three conditional paths to a receiver. A remedy for the net reaches
+  the field or the receivers' read of it, so WP16.6's list is judged again at all its views whatever the
+  remedy changed, in WP26.7 and at noon in WP26.4. Only a body's changed water is still conditional, by
+  WP16.8's descent in WP26.2. WP26.2's reviewer question now asks that alone.
+- 2026-11-27 Planner, not changed here: WP16.7's dark water beside the hull, which the handoff leaves open
+  with looks remaining. The builder's matched view of the signed march beside the frame is the next step.
+  [The change](../../../.orchestrate/evidence/WATERS/WP16-parked-net.md).
