@@ -1834,6 +1834,17 @@
       "quality_bar": "A sea under a living sky as in Sea of Thieves: cloud shadows sliding over the swell, the clouds themselves in the water, and the horizon closing in haze under both.",
       "items": [
         {
+          "id": "WP11.11",
+          "statement": "The workspace type-checks for Linux and Windows again: `scripts/check_cross_target.sh`, unchanged, passes on this work package's checkout for `x86_64-unknown-linux-gnu` and `x86_64-pc-windows-msvc`. On the Mac the cost example's mist-day run with clouds off still plays the solar sweep that WP16.8's record was taken with. Record: one run of the type-check; the scheduled `cross-target` main-branch check guards it from then on.",
+          "check": "bash scripts/check_cross_target.sh",
+          "ask": "On the Mac, does `cloud_cost --mist-day` with clouds off still install the solar sweep over the same ticks and hours as at `dd16512b7`? Is `scripts/check_cross_target.sh` unchanged?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
           "id": "WP11.1",
           "statement": "`examples/water` has a cloud selection, off by default. With it on, the scene keeps a weather state in its world, adds the cloud contribution after the sea, and the labelled stand-in shade provider is not used. With it off, the scene's world, page, compiled graph and frames are what they were.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test clouds_selection_gpu",

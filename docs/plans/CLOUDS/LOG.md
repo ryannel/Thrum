@@ -1313,3 +1313,10 @@ The paired 1440p record now measures clouds absent at all three rates with the
 same Sun and haze. The pass comparisons report dry and occupied timings,
 occurrence counts and unresolved causes. The WP15 reference stays beside them.
 [Route, visual and cost evidence](../../../.orchestrate/evidence/CLOUDS/WP16/repair/PROOF.md)
+
+- 2026-11-27 Planner, after main's `cross-target` check failed at `ff10e3295` (last pass `20227abd8`). WP16's
+  `dd16512b7` made `examples/v1-game/examples/cloud_cost.rs` call `set_cost_solar_sweep` on every target, while
+  `examples/v1-game/src/host.rs` declares it only for macOS with `proving`; it is the one error for Linux and for
+  Windows. New WP11.11 holds the fix and the type-check, first in WP11, the next work package. No design change.
+  WP15 is Done, so its plan note left `PLAN.md`: the eighth risk's fixes for a handover showing in WP15.4 or
+  WP15.13, and [the diagnosis](../../../.orchestrate/evidence/CLOUDS/WP15-diagnosis.md)'s three things to build.

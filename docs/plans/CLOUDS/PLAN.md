@@ -96,14 +96,14 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 
 ## WP15 Mist and fog banks reach the horizon, low cloud hides the hilltops, and a climbing camera passes into the cloud and out above it
 
-If the handover shows in WP15.4 or WP15.13, the eighth risk gives the fixes in order.
-
-[The diagnosis](../../../.orchestrate/evidence/CLOUDS/WP15-diagnosis.md) says what is left to build: one stop mode
-for a Ground profile, the sky pixel's rule, and a growth hook that leaves other resizes as they were.
+[Review](../../../.orchestrate/evidence/CLOUDS/WP15-review.md)
 
 ## WP16 Through a day mist forms after dusk and burns off in the morning, haze runs from crisp to murky, and a visitor sets them, on the Mac and in Chrome
 
 ## WP11 Clouds drift over the open sea, shade it and show in its reflections, and a fog bank drifts ashore
+
+Do WP11.11 first and merge it as its own checkpoint: main's `cross-target` check fails until it lands. The
+[log](LOG.md)'s last entry names the one error.
 
 `examples/water` is `WATERS`': add the selection and its surface field and change nothing else of that module's.
 
