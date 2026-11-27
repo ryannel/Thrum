@@ -434,13 +434,13 @@ fn scenery(bed: &Bed) -> Vec<MeshPlacement> {
             );
         }
     }
-    // Exposed rock on the solved shoulders. The lower part of each mesh
-    // is buried in terrain above the stream's highest waterline.
+    // Expose the solved bed's rock shoulders at their wetted edges.
+    // Sink each mesh into the bed so it reads as part of the same obstacle.
     for [x, z, scale, inset] in [
         [175.0, -43.0, 1.05, 0.34],
         [174.5, -41.5, 0.70, 0.48],
-        [183.7, -42.3, 1.30, 0.43],
-        [184.6, -40.0, 0.77, 0.50],
+        [182.2, -43.1, 1.05, 0.32],
+        [182.6, -40.0, 0.64, 0.46],
         [174.4, -52.3, 0.81, 0.60],
         [185.4, -52.6, 0.91, 0.55],
     ] {
