@@ -2973,7 +2973,8 @@ Five leads, none of them a cause until WP26.6's pictures show it:
   that plane cuts sheets of light that hang under the surface along the refracted Sun. An upright face
   cuts the same sheets more nearly along them, and crosses depths where they have not yet met or have
   spread. So a field sampled perfectly can hold closed cells on a level slice and streaks on a hull's side
-  that passes through it. A level plane at one depth says nothing of this. The hull crosses depths and the
+  that passes through it. A level plane at one depth says nothing of this, and does not tell it from the
+  lead above, a grid that holds the lines at one depth and not at the others. The hull crosses depths and the
   float curves through them: in the handoff's read, depths of 0.25 m, 0.5 m and 1 m take rungs 0, 2 and 4
   (`caustic_field_at` in `crates/thrum-water/src/caustics/sampling.wgsl` at `d072eb924`).
 - *The read on a receiver that is not level.* A level bed reads one depth, so one mix of two rungs serves
@@ -3013,11 +3014,24 @@ Five leads, none of them a cause until WP26.6's pictures show it:
   the water in front of the receiver a cause. A joined net in the factor and none on the shaded receiver
   makes the receiver's lighting a cause. A joined net in what the field supplies at the receiver's points
   and none in the factor makes the read a cause. Where what the field supplies there holds no joined net,
-  a fifth picture by the same diagnostic tells two causes apart: the field on a level plane at the depth
-  of the middle of the receiver's lit part. A joined net on that plane makes the light's shape on the
-  face a cause, which a finer grid will not join. None there either makes the field a cause. The level
-  plane is evidence for that one question and for no other. The record names a cause, of these five, only
-  with the pictures that show it, and may name more than one.
+  the loss is in the field's light at the receiver. The record names that and leaves it open between two
+  things the four pictures cannot tell apart: a field too coarse to hold the lines at the depths the
+  face crosses, and the shape the light itself has on that face. The field on a level plane at one of
+  the receiver's depths may stand beside the fourth picture as support, and it settles neither. The
+  design review of 27 November sampled ridges 21 cm apart, one family shifting sideways with depth, on a
+  3.5 cm grid: the level plane at the face's middle depth held 16 closed cells and a sloping face none,
+  and with the grid alone made finer the face held eight. So a net on the level and none on the face is
+  as much a field that resolves one depth and not the others as it is the light's shape.
+
+  The record says which of the two it is, or rules a candidate remedy out because of either, only with
+  evidence at the receiver's own points that tells them apart: pictures from the same camera at the same
+  engine time in which the receiver, the Sun and the view are the same and only the fineness of the
+  field differs. The fourth picture's diagnostic run on a finer field is one way, and the builder
+  chooses. The field's resolution is a cause where the net joins at the finer field. The light's shape
+  on the face is a cause where the net stays apart at two finer fields whose pictures agree with each
+  other, which shows that a finer one still would not change it. Without that evidence the cause stays
+  open, a remedy may answer either or both, and no candidate is ruled out on it. The record names a
+  cause, of these four, only with the pictures that show it, and may name more than one.
 - *What shipped games show.* Frames of a hull's side or another sunlit object that is not the bed, seen
   from under water within a few metres of the surface, in Subnautica and Sea of Thieves and in at least
   two high-end 3D games released from 2022 on: whether the light on it joins into a net, whether it shows

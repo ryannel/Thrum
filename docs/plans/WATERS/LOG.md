@@ -1741,3 +1741,11 @@
 - 2026-11-27 Planner, the review's suggestion taken: WP26.4 adds the hull and the float under the lake
   in a trade wind with the Sun 15° up in Chrome, one question, as one of the two views on record with no
   net.
+- 2026-11-27 Planner, for the one Must Fix of the design review at `9846c1572`, a net on a level plane and
+  none on the hull could rule out a remedy to the field for the wrong reason: WP26.6 loses the fifth
+  picture and names four causes. No joined net at the receiver's own points is the field's light at the
+  receiver, left open between the field's resolution and the light's shape on the face.
+- 2026-11-27 Planner, same finding: the record says which of the two, or rules a remedy out on either,
+  only with further pictures at the receiver's points in which only the field's fineness differs. Only
+  WP26.6 and [its design](DESIGN.md#the-net-on-the-hull-and-a-sunk-float) changed.
+  [The change](../../../.orchestrate/evidence/WATERS/WP26-level-plane-fix.md).
