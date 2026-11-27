@@ -224,30 +224,43 @@ The path is the free path of the water from the lip, launched at the lip's speed
 there, wherever that clears the rock; where the rock stands in its way the path follows the rock's face. It lands on a declared body,
 or on ground gentler than the steepest chart slope, where a new reach begins. So discharge is the same above and
 below a fall, a river is cut into reaches at its falls, and the **face**, the rock the water falls past from the
-brink down to the water below, is in no body.
+brink down to the shore margin of the water below, is in no body.
 
 **The water below stands to the rock.** Planner's decision, 27 November 2026, on WP6's question. A fall cuts the
 flow, and not the still water under it. A plunge pool is deepest at the foot of its cliff, so the receiving
 water's level stands above the bottom of the rock, and that ground is the receiving body's, as any ground under
 its level is. The body's water lies there at the level it has at the foot, with its joins and backwater, and
-its waterline is where that level meets the rock, as on a bank. The face ends at that line: this is the ground
-[ruling 1](../ARCHITECTURE.md#seam-rulings-for-rivers) leaves in no body. It holds whichever body receives the
-fall:
+its waterline is where that level meets the rock, as on a bank. The rock above that line is a bank too: it is
+the body's [shore margin](../WATERS/DESIGN.md#the-water-map), up to the profile's margin height over the level,
+with the negative depth the map gives any margin, so a wave on the pool washes the rock as it washes a shore.
+The margin stops at the brink's cells, which are the upper reach's whatever stands below them. The face is the
+rock above the margin: this is the ground [ruling 1](../ARCHITECTURE.md#seam-rulings-for-rivers) leaves in no
+body. So down the rock the map answers the upper reach on the lip, no body on the face, the receiving body on
+its margin, and the receiving body's water from the waterline to the foot, its depth the level less the bed all
+the way and so without a step. It holds whichever body receives the fall:
 
 - *A sea or a basin* takes the foot by its own fill. A brink is an end of its chart, so the fill may reach it
   from below, and preparation's refusal of a basin that reaches a chart away from an end does not apply there.
 - *A reach*, whether the one the fall starts or a chart the river declares. To the reach below, the ground
   under a brink is bed like any other: its still water backs onto the foot, and those cells are in its
-  footprint with the rest of its water. Its bank there is the face above its level. Where the face is too narrow
-  to hold that bank, as on the island, where it is one bed cell wide, the brink's own cells bank it: they hold
-  the upper reach's water and none of the lower's.
+  footprint with the rest of its water. Its bank there is the rock above its level, with its shore margin on
+  it. Where the rock is too narrow to hold that bank, as on the island, where it is one bed cell wide, the
+  brink's own cells bank it: they hold the upper reach's water and none of the lower's water or margin.
 
 The upper reach is as it was. Its footprint ends at the brink, its row there is its own with no mix, and no
 water passes a brink's faces except down the path. The record's path still runs to the ground, and where it
 meets the receiving level is found as the game runs ([the plunge](#the-plunge)). That meeting is now always on
 the receiving body's water: out in the pool where the water is thrown clear, and on the rock's waterline where
-it runs down the face. A receiving body whose water could reach the lip at the top of its stage's range is a
-drowned fall, which is not built, and preparation refuses it by name.
+it runs down the face.
+
+**A drowned fall is not built.** A fall is drowned when the water at its foot can stand as high as the bed of
+its lip. What decides that is the level the map itself gives at the foot, at its highest over the range of
+everything that sets it: the receiving body's own stage, the gauge of the river it belongs to, and the stage of
+a body it joins, whose [backwater](../WATERS/DESIGN.md#the-water-map) the map carries up a reach. The map's
+preparation makes that one comparison for every fall and refuses a drowned one by name. It is the same test
+for a sea, a basin and a reach, because it reads the map's level and never asks the body's kind. So a fall into
+a short reach that drains to a lake is refused when the lake's highest stage backs that reach up to the lip,
+though the lip stands clear at the lake's lowest.
 
 The rule this replaces left all the ground below a brink in no body. On the island the pool then began at the
 lower reach's first row of cells, 1.6 m to 2.1 m deep, with rock under its own level drawn dry behind it: a
@@ -274,9 +287,9 @@ For each reach, a chart as [the map defines one](../WATERS/DESIGN.md#the-water-m
 
 And once for the reach: its **footprint**, the cells any sample wets, grown by a margin of cells whose bed
 stands above the level beside them, so a dry cell whose bed is below that level is in the footprint only if
-some sample wets it, and below a brink that margin is the face, or the brink's own cells where the face is
-narrower ([above](#falls-inside-the-solve)); its **ends**, each a source end, a mouth or a **brink end**; its
-join lengths; and the **gauge level** of each sample.
+some sample wets it, and below a brink that margin is the rock above the reach's level, or the brink's own
+cells where the rock is narrower ([above](#falls-inside-the-solve)); its **ends**, each a source end, a mouth
+or a **brink end**; its join lengths; and the **gauge level** of each sample.
 
 For each fall, a **fall record**: along its lip, for each sample, the path as a line of points with the time the
 water takes to reach each, the discharge for each metre of lip, and the launch depth and speed; the reach above and the
@@ -828,11 +841,18 @@ dependencies. In addition:
     model's surface differs by between the same two places, so a wave both sides share cancels and the
     tight bound is one a frame can meet: WP4 measured 4.8 µm at the worst.
 - **The foot of a fall (WP6.12).** [The water below a fall stands to the rock](#falls-inside-the-solve) is a
-  rule of the map, so it is proved where the map is read: `thrum-water-model`'s answers down the face, and the
+  rule of the map, so it is proved where the map is read: `thrum-water-model`'s answers down the rock, and the
   GPU map's against them at the tolerance `WATERS` WP4.1's test states. A patch drawn over the gap by the sheet
   or the surface would pass the look and leave a float, a ring and the foam with no water there. The look is
-  WP6.5's. `brink_end` and `falls` were written to the rule this replaces: a case of theirs that pins ground
-  under the receiving level as no body changes to this rule, and nothing else in them does.
+  WP6.5's. The answers are sorted by the bed's height against the receiving level, so the item holds the
+  shore margin `WATERS` WP1.13 already gives a bank, and a map that cut the receiving body off at its still
+  level would fail it. The drowned fall's refusal is proved by three falls that are drowned only at the top of
+  a range, each of which prepares when that range stops short of the lip, so neither refusing every fall nor
+  testing the lowest level passes; the third is backed up by a lake the reach joins. A reviewer's question
+  holds that the refusal is one comparison for every kind of receiver, which is why a sea has no case of its
+  own. `brink_end` and `falls` were written to the rule this replaces: a case of theirs that pins ground under
+  the receiving level, or on the receiving body's shore margin, as no body changes to this rule, and nothing
+  else in them does.
 - **Maturity.** A ledger row for `E1.rivers` is added in WP4 and kept current.
 
 ## Open questions

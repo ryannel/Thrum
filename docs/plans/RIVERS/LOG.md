@@ -375,3 +375,17 @@
   trial looks of the flood's lower sheet, all at the first profile's lengths and with no water at its foot.
 - 2026-11-27 Planner. The plan file's notes for WP8, WP9, WP10, WP4 and WP5, which are Done, shrank to their
   review links. Their builder notes are in git at `5dac7ba91`.
+- 2026-11-27 Planner, design review 13, Must Fix 1. The receiving body keeps its shore margin on the rock under
+  a fall, as `WATERS` WP1.13 gives any bank, and only the rock above that margin is in no body. Changed
+  [the design's rule](DESIGN.md#falls-inside-the-solve), the footprint's words, ruling 1 in the module list and
+  WP6.12, which now sorts the answers down the rock by the bed's height against the receiving level: no body
+  more than the margin height above it, the receiving body at negative depth on the margin, and its water
+  below, with the depth the level less the bed throughout. Nothing of `WATERS`' changes.
+- 2026-11-27 Planner, design review 13, Must Fix 2. A drowned fall is decided by the highest level the map
+  gives at the foot over every stage and gauge that sets it, a joined body's backwater among them, in one
+  comparison for a sea, a basin and a reach. Changed the design, ruling 1 and WP6.12, which now refuses three
+  falls drowned only at the top of a range (a basin's stage, the reach's own level, a lake backing up a short
+  reach), each of which prepares short of the lip, and asks a reviewer whether the comparison is one for every
+  kind of receiver.
+- 2026-11-27 Planner, design review 13, suggestion taken. WP6.12 closes with its `Guard:` line and says what
+  only Metal shows, as the project's rule for a planned check asks.

@@ -597,9 +597,12 @@ its source's stage (ruling 2). [RIVERS' design](RIVERS/DESIGN.md#judged-from-fir
    does not refuse a cell on a declared brink, and the chart's row there is its own, with no mix. The ground
    below a brink is in no body. A chart whose source is a fall has no source body, as a spring has none.
    That ground ends at the receiving water (`RIVERS` WP6): where a body's level stands above the foot of the
-   rock, the ground under it is that body's, to its waterline on the rock. Preparation does not refuse a
-   basin's fill for reaching a brink from below, nor the reach below a fall for standing against the brink's
-   cells, which bank it and hold none of its water; it refuses a body whose water could reach the lip.
+   rock, the ground under it is that body's, and the rock above its waterline is its shore margin, as on any
+   bank of [the map's](WATERS/DESIGN.md#the-water-map). Only the rock above that margin is in no body.
+   Preparation does not refuse a basin's fill for reaching a brink from below, nor the reach below a fall for
+   standing against the brink's cells, which bank it and hold none of its water or margin. It refuses a fall
+   whose foot the map can give a level as high as the lip, over the range of every stage and gauge that sets
+   that level, a joined body's backwater among them, whatever kind of body receives the fall.
 2. **A chart may hold several flow samples** (`RIVERS` WP3 in `thrum-water-model`, WP4 in `thrum-water`). Each
    sample is a chart's grids with a gauge level. The chart's row at a point is the mix, linear in the gauge, of
    the two samples that bracket it: the source body's level where the chart has one, else the river's own
