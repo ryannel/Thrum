@@ -353,6 +353,11 @@ A planner or the lead chose each of these where your words left it open. Each st
 - SIM-3D assumes: the sizes proved are 10,000 colliders with up to 2,000 of them asking each tick, V1's representative scene, and worlds within 32,768 units of the origin, which holds the showcase's 36 km terrain. Farther out, devices still agree and contacts get coarser. ([plan](SIM-3D/PLAN.md))
 - SIM-3D assumes: a shape stops within about 1.5 cm of what it meets (1/64 of a unit at most), and a walking character rests within about 3 cm of the ground. The exact figures are measured and set by the first and fourth work packages. ([plan](SIM-3D/PLAN.md))
 - SIM-3D assumes: the devices are the Mac, Chrome and the iPhone simulator, and devices agree for one build of one rule set, as in `SIM-2D`. The simulator proves the code runs there, never speed. ([plan](SIM-3D/PLAN.md))
+- AUDIO assumes: "audio in its small form" is sounds that happen, with a limit on how many of one play at once; looping sounds heard from a place; music that streams, loops and cross-fades; and three volumes. It is stereo, with no effects and no mixing graph. ([plan](AUDIO/PLAN.md))
+- AUDIO assumes: you listen to the engine's own sound once, in WP5, with a small listening program on the Mac and in Chrome, and it can be the same sitting as `GAME-SDK` WP19. It is the only item in this module that waits for you, and nothing else waits for it. Agents prove what was mixed and that the operating system took it, with the output silenced so builds make no noise on your Mac. They cannot prove what a speaker played. ([plan](AUDIO/PLAN.md))
+- AUDIO assumes: music is kept in a light compressed form, QOA, at about 2.3 MB a minute in stereo, because its small decoder runs the same way on every target. It is lossy. If you hear hiss or grit in music at the listening, the codec is changed inside this module and no game changes. ([plan](AUDIO/PLAN.md))
+- AUDIO assumes: the targets are the Mac, Chrome and the iPhone simulator, which proves function only. A physical iPhone, Safari, Firefox, Windows and Linux are designed for and not run. ([plan](AUDIO/PLAN.md))
+- AUDIO assumes: in Chrome a game is silent until the player's first key press or click, because browsers start sound that way. Showing a player that is the game SDK's. ([plan](AUDIO/PLAN.md))
 - A name in the glossary waits for your agreement: Game SDK (the planner chose the name and the crate's name, `thrum`)
 - A name in the glossary waits for your agreement: Scene (the planner chose this meaning for game code)
 - A name in the glossary waits for your agreement: Rule (the planner chose "rule" over "system" and "behaviour" for game code)
@@ -360,6 +365,11 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A name in the glossary waits for your agreement: Action (the planner chose it for the game SDK)
 - A name in the glossary waits for your agreement: Command (the planner carried it into the game SDK)
 - A name in the glossary waits for your agreement: Look (the planner chose the name)
+- A name in the glossary waits for your agreement: Mix (the planner chose it for the engine, as the module list already wrote it)
+- A name in the glossary waits for your agreement: Voice (the planner chose it for AUDIO)
+- A name in the glossary waits for your agreement: Emitter (the planner chose it for AUDIO)
+- A name in the glossary waits for your agreement: Listener (the planner chose it for AUDIO)
+- A name in the glossary waits for your agreement: Sound output (the planner chose the name)
 - A name in the glossary waits for your agreement: Placement (the planner chose the name, in place of "scenery")
 - A name in the glossary waits for your agreement: Fixed collision (the planner chose "fixed" over "static", which in Rust means something else)
 - A name in the glossary waits for your agreement: Kinematic move (the planner chose the name)
@@ -385,6 +395,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - GATE-TIME WP5 The post-rollout record shows a five-minute median for Rust landings: Blocked: Needs Context: WP5.1 needs 17 more qualifying ordinary Rust landings before the fixed window can be judged. The lead finds the missing fact, or asks you for it
 - GAME-SDK's design: Design Changes Requested · [design](GAME-SDK/DESIGN.md) · [plan](GAME-SDK/PLAN.md)
 - SIM-3D's design: Design Ready for Review · [design](SIM-3D/DESIGN.md) · [plan](SIM-3D/PLAN.md)
+- AUDIO's design: Design Ready for Review · [design](AUDIO/DESIGN.md) · [plan](AUDIO/PLAN.md)
 
 ### Recently done
 
@@ -552,4 +563,4 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 36 | DEAD-CODE | Engine code that nothing calls is gone, and a scene contribution no longer writes empty methods | GATE-TIME WP1 to start; GATE-TIME WP6 for the contribution's defaults; WATERS WP7 for the water scene's settings; HOST WP3 for the game's projection; REVIEW-RENDER WP3 and GATE-TIME WP6 for the two helpers | Done 22 Nov |
 | 37 | GAME-SDK | A developer or an agent builds a 2D, a 3D or an online game in plain Rust against one documented crate, and the showcase and the swarm game are written on it | Nothing to start: the owner approved its design on 27 November 2026. SESSION WP7 for a game played online; GAME-UI WP4 for menus and status displays and GAME-UI WP6 for the iPhone simulator; APPLE-PRESENTATION WP8 to WP12, RAY-TRACING WP6 and MESH-SHADING WP3 for 3D models that turn between ticks; SIM-3D for a 3D character that walks on the ground and is stopped by walls; AUDIO for sound; GAME-SPLIT WP4 for the showcase on the SDK | Design Changes Requested |
 | 38 | SIM-3D | A 3D game's characters and shots find what is near them, what a ray meets and where they are stopped, the same on every device, and a character walks over hills, steps and solid models | SIM-2D WP3 | Design Ready for Review |
-| 39 | AUDIO | A game's sounds and music are heard on the Mac, in Chrome and on the iPhone simulator, mixed in one place and never stalling a frame |  | Not planned yet |
+| 39 | AUDIO | A game's sounds and music are heard on the Mac, in Chrome and on the iPhone simulator, mixed in one place and never stalling a frame |  | Design Ready for Review |
