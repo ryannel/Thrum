@@ -534,7 +534,7 @@ impl super::SyntheticTargetInputs {
         let exposure_history = self
             .atmosphere
             .as_ref()
-            .filter(|air| air.uses_haze_scale())
+            .filter(|air| air.has_overlay())
             .map(|_| ExposureResolve::history_sample(&mut graph, self.key.device_generation, true))
             .transpose()?;
         let exposure_sample = if let Some(previous) = &exposure_history {

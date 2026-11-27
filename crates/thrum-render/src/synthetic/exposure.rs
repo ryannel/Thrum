@@ -201,7 +201,8 @@ impl ExposureResolve {
             mapped_at_creation: false,
         });
         let visibility = wgpu::ShaderStages::COMPUTE;
-        let adapt = atmosphere.is_some_and(crate::atmosphere::AtmospherePrepared::uses_haze_scale);
+        // A sky overlay alters incident light with or without the view volume.
+        let adapt = atmosphere.is_some_and(crate::atmosphere::AtmospherePrepared::has_overlay);
         let entries = [
             binding::uniform(0, visibility, POLICY_BYTES),
             binding::uniform(1, visibility, DIRECTIONAL_BYTES),
