@@ -641,7 +641,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP6/native-parcels.log",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/metal-contact.log",
           "verdict": "",
           "review": ""
         },
@@ -662,8 +662,8 @@
           "statement": "The fall reads as falling water. At the lip it is a smooth tongue that shows the rock behind it; it whitens down its length and breaks into strands that stretch as they gather speed, with gaps where it is thin; at the lowest gauge it is a few strands and at the highest a heavy sheet. No pattern slides at one speed, nothing tiles or repeats, and it does not read as a card.",
           "inspect": "`realtime` sequences of the fall from 2 m and 5 m in front, from beside it, from behind it and from 60 m and 200 m off, at the gauge's lowest, middle and highest, at noon; stills cropped at native size of the lip, the middle and the foot.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/README.md",
           "verdict": "",
           "review": ""
         },
@@ -672,8 +672,8 @@
           "statement": "The pool answers the fall: a white boil at the foot, pale water spreading from it, foam drawn off downstream in streaks, and rings that cross the pool and die at its banks. The fall on screen shows in the pool's calmer water. There is no hard line where the sheet meets the pool.",
           "inspect": "`realtime` sequences of the plunge pool from its bank at 2 m and from 15 m above, with the interaction windows on the pool, at the gauge's middle and highest; one as the gauge falls to a dry lip and the pool calms.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/README.md",
           "verdict": "",
           "review": ""
         },
@@ -684,7 +684,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP6/native-parcels.log",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/metal-contact.log",
           "verdict": "",
           "review": ""
         },

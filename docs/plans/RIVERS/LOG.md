@@ -372,5 +372,5 @@
 - 2026-11-27 WP6. The Metal plunge readback showed 56 mm at the first Lake station and 11 mm
   another 6 m downstream. The overhead Sun glint take shows the same class of crest crossing the
   pool and fading into the shallows. Hardware Chrome also reads the sheet's submitted motion and
-  pool foam. Wet 1440p completion brackets remained around 300 ms under shared load.
+  pool foam. Wet 1440p completion brackets ranged from about 300 to 390 ms under shared load.
   [Target evidence](../../../.orchestrate/evidence/RIVERS/WP6/README.md)
