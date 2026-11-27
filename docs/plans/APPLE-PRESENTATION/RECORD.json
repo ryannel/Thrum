@@ -2141,12 +2141,12 @@
       }
     },
     "U3": {
-      "definitions": "36fc859341a33a68f40c66b27603418e4ada088aad7c218ca401bc0186a4d743",
+      "definitions": "b0afae440fd2b563608139b3b3fad7ba53943a89914c15a12556e9cef1a737ba",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner answered U2.2 (offer the Metal pipeline-cache patches to wgpu on issue #8526, or stop). The owner's words, in ",
-        "at": "2026-11-27T04:36:45Z"
+        "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, ",
+        "at": "2026-11-27T04:42:48Z"
       },
       "ends_stretch": true
     }
@@ -2259,11 +2259,15 @@
     {
       "task": "The owner answered U2.2 (offer the Metal pipeline-cache patches to wgpu on issue #8526, or stop). The owner's words, in U2's User Feedback in the record: \"I'm not in a position to understand every line of wgpu. it's not my area. But i would like you to make sure the patch is done well and to a high quality. Eventually they will fix this and we're going to have to strip it out.\" Read that as stop: Thrum posts nothing upstream, because wgpu requires the submitter to understand and explain every line. Replan U2 and U3 (and anything else that assumed an offer) around keeping the patches local: (1) the patches are of a quality we'd stand behind, judged by an independent review of the patch code against wgpu's own conventions and tests on Metal; (2) removing them later is cheap and safe: the patched behaviour sits behind one narrow seam in Thrum, nothing outside that seam depends on the patch's extras, and the steps to strip it out once wgpu ships Metal PIPELINE_CACHE are written down; (3) Thrum notices when upstream lands, for example a check that reads wgpu's released feature support or the issue's state, so the strip-out isn't forgotten. Keep WP11 (60 Hz) unblocked by this. Don't add process beyond what these three need.",
       "at": "2026-11-27T04:36:45Z"
+    },
+    {
+      "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, with its 1 Must Fix findings.",
+      "at": "2026-11-27T04:42:48Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-27T04:36:45Z"
+    "at": "2026-11-27T04:42:48Z"
   },
   "design_history": [
     {
