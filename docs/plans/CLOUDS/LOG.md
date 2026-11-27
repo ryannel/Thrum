@@ -1353,3 +1353,18 @@ The fixed weather step reads the rendered Sun. The lake's resolved near mist ret
 wisps in a same-Sun pair. The paired sea cost now derives each required
 investigation from the measured frames and rejects missing entries.
 [Target captures and checks](../../../.orchestrate/evidence/CLOUDS/WP11/repair/README.md)
+
+### WP11 second review repair
+
+An accepted Ground surface upload invalidates the sky overlay until a full
+replacement submits. Chrome held the weather tick, Sun and camera fixed.
+Raising and restoring the lake changed and restored both the overlay and
+reflection mip-zero hashes. Each result matched a forced refresh at the same Sun.
+[Held-stage readbacks](../../../.orchestrate/evidence/CLOUDS/WP11/review-repair/lake-light.md)
+
+The sea cost record retains raw visible measurements from the preceding
+comparable run. The archived 1440p Metal pair now reports the two missing
+pass comparisons at identical trace work. Shared load leaves the cause
+of the pass differences open for an isolated trace in the performance phase.
+The replacement command and validator exercised the same comparison with a fresh pair.
+[Metal cost evidence](../../../.orchestrate/evidence/CLOUDS/WP11/review-repair/sea-cost.md)

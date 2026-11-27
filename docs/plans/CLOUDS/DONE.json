@@ -1905,8 +1905,8 @@
           "check": "python3 scripts/cloud_cost.py check --scene sea",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP11/review-repair/sea-cost.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP11-review.md"
         },
