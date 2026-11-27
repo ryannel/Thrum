@@ -401,6 +401,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Recently done
 
+- A launch setting draws the valley below the window's pixel size and the display scales it to fill, with no hitch at the change (APPLE-PRESENTATION WP18), 27 Nov · [review](../../.orchestrate/evidence/APPLE-PRESENTATION/WP18-review.md)
 - Mist and fog banks reach the horizon, low cloud hides the hilltops, and a climbing camera passes into the cloud and out above it (CLOUDS WP15), 27 Nov · [review](../../.orchestrate/evidence/CLOUDS/WP15-review.md)
 - On a windless day the stream still reads as running water: its riffles are rough and glitter, its pools lie glassy, and foam forms below its ledges and behind its rocks and trails away downstream (RIVERS WP5), 27 Nov · review `.orchestrate/evidence/RIVERS/WP5-review.md` (cleared)
 - The camera goes under water: the waterline crosses the lens, and the surface overhead shows the sky through a bright window (WATERS WP15), 27 Nov · review `.orchestrate/evidence/WATERS/WP15-review.md` (cleared)
