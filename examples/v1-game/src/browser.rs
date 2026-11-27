@@ -240,8 +240,13 @@ pub async fn create_browser_game(
     cooked_valley: Option<bool>,
     exit: Option<bool>,
     clouds: Option<String>,
+    rain: Option<String>,
 ) -> Result<BrowserGame, JsValue> {
     let exit = exit.unwrap_or(false);
+    let rain = crate::RainSelection::named(rain.as_deref().unwrap_or("off")).map_err(js_error)?;
+    if rain != crate::RainSelection::Off && (!exit || cooked_valley != Some(true)) {
+        return Err(js_error("rain requires the populated cooked valley"));
+    }
     #[cfg(not(feature = "proving"))]
     if diagnostic_clouds == Some(true) || temporal_inputs == Some(true) {
         return Err(js_error("diagnostic scenes require the proving build"));
@@ -270,6 +275,7 @@ pub async fn create_browser_game(
             diagnostic_clouds: diagnostic_clouds.unwrap_or(false),
             clouds,
             cloud_weather: clouds.default_weather(),
+            rain,
             valley_stars: valley_stars.unwrap_or(false),
             field_meshes: meshes.unwrap_or(false),
             cooked_mesh_rows: (exit || (meshes.unwrap_or(false) && cooked_valley.unwrap_or(false)))
@@ -1086,7 +1092,9 @@ impl BrowserGame {
             ));
         }
         #[cfg(feature = "proving")]
-        let (camera, assets) = if preview {
+        let (camera, assets) = if self.page.shell.host().source().has_rain() {
+            crate::rain::prepare_rain_cooked_valley(source, thrum_asset_gpu::CookedDrawPath::Auto)
+        } else if preview {
             crate::showcase::prepare_content_preview(source)
         } else if chart_level_six == Some(true) {
             crate::showcase::prepare_chart_showcase(source)
@@ -1097,7 +1105,12 @@ impl BrowserGame {
         }
         .map_err(js_error)?;
         #[cfg(not(feature = "proving"))]
-        let (camera, assets) = crate::showcase::prepare_showcase(source).map_err(js_error)?;
+        let (camera, assets) = if self.page.shell.host().source().has_rain() {
+            crate::rain::prepare_rain_cooked_valley(source, thrum_asset_gpu::CookedDrawPath::Auto)
+        } else {
+            crate::showcase::prepare_showcase(source)
+        }
+        .map_err(js_error)?;
         let assets = if let Some(reader) = self.page.shell.host().mesh_rows() {
             let generation = valley
                 .feed
@@ -1161,6 +1174,13 @@ impl BrowserGame {
         } else {
             contribution
         };
+        let contribution = self
+            .page
+            .shell
+            .host()
+            .source()
+            .with_rain(contribution)
+            .map_err(js_error)?;
         self.page
             .shell
             .set_scene_contribution(contribution)
@@ -1482,6 +1502,18 @@ impl BrowserGame {
     #[cfg(feature = "proving")]
     pub fn complete(&self) -> bool {
         self.page.shell.samples().len() == SAMPLES
+    }
+
+    /// The selected rain projection and last submitted hollows, when present.
+    #[cfg(feature = "proving")]
+    #[must_use]
+    pub fn rain_observation(&self) -> Option<String> {
+        self.page
+            .shell
+            .host()
+            .source()
+            .rain_observation()
+            .map(|value| value.to_string())
     }
 
     /// Committed mover and submitted row observations for the exit scene.

@@ -18,6 +18,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from rain_valley_cost import valley
+
 REPO = Path(__file__).resolve().parent.parent
 RECORD = REPO / "tests/fixtures/puddles/rain-cost.json"
 TAKE = REPO / ".orchestrate/evidence/PUDDLES/rain-cost.json"
@@ -105,11 +107,13 @@ def yard(action):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=["record", "check"])
-    parser.add_argument("--scene", choices=["fixture", "yard"], default="fixture")
+    parser.add_argument("--scene", choices=["fixture", "yard", "valley"], default="fixture")
     args = parser.parse_args()
     try:
         if args.scene == "yard":
             yard(args.action)
+        elif args.scene == "valley":
+            valley(args.action)
         else:
             (record if args.action == "record" else check)()
     except (RuntimeError, OSError, ValueError, subprocess.SubprocessError) as error:

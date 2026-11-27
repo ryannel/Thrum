@@ -95,6 +95,8 @@ pub(super) fn run(
             | "exit-route"
             | "exit-drift"
             | "exit-stop"
+            | "rain-shower"
+            | "rain-cost"
             | "sun-settle"
             | "sun-cut"
             | "sun-set"
@@ -525,6 +527,7 @@ fn start_writer(
                 | "exit-drift"
                 | "sun-motion"
                 | "atmosphere-ground-pan"
+                | "rain-shower"
                 | "sprites-field"
         ) || recovery != super::NativeRecovery::Disabled
         {
@@ -656,6 +659,8 @@ fn world_moves(scenario: &str) -> bool {
             scenario,
             "running"
                 | "writer-slow"
+                | "rain-shower"
+                | "rain-cost"
                 | "reconstruction-pan"
                 | "content-edits"
                 | "clouds-drift"
@@ -680,6 +685,8 @@ fn applies_yaw(scenario: &str, active_world: bool) -> bool {
                 | "clouds-placed"
                 | "clouds-growth"
                 | "exit-stop"
+                | "rain-shower"
+                | "rain-cost"
                 | "sprites-field"
                 | "sprites-field-cost"
                 | "sprites-sheets"
@@ -736,6 +743,12 @@ fn prepare_parameters(
                     .unwrap_or(include_str!("../../params/showcase-noon.params.json")),
             )
             .map_err(|error| error.to_string())?;
+    }
+    if let Ok(view) = crate::content::launch_value("THRUM_RAIN_VIEW") {
+        rain_camera(driver.host_mut(), &view)?;
+    }
+    if matches!(scenario, "rain-shower" | "rain-cost") {
+        crate::host::hold_capture_sun(driver.host_mut());
     }
     if let Some(take) = haze_take {
         let pose = take.at(0.0);
@@ -810,6 +823,45 @@ fn prepare_parameters(
             .map_err(|error| error.to_string())?;
     }
     Ok((preset_requested, preset_accepted))
+}
+
+fn rain_camera(host: &mut crate::host::Runtime, name: &str) -> Result<(), String> {
+    let camera = host
+        .scene_camera()
+        .ok_or("rain view requires the cooked valley")?;
+    if name == "patch" {
+        return host.set_scene_camera(crate::SceneCamera::perspective(
+            [5.3, 241.65, 11.7],
+            [-0.1, 240.0, 4.7],
+            58_f32.to_radians(),
+            0.1,
+            30_000.0,
+        )?);
+    }
+    if name == "rock" {
+        return host.set_scene_camera(crate::SceneCamera::perspective(
+            [6.07, 241.83, -3.4],
+            [3.8, 241.15, -7.0],
+            47_f32.to_radians(),
+            0.1,
+            30_000.0,
+        )?);
+    }
+    let route = crate::CameraRoute::parse_long_capture(
+        include_str!("../../routes/exit-flythrough.json"),
+        camera,
+        60,
+    )
+    .map_err(|error| error.to_string())?;
+    let stop = route
+        .checkpoints
+        .iter()
+        .find(|stop| stop.name == name)
+        .ok_or("rain view must be patch, rock, or a named exit route stop")?;
+    let pose = route.pose(route.origin_tick + stop.tick + 1, 0.0);
+    host.set_scene_camera(camera.at(pose.eye)?)?;
+    host.set_camera_pitch(pose.pitch)?;
+    host.set_camera_yaw(pose.yaw)
 }
 
 fn settle_placed_capture(
@@ -942,7 +994,7 @@ async fn record(
             capture_output,
             RuntimeCaptureOutput::ObserverOnly | RuntimeCaptureOutput::Governor { images: false }
         );
-    if observer_only && !motion_capture && !sprite_cost {
+    if observer_only && !motion_capture && !sprite_cost && scenario != "rain-cost" {
         return Err(
             "observer-only control requires realtime exit or content-edit motion".to_owned(),
         );
@@ -1308,6 +1360,9 @@ async fn record(
             "settle_frames": penumbra.iter().find(|knob| knob.name == "Ambient occlusion settle length").map(|knob| knob.value),
         });
     }
+    if let Some(rain) = driver.host().source().rain_observation() {
+        result["rain"] = rain;
+    }
     result["display_phase_counts"] = phase_counts;
     result["gpu_pass_timing"] = json!(governed || measure_passes);
     if governed {
@@ -1343,6 +1398,7 @@ fn is_motion_capture(scenario: &str) -> bool {
         || matches!(
             scenario,
             "exit-route"
+                | "rain-shower"
                 | "sprites-status"
                 | "sprites-menu"
                 | "sprites-sheets"
@@ -1691,6 +1747,8 @@ fn scenario_bounds(scenario: &str, recovery: super::NativeRecovery) -> (f64, f64
         return (24.0, 20.0, 3.0);
     }
     match scenario {
+        "rain-shower" => (20.5, 19.0, 18.5),
+        "rain-cost" => (6.5, 5.0, 4.5),
         "sprites-field-cost" => (11.5, 10.0, 10.0),
         "sprites-status" => (6.75, 5.75, 5.75),
         "sprites-menu" => (4.9, 4.4, 4.2),
@@ -1747,6 +1805,8 @@ fn capture_mode(scenario: &str) -> Result<String, String> {
                 scenario,
                 "running"
                     | "writer-slow"
+                    | "rain-shower"
+                    | "rain-cost"
                     | "render-stall"
                     | "input-stall"
                     | "content-edits"

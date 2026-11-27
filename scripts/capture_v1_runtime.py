@@ -265,7 +265,7 @@ def run(args):
         raise ValueError("output must be a new directory")
     observer_only = getattr(args, "observer_only", False) or args.case == "sprites-field-cost"
     governed = os.environ.get("THRUM_GOVERNOR") == "on"
-    if observer_only and (args.case not in ("exit-route", "exit-drift", "content-edits", "sprites-field-cost")
+    if observer_only and (args.case not in ("exit-route", "exit-drift", "content-edits", "sprites-field-cost", "rain-cost")
                           and not (governed and args.case == "route") or args.mode != "realtime"):
         raise ValueError("--observer-only requires realtime exit or content-edit motion")
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -299,7 +299,7 @@ def run(args):
         "scenario": args.case,
         "observer_only": observer_only,
         "record_limit": 16_384 if args.case in LONG_WEATHER_CASES else
-        4096 if args.case in ('clouds-inspect','clouds-drift','clouds-wind','clouds-life-fast','clouds-placed','clouds-route','exit-route','exit-drift','atmosphere-ground-pan','sprites-field') or os.environ.get('THRUM_CAPTURE_NATIVE_RECOVERY') in ('control', 'faults') else 1024,
+        4096 if args.case in ('clouds-inspect','clouds-drift','clouds-wind','clouds-life-fast','clouds-placed','clouds-route','exit-route','exit-drift','atmosphere-ground-pan','sprites-field','rain-shower') or os.environ.get('THRUM_CAPTURE_NATIVE_RECOVERY') in ('control', 'faults') else 1024,
         "timebase": args.mode,
         "admission_policy": getattr(args, 'admission', 'omit'),
         "scenario_source_sha256": digest(ROOT / "examples/v1-game/src/window/capture.rs"),
@@ -484,7 +484,7 @@ if __name__ == "__main__":
         "reconstruction-pan", "content-edits", "reconstruction-stars", "reconstruction-scrub",
         "atmosphere-scrub", "atmosphere-ground-pan", "clouds-inspect", "clouds-drift", "clouds-wind", "clouds-life-fast",
         *LONG_WEATHER_CASES, "clouds-placed", "clouds-dusk", "clouds-still", "checkpoint", "clouds-route",
-        "exit-route", "exit-drift", "exit-stop", "sun-settle", "sun-cut", "sun-set", "sun-motion",
+        "exit-route", "exit-drift", "exit-stop", "rain-shower", "rain-cost", "sun-settle", "sun-cut", "sun-set", "sun-motion",
         "sprites-field", "sprites-field-cost", "sprites-scroll", "sprites-sheets", "sprites-status", "sprites-menu",
     ], default="pan")
     parser.add_argument("--defer", action="store_true", help="record pending evidence; finalize after consecutive sessions")

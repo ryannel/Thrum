@@ -387,6 +387,7 @@ enum MediumSource {
 /// The game's scene: its content, camera, solar day and display choices, which
 /// the engine's frame host samples for each frame.
 pub struct GameScene {
+    pub(super) rain: Option<std::cell::RefCell<crate::rain::RainSurface>>,
     #[cfg(feature = "proving")]
     interface: Option<crate::interface_card::Card>,
     #[cfg(feature = "proving")]
@@ -451,6 +452,46 @@ pub struct GameScene {
 pub(crate) type SolarSweep = ([u64; 2], [f32; 2]);
 
 impl GameScene {
+    pub(crate) fn has_rain(&self) -> bool {
+        self.rain.is_some()
+    }
+
+    pub(crate) fn with_rain(
+        &self,
+        contribution: Box<dyn thrum_render::contribution::SceneContribution>,
+    ) -> Result<Box<dyn thrum_render::contribution::SceneContribution>, String> {
+        let Some(rain) = &self.rain else {
+            return Ok(contribution);
+        };
+        Ok(Box::new(
+            thrum_render::contribution::SceneContributions::new(vec![
+                contribution,
+                Box::new(rain.borrow_mut().water()?),
+            ]),
+        ))
+    }
+
+    /// The same resources the forward material and water surface read.
+    #[cfg(all(target_os = "macos", feature = "proving"))]
+    #[doc(hidden)]
+    pub fn rain_proof_products(
+        &self,
+    ) -> Option<(
+        thrum_render::wetness::WetnessProvider,
+        thrum_water_model::Map,
+    )> {
+        self.rain
+            .as_ref()
+            .map(|rain| rain.borrow().proof_products())
+    }
+
+    /// Rain tick and the last submitted water geometry in the opt-in valley.
+    #[cfg(feature = "proving")]
+    #[doc(hidden)]
+    pub fn rain_observation(&self) -> Option<serde_json::Value> {
+        self.rain.as_ref().map(|rain| rain.borrow().observation())
+    }
+
     pub(super) fn ground_time_of_day(&self, alpha: f32) -> Option<f32> {
         let solar = self.ground_solar.get()?;
         if let Some((time, _)) = self
@@ -704,6 +745,7 @@ impl GameScene {
             field_sheets: None,
             #[cfg(feature = "proving")]
             sheet_stats: None,
+            rain: None,
             cloud_input: None,
             weather_edits: None,
             cloud_sky: None,
@@ -1006,6 +1048,9 @@ impl SceneSource<PublishedPage> for GameScene {
         }
     }
     fn extract(&self, into: &mut RenderExtractor, page: &PublishedPage) -> ExtractReport {
+        if let Some((surface, rain)) = self.rain.as_ref().zip(page.1.as_ref()) {
+            surface.borrow_mut().publish(rain);
+        }
         if let Some(input) = &self.cloud_input
             && let Some(state) = page.weather()
         {
@@ -1412,6 +1457,7 @@ mod tests {
             field_sheets: None,
             #[cfg(feature = "proving")]
             sheet_stats: None,
+            rain: None,
             cloud_input: None,
             weather_edits: None,
             cloud_sky: None,

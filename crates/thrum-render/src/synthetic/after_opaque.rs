@@ -64,7 +64,7 @@ impl SyntheticTargetInputs {
         extent: [u32; 2],
         resources: &crate::contribution::EffectResources,
         uniforms: &[Access],
-        forward: usize,
+        (forward, colour): (usize, usize),
     ) -> Result<LateGraph, RenderError> {
         let [depth, scene, motion, reactive] = targets;
         let refracts = self
@@ -73,8 +73,9 @@ impl SyntheticTargetInputs {
             .iter()
             .any(|pass| pass.refraction);
         let mut first = None;
-        let mut last = forward;
-        let mut previous_render = forward;
+        let mut last = colour;
+        let mut previous_render = colour;
+        let mut depth_writer = forward;
         let copy = if refracts {
             let id = graph.resource(
                 ResourceDescriptor::Texture {
@@ -101,7 +102,7 @@ impl SyntheticTargetInputs {
                     external_side_effect: false,
                 },
             );
-            graph.dependency(last, pass)?;
+            graph.select_producer(previous_render, pass, scene)?;
             first = Some(pass);
             last = pass;
             Some(id)
@@ -165,10 +166,19 @@ impl SyntheticTargetInputs {
                 },
             );
             graph.dependency(last, pass)?;
-            if declaration.kind == crate::contribution::AfterOpaqueKind::Render
-                && last != previous_render
-            {
-                graph.dependency(previous_render, pass)?;
+            if declaration.kind == crate::contribution::AfterOpaqueKind::Render {
+                for target in [scene, motion, reactive] {
+                    graph.select_producer(previous_render, pass, target)?;
+                }
+            } else if matches!(declaration.images, AfterOpaqueImages::Capture(_)) {
+                graph.select_producer(previous_render, pass, scene)?;
+            }
+            if declaration.depth || declaration.write_depth {
+                // The preceding colour/compute pass may only have read depth.
+                graph.select_producer(depth_writer, pass, depth)?;
+                if declaration.write_depth {
+                    depth_writer = pass;
+                }
             }
             first.get_or_insert(pass);
             last = pass;

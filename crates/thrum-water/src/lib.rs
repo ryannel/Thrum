@@ -162,6 +162,20 @@ pub struct Water {
     recorded: (f64, u64, f64),
     invalid: bool,
 }
+// A mapped scene may start with a hollows body anywhere in world space.
+// Its reference row is needed for shared surface parameters. Each tile still
+// reads its own level from the map.
+fn reference_row(map: &Map, body: usize) -> thrum_water_model::Row {
+    let point = match &map.body(body).expect("prepared water body").kind {
+        thrum_water_model::BodyKind::Hollows(hollows) => {
+            let (origin, spacing, _) = hollows.lattice();
+            origin.map(|axis| axis + 0.5 * spacing)
+        }
+        _ => [0.0; 2],
+    };
+    map.row(body, point)
+}
+
 impl Water {
     /// Declare a sea surface for the selected map body. Stage changes are read at frame boundaries.
     /// # Errors
@@ -241,7 +255,7 @@ impl Water {
         if !mapped && !matches!(declaration.kind, thrum_water_model::BodyKind::Sea) {
             return Err(WaterError::UnsupportedBody);
         }
-        let row = guard.row(body, [0.0; 2]);
+        let row = reference_row(&guard, body);
         let offshore_displacement = offshore_bound(&spectrum, profile.waves.choppiness);
         let lens_ambient = lens_ambient_reach(&spectrum, profile.waves.choppiness);
         let lens_horizontal = guard
@@ -695,7 +709,7 @@ impl SceneContribution for Water {
                 .is_none_or(|(_, tick, _)| frame.time.tick > tick.saturating_add(1));
         let previous = self.previous.map_or(now, |(time, _, _)| time);
         let map = self.map.lock().expect("water map lock");
-        let row = map.row(self.body, [0.0; 2]);
+        let row = reference_row(&map, self.body);
         let film = p.film_reader();
         let displayed_map = match &mut p.map {
             Some(gpu) => {

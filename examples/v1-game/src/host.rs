@@ -109,6 +109,8 @@ pub struct GameSetup {
     pub cooked_mesh_rows: MeshRowSource,
     /// Opt-in CPU Weather and GPU Shade, with no cloud layer. Off by default.
     pub clouds: crate::CloudSelection,
+    /// Opt into a shower and a hollows patch in the populated valley.
+    pub rain: crate::RainSelection,
     /// Initial authoritative weather controls; ignored when clouds are off.
     pub cloud_weather: thrum_cloud_model::Parameters,
     /// Optional tick-driven sequence for the selected weather.
@@ -192,6 +194,7 @@ impl Default for GameSetup {
             sprite_probe: None,
             cooked_mesh_rows: MeshRowSource::Code,
             clouds: crate::CloudSelection::Off,
+            rain: crate::RainSelection::Off,
             cloud_weather: crate::clouds::initial_state().parameters(),
             #[cfg(feature = "proving")]
             cloud_sequence: crate::clouds::WeatherSequence::Held,
@@ -628,6 +631,9 @@ impl GameSetup {
         let sprites = setup.sprite_scale.is_some();
         #[cfg(not(feature = "proving"))]
         let sprites = false;
+        if sprites && setup.rain != crate::RainSelection::Off {
+            return Err(FrameError::InvalidState("2D scene refuses rain"));
+        }
         if sheet_source.is_some() && !sprites {
             return Err(FrameError::InvalidState(
                 "cooked sprite sheets require a 2D scene",
@@ -661,6 +667,26 @@ impl GameSetup {
                 )
                 .await;
         }
+        let (rain_world, rain_surface) = if setup.rain == crate::RainSelection::Off {
+            (None, None)
+        } else {
+            if setup.content != GameContent::Exit || wetness.is_some() {
+                return Err(FrameError::InvalidState(
+                    "rain needs the populated valley and its own wetness field",
+                ));
+            }
+            #[cfg(feature = "proving")]
+            if setup.sun_proof_geometry != crate::SunProofGeometry::Off
+                || setup.exit_entities != ExitEntities::Draw
+            {
+                return Err(FrameError::InvalidState(
+                    "rain needs the ordinary valley entities",
+                ));
+            }
+            let (world, surface) =
+                crate::rain::ValleyRain::prepare(setup.rain).map_err(FrameError::Scene)?;
+            (Some(world), Some(surface))
+        };
         let mut scene = GameScene::scene(config.render_extent, setup)?;
         scene.wetness = wetness;
         #[cfg(not(target_arch = "wasm32"))]
@@ -686,6 +712,9 @@ impl GameSetup {
                 .clone();
             scene.meshes = Some(rows.selection(slots));
         }
+        if let Some(surface) = &rain_surface {
+            scene.wetness = Some(surface.provider());
+        }
         #[cfg(feature = "proving")]
         if setup.content == GameContent::Exit {
             setup.sun_proof_geometry.prepare(&mut scene);
@@ -704,7 +733,7 @@ impl GameSetup {
             && (ground.is_some() || cfg!(any(target_os = "macos", target_arch = "wasm32"))))
         .then(WeatherEdits::default);
         let world = GameWorld(WorldPort::Inline(Box::new(
-            WorldDriver::for_setup(&setup, weather, weather_edits.clone())
+            WorldDriver::for_setup(&setup, weather, weather_edits.clone(), rain_world)
                 .map_err(FrameError::World)?,
         )));
         let shade = cloud_shade(setup.clouds, shapes.as_ref(), cloud_sky, ground.as_ref())?;
@@ -719,6 +748,7 @@ impl GameSetup {
         source.cloud_ground = ground;
         source.cloud_shapes.clone_from(&shapes);
         source.cooked_rows = rows;
+        source.rain = rain_surface.map(std::cell::RefCell::new);
         let mut inner = Box::pin(Runtime::new_preparing(
             capabilities,
             queue,
@@ -1108,6 +1138,7 @@ impl GameHost for Runtime {
         } else {
             contribution
         };
+        let contribution = source.with_rain(contribution)?;
         self.set_scene_contribution(contribution)
             .map_err(String::from)
     }

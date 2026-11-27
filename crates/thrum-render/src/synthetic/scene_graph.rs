@@ -634,7 +634,7 @@ impl super::SyntheticTargetInputs {
             [width, height],
             &effect_resources,
             &late_uniforms,
-            early_stars.unwrap_or(forward),
+            (forward, early_stars.unwrap_or(forward)),
         )?;
         if let Some((_, passes)) = &soft_sun {
             if let Some(ambient) = &ambient {

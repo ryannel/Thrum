@@ -45,9 +45,17 @@ impl<'a> DirtySlots<'a> {
 
 /// Shared immutable lease of one complete V1 game endpoint.
 #[derive(Clone)]
-pub struct PublishedPage(pub(crate) Arc<Page>);
+pub struct PublishedPage(
+    pub(crate) Arc<Page>,
+    pub(crate) Option<crate::rain::RainPage>,
+);
 
 impl PublishedPage {
+    /// The rain and drying flux for this endpoint, if the valley selected rain.
+    pub fn rain(&self) -> Option<thrum_rain_model::Rain> {
+        self.1.as_ref().map(|page| page.record)
+    }
+
     /// Weather from this exact committed page, absent when clouds are disabled.
     pub fn weather(&self) -> Option<Arc<thrum_cloud_model::State>> {
         self.weather_component()

@@ -28,6 +28,14 @@ const BALLOON_MESH_ROW: u32 = 4;
 pub(crate) struct Prop(u32, u64, f64, f64, f64, f32, f32);
 
 impl Prop {
+    pub(crate) fn mesh_row(self) -> u32 {
+        self.0
+    }
+
+    pub(crate) fn orientation(self) -> (f32, f32) {
+        (self.5, self.6)
+    }
+
     pub(crate) fn position(self) -> [f64; 3] {
         [self.2, self.3, self.4]
     }

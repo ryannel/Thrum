@@ -177,7 +177,7 @@
             : await create_sprite_game(canvas, scale, spriteRows, probe.get("culling") ?? undefined, probe.get("reconstruction") ?? undefined)
           : probe.has("field")
           ? await create_field_game(canvas, probe.get("culling") ?? "default", probe.has("field-meshes"))
-          : await create_browser_game(canvas, cooked && probe.get("stars") !== "off", probe.has("diagnostic-clouds"), false, probe.get("culling") ?? undefined, probe.get("meshes") === "on", probe.get("reconstruction") === "taau", cooked, exit, clouds);
+          : await create_browser_game(canvas, cooked && probe.get("stars") !== "off", probe.has("diagnostic-clouds"), false, probe.get("culling") ?? undefined, probe.get("meshes") === "on", probe.get("reconstruction") === "taau", cooked, exit, clouds, probe.get("rain") ?? undefined);
         // Arm the scene-linear checkpoint before the first animation frame.
         // Switching tap sources on a continuously driven game needs retirement.
         if (spriteSweep) {
@@ -193,7 +193,7 @@
         }
         // @shipping
         const spriteStore = null;
-        const game = await create_browser_game(canvas, cooked && probe.get("stars") !== "off", false, false, probe.get("culling") ?? undefined, probe.get("meshes") === "on", probe.get("reconstruction") === "taau", cooked, exit, clouds);
+        const game = await create_browser_game(canvas, cooked && probe.get("stars") !== "off", false, false, probe.get("culling") ?? undefined, probe.get("meshes") === "on", probe.get("reconstruction") === "taau", cooked, exit, clouds, probe.get("rain") ?? undefined);
         // @end
         // ?assets follows the cooker's publications for the selected scene.
         if (cooked) {
@@ -443,8 +443,9 @@
               lastPlayerUpdate = time;
               if (exit && !qualify && !exitReported) {
                 const rows = JSON.parse(game.exit_status());
+                const rainy = ["shower", "soaked", "half-dry"].includes(probe.get("rain"));
                 if (rows.row_generation && rows.active === 10000) {
-                  status.textContent = "Running 10,000 exit entities on cooked mesh rows";
+                  status.textContent = rainy ? "Running the valley shower" : "Running 10,000 exit entities on cooked mesh rows";
                   exitReported = true;
                 }
               }

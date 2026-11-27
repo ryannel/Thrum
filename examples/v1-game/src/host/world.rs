@@ -306,6 +306,7 @@ pub(super) struct GameRules {
     admitted_axes: [f32; 3],
     input_sequence: u64,
     weather_edits: Option<super::WeatherEdits>,
+    rain: Option<crate::rain::ValleyRain>,
     #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
     menu: Option<crate::interface_menu::MenuView>,
 }
@@ -350,9 +351,12 @@ impl WorldDriver {
         setup: &super::GameSetup,
         clouds: Option<crate::simulation::Weather>,
         weather_edits: Option<super::WeatherEdits>,
+        rain: Option<crate::rain::ValleyRain>,
     ) -> Result<Self, String> {
         let mut driver = Self::create_for_setup(setup, clouds)?;
-        driver.world.game_mut().weather_edits = weather_edits;
+        let game = driver.world.game_mut();
+        game.weather_edits = weather_edits;
+        game.rain = rain;
         Ok(driver)
     }
 
@@ -389,6 +393,7 @@ impl WorldDriver {
             admitted_axes: [0.0; 3],
             input_sequence: 1,
             weather_edits: None,
+            rain: None,
             #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
             menu: None,
         };
@@ -437,7 +442,7 @@ impl WorldDriver {
         if !game.sim.has_current_page() {
             return Err(SimError::PublicationBusy);
         }
-        game.sim.published_page()
+        game.published_page()
     }
 
     pub(super) fn next_due_in(&self) -> Option<Duration> {
@@ -482,6 +487,14 @@ impl WorldDriver {
 }
 
 impl GameRules {
+    fn published_page(&mut self) -> Result<PublishedPage, SimError> {
+        let mut page = self.sim.published_page()?;
+        if let Some(rain) = &self.rain {
+            page.1 = Some(rain.page());
+        }
+        Ok(page)
+    }
+
     fn recover_page(&mut self) -> Result<Option<usize>, SimError> {
         if self.sim.has_current_page() {
             return Ok(None);
@@ -622,6 +635,9 @@ impl WorldGame for GameRules {
                 operation: "simulation step",
                 source,
             })?;
+        if let Some(rain) = &mut self.rain {
+            rain.step(self.sim.tick());
+        }
         if let Some(edits) = &self.weather_edits {
             edits.committed(weather);
         }
@@ -645,7 +661,7 @@ impl WorldGame for GameRules {
         if !self.sim.has_current_page() {
             return Ok(None);
         }
-        match self.sim.published_page() {
+        match self.published_page() {
             Ok(page) => Ok(Some(WorldPublication {
                 id: page.id(),
                 timeline: page.timeline(),

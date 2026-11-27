@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Actual built-game qualification, not display cadence or a performance measurement.
 import fs from 'node:fs/promises';
+import { qualifyRainValley } from './check_rain_valley_browser.mjs';
 import { prepareLent } from './check_lent_browser.mjs';
 import { prepareMeshRows } from './check_mesh_rows_browser.mjs';
 import { checkContentEdits, loadContentEdits } from './check_content_edits_browser.mjs';
@@ -29,7 +30,7 @@ cases.push('mesh-rows');
 cases.push('effect-after-opaque', 'effect-tick', 'effect-simulate-draw');
 cases.push('exit-scene', 'exit-sweep', 'exit-stops', 'exit-clauses', 'extent');
 cases.push('route-diagnostic', 'scale', 'governor', 'no-compile');
-cases.push('shipping-boundary');
+cases.push('shipping-boundary', 'rain');
 cases.push('interface-stage', 'interface-stage-cost', 'interface-text', 'interface-text-visual', 'interface-status', 'interface-status-cost', 'interface-modal');
 cases.push('sprites-2d', 'sprites-2d-cost', 'sprites-field', 'sprites-field-cost', 'sprites-crisp', 'sprite-sheets');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -320,10 +321,16 @@ async function serveCooked(args, output, temporalDefinition) {
   if (args.case === 'content-edits' ) {
     execFileSync('python3', ['scripts/edit_valley_content.py', source, 'prepare'], { cwd: repo });
   }
-  if (args.case === 'exit-scene' || args.case === 'exit-stops') {
+  if (['exit-scene', 'exit-stops', 'rain'].includes(args.case)) {
     const exit = path.join(repo, 'examples/v1-game/assets/exit');
     for (const name of await fs.readdir(exit)) {
       if (/^exit-.*\.(bin|gltf)$/.test(name)) await fs.copyFile(path.join(exit, name), path.join(source, name));
+    }
+  }
+  if (args.case === 'rain') {
+    const patch = path.join(repo, 'examples/v1-game/assets/rain');
+    for (const file of ['rain-patch.bin', 'rain-patch.gltf']) {
+      await fs.copyFile(path.join(patch, file), path.join(source, file));
     }
   }
   if (temporalDefinition) {
@@ -2658,7 +2665,7 @@ async function main() {
       { cwd: repo, env: { ...process.env, CARGO_TARGET_DIR: 'target', RUSTC_WRAPPER: '' }, stdio: 'inherit' });
     if (proving) args['web-root'] = 'target/v1-game-web-proving';
   }
-  if (['exit-scene', 'scale', 'g4-route', 'no-compile', 'interface-text', 'interface-text-visual', 'interface-status', 'interface-status-cost', 'interface-modal'].includes(args.case) && args.cook === 'target/debug/thrum-cook') {
+  if (['exit-scene', 'rain', 'scale', 'g4-route', 'no-compile', 'interface-text', 'interface-text-visual', 'interface-status', 'interface-status-cost', 'interface-modal'].includes(args.case) && args.cook === 'target/debug/thrum-cook') {
     execFileSync('rustup', ['run', 'stable', 'cargo', 'build', '--locked', '--offline', '--target-dir', 'target', '-p', 'thrum-cook', '--bin', 'thrum-cook'],
       { cwd: repo, env: { ...process.env, RUSTC_WRAPPER: '' }, stdio: 'inherit' });
   }
@@ -2750,7 +2757,7 @@ async function main() {
     // `all` checks the default page; `material` needs the development page, so it runs on its own.
     const modes = [];
     // The moving route is its own run: it needs route.html and makes a separate evidence record.
-    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'mesh-rows' && mode !== 'material' && mode !== 'shipping-boundary' && mode !== 'sprites-2d-cost' && mode !== 'sprites-crisp' && mode !== 'sprite-sheets' && mode !== 'route-diagnostic' && mode !== 'no-compile' && mode !== 'scale' && mode !== 'g4-route' && mode !== 'governor' && !mode.startsWith('interface-') && !mode.startsWith('sprites-field') && !mode.startsWith('moving-route') && !mode.startsWith('environment-') && !mode.startsWith('exit-')) : [args.case]) {
+    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'rain' && mode !== 'mesh-rows' && mode !== 'material' && mode !== 'shipping-boundary' && mode !== 'sprites-2d-cost' && mode !== 'sprites-crisp' && mode !== 'sprite-sheets' && mode !== 'route-diagnostic' && mode !== 'no-compile' && mode !== 'scale' && mode !== 'g4-route' && mode !== 'governor' && !mode.startsWith('interface-') && !mode.startsWith('sprites-field') && !mode.startsWith('moving-route') && !mode.startsWith('environment-') && !mode.startsWith('exit-')) : [args.case]) {
       modes.push(...(mode === 'moving-route-controls' ? Object.keys(movingControls).map(control => `moving-route-${control}`) : mode === 'field-oracle' ? ['field-oracle-direct', 'field-oracle-frustum', 'field-oracle-occlusion'] : mode === 'route' || mode === 'exit-stops' ? (await routeStops(files, directory)).map(stop => mode === 'exit-stops' ? stop.replace(/^route-/, 'exit-stop-') : stop) : [mode]));
     }
     if (modes.some(mode => mode === 'scale' || mode === 'g4-route' || mode === 'no-compile' || mode.startsWith('moving-route'))) {
@@ -2763,7 +2770,7 @@ async function main() {
     let assetsOrigin;
     let assetsSource;
     if (modes.includes('route-diagnostic')) await routeStops(files, directory);
-    if (modes.some(mode => mode.startsWith('environment-') || ['scale', 'g4-route', 'no-compile', 'temporal', 'valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || (mode.startsWith('route-') && mode !== 'route-diagnostic') || mode.startsWith('moving-route') || mode.startsWith('exit-'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output, temporalDefinition));
+    if (modes.some(mode => mode.startsWith('environment-') || ['rain', 'scale', 'g4-route', 'no-compile', 'temporal', 'valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || (mode.startsWith('route-') && mode !== 'route-diagnostic') || mode.startsWith('moving-route') || mode.startsWith('exit-'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output, temporalDefinition));
     if (args.case.startsWith('interface-text') || args.case.startsWith('interface-status') || args.case === 'interface-modal') {
       ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked({
         ...args, 'assets-source': 'tests/fixtures/game-ui/font-source',
@@ -2808,6 +2815,10 @@ async function main() {
       else if (mode === 'sprites-2d' || mode === 'sprites-2d-cost') results.push(await qualifySprites({
         cdp, origin: serving.origin, output, mode, timeout: args['timeout-ms'],
         wasm: files.get('/v1_game_bg.wasm'), existingGame, destroyActualDevice, waitFor,
+      }));
+      else if (mode === 'rain') results.push(await qualifyRainValley({
+        cdp, origin: serving.origin, assetsOrigin, output, timeout: args['timeout-ms'],
+        waitFor, existingGame,
       }));
       else if (mode === 'lent-products') results.push(await lent.qualify(cdp, serving.origin, output, waitFor));
       else if (mode === 'mesh-rows') results.push(await rows.qualify(cdp, serving.origin, output, waitFor));

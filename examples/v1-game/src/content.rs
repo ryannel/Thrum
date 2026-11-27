@@ -239,6 +239,7 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         }
     };
     Ok(crate::GameSetup {
+        rain: selected_rain(content)?,
         #[cfg(feature = "proving")]
         interface_scale,
         #[cfg(feature = "proving")]
@@ -423,6 +424,18 @@ fn validate_sprite_launch() -> Result<(), String> {
     Ok(())
 }
 
+fn selected_rain(content: crate::GameContent) -> Result<crate::RainSelection, String> {
+    let rain = match launch_value("THRUM_RAIN") {
+        Ok(value) => crate::RainSelection::named(&value)?,
+        Err(std::env::VarError::NotPresent) => crate::RainSelection::Off,
+        Err(error) => return Err(error.to_string()),
+    };
+    if rain != crate::RainSelection::Off && content != crate::GameContent::Exit {
+        return Err("THRUM_RAIN needs THRUM_SCENE=exit and the cooked valley store".to_owned());
+    }
+    Ok(rain)
+}
+
 fn selected_clouds() -> Result<crate::CloudSelection, String> {
     let clouds = match launch_value("THRUM_CLOUDS") {
         Ok(value) => value,
@@ -603,10 +616,12 @@ fn attach_selected(
     };
     let (camera, assets) = match scene.as_deref() {
         Ok("valley" | "exit") => {
-            let (camera, assets) = crate::showcase::prepare_showcase_with_path(
-                std::path::PathBuf::from(store).into(),
-                path,
-            )?;
+            let source = std::path::PathBuf::from(store).into();
+            let (camera, assets) = if host.source().has_rain() {
+                crate::rain::prepare_rain_cooked_valley(source, path)?
+            } else {
+                crate::showcase::prepare_showcase_with_path(source, path)?
+            };
             (Some(camera), assets)
         }
         #[cfg(feature = "proving")]

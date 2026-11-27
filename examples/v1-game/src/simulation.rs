@@ -600,7 +600,7 @@ impl Simulation {
         }
         self.runtime
             .latest()
-            .map(PublishedPage)
+            .map(|page| PublishedPage(page, None))
             .ok_or(SimError::PublicationBusy)
     }
 
