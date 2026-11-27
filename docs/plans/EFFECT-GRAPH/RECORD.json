@@ -767,9 +767,9 @@
       },
       "ends_stretch": true,
       "ready_for_review": {
-        "commit": "37679eeeec79462dec0aba528aec4220d2159a6a",
-        "checked": "37679eeeec79462dec0aba528aec4220d2159a6a",
-        "at": "2026-11-27T10:05:10Z",
+        "commit": "238227160983d54b3a9c4e8c27bd7aa76780fc0f",
+        "checked": "60fd6b24b6c7dbf92c94b01f2075941904117c32",
+        "at": "2026-11-27T10:54:57Z",
         "reused": [
           "WP7.1",
           "WP7.2",
@@ -786,16 +786,16 @@
         "cli": "codex-cli 0.171.0-alpha.13.2",
         "path": "headless",
         "usage": {
-          "input": 257870,
-          "cached": 40551040,
-          "output": 60455,
+          "input": 62750,
+          "cached": 21896192,
+          "output": 17982,
           "turns": 1
         },
         "session_usage": {
-          "input": 785042,
-          "cached": 97134720,
-          "output": 155291,
-          "turns": 2
+          "input": 847792,
+          "cached": 119030912,
+          "output": 173273,
+          "turns": 3
         }
       }
     }
