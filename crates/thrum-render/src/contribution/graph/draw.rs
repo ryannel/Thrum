@@ -5,7 +5,6 @@ use crate::{
     error::EffectGraphError,
     graph::{AccessKind, ResourceDescriptor, ResourceScope, TextureKind},
 };
-use std::collections::BTreeSet;
 
 /// A simulate pass's prepared colour view and clear value.
 #[derive(Clone)]
@@ -241,7 +240,7 @@ impl EffectGraph {
         capabilities: &crate::capabilities::DeviceCapabilities,
         target: impl Fn(usize) -> Option<&'a EffectDrawTarget>,
     ) -> Result<(), EffectGraphError> {
-        let mut written = BTreeSet::new();
+        let mut written = Vec::new();
         for (index, pass) in self.passes.iter().enumerate() {
             let Some(attachment) = pass.attachments().next() else {
                 continue;
@@ -267,12 +266,14 @@ impl EffectGraph {
             }
             // Graph indices identify declarations. Distinct declarations can be backed
             // by views of the same texture, so also check the actual subresource.
-            if !written.insert((target.view.texture(), target.unit)) {
+            let subresource = (target.view.texture(), target.unit);
+            if written.contains(&subresource) {
                 return Err(draw_error(
                     &pass.name,
                     "prepared colour subresource overlaps another pass's write",
                 ));
             }
+            written.push(subresource);
         }
         Ok(())
     }
