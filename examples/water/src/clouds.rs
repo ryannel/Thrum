@@ -157,6 +157,8 @@ impl Selection {
     /// with no weather state, provider, or cloud contribution.
     /// # Errors
     /// Propagates invalid scene assets, terrain, weather or controls.
+    /// # Panics
+    /// Panics if a rendered lake control encounters a poisoned water map.
     pub fn build(self, draw_craft: bool, enabled: bool) -> Result<Scene, Box<dyn Error>> {
         let (game, report, map) = match self.weather {
             Weather::Fair | Weather::Broken if self.craft_view => {

@@ -71,7 +71,6 @@ use thrum_render::{
 
 #[cfg(not(target_arch = "wasm32"))]
 use crate::Config;
-#[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
 use crate::GameError;
 #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 use crate::{Edits, Game, Gpu, Prepared};
@@ -614,7 +613,7 @@ impl SceneSource<SourceTick> for SkyScene {
     }
 }
 
-/// The desired sky carried to the render owner, when it changed.
+/// Changed sky and scene-control values carried to the render owner.
 #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SkyEdits(Option<Sky>, Option<f32>);
