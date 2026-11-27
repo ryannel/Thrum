@@ -107,7 +107,8 @@ fn air_path_to(light: vec3<f32>, start: vec3<f32>, end: vec3<f32>, uv: vec2<f32>
         + max(vec3(0.0), end_air.scatter - start_air.scatter) * inverse;
 }
 
-fn underside_light(world: vec3<f32>, n: vec3<f32>, v: vec3<f32>, variance: f32, foam: f32, eye: LensPoint) -> vec3<f32> {
+fn underside_light(world: vec3<f32>, n: vec3<f32>, v: vec3<f32>, variance: f32,
+    footprint: f32, foam: f32, eye: LensPoint) -> vec3<f32> {
     let normal = select(n, -n, dot(n, v) < 0.0);
     let cosine = clamp(dot(normal, v), 0.0001, 1.0);
     let critical = sqrt(1.0 - 1.0 / (WATER_INDEX * WATER_INDEX));
@@ -142,7 +143,17 @@ fn underside_light(world: vec3<f32>, n: vec3<f32>, v: vec3<f32>, variance: f32, 
         let distance = length(hit.point - world);
         let end_depth = max(0.0, world.y - hit.point.y);
         let body = hit_light(hit) * exp(-optics.downwelling_mirror.xyz * end_depth);
-        reflected_light = mix(reflected_light, water_path(body, incident, distance, 0.0, end_depth), hit.edge);
+        // A grazing reflected ray can cross the unresolved surface. Grade the
+        // copied hit by its clearance from that rough interface.
+        let angular_width = clamp(4.0 * sqrt(variance), 0.01, 0.28);
+        let clearance = smoothstep(0.0, angular_width, -reflected.y);
+        // A single copied texel resolves only a coherent part of the reflected
+        // footprint. Keep the water light where wave spread or the projected
+        // pixel covers too much of the source for one sample.
+        let spread = (footprint + distance * angular_width) / max(1.0, 0.5 * distance);
+        let coherence = 1.0 - smoothstep(0.018, 0.065, spread);
+        reflected_light = mix(reflected_light,
+            water_path(body, incident, distance, 0.0, end_depth), hit.edge * clearance * coherence);
     }
     let light = mix(reflected_light, transmitted, transmission);
     let ceiling = incident * vec3(0.72, 0.83, 0.85) / 3.14159265;
@@ -154,9 +165,10 @@ fn water_underside(input: VertexOut, n: vec3<f32>, v: vec3<f32>, variance: f32, 
     let uv = optics_uv(vec2<u32>(input.clip.xy));
     let eye = read_lens(uv);
     let pixel_depth = max(fwidth(eye.signed_depth), 0.00001);
+    let footprint = max(length(dpdx(input.world)), length(dpdy(input.world)));
     let coverage = lens_coverage(eye.signed_depth, pixel_depth);
     if coverage == 0.0 { return vec4(0.0); }
-    let light = underside_light(input.world, n, v, variance, foam, eye);
+    let light = underside_light(input.world, n, v, variance, footprint, foam, eye);
     let colour = mix(lens_grazing_light(-v), light, coverage);
     return vec4(colour * environment_storage_scale(), coverage);
 }

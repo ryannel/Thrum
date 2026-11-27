@@ -61,6 +61,20 @@ fn only_the_refracted_ray_can_see_an_air_panel_from_below() {
 }
 
 thrum_test_support::macos_gpu_test! {
+fn the_reflected_ray_can_see_a_submerged_panel() {
+    let Some((_serial, gpu)) = crate::metal::gpu("underwater reflected source") else { return };
+    let view = camera([0.0, -0.4, 0.0], [0.0, 0.0, 1.0], 105.0_f32.to_radians(), 1.0 / 32768.0);
+    let panel = Panel {
+        centre: [0.0, -0.2, 1.5],
+        half_size: [0.25, 0.05, 0.04],
+        radiant: false,
+    };
+    let delta = emission_delta(&gpu, &view, panel, [160, 90], true, None);
+    assert!(delta > 100.0, "a submerged source on the reflected ray should be visible: {delta}");
+}
+}
+
+thrum_test_support::macos_gpu_test! {
 fn wet_side_of_a_split_lens_reflects_water_instead_of_the_dry_hull() {
     let Some((_serial, gpu)) = crate::metal::gpu("split lens source paths") else { return };
     let y = -0.06;
