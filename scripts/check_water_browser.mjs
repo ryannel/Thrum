@@ -1882,12 +1882,14 @@ try {
             ${-diveDepth}*Math.cos(2*Math.PI*elapsed/${duration});
           if(${depthTour}){
             const below=Math.max(0,depth-${diveDepth});
-            game.edit_control('camera.setback',${diveSetback}+1.7+${retreat}*below);
             const hullPitch=32*Math.min(1,below/4);
             const bed=Math.max(0,Math.min(1,(depth/${diveTravel}-0.8)/0.2));
-            game.edit_control('camera.pitch',hullPitch+(-35-hullPitch)*bed*bed*(3-2*bed));
+            const bedView=bed*bed*(3-2*bed);
+            game.edit_control('camera.pitch',hullPitch+(-35-hullPitch)*bedView);
             const release=Math.min(1,below/1.5);
-            game.edit_control('camera.surface_follow',1-release*release*(3-2*release));
+            const follow=1-release*release*(3-2*release);
+            game.edit_control('camera.surface_follow',follow);
+            game.edit_control('camera.setback',(${diveSetback}*follow+1.7+${retreat}*below)*(1-bedView));
           }
           game.edit_control('camera.depth',depth);
         }
