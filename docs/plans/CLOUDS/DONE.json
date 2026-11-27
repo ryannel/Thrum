@@ -1824,7 +1824,7 @@
     {
       "id": "WP11",
       "name": "Clouds drift over the open sea, shade it and show in its reflections, and a fog bank drifts ashore",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
