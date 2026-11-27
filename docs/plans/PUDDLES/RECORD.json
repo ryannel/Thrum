@@ -767,7 +767,7 @@
         {
           "verdict": "fail",
           "commit": "4efe8c0115cf61965f652943d680e28db7ba356e",
-          "review": ".orchestrate/evidence/PUDDLES/WP8-review.md",
+          "review": ".orchestrate/evidence/PUDDLES/WP8-review-1.md",
           "items": {
             "WP8.3": "fail",
             "WP8.9": "pass",
@@ -818,6 +818,48 @@
             "turns": 1
           },
           "at": "2026-11-27T00:35:17Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "f9554b22ae1f8d5487c54111bd3af2c6c4ff92bb",
+          "review": ".orchestrate/evidence/PUDDLES/WP8-review.md",
+          "items": {
+            "WP8.3": "fail",
+            "WP8.9": "pass",
+            "WP8.4": "fail",
+            "WP8.6": "pass",
+            "WP8.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "A wet impact beside a narrow dry sill can produce no wave on any level",
+              "item": "WP8.3",
+              "different": "The previous defect sent a wave into the receiving puddle. Here the source cell is wet, but its own puddle stays at exact rest after impact.",
+              "repeat": false
+            },
+            {
+              "name": "The walking marker loses its ring train in the shallow puddle at low Sun",
+              "item": "WP8.4",
+              "different": "The current default Sun shows overlapping rings in both puddles. The failure occurs on the low-Sun target condition with the camera, path, azimuth and rain held fixed.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 187696,
+            "cached": 9226112,
+            "output": 24513,
+            "turns": 1
+          },
+          "at": "2026-11-27T01:53:14Z"
         }
       ],
       "authorised": {
