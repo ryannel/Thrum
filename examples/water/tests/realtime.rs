@@ -272,9 +272,13 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         Offscreen::new(game, &device, &caps, &queue, extent).expect("ordinary game runtime");
     if let Some((_, site)) = dive_site {
         let (depth, pitch) = held_dive.unwrap_or((-site.crossing_depth(), 0.0));
+        let follow = u8::from(
+            dive_travel.is_some()
+                || (route == "under-light" && held_dive.is_some_and(|(depth, _)| depth == 0.0)),
+        );
         runtime
             .parameters(&format!(
-                r#"{{"camera.depth":{depth},"camera.pitch":{pitch},"camera.bearing":{dive_bearing},"camera.fov":{dive_fov},"sun.elevation":{dive_light}}}"#
+                r#"{{"camera.depth":{depth},"camera.pitch":{pitch},"camera.bearing":{dive_bearing},"camera.fov":{dive_fov},"camera.surface_follow":{follow},"sun.elevation":{dive_light}}}"#
             ))
             .expect("initial dive view");
     }
@@ -553,8 +557,10 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             if dive_travel.is_some() {
                 let distance = 0.9 * (depth - crossing).max(0.0);
                 let pitch = 32.0 * ((depth - crossing) / 4.0).clamp(0.0, 1.0);
+                let release = ((depth - crossing) / 1.5).clamp(0.0, 1.0);
+                let follow = 1.0 - release * release * (3.0 - 2.0 * release);
                 runtime.parameters(&format!(
-                    r#"{{"camera.depth":{depth:.4},"camera.setback":{distance:.4},"camera.pitch":{pitch:.4}}}"#,
+                    r#"{{"camera.depth":{depth:.4},"camera.setback":{distance:.4},"camera.pitch":{pitch:.4},"camera.surface_follow":{follow:.4}}}"#,
                 ))
             } else {
                 runtime.parameters(&format!(r#"{{"camera.depth":{depth:.4}}}"#))
@@ -805,6 +811,10 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             |(depth, pitch)| json!({"depth":depth,"pitch":pitch}),
         );
         record["sun_elevation"] = json!(dive_light);
+        record["surface_follow"] = json!(
+            dive_travel.is_some()
+                || (route == "under-light" && held_dive.is_some_and(|(depth, _)| depth == 0.0))
+        );
         record["bearing"] = json!(dive_bearing);
         record["fov"] = json!(dive_fov);
         record

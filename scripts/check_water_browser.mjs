@@ -1779,7 +1779,9 @@ try {
       const [depth,pitch]=diveView??[-diveDepth,0];
       result.dive_camera=diveView?{depth,pitch,bearing:diveBearing,sun:diveSun}:
         {sweep_depth:diveDepth,maximum_depth:diveTravel,pitch,bearing:diveBearing,sun:diveSun};
-      await evaluate(`game.edit_control('camera.pitch',${pitch});game.edit_control('camera.depth',${depth});
+      const surfaceFollow=depthTour||(process.env.THRUM_WATER_ROUTE==='under-light'&&diveView?.[0]===0);
+      result.dive_camera.surface_follow=surfaceFollow;
+      await evaluate(`game.edit_control('camera.surface_follow',${Number(surfaceFollow)});game.edit_control('camera.pitch',${pitch});game.edit_control('camera.depth',${depth});
         game.edit_control('camera.bearing',${diveBearing});game.edit_control('camera.fov',${diveFov});game.edit_control('sun.elevation',${diveSun})`);
       await until(async()=>{
         const status=await evaluate('game.frame(performance.now());game.report()');
@@ -1837,6 +1839,8 @@ try {
             const below=Math.max(0,depth-${diveDepth});
             game.edit_control('camera.setback',0.9*below);
             game.edit_control('camera.pitch',32*Math.min(1,below/4));
+            const release=Math.min(1,below/1.5);
+            game.edit_control('camera.surface_follow',1-release*release*(3-2*release));
           }
           game.edit_control('camera.depth',depth);
         }

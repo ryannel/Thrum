@@ -4,7 +4,10 @@ use super::{
 use crate::SharedReport;
 use std::{
     error::Error,
-    sync::{Arc, Mutex},
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicU64, Ordering},
+    },
     time::Duration,
 };
 use thrum_app::sky::{Camera, ContentStatus, Controls, CookedMaterial, MeshPlacement, SkyGame};
@@ -308,38 +311,55 @@ fn build(
         )
         .default(0.0)
         .add()?;
+    let surface_follow = controls
+        .slider("camera.surface_follow", "Follow local surface", 0.0..=1.0)
+        .default(0.0)
+        .add()?;
     let sun = controls
         .slider("sun.elevation", "Sun elevation", -18.0..=80.0)
         .default(60.0)
         .add()?;
     let step = Duration::from_secs_f64(STEP_SECONDS);
-    let game = SkyGame::new(
-        controls,
-        camera(eye_at_surface, initial_depth, 45.0, 90.0, 105.0),
-        move |controls, sky| {
-            let heading = controls.get(bearing);
-            let (east, south) = heading.to_radians().sin_cos();
-            let distance = controls.get(setback);
-            let [x, y, z] = eye_at_surface;
-            sky.camera = camera(
-                [x - east * distance, y, z + south * distance],
-                controls.get(depth),
-                controls.get(pitch),
-                heading,
-                controls.get(fov),
-            );
-            sky.sun_elevation_degrees = controls.get(sun);
-            sky.sun_azimuth_degrees = 228.0;
-            sky.temporal_inputs = true;
-        },
-    )
+    let initial_camera = camera(eye_at_surface, initial_depth, 45.0, 90.0, 105.0);
+    let presentation_camera = Arc::new(Mutex::new((initial_camera, 0.0)));
+    let edited_camera = Arc::clone(&presentation_camera);
+    let game = SkyGame::new(controls, initial_camera, move |controls, sky| {
+        let heading = controls.get(bearing);
+        let (east, south) = heading.to_radians().sin_cos();
+        let distance = controls.get(setback);
+        let [x, y, z] = eye_at_surface;
+        sky.camera = camera(
+            [x - east * distance, y, z + south * distance],
+            controls.get(depth),
+            controls.get(pitch),
+            heading,
+            controls.get(fov),
+        );
+        *edited_camera.lock().expect("dive camera") = (sky.camera, controls.get(surface_follow));
+        sky.sun_elevation_degrees = controls.get(sun);
+        sky.sun_azimuth_degrees = 228.0;
+        sky.temporal_inputs = true;
+    })
     .with_ground(None)
     .with_temporal_sampling(cfg!(target_arch = "wasm32"))
     .with_tick_duration(step)?;
+    let wave_tick = Arc::new(AtomicU64::new(1));
     let game = if let Some(field) = meter_field {
+        let field = Arc::new(field);
+        let camera_field = Arc::clone(&field);
+        let camera_map = Arc::clone(&map);
+        let camera_tick = Arc::clone(&wave_tick);
         let map = Arc::clone(&map);
         let downwelling = optics.downwelling.map(f64::from);
-        game.with_meter_medium(move |camera, source, alpha| {
+        game.with_presentation_camera(move |alpha| {
+            let (pose, follow) = *presentation_camera.lock().expect("dive camera");
+            if follow == 0.0 {
+                return pose;
+            }
+            let time = display_time(camera_tick.load(Ordering::Relaxed), alpha, step);
+            follow_surface(pose, follow, &camera_map, &camera_field, time)
+        })
+        .with_meter_medium(move |camera, source, alpha| {
             let [x, y, z] = camera.position.map(f64::from);
             let time = display_time(source.tick, alpha, step);
             let Some(surface) = map
@@ -378,6 +398,7 @@ fn build(
     } else {
         game
     };
+    let game = game.and_fixed_update(move |tick, _| wave_tick.store(tick, Ordering::Relaxed));
     let game = if draw_water {
         game.with_sun_path(water.sun_path_provider())
             .with_contribution(Box::new(water), || ContentStatus::Drawn(1))
@@ -385,6 +406,31 @@ fn build(
         game
     };
     Ok((game, report))
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "presentation camera coordinates use f32 metres"
+)]
+fn follow_surface(
+    mut pose: Camera,
+    follow: f32,
+    map: &Mutex<thrum_water_model::Map>,
+    field: &Field,
+    time: f64,
+) -> Camera {
+    let [x, _, z] = pose.position.map(f64::from);
+    let height = map.lock().ok().and_then(|map| {
+        let level = map.sample([x, z])?.row.level;
+        let surface = map.surface(field, [x, z], time).ok()?;
+        surface.wet.then_some(surface.sample.height - level)
+    });
+    if let Some(height) = height {
+        let offset = height as f32 * follow;
+        pose.position[1] += offset;
+        pose.target[1] += offset;
+    }
+    pose
 }
 
 fn dive_meshes(
