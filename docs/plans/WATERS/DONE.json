@@ -1735,7 +1735,7 @@
     {
       "id": "WP15",
       "name": "The camera goes under water: the waterline crosses the lens, and the surface overhead shows the sky through a bright window",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
