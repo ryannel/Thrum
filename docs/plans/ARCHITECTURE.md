@@ -769,8 +769,24 @@ large, has its own inspections and must leave the V1 scene untouched:
    it moves. The weather state holds both (`CLOUDS` WP13 the range, WP16 the exponent); `ATMOSPHERE` turns them into
    the aerosol in each band ([its design](ATMOSPHERE/DESIGN.md#the-view-volume-haze-fog-and-light-near-the-camera)).
 
+Ruling 9 is outside `ATMOSPHERE`. The `CLOUDS` builder builds it in `thrum-render`'s contribution seam and the
+frame host's extent preparation, which are `EFFECT-GRAPH`'s, `SCENE-VIEWS`' and `APPLE-PRESENTATION`'s:
+
+9. **A contribution may hold storage sized by the scene's extent** (`CLOUDS` WP15). With
+   [a stop at every pixel's depth](CLOUDS/DESIGN.md#the-visible-layer) the cloud layer is addressed by render
+   pixel, so it must grow with the scene, where every earlier contribution kept storage of a fixed size through
+   a resize. A contribution says whether an extent needs more than it holds. One that does supplies a job that
+   prepares the replacement where the frame host prepares its own targets for that extent. On the Mac that is
+   the preparation worker, and the switch installs what the worker made and creates no texture, view, bind
+   group or pipeline, as [the Mac's lifecycle](APPLE-PRESENTATION/DESIGN.md#the-lifecycle-of-a-generation-build-wp4)
+   requires. The ruling adds to a resize and changes none: when no contribution needs more, a resize is
+   prepared, refused and published as it was before the ruling, for one contribution and for a list of them,
+   whether or not a member declares secondary view slots and whether or not such a member has bindings of its
+   own to replace. [`CLOUDS` WP15.17](CLOUDS/DONE.json) lists the cases. The three owners' items, tests and
+   bounds do not change and keep passing.
+
 Once built, rulings 1 to 4 belong to `ATMOSPHERE`: later work there keeps their tests passing. Rulings 6 to 8
-are its own from the start. `CONTENT-LOOP`'s
+are its own from the start. Ruling 9, once built, belongs with the seam's owners in the same way. `CONTENT-LOOP`'s
 anticipated cook-time atlas is not asked for: a game stacks its shapes into one `TVOL` source of power-of-two
 slabs, cooked as any volume is. Its mips stay inside a slab only down to the level with one texel a slab, so
 `CLOUDS` reads no coarser level and holds its coordinate inside the slab
@@ -3606,3 +3622,8 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   closes at a steady 60 Hz at full screen as an interim rate. The module table's row 13, the exit coverage table,
   step 7 of the build order and [the planning note](#apple-presentation-wp4wp11-g4) follow. No other module's
   item changed.
+- 2026-11-27 [Seam rulings for CLOUDS](#seam-rulings-for-clouds) gained ruling 9, from the diagnosis of `CLOUDS`
+  WP15: a contribution may hold storage sized by the scene's extent, prepared with the frame host's own targets,
+  and a resize in which no contribution needs more is as it was. The `CLOUDS` builder had added the hook without
+  a ruling, and three reviews each found a regression in another resize
+  ([the log](CLOUDS/LOG.md#wp15-diagnosis)). No other module's item changed.

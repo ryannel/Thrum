@@ -913,13 +913,41 @@ profile, that may lie at different depths. Its ray is marched once, to the farth
 each pixel's depth it keeps the pair it has reached there, with that distance: one **stop** for each pixel. A
 stop is the whole transport along the texel's ray from the start of the interval to that pixel's own surface. It
 holds everything in front of the surface and nothing behind it, wherever the condensate lies along the ray, and
-nothing is interpolated between stops. A pixel composes its own stop, so a ridge in front of far mist has a clean
-edge. The nearest and farthest pairs alone cannot do this: a bank just in front of a middle surface and the same
-bank just behind it leave the same two pairs, and blending them gives the middle pixel a transmittance of 0.77
-or 0.67 where the truth is 0.30 and 1 (part VII). The ray is the texel's and not the pixel's, under a pixel's
-width to the side, as it is for the sky. In a profile without Ground every pixel of a texel is beyond the
+nothing is interpolated between stops at different depths. A pixel on a surface composes its own stop, so a ridge
+in front of far mist has a clean edge. The nearest and farthest pairs alone cannot do this: a bank just in
+front of a middle surface and the same bank just behind it leave the same two pairs, and blending them gives
+the middle pixel a transmittance of 0.77 or 0.67 where the truth is 0.30 and 1 (part VII). The ray is the
+texel's and not the pixel's, under a pixel's width to the side, as it is for the sky. In a profile without Ground every pixel of a texel is beyond the
 condensate or is sky, a texel keeps one stop, and the compose is the depth test it was. Water writes depth and
 is geometry here.
+
+**Which profile keeps stops.** Whether a texel keeps a stop for each pixel is the profile's alone. Every texel
+does in a profile with Ground and none does in a profile without, whatever the weather state holds. The march, how
+often a texel is traced and what a pixel composes never follow the fog amounts, the coverage or the shapes. Each
+of those moves by degrees, and a layer that changed its march or its compose with one would change the clouds
+overhead in the frame mist first forms. So a Ground scene whose fog amounts are all zero is drawn by the Ground
+profile's march, refresh and compose. It is not held to the bytes it drew before WP15, when its layer kept one
+stop a texel: a full refresh and a stop for each pixel cannot reproduce them. WP15.16 judges that its clouds
+look as they do in a scene without Ground. A profile without Ground is as it was before stops existed: the same
+passes and the same bytes (WP15.15).
+
+**A pixel of sky.** A pixel with no surface composes the transport of a whole ray, which is the stop a texel
+keeps for each of its pixels that is sky. Those stops are interpolated between texels at the pixel's centre, as
+the layer is in a profile without Ground, so a cloud's edge is as smooth with Ground as without it. Only a stop
+that ended in the sky is a tap. A texel with no sky pixel gives none, and the weights of the other taps are
+renormalised; the pixel's own texel always gives one. So transport that ended on a surface never reaches a sky
+pixel, and a ridge or a nearby occluder against cloud has a clean edge from the sky's side as it has from the
+surface's (WP15.14). A stop that ended in the sky keeps the frame contract below. A Ground profile may trace
+every texel in every frame, and that alone is no reason to call the cloud changed: such a stop writes reactive
+coverage where the cloud changed beyond what its motion explains, measured against the layer's history, as a
+profile without Ground does in a frame whose history is valid.
+
+**The scene's extent.** A profile without Ground keeps the layer it was prepared with and is sampled at any
+render extent. With a stop for each pixel the layer is addressed by render pixel, so it follows the scene's
+extent, and its layer scale is fixed at 100%, which its controls say. When the scene grows past what the layer
+holds, the replacement is prepared where the frame host prepares its own targets for the new extent
+([ruling 10](#what-clouds-asks-of-other-modules)), the switch installs it and marks the layer's history
+invalid, and the first frame at the new extent has a stop for every pixel (WP15.17).
 
 **Carried stops.** A stop traced in an earlier frame is carried with the surface it ended on, by the scene's
 motion for that pixel; a stop that ended in the sky is carried by the cloud's own, as above. A pixel composes a
@@ -1264,9 +1292,11 @@ The owner's bar of 17 November 2026 ([the request](#the-request), and
   query's column, which is [the bound a query promises](#one-weather-field-in-the-air-frame) (WP6.2, WP7.6).
   Each test states its allowance for the map's filtering and shows that twice the amount fails. These compare
   two answers to one question a game asks. Neither is a reference for light, and no photon is counted.
-- **Contracts are tested.** The frame contract's motion, reactive coverage and history (WP3.4, WP15.7); air and
+- **Contracts are tested.** The frame contract's motion, reactive coverage and history (WP3.4, WP15.7); the
+  stop each pixel composes, in named cases (WP15.1, WP15.14); air and
   condensate composed once (WP3.6, WP14.3); one optical depth for every receiver, with the same bytes with
-  visible clouds off (WP3.8, WP6.12, WP8.9); a capability left out costing nothing; state through pauses, hitches
+  visible clouds off (WP3.8, WP6.12, WP8.9); a capability left out costing nothing (WP15.15 for Ground); a
+  resize with and without a contribution that must grow (WP15.17); state through pauses, hitches
   and a replaced device; and no retained image moved.
 - **A wrong substitute still fails.** Where a test names a plausible wrong version, such as a shore mask that
   drifts or a cloud band's value counted twice, it runs that version through the same assertion and shows it
@@ -1754,7 +1784,7 @@ profile or the library rebuilds the effect and resets its histories.
 
 ## What CLOUDS asks of other modules
 
-Settled in [the module list](../ARCHITECTURE.md#seam-rulings-for-clouds). Rulings 1 to 5 are each built by this
+Settled in [the module list](../ARCHITECTURE.md#seam-rulings-for-clouds). Rulings 1 to 5 and 10 are each built by this
 module's builder in the owning module's files, with that module's items unchanged and its tests kept passing,
 and each is absent from a scene with no cloud provider: the same shader text, passes, storage and bytes as
 today. Rulings 6 to 8 are `ATMOSPHERE`'s own work, in its WP7 and WP8, and this module uses them as built.
@@ -1785,6 +1815,15 @@ today. Rulings 6 to 8 are `ATMOSPHERE`'s own work, in its WP7 and WP8, and this 
 9. **The display phase** (`EFFECT-GRAPH` WP4): where a frame's consumed target lies between the last two committed
    ticks or past the newest, bounded at 50 ms, with the frame's observation, lead, lead status and tick's due
    time on the capture record. This module reads it in WP2 and builds none of it.
+
+10. **A contribution may hold storage sized by the scene's extent** (the module list's ruling 9; built by this
+    module's builder in WP15, in `thrum-render`'s contribution seam and the frame host's extent preparation).
+    A contribution says whether an extent needs more than it holds, and one that does supplies a job that
+    prepares the replacement where the frame host prepares its own targets: on the Mac that is the preparation
+    worker, and the switch creates no texture, view, bind group or pipeline. The ruling adds to a resize and
+    changes none. When no contribution needs more, a resize is prepared, refused and published as it was
+    before the ruling, for one contribution and for a list of them, whether or not a member declares secondary
+    view slots and whether or not such a member has bindings of its own to replace. WP15.17 lists the cases.
 
 Everything else is used as built: effect stages, histories and cadence; the sea's depth write, which the trace
 treats as geometry; the temporal contribution; leases of volumes; typed controls; and `PLATFORM-RUNTIME-MAC`'s

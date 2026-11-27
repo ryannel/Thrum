@@ -1165,3 +1165,28 @@ the stop at their own depth. The cooked valley's Clear Ground frame matches its
 pre-WP15 Mac Metal capture at all 921,600 RGBA bytes. The public contribution list
 forwards both resize hooks and slices the replacement handles in member order.
 [Clear Ground and resize evidence](../../../.orchestrate/evidence/CLOUDS/WP15/review-repair-r3/REPAIR.md)
+
+## WP15 diagnosis
+
+- 2026-11-27 Planner, after four failed reviews, three on WP15.1. The plan was at fault. Every inspected item
+  passed each time and every fix held. [The diagnosis](../../../.orchestrate/evidence/CLOUDS/WP15-diagnosis.md)
+  holds the reasons, what each review found and the notes for the builder.
+- WP15.1 was an open claim, so each review tried a new case, and its byte clause was read as covering a Ground
+  scene with no mist, which a stop for each pixel and a full refresh cannot meet. The builder's answer, a stop
+  mode that follows the fog amounts, is where review 4's second finding came from.
+- The design gains three paragraphs in [the visible layer](DESIGN.md#the-visible-layer): the profile alone
+  decides whether a texel keeps stops; a sky pixel composes whole-ray stops and never one that ended on a
+  surface; and the layer follows the scene's extent.
+- WP15.1 before: "The trace marches each ray once over the design's interval and keeps a stop at every pixel
+  depth in its texel. [the three-depth bank cases and the nearer pixel]. Under a cloud band that clears all
+  geometry, with no ground condensate, the composed frame holds the same bytes as before this work package."
+  Now: the march, the bank cases and the nearer pixel, for a profile with Ground.
+- WP15.14 is new: what a pixel composes in a Ground profile, as two named cases, with a question on whether
+  the weather state can change the stop mode. WP15.15 is new: the byte clause, for a scene without Ground.
+- WP15.16 is new, an inspection: the clouds overhead look the same with Ground declared. It replaces the byte
+  comparison of a Ground scene.
+- WP15.17 is new: growth of a Ground scene and the resizes it must leave alone, as six cases. The growth hook
+  had no ruling and three reviews found a regression beside it;
+  [ruling 9](../ARCHITECTURE.md#seam-rulings-for-clouds) now states it.
+- WP15.4 to WP15.13 are unchanged. PLAN.md gains one assumption, that a Ground scene pays the full-refresh
+  trace at every fog amount, and WP14's note shrank to its review link, WP14 being Done.

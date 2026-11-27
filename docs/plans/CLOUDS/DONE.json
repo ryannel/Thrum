@@ -1538,19 +1538,57 @@
       "failed_reviews_with_repeat": 3,
       "diagnoses": 0,
       "depends_on": [],
-      "quality_bar": "The far mists of Red Dead Redemption 2 and the low cloud of Horizon Forbidden West: banks and filled valleys to the horizon with clean ridge lines in front of them, a cloud base that hills rise into, and a climb through it with no seam between what is near and what is far.",
+      "quality_bar": "The far mists of Red Dead Redemption 2 and the low cloud of Horizon Forbidden West: banks and filled valleys to the horizon with clean ridge lines in front of them, a cloud base that hills rise into, and a climb through it with no seam between what is near and what is far. Declaring mist costs the sky nothing in look: the clouds overhead are held to the same view without Ground, as WP3 to WP10 accepted it.",
       "items": [
         {
           "id": "WP15.1",
-          "statement": "The trace marches each ray once over the design's interval and keeps a stop at every pixel depth in its texel. In one texel whose pixels lie at three depths, a bank between the first and second depths leaves the nearest pixel clear and covers the two behind it, and the same bank between the second and third covers only the farthest; a pixel nearer than all the condensate takes none. Under a cloud band that clears all geometry, with no ground condensate, the composed frame holds the same bytes as before this work package.",
+          "statement": "In a profile with Ground the trace marches each texel's ray once and keeps a stop at the depth of each of the texel's pixels. In one texel whose pixels lie at three depths, a bank between the first and second depths leaves the nearest pixel clear and covers the two behind it, and the same bank between the second and third covers only the farthest. A pixel nearer than all the condensate takes none.",
           "check": "cargo test --locked --offline -p thrum-clouds --test trace_depth_gpu",
-          "ask": "Would the nearest and farthest stops blended to the middle depth fail the bank cases? Is the unchanged frame compared with one from the commit this work package started at, or with a retained image?",
+          "ask": "Would the nearest and farthest stops blended to the middle depth fail the bank cases?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
+        },
+        {
+          "id": "WP15.14",
+          "statement": "In a profile with Ground every pixel composes transport that ended at its own depth, whatever the weather state holds. Two cases hold on Metal with every fog amount at zero. (1) With the coverage at zero, a directed shape in front of a surface 2,000 m away covers that surface's pixel the same whether the other three pixels of its texel lie at 2,000 m beside it or at 420, 700 and 420 m, and those three are clear. (2) With the camera inside an elevated cloud layer, a sky pixel beside the edge of a surface 3 m away composes the transmittance its own ray traced, within the test's stated tolerance, both with the edge's first pixel next to it and with it one pixel further off.",
+          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_depth_contract_gpu",
+          "ask": "In a profile with Ground, is whether a texel keeps a stop for each pixel, how often it is traced and which stop a pixel composes decided by the profile and the pixels' depths alone, never by the fog amounts, the coverage or the shapes? Does case 2's test fail when the sky pixel takes a tap from a stop that ended on the surface?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP15.15",
+          "statement": "A scene that does not declare Ground draws the bytes it drew before this work package: the V1 valley under its Sky selection and the fair preset, at one fixed submission on the portable recipe with reconstruction off.",
+          "ask": "Is the frame compared with one drawn by a build of the commit this work package started from, or, if another module's landing has since moved those bytes, by a build that differs from the compared one only in this work package's commits?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP15.16",
+          "statement": "Declaring Ground leaves the look of the clouds overhead as it is without it. Over the valley under the fair preset with every fog amount at zero, a cloud's edge against the sky is as smooth as in the same view without Ground, and no bright or dark fringe follows a ridge that stands against cloud. With far mist switched on, the cloud above it is as it was with the mist off. In a pan the clouds' edges crawl and flicker no more than they do without Ground.",
+          "inspect": "Capture with T2 engine capture from 40 m above the V1 valley under the fair preset. `fixed` stills of one view with the Ground selection at zero fog amounts and with the Sky selection, each on the portable recipe with reconstruction off and on the Apple recipe with TAAU. A `fixed` pair looking up at the cloud under the Ground selection, with far mist off and on. A `realtime` 10-second pan across the cloud on the Apple recipe with TAAU, once under each selection. Judge native-size crops of a cloud's edge against sky and of a ridge against cloud, and the pans at 1x: 1. in each recipe the Ground still's cloud edges are as smooth as the Sky still's, with no steps two pixels wide; 2. no bright or dark fringe follows the ridge line in the Ground stills; 3. with far mist on, the cloud overhead has no hole and no change of brightness from the mist-off frame; 4. in the pan the Ground take's cloud edges crawl and flicker no more than the Sky take's.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP15.17",
+          "statement": "A scene with Ground keeps a stop for every pixel when it grows, and the hook that lets its layer grow changes no other resize. Six cases hold on Metal, each through the frame host's own resize. (1) A Ground scene grown from 32\u00d718 to 65\u00d737, by the host's immediate resize and by a generation prepared on the Mac's preparation worker, has in its first frame at the new extent a stop at every pixel's own depth, the far edge included. (2) On the worker's route the switch creates no texture, view, bind group or pipeline. (3) A list whose member declares a secondary view slot and supplies bindings to replace is resized, and its first resized view reads the replacements; the list's secondary resize hook, called directly and through a consumer that forwards it, supplies that member's job. (4) A list whose member declares a slot and has no bindings of its own to replace is resized: the host prepares and publishes the new extent, as it did before this work package. (5) A list whose member refuses preparation refuses the resize, and the host goes on drawing the extent it had. (6) A list that holds a member with a slot and a Ground cloud contribution that must grow is resized, and its first frame has case 1's stops and case 3's replacements.",
+          "check": "cargo test --locked --offline -p thrum-render --test scene_view_seam --test scene_view_frame_gpu && cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_depth_contract_gpu",
+          "ask": "Does a test take each of the six cases through the frame host's public resize, with case 4's member returning no job from its secondary hook, and does case 2 count what the switch creates by thread?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
         },
         {
           "id": "WP15.4",
