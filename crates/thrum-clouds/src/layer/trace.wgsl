@@ -199,10 +199,11 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
         let value = vec4(total.scattering * environment_storage_scale(), total.transmittance);
         if clear_ground {
             for (var slot = 0u; slot < 4u; slot++) {
-                let ends_in_sky = distances[slot] == cloud.heights.w;
-                textureStore(transport, vec2<i32>(texel), i32(slot), select(vec4(0.0, 0.0, 0.0, 1.0), value, ends_in_sky));
+                // Depth beyond the trace limit receives the same full transport as sky.
+                let reaches_far_edge = distances[slot] >= cloud.heights.w;
+                textureStore(transport, vec2<i32>(texel), i32(slot), select(vec4(0.0, 0.0, 0.0, 1.0), value, reaches_far_edge));
                 textureStore(front, vec2<i32>(texel), i32(slot),
-                    vec4(select(vec2(0.0), vec2(front_distance * 0.001, opacity), ends_in_sky),
+                    vec4(select(vec2(0.0), vec2(front_distance * 0.001, opacity), reaches_far_edge),
                          f32(samples), distances[slot] * 0.001));
             }
         } else {
