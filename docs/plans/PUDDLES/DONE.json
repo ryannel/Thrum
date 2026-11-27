@@ -720,6 +720,14 @@
       "quality_bar": "A desert after a cloudburst as in Red Dead Redemption 2's New Austin: a darker, richer floor, rocks wet on top and dry beneath their overhangs, level puddles that hold the sky, in the valley's own light. The exit scene itself is untouched.",
       "items": [
         {
+          "id": "WP6.6",
+          "statement": "The workspace type-checks for Linux and Windows again: `scripts/check_cross_target.sh`, unchanged, passes on this work package's checkout for `x86_64-unknown-linux-gnu` and `x86_64-pc-windows-msvc`. In `examples/water/tests/lens_review/` the helper the rain lens tests share is compiled only where the macOS-only helpers it calls are. Record: one run of the type-check; the scheduled `cross-target` main-branch check guards it from then on.",
+          "check": "git diff --quiet \"$(git merge-base HEAD origin/main)\" -- scripts/check_cross_target.sh && bash scripts/check_cross_target.sh",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
           "id": "WP6.1",
           "statement": "Ruling 6 is built for `examples/v1-game`: a rain selection, off by default. With it off the game's world, tick page, compiled graph and frames are what they were. With it on the game keeps a rain state, registers the wetness provider, and adds the water with a hollows body over a patch of ground the selection adds. The showcase's generator, routes and exit configuration are not edited.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test rain_selection_gpu",

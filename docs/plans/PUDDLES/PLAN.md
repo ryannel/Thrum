@@ -31,25 +31,28 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 ## WP2 On the CPU alone, ground wets and dries as ground does, sheen first and darkness last, and a raindrop's rings spread as water's own waves do: done
 [review](../../../.orchestrate/evidence/PUDDLES/WP2-review.md)
 
-## WP3 On the island, rain fills the hollows of a yard: puddles lie level in the ground, grow, join and shrink with a clean waterline, show the ground through them and mirror the sky, and a float sits in one
+## WP3 On the island, rain fills the hollows of a yard: puddles lie level in the ground, grow, join and shrink with a clean waterline, show the ground through them and mirror the sky, and a float sits in one: done
+[review](../../../.orchestrate/evidence/PUDDLES/WP3-review.md)
 
-The island's ground, bodies, `scripts/water_cost.py` and `scripts/check_water_browser.mjs` are `WATERS`'; add the yard, cases and scenes behind the selection and change none of theirs. The yard's ground has to hold its dips as real triangles, since the ground's depth cuts each waterline. `thrum-water` takes the rain as data in `upload` and does not link `thrum-rain-model`. If `RIVERS`' selection has landed, the two selections are independent.
+## WP4 Rain rings every water it falls on, the puddles, the lake and the sea, more and rougher as it grows and not at all under the roof, and the rings run out when the rain stops: done
+[review](../../../.orchestrate/evidence/PUDDLES/WP4-review.md)
 
-## WP4 Rain rings every water it falls on, the puddles, the lake and the sea, more and rougher as it grows and not at all under the roof, and the rings run out when the rain stops
+## WP8 A footfall or a dropped stone in a puddle sends rings across it at the speed its depth gives, and they die at its edge and stop at a dry sill: done
+[review](../../../.orchestrate/evidence/PUDDLES/WP8-review.md)
 
-The rain bands' passes join the cascades' in `thrum-sea`, which is `WATERS`' to extend by now. WP4.1's test states its own tolerance. The schedule's count and the moments of the drops below the cut are the two values to tune against WP4.4 and WP4.5; record both. Both findings of the WP4 review are open. The stalled tick is settled by [what a query reads](DESIGN.md#rain-rings): the rain's share of an answer is `thrum-water-model`'s to compute, from one list of the live drops a tick and the prepared footprint, and `thrum-water`'s drain calls it. The footprint is prepared from the ring table, fade and all, and the game commits the tick's rain before it drains; WP4.13 holds both, the second with rain that stops between a request's posting and its use. The review's mailbox probe, `WP4-review/dab0796/fleet.rs` in the evidence folder, posts the batch WP4.10 times. The slope on a current that changes along the flow stands as the review states it, under ruling 3.
-
-## WP8 A footfall or a dropped stone in a puddle sends rings across it at the speed its depth gives, and they die at its edge and stop at a dry sill
-
-Built after WP4 and before WP5. Ruling 2 extends the interaction step `WATERS` WP6 built, in `thrum-water`; leave its tests as they are. The game names the walking marker as the body the interaction windows follow. `WATERS` WP6.3's test reads only its near and far levels, so it passes with a short wave on both the near and the fine level; WP8.9 is the test that reads the near level with the fine level on.
-
-## WP5 The ground itself gets wet: paving and earth darken as the rain starts, a sheen gathers in the paving's joints and mirrors what stands on it, the ground under the roof stays dry, sand is dark where waves have run, and it dries sheen first and darkness last
-
-Ruling 5 edits `thrum-render`'s `synthetic/scene_source.rs` and `synthetic.wgsl` and `thrum-asset-gpu`'s material, which other modules own; compose the read as `compose_with_cloud` composes the cloud factor, and leave the text of a scene with no provider as it is. `WATERS` WP16 adds a water factor to the same shader; whichever lands second integrates. WP5.2's test states its own tolerance. Each class's `p` and the film's roughness are the values to tune against WP5.5 and WP5.6; record them.
+## WP5 The ground itself gets wet: paving and earth darken as the rain starts, a sheen gathers in the paving's joints and mirrors what stands on it, the ground under the roof stays dry, sand is dark where waves have run, and it dries sheen first and darkness last: done
+[review](../../../.orchestrate/evidence/PUDDLES/WP5-review.md)
 
 ## WP6 In the V1 valley, behind a selection, a shower darkens the desert floor and its rocks and leaves puddles in a patch of ground, and with the selection off the exit scene is what it was
 
 `examples/v1-game` is `SHOWCASE`'s, and `CLOUDS` has a selection there too. The valley's terrain is a cooked mesh too coarse to hold a puddle, so the selection adds its own patch of ground with dips; it does not edit the terrain, the generator, a route or the exit configuration.
+
+WP6.6 comes first, and nothing of WP6 merges again until its check passes on the checkout to be merged: main's
+`cross-target` check has failed since `8af60352a`, and a merge's own check does not type-check Linux or Windows.
+`check_rain_ring_lens` in `examples/water/tests/lens_review/mod.rs` is compiled on every target and calls helpers
+that exist only on macOS. Give it the condition they carry, as
+[the engineering skill's GPU tests](../../../.agents/skills/thrum-engineering/references/patterns.md#tests) says, and
+leave each test a test on every target.
 
 ## WP7 A visitor starts and stops the rain, sets how fast things dry and takes the day from dawn to night, and the puddles and the wet ground mirror the scenery round them and hold up in motion, on the Mac and in Chrome
 

@@ -152,6 +152,14 @@ skipping; admit `Some(wgpu::Backend::Metal)`. A test that runs on any backend ma
 `#[cfg(target_os = "macos")]`. The CPU graph
 validation cases use portable limits and feature facts and compile on every target.
 
+**Helpers only Metal tests call.** `macos_gpu_test!` compiles a test's body on macOS alone, and nothing else: a
+function the body calls is still type-checked for Linux and Windows. So a helper that names anything macOS-only (the
+Metal rig in `tests/support`, another gated helper, a gated import) carries `#[cfg(target_os = "macos")]` itself, with
+the imports only it uses, or sits in a gated module that holds no test, such as `mod metal` in
+`examples/water/tests/lens_gpu.rs`. A merge's check builds for the Mac alone, so after adding, moving or splitting
+such a helper, run `bash scripts/check_cross_target.sh` before you merge; otherwise the hourly `cross-target` check
+finds the break on main.
+
 **The kit.** `thrum-test-support` writes once the jobs every GPU test repeats:
 - `open(test, backend, profile, &restriction)` (the `render` feature) requests a GPU on `backend` where given and
   returns the recipe's device, queue and capabilities, or `None` for a reported skip. `thrum-render`'s unit tests

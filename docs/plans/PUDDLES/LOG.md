@@ -344,3 +344,12 @@
   teeth at the near pool's tip. The 1080p pair records 33,832,960 bytes of forward wetness in the
   soaked arm, and both arms crossed the 120 Hz interval in the recorded run.
   [Repair evidence](../../../.orchestrate/evidence/PUDDLES/WP6/after-review/README.md)
+
+- 2026-11-27 Planner, after main's `cross-target` check failed at `9b0fa426f`. WP6's `8af60352a` moved the rain
+  lens controls into `check_rain_ring_lens` (`examples/water/tests/lens_review/mod.rs`) without the macOS condition
+  that its helpers and imports carry, and `f70d1ccab` kept it so; its seven unresolved names are the only errors,
+  the same for Linux and for Windows. New WP6.6 holds the fix and the type-check, first in WP6, which is being
+  built. No design change. It is the day's second such break (`CLOUDS` WP11.11 was the first), so the engineering
+  skill's GPU tests now say how a helper only Metal tests call is gated, and when to run the type-check.
+  WP3, WP4, WP8 and WP5 are Done, so their plan notes left `PLAN.md`; each one's review and the entries above
+  hold what they said.
