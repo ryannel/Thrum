@@ -786,7 +786,13 @@ try {
   const pixels=async expression=>{
     const size=await evaluate(`${expression}.length`),chunks=[];
     for(let offset=0;offset<size;offset+=1024*1024){
-      const data=await evaluate(`(()=>{const p=${expression}.subarray(${offset},${offset+1024*1024});let bytes='';for(let i=0;i<p.length;i+=8192)bytes+=String.fromCharCode(...p.subarray(i,i+8192));return btoa(bytes);})()`);
+      const data=await evaluate(`(()=>{
+        const bytes=${expression}.subarray(${offset},${offset+1024*1024});
+        if(bytes.toBase64)return bytes.toBase64();
+        let text='';
+        for(let i=0;i<bytes.length;i+=8192)text+=String.fromCharCode(...bytes.subarray(i,i+8192));
+        return btoa(text);
+      })()`);
       chunks.push(Buffer.from(data,'base64'));
     }
     return Buffer.concat(chunks);
@@ -1700,13 +1706,14 @@ try {
       const openSea=['sea','deep-sea'].includes(site);
       const views=shallow?[['through-shallows',-2,-73,90]]:[
         ['bed-0.5m',0.5,-45,90],['bed-3m',3,-45,90],['level-0.5m',0.5,0,90],['level-3m',3,0,90],
-        ['shaft-1m',1,67,228],['away-1m',1,22,228],['sunk-float',0.5,-14,169],
+        ['shaft-1m',1,67,228],['away-1m',1,22,228],['sunk-float',0.5,-25,349],
         ['shaft-3m',3,67,228],['away-3m',3,22,228],
         ...(openSea?[['shaft-10m',10,67,228],['away-10m',10,22,228],['level-10m',10,0,90]]:[]),
         ...(site==='deep-sea'?[['bed-20m',20,-35,90],['level-20m',20,0,90]]:[]),
       ];
       checkpoints=views.map(([name,depth,pitch,bearing])=>[name,{
         'camera.depth':depth,'camera.pitch':pitch,'camera.bearing':bearing,
+        'camera.setback':name==='sunk-float'?5.7:0,
         'camera.fov':/^(shaft|away)-/.test(name)?55:name==='sunk-float'?60:105,'sun.elevation':60,
       }]);
     }else if(routeParams.has('dive')){

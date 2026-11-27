@@ -1000,7 +1000,7 @@ fn under_light_checkpoints(site: DiveSite) -> Vec<(String, String, f64)> {
             ("bed-3m", 3.0, -45.0, 90.0),
             ("level-0.5m", 0.5, 0.0, 90.0),
             ("level-3m", 3.0, 0.0, 90.0),
-            ("sunk-float", 0.5, -14.0, 169.0),
+            ("sunk-float", 0.5, -25.0, 349.0),
             ("shaft-1m", 1.0, 67.0, 228.0),
             ("shaft-3m", 3.0, 67.0, 228.0),
             ("away-1m", 1.0, 67.0, 273.0),
@@ -1011,10 +1011,11 @@ fn under_light_checkpoints(site: DiveSite) -> Vec<(String, String, f64)> {
             ("bed-3m", 3.0, -45.0, 90.0),
             ("level-0.5m", 0.5, 0.0, 90.0),
             ("level-3m", 3.0, 0.0, 90.0),
-            ("sunk-float", 0.5, -14.0, 169.0),
+            ("sunk-float", 0.5, -25.0, 349.0),
             ("shaft-1m", 1.0, 67.0, 228.0),
             ("shaft-3m", 3.0, 67.0, 228.0),
             ("shaft-10m", 10.0, 67.0, 228.0),
+            ("level-10m", 10.0, 0.0, 90.0),
             ("away-1m", 1.0, 67.0, 273.0),
             ("away-3m", 3.0, 67.0, 273.0),
             ("away-10m", 10.0, 67.0, 273.0),
@@ -1032,8 +1033,9 @@ fn under_light_checkpoints(site: DiveSite) -> Vec<(String, String, f64)> {
             } else {
                 (pitch, bearing, 105.0)
             };
+            let setback = if view == "sunk-float" { 5.7 } else { 0.0 };
             (format!("{light}-{view}"), format!(
-                r#"{{"camera.depth":{depth},"camera.pitch":{pitch},"camera.bearing":{bearing},"camera.fov":{fov},"sun.elevation":{sun}}}"#,
+                r#"{{"camera.depth":{depth},"camera.pitch":{pitch},"camera.bearing":{bearing},"camera.fov":{fov},"camera.setback":{setback},"sun.elevation":{sun}}}"#,
             ), 10.0)
         })).collect()
 }
