@@ -54,10 +54,7 @@ impl Inputs {
         dot < 0.0 || previous.cross(next).length() > dot * 0.034_920_77
     }
 
-    fn change(self, previous: Self, tuning: Tuning) -> f32 {
-        let sun = glam::Vec3::from_array(self.direction);
-        let old_sun = glam::Vec3::from_array(previous.direction);
-        let angle = sun.cross(old_sun).length().atan2(sun.dot(old_sun));
+    fn light_change(self, previous: Self) -> f32 {
         let relative = |new: f32, old: f32| {
             let larger = new.max(old);
             if larger > 0.0 {
@@ -66,13 +63,19 @@ impl Inputs {
                 0.0
             }
         };
-        let light = self.colour.into_iter().zip(previous.colour).fold(
+        self.colour.into_iter().zip(previous.colour).fold(
             relative(self.illuminance, previous.illuminance),
             |worst, (new, old)| worst.max(relative(new, old)),
-        );
+        )
+    }
+
+    fn change(self, previous: Self, tuning: Tuning) -> f32 {
+        let sun = glam::Vec3::from_array(self.direction);
+        let old_sun = glam::Vec3::from_array(previous.direction);
+        let angle = sun.cross(old_sun).length().atan2(sun.dot(old_sun));
         (angle / tuning.sun_tolerance(sun.y))
             .max((self.altitude - previous.altitude).abs() / tuning.altitude)
-            .max(light / tuning.light)
+            .max(self.light_change(previous) / tuning.light)
     }
 }
 
@@ -237,11 +240,20 @@ impl ChartSchedule {
         };
         let prior_dirty =
             (0..STAGES).any(|index| self.due(index, live, before_overlay, overlay_light));
+        // Cadence 1 can keep cloudy reflections through a light-only edit.
+        // On entry compare their own source light, even after the light settles.
+        let stale_entry_light = overlay_light
+            && self.cadence == 1
+            && self.sources[2..]
+                .iter()
+                .flatten()
+                .any(|source| inputs.light_change(source.inputs) > self.tuning.light);
         let whole_update = match self.last {
             None => Some(WholeUpdate::Initialization),
             Some(last) if !inputs.same_air(last.inputs) => Some(WholeUpdate::AirChange),
             Some(_) if cadence > 1 && camera_cut => Some(WholeUpdate::CameraCut),
             Some(last) if cadence > 1 && inputs.jumped(last.inputs) => Some(WholeUpdate::SunJump),
+            Some(_) if stale_entry_light => Some(WholeUpdate::Recovery),
             Some(_)
                 if cadence > 1
                     && cadence < self.cadence

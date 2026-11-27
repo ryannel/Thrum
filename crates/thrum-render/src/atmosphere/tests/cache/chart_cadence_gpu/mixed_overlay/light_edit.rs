@@ -161,6 +161,15 @@ fn compare(after: &[[f32; 4]], old: &[[f32; 4]], expected: &[[f32; 4]]) {
 
 #[test]
 fn light_edit_refreshes_all_levels_after_the_registered_overlay_stops_writing() {
+    assert_reflection_light_edit(false);
+}
+
+#[test]
+fn governor_entry_refreshes_all_levels_after_a_held_light_edit() {
+    assert_reflection_light_edit(true);
+}
+
+fn assert_reflection_light_edit(edit_before_governor: bool) {
     let Some(crate::test_device::Opened {
         gpu, device, queue, ..
     }) = crate::test_device::open(
@@ -184,8 +193,14 @@ fn light_edit_refreshes_all_levels_after_the_registered_overlay_stops_writing() 
         overlay.submit_frame(&mut spread, old);
         assert_eq!(overlay.executions, 1);
         overlay.runs = false;
-        spread.cadence(8);
-        overlay.submit_frame(&mut spread, old);
+        if edit_before_governor {
+            overlay.submit_frame(&mut spread, dim);
+            overlay.submit_frame(&mut spread, dim);
+            spread.cadence(4);
+        } else {
+            spread.cadence(8);
+            overlay.submit_frame(&mut spread, old);
+        }
         for (control, light) in [(&mut prior, old), (&mut expected, dim)] {
             control.overlay(CLOUDY);
             control.draw(light);
@@ -210,15 +225,13 @@ fn light_edit_refreshes_all_levels_after_the_registered_overlay_stops_writing() 
 
         overlay.submit_frame(&mut spread, dim);
         assert_eq!(overlay.executions, 1);
-        compare(
-            &sample(&lent),
-            &sample(&observer_products(&prior)),
-            &sample(&observer_products(&expected)),
-        );
-        compare(
-            &forward.sample(&spread, 0),
-            &forward.sample(&prior, 1),
-            &forward.sample(&expected, 2),
-        );
+        let actual_lent = sample(&lent);
+        let old_lent = sample(&observer_products(&prior));
+        let new_lent = sample(&observer_products(&expected));
+        let actual_forward = forward.sample(&spread, 0);
+        let old_forward = forward.sample(&prior, 1);
+        let new_forward = forward.sample(&expected, 2);
+        compare(&actual_lent, &old_lent, &new_lent);
+        compare(&actual_forward, &old_forward, &new_forward);
     });
 }

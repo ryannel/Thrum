@@ -66,6 +66,56 @@ fn cadence_one_uses_chart_keys_and_actual_overlay_writes() {
 }
 
 #[test]
+fn governor_entry_recovers_reflections_with_stale_cloud_light() {
+    let old = sun(30.0);
+    let mut dim = old;
+    dim.illuminance *= 0.5;
+    let mut tinted = old;
+    tinted.colour[1] *= 0.5;
+    let mut close = old;
+    close.illuminance *= 0.995;
+
+    for cadence in [4, 6, 8] {
+        for (overlay, edited, recovery) in [
+            (true, dim, true),
+            (true, tinted, true),
+            (true, close, false),
+            (true, old, false),
+            (false, dim, false),
+        ] {
+            let mut schedule = ChartSchedule::default();
+            submit(&mut schedule, old, 1, false, overlay);
+            let edit = schedule.plan(edited, 1, false, overlay, false);
+            schedule.submitted(&edit);
+            let hold = schedule.plan(edited, 1, false, overlay, false);
+            schedule.submitted(&hold);
+            assert_eq!(schedule.sources[STAGES - 1].unwrap().inputs, old);
+
+            let entry = schedule.plan(edited, cadence, false, overlay, false);
+            assert_eq!(
+                entry.whole_update,
+                recovery.then_some(WholeUpdate::Recovery)
+            );
+            schedule.submitted(&entry);
+            if recovery {
+                assert_eq!(entry.writes, ALL);
+                assert!(entry.is_live_snapshot());
+                assert!(
+                    schedule
+                        .sources
+                        .iter()
+                        .all(|source| source.unwrap().inputs == edited)
+                );
+                assert_eq!(
+                    schedule.plan(edited, cadence, false, overlay, false).writes,
+                    0
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn spread_submissions_latch_inputs_retry_and_drain() {
     let phase_edit = crate::synthetic::SyntheticView::default().with_phase_history_reset();
     assert!(phase_edit.history_reset());
