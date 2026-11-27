@@ -1004,9 +1004,15 @@
       },
       "ends_stretch": true,
       "ready_for_review": {
-        "commit": "b16ad9aa7e45698ea91e5c3811d29a05d6924ecc",
-        "checked": "b16ad9aa7e45698ea91e5c3811d29a05d6924ecc",
-        "at": "2026-11-27T14:48:17Z",
+        "commit": "ec4b096a90e729d611d92bb55deb318ed0893c61",
+        "checked": "ec4b096a90e729d611d92bb55deb318ed0893c61",
+        "at": "2026-11-27T15:34:06Z",
+        "reused": [
+          "WP12.1",
+          "WP12.2",
+          "WP12.3",
+          "WP12.6"
+        ],
         "host": "codex",
         "model": "gpt-6.2-sol",
         "effort": "medium",
@@ -1017,16 +1023,16 @@
         "cli": "codex-cli 0.171.0-alpha.13.2",
         "path": "headless",
         "usage": {
-          "input": 592503,
-          "cached": 157293696,
-          "output": 126329,
-          "turns": 3
+          "input": 118258,
+          "cached": 32847616,
+          "output": 25529,
+          "turns": 1
         },
         "session_usage": {
-          "input": 1907774,
-          "cached": 343694336,
-          "output": 406886,
-          "turns": 7
+          "input": 2026032,
+          "cached": 376541952,
+          "output": 432415,
+          "turns": 8
         }
       }
     }
