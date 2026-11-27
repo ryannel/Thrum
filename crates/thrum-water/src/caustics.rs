@@ -22,9 +22,6 @@ const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R16Float;
 const SIDE: u32 = 512;
 const RUNGS: u32 = 13;
 const BORDER_CELLS: u32 = 16;
-const RUNGS_PER_GRID_SCALE: u32 = 4;
-// At sqrt(2) per rung from 0.25 m, rung six is the first at 2 m.
-const GRID_RUNG_OFFSET: u32 = 2;
 const COLUMNS_PASS: &str = "water caustic columns";
 const RECEIVER: &str = concat!(
     include_str!("caustics/refraction.wgsl"),
@@ -172,8 +169,7 @@ impl Caustics {
             }],
         });
         let source = format!(
-            "{source}\nconst CAUSTIC_RUNGS_PER_GRID_SCALE: u32 = {RUNGS_PER_GRID_SCALE}u;\n\
-             const CAUSTIC_GRID_RUNG_OFFSET: u32 = {GRID_RUNG_OFFSET}u;\n{}\n{}",
+            "{source}\n{}\n{}",
             if mapped {
                 "fn caustic_slot(point: vec2<f32>) -> u32 {
                     let answer = map_sample(point);
@@ -398,8 +394,7 @@ impl Caustics {
             return;
         }
         let cell_scale = self.current.expect("caustic values").cell_scale;
-        let depth_scale = rung.saturating_sub(GRID_RUNG_OFFSET) / RUNGS_PER_GRID_SCALE;
-        let grid = &self.grids[depth_scale.max(cell_scale).min(2) as usize];
+        let grid = &self.grids[((rung / 4).max(cell_scale).min(2)) as usize];
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, &self.view, &[frame.view_uniform_offset]);
         pass.set_bind_group(1, &self.frame, &[]);
