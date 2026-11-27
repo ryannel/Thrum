@@ -101,6 +101,8 @@ def run_take(output, binary, store, route, cadence):
         THRUM_MAC_FRAME_RATE="60", THRUM_MAC_EDR="sdr", THRUM_ROUTE_OVERLAY="off",
         THRUM_V1_FRAMES="550", THRUM_REPORT="1",
     )
+    if cadence == 4:
+        env["THRUM_MAC_CHART_CADENCE"] = "4"
     load = LoadRecord(directory)
     try:
         with awake_display(), (directory / "game.log").open("w") as log:
