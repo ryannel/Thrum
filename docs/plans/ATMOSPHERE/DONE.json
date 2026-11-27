@@ -794,8 +794,8 @@
           "check": "python3 scripts/exact_baselines.py guard",
           "ask": "Do the protected changes on the candidate agree with the log's list, with any refresh confined to a governed moving capture and completed by its registered owner under the existing refresh procedure?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP12/README.md",
           "verdict": "",
           "review": ""
         }

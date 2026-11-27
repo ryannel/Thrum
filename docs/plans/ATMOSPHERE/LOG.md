@@ -830,3 +830,9 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   1. The bound borrowers rely on is three of each tolerance's widest value, which for the Sun is its value at 10° or more above the horizon, and the Sun tolerance may only tighten below that. A measure uses the tolerance at the submission being scheduled, so a refresh running when the tolerance tightens is cut by the tighter value. The design works the review's example: level 6 is 0.8 of the widest tolerance old and 3.2 of the tight one. WP12.1 runs a tuning that drops to a quarter, between two refreshes and inside one, and follows level 6's source through both.
   2. A change over one tolerance at the start of a refresh takes spread 1 and is recorded as a refresh, not a motion cut. The choice rule says so, WP12.3 states the spread for every change and counts spread-1 refreshes in the timings, and WP12.1 has the 1.1-tolerance case.
   3. Chrome's scrub in WP12.5 now starts partway through an eight-submission refresh. The trace must show the first scrub submission run all nine as a motion cut, and a new point judges the sky, shade and level-6 surface on that submission against the governor-off frame. The Mac's scrub keeps its two complete refreshes before it. A third anchor keeps the widest Sun tolerance under 1.5°, so that submission is a cut under any tuning.
+
+- 2026-11-27 WP12 candidate spreads the Sun-following chart stages by submission and keeps cadence 1 on the
+  original invalidation keys. The CPU schedule, Metal products and consumers, paired Metal timing, Mac window
+  inspection and protected reference guard pass. No exact-baseline set changed. Chrome shows a visible colour
+  step at the cadence-8 twilight refresh on submission 158. WP12.5 remains open, and the candidate stays in
+  the builder worktree. [Evidence](../../../.orchestrate/evidence/ATMOSPHERE/WP12/README.md)
