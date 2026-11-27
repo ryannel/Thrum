@@ -20,7 +20,7 @@ test-support = []
 thrum-asset = { path = "../thrum-asset" }
 thrum-core = { path = "../thrum-core" }
 bytemuck = { version = "=1.25.2", features = ["derive"] }
-glam = { version = "=0.33.12", default-features = false, features = ["std"] }
+glam = { version = "=0.33.12", default-features = false, features = ["std", "f64"] }
 half = { version = "=2.7.1", default-features = false }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl"] }
 

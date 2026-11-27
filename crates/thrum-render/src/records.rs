@@ -142,16 +142,14 @@ records! {
     HistoryRecord { current: Matrix, identity: [u32; 4] }
     MeshVertex { a: [f32; 4], b: [f32; 4], c: [f32; 4] }
     ShadowCascades {
-        light_view_proj: [Matrix; 2],
-        split_overlap: [f32; 4],
-        bias: [f32; 4],
-        penumbra: [f32; 4],
+        light_view_proj: [Matrix; crate::shader_constants::SUN_CASCADE_COUNT as usize],
+        cascade_metrics: [[f32; 4]; crate::shader_constants::SUN_CASCADE_COUNT as usize],
+        profile: [f32; 4],
         height_support: [f32; 4],
         height_view_proj: Matrix,
         horizon: [f32; 4],
-        near_partition: [f32; 4],
     }
-    ShadowView { light_view_proj: Matrix, clip_upstream: [u32; 4] }
+    ShadowView { light_view_proj: Matrix, minimum_cast_width: [f32; 4] }
     SoftSunFrame {
         inverse: Matrix,
         previous: Matrix,

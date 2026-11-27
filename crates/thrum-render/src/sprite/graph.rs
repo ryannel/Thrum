@@ -856,6 +856,7 @@ fn bind(plan: CompiledGraph) -> Result<ExecutableGraph<SpriteGraph>, RenderError
                 | PassKey::Display
                 | PassKey::ShadowNear
                 | PassKey::ShadowFar
+                | PassKey::SunCascade(_)
                 | PassKey::HorizonHeights
                 | PassKey::AirShadow
                 | PassKey::CasterCull

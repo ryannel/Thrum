@@ -44,7 +44,6 @@ fn view_volume_main(@builtin(global_invocation_id) id: vec3<u32>) {
     let sun = atmosphere.sun_lux.xyz;
     let phase = scattering_phase(dot(direction, sun));
     let limit = min(32000.0, top_distance(h, direction.y));
-    let forward_cos = dot(direction, volume_history.current_view_forward_phase.xyz);
     let cloud_projection = volume_cloud_projection(direction);
     var baseline = empty_ray();
     var joint_medium = empty_ray();
@@ -76,8 +75,8 @@ fn view_volume_main(@builtin(global_invocation_id) id: vec3<u32>) {
             let jitter = volume_shadow_jitter(id.xy, layer, volume_history.current_view_forward_phase.w);
             let sample_distance = mix(start, end, jitter);
             let world = eye + direction * sample_distance;
-            let depth = sample_distance * forward_cos;
-            let terrain = volume_terrain_visibility(world, depth) * volume_ground_visibility(world, depth);
+            let terrain = volume_terrain_visibility(world, sample_distance)
+                * volume_ground_visibility(world, sample_distance);
             let visibility = terrain
                 * volume_cloud_visibility(eye, direction, cloud_projection, start, end);
             let sigma_lo = extinction(densities, 0u);

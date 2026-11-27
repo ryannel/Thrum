@@ -12,6 +12,12 @@ macro_rules! wgsl {
     (@lighting_constants) => {
         include_str!(concat!(env!("OUT_DIR"), "/lighting_constants.wgsl"))
     };
+    ("records/shadow_cascades.wgsl") => {
+        concat!(
+            include_str!(concat!(env!("OUT_DIR"), "/sun_cascade_layout.wgsl")),
+            $crate::shaders::wgsl!(@file "records/shadow_cascades.wgsl"),
+        )
+    };
     ("present.wgsl") => {
         concat!(
             include_str!(concat!(env!("OUT_DIR"), "/srgb.wgsl")),
@@ -135,7 +141,7 @@ macro_rules! wgsl {
             $crate::shaders::wgsl!(@file "records/serials.wgsl"),
             $crate::shaders::wgsl!(@file "records/mesh_vertex.wgsl"),
             $crate::shaders::wgsl!(@file "records/history.wgsl"),
-            $crate::shaders::wgsl!(@file "records/shadow_cascades.wgsl"),
+            $crate::shaders::wgsl!("records/shadow_cascades.wgsl"),
             $crate::shaders::wgsl!(@file "records/cluster_head.wgsl"),
             "\n// thrum-wgsl-source: synthetic.wgsl\n",
             $crate::shaders::wgsl!(@bytes "synthetic.wgsl"),
@@ -215,7 +221,7 @@ macro_rules! wgsl {
     ("synthetic/air_shadow.wgsl") => {
         concat!(
             include_str!(concat!(env!("OUT_DIR"), "/air_shadow.wgsl")),
-            $crate::shaders::wgsl!(@file "records/shadow_cascades.wgsl"),
+            $crate::shaders::wgsl!("records/shadow_cascades.wgsl"),
             $crate::shaders::wgsl!(@file "synthetic/air_shadow.wgsl"),
         )
     };

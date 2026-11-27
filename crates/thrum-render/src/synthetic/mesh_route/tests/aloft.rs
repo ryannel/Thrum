@@ -15,7 +15,7 @@ fn scene() -> SyntheticScene {
     let mut scene = SyntheticScene::grid(3).expect("three slots");
     scene.sun_shadows = true;
     scene.view = SyntheticView::perspective(
-        [0.0, 85.0, 170.0],
+        [44.0, 85.0, 90.0],
         [0.0, 35.0, 0.0],
         [0.0, 1.0, 0.0],
         1.0,
@@ -98,7 +98,7 @@ fn read_layers(gpu: &Gpu, scene: &SyntheticScene) -> Vec<u8> {
 }
 
 #[test]
-fn aloft_casters_draw_into_both_cascades_only() {
+fn sun_cascades_gpu_aloft_casters_draw_into_cascades_only() {
     let backend = cfg!(target_os = "macos").then_some(wgpu::Backend::Metal);
     let Some(crate::test_device::Opened {
         gpu: admitted,

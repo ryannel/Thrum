@@ -48,7 +48,7 @@ impl OffscreenTarget {
 #[derive(Clone, Copy)]
 pub(crate) struct SceneTimingLayout {
     shadows: Shadows,
-    cascades: bool,
+    cascades: u32,
     clusters: bool,
     transforms: bool,
     sdr_tone: Option<PassKey>,
@@ -96,7 +96,7 @@ impl From<&PreparedSynthetic> for SceneTimingLayout {
                 (true, false) => Shadows::Unculled,
                 (true, true) => Shadows::Culled,
             },
-            cascades: prepared.shadowed() && prepared.surface_uses_cascades(),
+            cascades: prepared.shadow_cascade_count(),
             clusters: prepared.gpu_clustered(),
             transforms: prepared.active_instance_count() != 0,
             sdr_tone: Some(PassKey::Display),
@@ -148,9 +148,7 @@ pub(crate) fn validate_pass_timings(
     layout: SceneTimingLayout,
 ) -> Option<(Option<f64>, Option<f64>)> {
     // The fixed scene sequence, in recording order.
-    const ALL: [PassKey; 8] = [
-        PassKey::ShadowNear,
-        PassKey::ShadowFar,
+    const REST: [PassKey; 6] = [
         PassKey::HorizonHeights,
         PassKey::Cluster,
         PassKey::Exposure,
@@ -158,16 +156,15 @@ pub(crate) fn validate_pass_timings(
         PassKey::History,
         PassKey::Display,
     ];
-    let mut names = ALL
-        .into_iter()
-        .filter(|&key| match key {
-            PassKey::ShadowNear | PassKey::ShadowFar => layout.cascades,
+    let mut names = (0..layout.cascades)
+        .map(PassKey::sun_cascade)
+        .chain(REST.into_iter().filter(|&key| match key {
             PassKey::HorizonHeights => layout.shadows != Shadows::Off,
             PassKey::Cluster => layout.clusters,
             PassKey::History => layout.transforms,
             PassKey::Display => layout.sdr_tone == Some(key),
             _ => true,
-        })
+        }))
         .map(PassKey::constant_name);
     // A scene contribution adds one timed compute pass that the graph may order anywhere before
     // forward; it is reported on its own and the fixed scene sequence is matched without it.

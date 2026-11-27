@@ -33,9 +33,9 @@ impl ShadowPrepared {
             view_layout: self.view_layout.clone(),
             inputs: FitInputs { ..self.inputs },
             fitted: FittedShadow {
+                count: self.fitted.count,
                 matrices: self.fitted.matrices,
                 samples: self.fitted.samples,
-                partitioned: self.fitted.partitioned,
             },
             sample_buffer: device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some("secondary Sun samples"),
@@ -55,13 +55,13 @@ impl ShadowPrepared {
     ) -> Result<[super::Mat4; super::MAPS], RenderError> {
         let bounds = bounds.filter(|bounds| world.inputs.fit(Some(*bounds)).is_ok());
         let inputs = FitInputs {
-            projection: camera.projection(),
+            camera: super::Vec3::from_array(camera.camera_position()),
             profile: Some(profile),
             ..world.inputs
         };
         let mut fitted = inputs.fit(bounds)?;
         let world_fit = world.inputs.fit(bounds)?;
-        fitted.matrices[2] = world_fit.matrices[2];
+        fitted.matrices[super::HEIGHT_LAYER] = world_fit.matrices[super::HEIGHT_LAYER];
         fitted.samples.height_view_proj = world_fit.samples.height_view_proj;
         fitted.samples.horizon = world_fit.samples.horizon;
         for (index, cascade) in self.cascades.iter().enumerate() {

@@ -5,9 +5,8 @@
 // translation as the caster vertex stage) lies wholly outside the volume
 // that pass rasterizes: the xy clip planes, and in depth what `shadow.wgsl`
 // keeps. The caster stage clamps z below 0 to 0, which the Greater test
-// against the 0 clear never passes, so the z = 0 plane always rejects. It
-// clamps z above w to w (still drawn) unless the pass clips upstream
-// geometry, when z = w is a real clip plane too.
+// against the 0 clear never passes, so the z = 0 plane always rejects. An
+// out-of-date fit can clamp an upstream caster to w, where it still draws.
 // `CasterView` is `ShadowView` in `shadow.wgsl`: the bytes the pass draws with.
 @group(0) @binding(14) var<uniform> caster_view: ShadowView;
 
@@ -27,7 +26,7 @@ fn caster_outside(plane: vec4<f32>, center: vec3<f32>, extent: vec3<f32>) -> boo
 
 fn casts(slot: u32, mesh: MeshRecord) -> bool {
     // The caster stage collapses inactive rows to a point outside the clip.
-    if instances[slot].ids.w == 0u {
+    if instances[slot].ids.w == 0u || shadow_cast_width(instances[slot]) < caster_view.minimum_cast_width.x {
         return false;
     }
     let bounds = world_bounds(slot, mesh);
@@ -37,10 +36,9 @@ fn casts(slot: u32, mesh: MeshRecord) -> bool {
     let r1 = caster_row(1u);
     let r2 = caster_row(2u);
     let r3 = caster_row(3u);
-    let upstream = caster_view.clip_upstream.x != 0u && caster_outside(r3 - r2, center, extent);
     return !(caster_outside(r3 + r0, center, extent) || caster_outside(r3 - r0, center, extent)
         || caster_outside(r3 + r1, center, extent) || caster_outside(r3 - r1, center, extent)
-        || caster_outside(r2, center, extent) || upstream);
+        || caster_outside(r2, center, extent));
 }
 
 @compute @workgroup_size(WORKGROUP)

@@ -2,7 +2,7 @@
 //! draws every admitted caster into every Sun pass; Frustum on the bucket
 //! route draws each pass's own list. Both must write the same depth into
 //! each map, bit for bit, and shade the same pixels, as the camera moves
-//! (receivers handing off between the near and last cascades), through a
+//! (receivers handing off between nested cascades), through a
 //! resize, with mirrored, thin, off-camera and upstream-clipped casters.
 
 use std::sync::Arc;
@@ -277,11 +277,12 @@ fn compare(
     gpu: &Gpu,
     scene: &SyntheticScene,
     slots: &[SyntheticMeshChoice],
+    mode: CullMode,
 ) -> Vec<(usize, usize, Vec<u32>)> {
     let mut direct_scene = scene.clone();
     direct_scene.camera_culling = CullMode::Direct;
     let mut frustum_scene = scene.clone();
-    frustum_scene.camera_culling = CullMode::Frustum;
+    frustum_scene.camera_culling = mode;
     let mut direct = gpu.prepare_field(&direct_scene, slots.to_vec());
     let mut frustum = gpu.prepare_field(&frustum_scene, slots.to_vec());
     assert!(direct.caster_culling.is_none(), "Direct draws every caster");
@@ -319,7 +320,7 @@ fn compare(
 }
 
 #[test]
-fn per_pass_caster_lists_draw_the_unculled_depth_and_image() {
+fn sun_cascades_gpu_per_pass_caster_lists_draw_the_unculled_depth_and_image() {
     let Some(gpu) = gpu(
         "per_pass_caster_lists_draw_the_unculled_depth_and_image",
         None,
@@ -328,32 +329,37 @@ fn per_pass_caster_lists_draw_the_unculled_depth_and_image() {
     };
     let (scene, slots) = field();
     let total = u32::try_from(scene.instances.len()).expect("small");
-    let rows = compare(&gpu, &scene, &slots);
-    for (pose, (depth, pixels, casters)) in rows.iter().enumerate() {
-        eprintln!(
-            "pose {pose}: {depth} depth texels and {pixels} px differ; casters near {}, far {}, heights {} of {total}",
-            casters[0], casters[1], casters[2]
-        );
-    }
-    for (pose, (depth, pixels, casters)) in rows.iter().enumerate() {
-        assert_eq!(
-            (*depth, *pixels),
-            (0, 0),
-            "pose {pose} matches unculled casters"
+    let rows = [CullMode::Frustum, CullMode::Occlusion]
+        .map(|mode| (mode, compare(&gpu, &scene, &slots, mode)));
+    for (mode, rows) in rows {
+        for (pose, (depth, pixels, casters)) in rows.iter().enumerate() {
+            eprintln!(
+                "{mode:?} pose {pose}: {depth} depth texels and {pixels} px differ; casters {casters:?} of {total}"
+            );
+        }
+        for (pose, (depth, pixels, casters)) in rows.iter().enumerate() {
+            assert_eq!(
+                (*depth, *pixels),
+                (0, 0),
+                "pose {pose} matches unculled casters"
+            );
+            assert!(
+                casters[0] < casters[1],
+                "pose {pose}: the near map lists fewer"
+            );
+            assert!(casters[0] > 0, "pose {pose}: the near map casts");
+        }
+        assert!(
+            rows.iter()
+                .all(|(_, _, casters)| casters[0] * 3 < total * 2),
+            "the near map culls a third of the field or more"
         );
         assert!(
-            casters[0] < casters[1],
-            "pose {pose}: the near map lists fewer"
+            rows.iter()
+                .any(|(_, _, casters)| casters[..shadow::HEIGHT_LAYER]
+                    .iter()
+                    .any(|&count| count < total)),
+            "the last cascade culls on some pose"
         );
-        assert!(casters[0] > 0, "pose {pose}: the near map casts");
     }
-    assert!(
-        rows.iter()
-            .all(|(_, _, casters)| casters[0] * 3 < total * 2),
-        "the near map culls a third of the field or more"
-    );
-    assert!(
-        rows.iter().any(|(_, _, casters)| casters[1] < total),
-        "the last cascade culls on some pose"
-    );
 }

@@ -27,7 +27,10 @@ impl PreparedSynthetic {
             self.visibility.as_ref(),
             self.caster_culling.as_ref().map(|(culling, _)| culling),
             &self.secondary,
-        )
+        )?;
+        self.instance_upload
+            .refresh_cast_widths(queue, self.caster_boxes.as_deref());
+        Ok(())
     }
 
     fn refresh_mesh_records(
@@ -81,6 +84,8 @@ impl PreparedSynthetic {
             self.caster_culling.as_ref().map(|(culling, _)| culling),
             &self.secondary,
         )?;
+        self.instance_upload
+            .refresh_cast_widths(queue, self.caster_boxes.as_deref());
         self.history.rebind_mesh_vertices(
             self.capabilities.device(),
             self.instance_upload.buffer(),

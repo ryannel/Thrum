@@ -12,30 +12,21 @@ fn volume_cascade(index: u32, point: vec3<f32>) -> f32 {
     if any(uv < vec2(0.0)) || any(uv > vec2(1.0)) || p.z < 0.0 || p.z > 1.0 {
         return 1.0;
     }
-    let bias = select(volume_shadows.bias.y, volume_shadows.bias.x, index == 0u);
+    let bias = volume_shadows.cascade_metrics[index].w;
     return textureSampleCompareLevel(volume_shadow_maps, volume_shadow_filter, uv,
         i32(index), p.z + bias);
 }
 
-fn volume_terrain_visibility(point: vec3<f32>, depth: f32) -> f32 {
-    let split = volume_shadows.split_overlap.x;
-    let overlap = volume_shadows.split_overlap.y;
-    let reach = volume_shadows.split_overlap.z;
-    let fade_start = volume_shadows.split_overlap.w;
-    let weight = select(0.0, smoothstep(fade_start, reach, depth), reach > fade_start);
-    if weight >= 1.0 { return 1.0; }
-    if depth <= split - overlap {
-        // The near map may clip tall or far upstream casters into the far map.
-        return min(volume_cascade(0u, point), volume_cascade(1u, point));
+fn volume_terrain_visibility(point: vec3<f32>, distance: f32) -> f32 {
+    let choice = sun_cascade_choice(volume_shadows.profile, volume_shadows.cascade_metrics[0].x, distance);
+    if choice.fade >= 1.0 { return 1.0; }
+    var value = volume_cascade(choice.layer, point);
+    if choice.blend > 0.0 {
+        value = mix(value, volume_cascade(choice.layer + 1u, point), choice.blend);
     }
-    let far = volume_cascade(1u, point);
-    if depth >= split + overlap { return mix(far, 1.0, weight); }
-    let near = min(volume_cascade(0u, point), far);
-    return mix(near, far, smoothstep(split - overlap, split + overlap, depth));
+    return mix(value, 1.0, choice.fade);
 }
 
-fn volume_cascade_fade(depth: f32) -> f32 {
-    let reach = volume_shadows.split_overlap.z;
-    let fade_start = volume_shadows.split_overlap.w;
-    return select(0.0, smoothstep(fade_start, reach, depth), reach > fade_start);
+fn volume_cascade_fade(distance: f32) -> f32 {
+    return sun_cascade_choice(volume_shadows.profile, volume_shadows.cascade_metrics[0].x, distance).fade;
 }

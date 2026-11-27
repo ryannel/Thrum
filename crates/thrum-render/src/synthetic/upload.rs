@@ -62,6 +62,9 @@ impl PackedInstances {
             active_count,
         })
     }
+    pub(super) fn set_cast_widths(&mut self, boxes: Option<&[super::CasterBox]>) {
+        set_cast_widths(&mut self.rows, &self.physical_to_slot, boxes);
+    }
 }
 
 pub(super) struct InstanceUpload {
@@ -125,6 +128,17 @@ impl InstanceUpload {
         }
     }
 
+    pub(super) fn refresh_cast_widths(
+        &mut self,
+        queue: &wgpu::Queue,
+        boxes: Option<&[super::CasterBox]>,
+    ) {
+        set_cast_widths(&mut self.packed, &self.physical_to_slot, boxes);
+        if !self.packed.is_empty() {
+            queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&self.packed));
+        }
+    }
+
     pub(super) fn seed_shadow_clamps(
         &mut self,
         instances: &[InstanceRecord],
@@ -185,13 +199,14 @@ impl InstanceUpload {
             }
             previous_slot = Some(slot);
             let index = slot as usize;
-            let Ok(record) =
+            let Ok(mut record) =
                 validate_synthetic_instance(&instances[index], self.material_count, slot)
             else {
                 dropped_invalid += 1;
                 continue;
             };
             let physical = self.slot_to_physical[index] as usize;
+            set_cast_width(&mut record, self.packed[physical].normal[1][3]);
             if bytemuck::bytes_of(&self.packed[physical]) != bytemuck::bytes_of(&record) {
                 let clamped = shadow_depth_clamped(index, &instances[index]);
                 self.staged.push(record);
@@ -348,6 +363,18 @@ fn build_runs(actual: &[u32], runs: &mut Vec<UploadRun>) -> bool {
         }
     }
     too_many
+}
+
+// Two padded normal components carry the renderer-owned world and mesh widths.
+fn set_cast_widths(rows: &mut [InstanceRecord], slots: &[u32], boxes: Option<&[super::CasterBox]>) {
+    for (row, &slot) in rows.iter_mut().zip(slots) {
+        set_cast_width(row, super::caster_box(boxes, slot as usize).cast_width);
+    }
+}
+
+fn set_cast_width(row: &mut InstanceRecord, local: f32) {
+    row.normal[0][3] = super::CasterBox::world_cast_width(local, row);
+    row.normal[1][3] = local;
 }
 
 fn validate_synthetic_instance(

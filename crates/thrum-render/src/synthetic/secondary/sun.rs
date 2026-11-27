@@ -255,12 +255,12 @@ impl SceneContext<'_> {
             .as_ref()
             .ok_or(RenderError::GraphPassMismatch)?
             .0
-            .encode_range(
+            .encode_layers(
                 self.encoder,
                 self.generation,
                 pass,
                 self.timings.as_deref_mut(),
-                usize::from(request.cascades == 1)..2,
+                0..request.cascades as usize,
             )?
             .then_some(())
             .ok_or(RenderError::GraphPassMismatch)
@@ -277,9 +277,7 @@ impl SceneContext<'_> {
         let Some(request) = slot.handle.asked() else {
             return Ok(());
         };
-        // A single cascade uses the whole-reach far fit. Zero uses only
-        // the scene's height layer, so neither cascade is recorded.
-        if request.cascades == 0 || (request.cascades == 1 && layer == 0) {
+        if layer >= request.cascades as usize {
             return Ok(());
         }
         let sun = slot.sun.as_ref().ok_or(RenderError::GraphPassMismatch)?;

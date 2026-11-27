@@ -40,6 +40,7 @@ pub struct MeshRowGeometry {
     pub(super) vertices: Arc<[u8]>,
     pub(super) indices: Arc<[u8]>,
     pub(super) bounds: [[f32; 3]; 2],
+    pub(super) cast_width: f32,
 }
 
 impl MeshRowGeometry {
@@ -57,6 +58,7 @@ impl MeshRowGeometry {
         let vertices = bytemuck::cast_slice(&mesh.vertices).to_vec().into();
         let indices = bytemuck::cast_slice(&mesh.indices).to_vec().into();
         Ok(Self {
+            cast_width: super::shadow::cast_width::measure(&mesh.vertices, &mesh.indices, bounds),
             mesh: Arc::new(mesh),
             vertices,
             indices,

@@ -199,7 +199,7 @@ impl PreparedSynthetic {
             }
             packed_materials.extend_from_slice(&material.pack(&classes)?);
         }
-        let packed_instances = PackedInstances::new(&scene.instances, material_count)?;
+        let mut packed_instances = PackedInstances::new(&scene.instances, material_count)?;
         let needs_structure = traced_forward || scene.ray_structure || scene.view.traced_geometry();
         let ray_structure_selection = if needs_structure {
             ray_structure_selection
@@ -236,6 +236,17 @@ impl PreparedSynthetic {
             &packed_materials,
             material_bytes,
         );
+        let caster_boxes = meshes
+            .map(|selection| {
+                selection
+                    .slots
+                    .iter()
+                    .map(|&mesh| mesh_arena.row(mesh).map(CasterBox::from_mesh))
+                    .collect::<Option<Vec<_>>>()
+                    .ok_or(RenderError::MissingMeshRow)
+            })
+            .transpose()?;
+        packed_instances.set_cast_widths(caster_boxes.as_deref());
         let instance_buffer = storage_buffer(
             device,
             queue,
@@ -568,20 +579,6 @@ impl PreparedSynthetic {
         let arena_buffers = mesh_arena
             .buffers()
             .ok_or(RenderError::MissingMeshBuffers)?;
-        let caster_boxes = meshes
-            .map(|selection| {
-                selection
-                    .slots
-                    .iter()
-                    .map(|&mesh| {
-                        mesh_arena
-                            .row(mesh)
-                            .map(|row| CasterBox::from_bounds(row.bounds))
-                    })
-                    .collect::<Option<Vec<_>>>()
-                    .ok_or(RenderError::MissingMeshRow)
-            })
-            .transpose()?;
         let instance_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("ABI2 instance table"),
             entries: &[

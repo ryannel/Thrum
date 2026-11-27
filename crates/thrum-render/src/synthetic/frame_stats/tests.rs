@@ -20,7 +20,7 @@ const TRANSFORMS: SceneTimingLayout = SceneTimingLayout {
     aerial: AerialPass::Chart,
     star_pass: None,
     shadows: Shadows::Off,
-    cascades: false,
+    cascades: 0,
     clusters: false,
     culling: culling_passes(CullMode::Direct),
 };
@@ -172,7 +172,7 @@ fn the_horizon_height_pass_reports_in_the_far_shadow_bucket() {
         false,
         SceneTimingLayout {
             shadows: Shadows::Unculled,
-            cascades: true,
+            cascades: 2,
             ..TRANSFORMS
         },
     )
@@ -185,7 +185,7 @@ fn the_horizon_height_pass_reports_in_the_far_shadow_bucket() {
             false,
             SceneTimingLayout {
                 shadows: Shadows::Unculled,
-                cascades: true,
+                cascades: 2,
                 ..TRANSFORMS
             }
         )
@@ -214,7 +214,7 @@ fn the_joint_volume_keeps_aerial_timing_after_the_shadows() {
     ];
     let layout = SceneTimingLayout {
         shadows: Shadows::Unculled,
-        cascades: true,
+        cascades: 2,
         aerial: AerialPass::ViewVolume,
         ..TRANSFORMS
     };
@@ -306,7 +306,7 @@ fn occlusion_passes_are_required_once_each_and_counted_in_forward() {
 fn the_caster_cull_is_required_once_and_counted_in_the_near_shadow_bucket() {
     let layout = SceneTimingLayout {
         shadows: Shadows::Culled,
-        cascades: true,
+        cascades: 2,
         ..CULLED
     };
     let named = |names: &[&str]| -> Vec<PassTiming> {

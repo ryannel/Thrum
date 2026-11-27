@@ -1,5 +1,5 @@
 //! The shipping PCSS consumer against independent finite-disk/plane geometry.
-use super::observer::{SAMPLE_FLOATS, constant_depth_maps, device, pipeline, read_visibility};
+use super::observer::{SAMPLE_FLOATS, device, pipeline, read_visibility};
 use wgpu::util::DeviceExt;
 
 const SIDE: u32 = 256;
@@ -18,18 +18,6 @@ fn observe(@builtin(global_invocation_id) id:vec3<u32>) {
     let receiver=ShadowReceiver(vec3(x,0.0,0.25+slope*x),
         vec3(1.0,0.0,slope),vec3(0.0,1.0,0.0),normalize(vec3(-slope,0.0,1.0)));
     result[id.x]=cascade_visibility(cascade,receiver);
-}
-";
-
-const CASCADE_HANDOFF: &str = r"
-@group(2) @binding(6) var<storage,read_write> result: array<f32>;
-@compute @workgroup_size(64)
-fn observe(@builtin(global_invocation_id) id:vec3<u32>) {
-    if id.x!=0u { return; }
-    let slope=light.direction_to_light.x;
-    let receiver=ShadowReceiver(vec3(light.direction_to_light.w,0.0,0.25),
-        vec3(1.0,0.0,slope),vec3(0.0,1.0,0.0),normalize(vec3(-slope,0.0,1.0)));
-    result[0]=near_visibility(receiver);
 }
 ";
 
@@ -158,8 +146,20 @@ fn observe(device: &wgpu::Device, queue: &wgpu::Queue, slope: f32, kind: u8) -> 
     let identity = glam::Mat4::IDENTITY.to_cols_array();
     samples[..16].copy_from_slice(&identity);
     samples[16..32].copy_from_slice(&identity);
-    samples[36..38].fill(0.000_03);
-    samples[40..44].copy_from_slice(&[SCALE, SCALE, 0.000_001, 0.000_001]);
+    let metrics = std::mem::offset_of!(super::ShadowCascades, cascade_metrics) / 4;
+    let profile = std::mem::offset_of!(super::ShadowCascades, profile) / 4;
+    let span = 2.0 * SCALE / crate::shader_constants::SUN_ANGULAR_RADIUS.tan();
+    for layer in 0..2 {
+        let index = metrics + layer * 4;
+        samples[index..index + 4].copy_from_slice(&[
+            1.0,
+            2.0 / SIDE as f32,
+            span.recip(),
+            0.000_03,
+        ]);
+    }
+    // Observe each test layer in isolation; the separate nested test exercises the far search.
+    samples[profile] = 1.0;
     let depth = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("two finite-disk test blocker distances"),
         size: wgpu::Extent3d {
@@ -255,106 +255,6 @@ fn finite_sun_shadow_width_tracks_blocker_distance_and_tilted_receivers() {
                 }
                 assert!(row.windows(2).all(|v| v[0] >= v[1] - 0.02));
             }
-        }
-    });
-}
-
-#[test]
-fn near_and_last_cascades_cover_complementary_blocker_distances() {
-    let Some((device, queue)) = device(
-        "near_and_last_cascades_cover_complementary_blocker_distances",
-        None,
-    ) else {
-        return;
-    };
-    pollster::block_on(async {
-        let pipeline = pipeline(&device, CASCADE_HANDOFF);
-        let mut samples = [0_f32; SAMPLE_FLOATS];
-        samples[..16].copy_from_slice(&glam::Mat4::IDENTITY.to_cols_array());
-        let far = glam::Mat4::from_scale(glam::Vec3::splat(0.5));
-        samples[16..32].copy_from_slice(&far.to_cols_array());
-        samples[36..38].fill(0.000_03);
-        samples[40..44].copy_from_slice(&[SCALE, SCALE, 0.000_001, 0.000_001]);
-        samples[46..48].copy_from_slice(&[1.0, 0.5]);
-        // The receiver sits at u=0.02 in the near map. After the two-texel guard,
-        // its near blocker-gap limit is about 0.122. The last cascade doubles
-        // the depth span, so its complementary window starts at about 0.061.
-        for (depths, expected) in [
-            ([0.30, 0.0], 0.0),
-            ([0.0, 0.225], 0.0),
-            ([0.45, 0.0], 1.0),
-            ([0.0, 0.165], 1.0),
-        ] {
-            let maps = constant_depth_maps(&device, &queue, SIDE, &depths);
-            let result = read_visibility(
-                &device,
-                &queue,
-                &pipeline,
-                &samples,
-                &maps.create_view(&wgpu::TextureViewDescriptor::default()),
-                [0.0, 0.0, 1.0, -0.96],
-                1,
-            );
-            assert!(
-                (result[0] - expected).abs() <= 1e-6,
-                "near and last depths {depths:?}: GPU {}, expected {expected}",
-                result[0]
-            );
-        }
-    });
-}
-
-#[test]
-fn near_clip_plane_hands_excluded_blockers_to_the_last_cascade() {
-    let Some((device, queue)) = device(
-        "near_clip_plane_hands_excluded_blockers_to_the_last_cascade",
-        None,
-    ) else {
-        return;
-    };
-    pollster::block_on(async {
-        let pipeline = pipeline(&device, CASCADE_HANDOFF);
-        let mut samples = [0_f32; SAMPLE_FLOATS];
-        samples[..16].copy_from_slice(&glam::Mat4::IDENTITY.to_cols_array());
-        let far = glam::Mat4::from_scale(glam::Vec3::splat(0.5));
-        samples[16..32].copy_from_slice(&far.to_cols_array());
-        samples[36..38].fill(0.000_03);
-        samples[40..44].copy_from_slice(&[SCALE, SCALE, 0.000_001, 0.000_001]);
-        samples[46..48].copy_from_slice(&[1.0, 0.5]);
-        samples[68] = 1.0;
-        samples[69] = 0.5;
-        // The receiver is at the centre, so the spatial support fits. In
-        // light depth, the near map owns gaps up to 0.75, or 0.375 in the
-        // last map's units. A far depth of 0.65 is upstream of that boundary.
-        for (depths, slope, height, expected) in [
-            ([0.3, 0.65], 0.0, 0.0, 0.0),
-            ([0.0, 0.65], 0.0, 0.0, 0.0),
-            ([0.0, 0.4], 0.0, 0.0, 1.0),
-            ([0.0, 0.0], 0.0, 0.0, 1.0),
-            ([0.0, 0.500_01], 0.75, 0.0, 0.0),
-            ([0.0, 0.500_01], -0.75, 0.0, 0.0),
-            ([0.0, 0.499_99], 0.75, 0.0, 1.0),
-            ([0.0, 0.499_99], -0.75, 0.0, 1.0),
-            // Standalone upload can move a caster beyond the prepared height.
-            ([0.0, 0.65], 0.0, 0.1, 0.0),
-        ] {
-            samples[44] = height;
-            samples[45] = if height > 0.0 { 0.5 } else { 0.0 };
-            let maps = constant_depth_maps(&device, &queue, SIDE, &depths);
-            let result = read_visibility(
-                &device,
-                &queue,
-                &pipeline,
-                &samples,
-                &maps.create_view(&wgpu::TextureViewDescriptor::default()),
-                [slope, 0.0, 1.0, 0.0],
-                1,
-            );
-            assert!(
-                (result[0] - expected).abs() <= 1e-6,
-                "near and last depths {depths:?}: GPU {}, expected {expected}",
-                result[0]
-            );
         }
     });
 }

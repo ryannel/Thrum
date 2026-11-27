@@ -1246,16 +1246,11 @@ impl super::SyntheticTargetInputs {
         };
         // Culled camera modes on the bucket route: one compaction lists each
         // pass's casters against that pass's own view, which it reads.
-        let first = if self.surface_uses_cascades()
-            || self.sun_path
-            || self
-                .atmosphere
-                .as_ref()
-                .is_some_and(|air| air.view_volume.is_some())
-        {
-            0
-        } else {
-            shadow::LAYERS - 1
+        let count = self.sun_cascade_count;
+        let layers = || {
+            (0..count).chain(std::iter::once(
+                crate::shader_constants::SHADOW_HEIGHT_LAYER,
+            ))
         };
         let lists = match &self.caster_culling {
             Some(culling) => {
@@ -1268,10 +1263,8 @@ impl super::SyntheticTargetInputs {
                     uniform(&serials, history_gpu::SERIAL_BYTES),
                 ];
                 cull.extend(
-                    matrices
-                        .iter()
-                        .skip(first as usize)
-                        .map(|matrix| uniform(matrix, shadow::CASTER_VIEW_RANGE)),
+                    layers()
+                        .map(|index| uniform(&matrices[index as usize], shadow::CASTER_VIEW_RANGE)),
                 );
                 cull.extend_from_slice(route);
                 let ids = culling.append_outputs(graph, &mut cull)?;
@@ -1295,7 +1288,8 @@ impl super::SyntheticTargetInputs {
             }
             None => None,
         };
-        for (index, matrix) in (0..shadow::LAYERS).zip(matrices).skip(first as usize) {
+        for index in layers() {
+            let matrix = matrices[index as usize].clone();
             // Unculled casters read the route's member list; culled ones
             // read their own pass's list and records.
             let caster_reads: Vec<Access> = match &lists {
@@ -1309,10 +1303,10 @@ impl super::SyntheticTargetInputs {
             let key = self.shadow_key(index);
             prepared_keys.insert(key);
             let draw = graph.declare(
-                match index {
-                    0 => PassKey::ShadowNear,
-                    1 => PassKey::ShadowFar,
-                    _ => PassKey::HorizonHeights,
+                if index as usize == shadow::HEIGHT_LAYER {
+                    PassKey::HorizonHeights
+                } else {
+                    PassKey::sun_cascade(index)
                 },
                 PassBody {
                     scope: PassScope::View(1),
@@ -1362,11 +1356,13 @@ impl super::SyntheticTargetInputs {
             0..shadow::SAMPLE_BYTES as u64,
             AccessKind::UniformRead,
         ));
-        accesses.push(Access::new(
-            maps.clone(),
-            u64::from(first)..u64::from(shadow::LAYERS),
-            AccessKind::SampledRead,
-        ));
+        accesses.extend(layers().map(|index| {
+            Access::new(
+                maps.clone(),
+                u64::from(index)..u64::from(index + 1),
+                AccessKind::SampledRead,
+            )
+        }));
         Ok(Some(maps))
     }
     fn append_cluster_reads(
@@ -1603,12 +1599,11 @@ impl super::SyntheticTargetInputs {
             PassKey::Opaque => B::new(id, PassKind::Render, |frame, pass| frame.opaque(pass)),
             PassKey::Display => B::new(id, PassKind::Render, |frame, pass| frame.tone(pass)),
             PassKey::Interface => B::new(id, PassKind::Render, |frame, pass| frame.interface(pass)),
-            PassKey::ShadowNear | PassKey::ShadowFar | PassKey::HorizonHeights => {
-                let index = match key {
-                    PassKey::ShadowNear => 0,
-                    PassKey::ShadowFar => 1,
-                    _ => 2,
-                };
+            PassKey::ShadowNear
+            | PassKey::ShadowFar
+            | PassKey::SunCascade(_)
+            | PassKey::HorizonHeights => {
+                let index = key.shadow_layer().expect("Sun shadow layer") as usize;
                 B::new(id, PassKind::Render, move |frame, pass| {
                     frame.shadow(index, pass)
                 })

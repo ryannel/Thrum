@@ -227,7 +227,7 @@ impl BucketRoute {
             .map(|&mesh| {
                 arena
                     .row(mesh)
-                    .map(|row| super::shadow::CasterBox::from_bounds(row.bounds))
+                    .map(super::shadow::CasterBox::from_mesh)
                     .ok_or(RenderError::MissingMeshRow)
             })
             .collect()

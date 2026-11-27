@@ -3,6 +3,7 @@
 //! the declared-position test also holds every admitted vertical to one map.
 
 use super::*;
+use crate::synthetic::view::Projection;
 use crate::synthetic::{
     CaptureSource, OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticScene,
 };
@@ -33,8 +34,8 @@ fn height_anchor_uses_declared_position_on_a_texel_edge() {
             FitInputs::new(&view, (&casters, None), Vec3::ONE.normalize()).expect("scene inputs");
         let fitted = inputs.fit(None).expect("scene fit");
         let layout = (
-            fitted.matrices[2].to_cols_array(),
-            bytemuck::bytes_of(&fitted.samples)[192..272].to_vec(),
+            fitted.matrices[HEIGHT_LAYER].to_cols_array(),
+            (fitted.samples.height_view_proj, fitted.samples.horizon),
         );
         if let Some(expected) = &reference {
             assert_eq!(
@@ -170,7 +171,7 @@ fn a_shared_main_height_map_cannot_cover_an_unrestricted_view_camera() {
             .fit(None)
             .expect("main fit");
         let shadow = prepared.shadow.as_mut().expect("Sun shadows");
-        shadow.fitted.matrices[2] = main.matrices[2];
+        shadow.fitted.matrices[HEIGHT_LAYER] = main.matrices[HEIGHT_LAYER];
         shadow.fitted.samples.height_view_proj = main.samples.height_view_proj;
         shadow.fitted.samples.horizon = main.samples.horizon;
         let shared = render(&device, &queue, &prepared);

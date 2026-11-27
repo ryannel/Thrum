@@ -2,7 +2,7 @@
 //! instance tables, four texture-class bindings, graph declaration and optional
 //! timestamps. One directional metallic-roughness closure and opaque depth are
 //! real, followed by a fixed authored SDR display transform. Fixed-view
-//! selective GPU local-light lists and two synthetic Sun cascades run here;
+//! selective GPU local-light lists and camera-centred Sun cascades run here;
 //! a checked constant-light presentation handoff and the general render scene
 //! remain open.
 
@@ -157,7 +157,7 @@ pub struct SyntheticScene {
     pub local_lights: Vec<SyntheticPointLight>,
     /// Unjittered camera used for this prepared view.
     pub view: SyntheticView,
-    /// Prepare two finite perspective Sun cascades; off avoids their maps and passes.
+    /// Prepare the Sun shadow maps; off avoids their maps and passes.
     pub sun_shadows: bool,
     /// Main view's Sun visibility method, when the Sun casts shadows.
     pub sun_shadow_method: SunShadowMethod,
@@ -175,7 +175,7 @@ pub struct SyntheticScene {
     /// newest committed geometry on reconstruction. `None` draws the unit cube.
     pub meshes: Option<Arc<SyntheticMeshes>>,
     /// Authored row indices in [`SyntheticMeshes::meshes`] that are aloft.
-    /// They cast into both Sun cascades and are omitted from the terrain
+    /// They cast into the Sun cascades that admit their width and are omitted from the terrain
     /// horizon. The mark is fixed at preparation and survives row replacement.
     /// Preparation refuses indices outside the selected mesh table.
     pub aloft_mesh_rows: Vec<u32>,
@@ -734,22 +734,14 @@ impl SceneContext<'_> {
             .caster_culling
             .as_ref()
             .ok_or(RenderError::GraphPassMismatch)?;
-        let result = if self.prepared.cascade_casters() {
-            culling.encode(
-                self.encoder,
-                self.generation,
-                pass,
-                self.timings.as_deref_mut(),
-            )
-        } else {
-            culling.encode_range(
-                self.encoder,
-                self.generation,
-                pass,
-                self.timings.as_deref_mut(),
-                shadow::HEIGHT_LAYER..shadow::MAPS,
-            )
-        };
+        let count = self.prepared.shadow_cascade_count() as usize;
+        let result = culling.encode_layers(
+            self.encoder,
+            self.generation,
+            pass,
+            self.timings.as_deref_mut(),
+            (0..count).chain(std::iter::once(shadow::HEIGHT_LAYER)),
+        );
         result?.then_some(()).ok_or(RenderError::GraphPassMismatch)
     }
 
@@ -1259,6 +1251,13 @@ impl PreparedSynthetic {
                 .is_some_and(|air| air.view_volume.is_some())
     }
 
+    fn shadow_cascade_count(&self) -> u32 {
+        self.shadow
+            .as_ref()
+            .filter(|_| self.cascade_casters())
+            .map_or(0, ShadowPrepared::count)
+    }
+
     pub(crate) fn lamp_quality(&self) -> &[crate::contribution::QualityKnob] {
         self.lamp_shadows
             .as_ref()
@@ -1396,7 +1395,7 @@ impl PreparedSynthetic {
     pub fn two_sided_instance_count(&self) -> usize {
         self.instance_upload.two_sided_count()
     }
-    /// Whether the prepared frame records two Sun cascade passes and a height pass.
+    /// Whether the prepared scene has Sun shadow maps.
     pub fn shadowed(&self) -> bool {
         self.shadow.is_some()
     }
@@ -1745,12 +1744,13 @@ impl SyntheticTargetInputs {
     fn display_key(&self) -> PipelineKey {
         PipelineRole::Display.key(self.key)
     }
-    /// The near and far Sun cascades, then the horizon height map.
+    /// A Sun cascade or the horizon height map.
     fn shadow_key(&self, index: u32) -> PipelineKey {
         match index {
             0 => PipelineRole::ShadowNear,
             1 => PipelineRole::ShadowFar,
-            _ => PipelineRole::HorizonHeights,
+            index if index as usize == shadow::HEIGHT_LAYER => PipelineRole::HorizonHeights,
+            index => PipelineRole::SunCascade(index),
         }
         .key(self.key)
     }

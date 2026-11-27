@@ -260,12 +260,13 @@ impl SyntheticView {
 
     /// Prepare the ordinary scene with a secondary view's Sun profile.
     /// Zero cascades uses only the scene's distant height map; one uses a
-    /// single full-reach cascade, and two use the ordinary near/far fit.
-    /// The default remains two cascades to the original 512 m reach.
+    /// single full-reach cascade. Each finer cascade serves half the radius
+    /// of its neighbour. Ordinary views use the full set to 2,048 metres.
     /// # Errors
-    /// Refuses more than two cascades or a nonpositive, nonfinite reach.
+    /// Refuses more than the full set of cascades or a nonpositive, nonfinite reach.
     pub fn with_sun_shadow_profile(mut self, count: u32, reach: f32) -> Result<Self, RenderError> {
-        if count > 2 || !reach.is_finite() || reach <= 0.0 {
+        if count > crate::shader_constants::SUN_CASCADE_COUNT || !reach.is_finite() || reach <= 0.0
+        {
             return Err(RenderError::InvalidView);
         }
         self.sun_shadow_profile = Some((count, reach));

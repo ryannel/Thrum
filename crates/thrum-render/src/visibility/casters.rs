@@ -259,32 +259,21 @@ impl CasterCulling {
         ]
     }
 
-    /// Encode every list's three ordered dispatches into the graph's compute
-    /// pass. The caster views must already hold this recording's fit.
-    pub(crate) fn encode(
+    /// Encode the requested caster lists using this recording's fitted views.
+    pub(crate) fn encode_layers(
         &self,
         encoder: &mut wgpu::CommandEncoder,
         generation: u64,
         compiled: &CompiledPass,
         timings: Option<&mut GpuTimings>,
-    ) -> Result<bool, TimingError> {
-        self.encode_range(encoder, generation, compiled, timings, 0..self.lists.len())
-    }
-
-    /// Record only the requested cascades; a one-cascade view uses the far fit.
-    pub(crate) fn encode_range(
-        &self,
-        encoder: &mut wgpu::CommandEncoder,
-        generation: u64,
-        compiled: &CompiledPass,
-        timings: Option<&mut GpuTimings>,
-        range: std::ops::Range<usize>,
+        layers: impl IntoIterator<Item = usize>,
     ) -> Result<bool, TimingError> {
         let Some(mut pass) = compiled.begin_compute(encoder, generation, timings)? else {
             return Ok(false);
         };
         let groups = self.groups.max(1);
-        for list in &self.lists[range] {
+        for layer in layers {
+            let list = &self.lists[layer];
             pass.set_bind_group(0, &list.group, &[]);
             pass.set_pipeline(&self.count);
             pass.dispatch_workgroups(groups, 1, 1);

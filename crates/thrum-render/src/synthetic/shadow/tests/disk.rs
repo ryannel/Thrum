@@ -1,4 +1,5 @@
-//! Independent finite-Sun reference using solid-angle-weighted 3D rays.
+//! Offline finite-Sun reference using solid-angle-weighted 3D rays. The tests
+//! in this file exercise the reference integrator.
 
 const COLUMNS: i32 = 256;
 const ROWS: i32 = 128;

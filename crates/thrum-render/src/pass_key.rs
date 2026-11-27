@@ -160,6 +160,8 @@ pub(crate) enum PipelineRole {
     ShadowNear,
     /// Far Sun cascade.
     ShadowFar,
+    /// A coarser Sun cascade, by layer.
+    SunCascade(u32),
     /// Local-light cluster build.
     Cluster,
     /// Transform history publication.
@@ -227,6 +229,7 @@ impl PipelineRole {
             Self::Display => 1,
             Self::ShadowNear => 2,
             Self::ShadowFar => 3,
+            Self::SunCascade(index) => 1200 + index,
             Self::Cluster => 4,
             Self::History => 5,
             Self::Exposure => 6,
@@ -310,6 +313,8 @@ pub(crate) enum PassKey {
     ShadowNear,
     /// Far Sun cascade.
     ShadowFar,
+    /// A coarser Sun cascade, by layer.
+    SunCascade(u32),
     /// Sun horizon height map.
     HorizonHeights,
     /// Atmospheric Sun shadow heights.
@@ -383,7 +388,35 @@ pub(crate) enum PassKey {
     Surface,
 }
 
+const SUN_CASCADE_NAMES: [&str; 7] = [
+    "synthetic Sun cascade 2",
+    "synthetic Sun cascade 3",
+    "synthetic Sun cascade 4",
+    "synthetic Sun cascade 5",
+    "synthetic Sun cascade 6",
+    "synthetic Sun cascade 7",
+    "synthetic Sun cascade 8",
+];
+
 impl PassKey {
+    pub(crate) const fn sun_cascade(index: u32) -> Self {
+        match index {
+            0 => Self::ShadowNear,
+            1 => Self::ShadowFar,
+            _ => Self::SunCascade(index),
+        }
+    }
+
+    pub(crate) const fn shadow_layer(self) -> Option<u32> {
+        match self {
+            Self::ShadowNear => Some(0),
+            Self::ShadowFar => Some(1),
+            Self::SunCascade(index) => Some(index),
+            Self::HorizonHeights => Some(crate::shader_constants::SHADOW_HEIGHT_LAYER),
+            _ => None,
+        }
+    }
+
     /// Stable diagnostic and timing name. Contributed passes are named by their
     /// contribution and return `None`; declare them with that name.
     pub(crate) fn name(self) -> Option<Cow<'static, str>> {
@@ -405,6 +438,7 @@ impl PassKey {
             Self::DisplayReferred => "display-referred tone encode",
             Self::ShadowNear => "synthetic Sun shadow near",
             Self::ShadowFar => "synthetic Sun shadow far",
+            Self::SunCascade(index) => SUN_CASCADE_NAMES[index as usize - 2],
             Self::HorizonHeights => "synthetic Sun horizon heights",
             Self::AirShadow => "synthetic Sun air shadow heights",
             Self::CasterCull => "synthetic Sun caster cull",
@@ -457,7 +491,9 @@ impl PassKey {
     pub(crate) const fn timing(self) -> TimingCategory {
         match self {
             Self::ShadowNear | Self::CasterCull => TimingCategory::ShadowNear,
-            Self::ShadowFar | Self::HorizonHeights | Self::AirShadow => TimingCategory::ShadowFar,
+            Self::ShadowFar | Self::SunCascade(_) | Self::HorizonHeights | Self::AirShadow => {
+                TimingCategory::ShadowFar
+            }
             Self::Cluster => TimingCategory::Clusters,
             Self::Opaque
             | Self::Stars
@@ -502,6 +538,7 @@ impl PassKey {
             Self::Display | Self::DisplayReferred => PipelineRole::Display,
             Self::ShadowNear => PipelineRole::ShadowNear,
             Self::ShadowFar => PipelineRole::ShadowFar,
+            Self::SunCascade(index) => PipelineRole::SunCascade(index),
             Self::HorizonHeights => PipelineRole::HorizonHeights,
             Self::AirShadow => PipelineRole::AirShadow,
             Self::CasterCull => PipelineRole::CasterCull,

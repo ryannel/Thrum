@@ -165,6 +165,7 @@ impl LiveRows {
                 base_vertex,
                 vertex_count,
                 bounds: geometry.bounds,
+                cast_width: geometry.cast_width,
             },
             geometry,
             old: None,

@@ -203,155 +203,131 @@ const SURFACE_MAX_GRADIENT: f32 = 30.0;
 // h/(n.l) along the ray. Accept bounded bending that grows with the tap's world
 // offset, so a concave join near the receiver is not its own blocker.
 fn surface_tolerance(index:u32,gradient:vec2<f32>,delta:vec2<f32>) -> f32 {
-    let uv_metres_span=select(shadows.penumbra.y,shadows.penumbra.x,index==0u)/SUN_TAN_RADIUS;
+    let metrics = shadows.cascade_metrics[index];
+    let uv_metres_span = 1.0 / (f32(textureDimensions(shadow_maps).x) * metrics.y * metrics.z);
     let slope=min(length(gradient)*uv_metres_span,SURFACE_MAX_GRADIENT);
     let bend=min(SURFACE_ELEVATION_FRACTION/max(slope,1e-3),SURFACE_MAX_SLOPE);
     return bend*length(delta)*(1.0+slope*slope)/max(uv_metres_span,1e-20);
 }
 
-fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
-    return cascade_window(index,receiver,vec3(0.0,2.0,2.0));
-}
+const SUN_SEARCH_TEXELS: f32 = 8.0;
+const SUN_MIN_FILTER_RADIUS: f32 = 1.25;
+const NO_BLOCKER: f32 = 1e30;
 
-// The near map is fitted to its receivers only. A blocker whose finite-Sun
-// support leaves that map is evaluated in the padded last cascade instead.
-// Returns the spatial gap limit in near-map units and the absolute clip
-// plane in last-map units. Two means that boundary needs no fallback.
-fn near_gap_limit(receiver: ShadowReceiver) -> vec2<f32> {
-    let clip = shadows.light_view_proj[0]*vec4(receiver.position,1.0);
-    let p = clip.xyz/clip.w;
-    let uv = vec2(p.x*0.5+0.5,0.5-p.y*0.5);
-    let edge = min(min(uv.x,uv.y),min(1.0-uv.x,1.0-uv.y))-2.0/f32(textureDimensions(shadow_maps).x);
-    let clip_gap = max(0.0,1.0-p.z);
-    let excluded = shadows.near_partition.x;
-    var search_gap = clip_gap+excluded;
-    if shadows.height_support.y>1e-6 {
-        let world_gap=max(0.0,shadows.height_support.x-receiver.position.y)/shadows.height_support.y;
-        search_gap=min(search_gap,world_gap*shadows.height_support.z);
-    }
-    let support = edge/max(shadows.penumbra.x,1e-20);
-    let spatial_limit = select(max(support,0.0),2.0,search_gap<=support);
-    // The height estimate can be stale after a standalone instance upload.
-    // It sizes the search but cannot revoke the last map's clip ownership.
-    let far_clip = select(2.0,shadows.near_partition.y,excluded>0.0);
-    return vec2(spatial_limit,far_clip);
-}
+struct CascadeReceiver {
+    uv: vec2<f32>,
+    depth: f32,
+    gradient: vec2<f32>,
+    bias: f32,
+    epsilon: f32,
+    metres_to_depth: f32,
+    texel_metres: f32,
+};
 
-fn near_visibility(receiver: ShadowReceiver) -> f32 {
-    let limits = near_gap_limit(receiver);
-    let near = cascade_window(0u,receiver,vec3(0.0,limits.x,2.0));
-    if (limits.x>=2.0 && limits.y>=2.0) || near<=0.0 { return near; }
-    // Depth units scale inversely with each cascade's depth span.
-    let far_floor = select(limits.x*shadows.height_support.w/max(shadows.height_support.z,1e-20),
-        2.0,limits.x>=2.0);
-    return min(near,cascade_window(1u,receiver,vec3(far_floor,2.0,limits.y)));
-}
-
-// XY support bounds the tap's receiver-relative gap. The depth partition
-// instead compares to the rasterizer's absolute clip plane.
-fn blocker_in_window(depth: f32, gap: f32, window: vec3<f32>) -> bool {
-    return gap<=window.y && (gap>window.x || depth>window.z);
-}
-
-fn cascade_window(index: u32, receiver: ShadowReceiver, window: vec3<f32>) -> f32 {
+fn cascade_receiver(index: u32, receiver: ShadowReceiver, size: f32) -> CascadeReceiver {
     let matrix = shadows.light_view_proj[index];
-    let clip = matrix*vec4(receiver.position,1.0);
-    let p = clip.xyz/clip.w;
-    let uv = vec2(p.x*0.5+0.5,0.5-p.y*0.5);
-    if any(uv < vec2(0.0)) || any(uv > vec2(1.0)) || p.z < 0.0 || p.z > 1.0 {
-        return 1.0;
+    let p = (matrix * vec4(receiver.position, 1.0)).xyz;
+    let uv = vec2(p.x * 0.5 + 0.5, 0.5 - p.y * 0.5);
+    let dx = (matrix * vec4(receiver.dx, 0.0)).xyz;
+    let dy = (matrix * vec4(receiver.dy, 0.0)).xyz;
+    let plane = cross(dx, dy);
+    var gradient = vec2(0.0);
+    if abs(plane.z) > max(1e-20, max(abs(plane.x), abs(plane.y)) * 1e-6) {
+        gradient = -plane.xy / plane.z * vec2(2.0, -2.0);
     }
-    let normal_bias = 1.0-clamp(dot(receiver.normal,light.direction_to_light.xyz),0.0,1.0);
-    let base = select(shadows.bias.y,shadows.bias.x,index == 0u);
-    let slope = select(shadows.bias.w,shadows.bias.z,index == 0u);
+    let metrics = shadows.cascade_metrics[index];
+    let footprint = max(abs(gradient.x), abs(gradient.y)) * (0.25 / size);
+    let normal_bias = 1.0 - clamp(dot(receiver.normal, light.direction_to_light.xyz), 0.0, 1.0);
+    let bias = clamp(footprint, metrics.w, 8.0 * metrics.w) + 0.25 * metrics.w * normal_bias;
+    let epsilon = max(0.06 * metrics.y * metrics.z, 4e-7);
+    return CascadeReceiver(uv, p.z, gradient, bias, epsilon, metrics.z, metrics.y);
+}
 
-    // The orthographic cascade maps a receiver triangle to a plane in light clip space.
-    // Evaluate its depth at each texel centre so the four comparisons follow the surface.
-    let dx = (matrix*vec4(receiver.dx,0.0)).xyz;
-    let dy = (matrix*vec4(receiver.dy,0.0)).xyz;
-    let plane = cross(dx,dy);
-    let plane_extent = max(abs(plane.x),abs(plane.y));
-    var depth_gradient = vec2(0.0);
-    if abs(plane.z) > max(1e-20,plane_extent*1e-6) {
-        depth_gradient = -plane.xy/plane.z*vec2(2.0,-2.0);
+fn caster_gap(index: u32, receiver: CascadeReceiver, texel: vec2<i32>, size: f32) -> f32 {
+    let uv = (vec2<f32>(texel) + 0.5) / size;
+    let delta = uv - receiver.uv;
+    let depth = textureLoad(shadow_maps, texel, i32(index), 0);
+    let gap = depth - receiver.depth - dot(receiver.gradient, delta);
+    let tolerance = receiver.epsilon + surface_tolerance(index, receiver.gradient, delta);
+    if depth <= 0.0 || depth <= receiver.depth + receiver.epsilon || gap <= max(receiver.bias, tolerance) {
+        return 0.0;
     }
-    let extent = vec2<f32>(textureDimensions(shadow_maps));
-    // A light texel spans more receiver depth at grazing incidence. Bound the
-    // extra tolerance so a nearly edge-on triangle cannot erase its own shadow.
-    let texel_depth = abs(depth_gradient)/extent;
-    let footprint = 0.5*max(texel_depth.x,texel_depth.y);
-    let reference = p.z + clamp(footprint,base,8.0*base) + slope*normal_bias;
-    let scale = select(shadows.penumbra.y,shadows.penumbra.x,index==0u);
-    var search_gap = max(0.0,1.0-p.z);
-    if shadows.height_support.y>1e-6 {
-        let world_gap=max(0.0,shadows.height_support.x-receiver.position.y)/shadows.height_support.y;
-        let inverse_span=select(shadows.height_support.w,shadows.height_support.z,index==0u);
-        search_gap=min(search_gap,world_gap*inverse_span);
+    return gap / receiver.metres_to_depth;
+}
+
+fn nearest_blocker(index: u32, receiver: CascadeReceiver, size: f32, radius: f32, lower: f32,
+    upper: f32) -> vec2<f32> {
+    var nearest = NO_BLOCKER;
+    var centre_gap = 0.0;
+    for (var tap = 0u; tap < 9u; tap++) {
+        let offset = select(SHADOW_DISK[(tap * 4u + 1u) % 32u], vec2(0.0), tap == 0u);
+        let pixel = receiver.uv * size + offset * radius;
+        if any(pixel < vec2(0.0)) || any(pixel >= vec2(size)) { continue; }
+        let gap = caster_gap(index, receiver, vec2<i32>(pixel), size);
+        if tap == 0u { centre_gap = gap; }
+        if gap > lower && gap <= upper { nearest = min(nearest, gap); }
     }
-    let search_radius = search_gap*scale;
-    var nearest_gap = 1.0;
-    var blockers = 0.0;
-    for(var i=0u;i<8u;i++) {
-        let offset=select(SHADOW_DISK[i*4u],vec2(0.0),i==0u);
-        let q=uv+offset*search_radius;
-        if any(q<vec2(0.0)) || any(q>vec2(1.0)) { continue; }
-        let texel=clamp(vec2<i32>(q*extent),vec2(0),vec2<i32>(extent)-1);
-        let tap=(vec2<f32>(texel)+0.5)/extent;
-        let depth=textureLoad(shadow_maps,texel,i32(index),0);
-        let receiver_depth=reference+dot(depth_gradient,tap-uv);
-        let plane_depth=p.z+dot(depth_gradient,tap-uv);
-        let epsilon=select(shadows.penumbra.w,shadows.penumbra.z,index==0u)+4e-7;
-        let same_plane=depth-plane_depth<=epsilon+surface_tolerance(index,depth_gradient,tap-uv);
-        let gap=depth-plane_depth;
-        if depth>p.z+epsilon && depth>receiver_depth && !same_plane && blocker_in_window(depth,gap,window) {
-            nearest_gap=min(nearest_gap,max(0.0,depth-p.z));
-            blockers+=1.0;
+    return vec2(nearest, centre_gap);
+}
+
+fn filtered_shadow(index: u32, receiver: CascadeReceiver, size: f32, radius: f32,
+    lower: f32, upper: f32) -> f32 {
+    var visible = 0.0;
+    // Nine bilinear taps spread the minimum footprint over neighbouring texels.
+    for (var tap = 0u; tap < 9u; tap++) {
+        let offset = select(SHADOW_DISK[(tap * 4u + 1u) % 32u], vec2(0.0), tap == 0u);
+        let pixel = receiver.uv * size + offset * radius - 0.5;
+        let first = floor(pixel);
+        let blend = fract(pixel);
+        for (var corner = 0u; corner < 4u; corner++) {
+            let step = vec2(f32(corner & 1u), f32(corner >> 1u));
+            let texel = vec2<i32>(clamp(first + step, vec2(0.0), vec2(size - 1.0)));
+            let weights = mix(1.0 - blend, blend, step);
+            let gap = caster_gap(index, receiver, texel, size);
+            visible += weights.x * weights.y * select(0.0, 1.0, gap <= lower || gap > upper);
         }
     }
-    if blockers==0.0 {
-        return shadow_filter(index,uv,p.z,reference,depth_gradient,extent,uv,window);
-    }
-    // Eight search and sixteen disk taps match the 16/32 truth scores on the
-    // solar crossing at about half the shadowed-fragment cost.
-    // Prefer the nearest upstream blocker when depths overlap. Bound the
-    // broad plane offset to half its gap; local texel bias remains separate.
-    let physical_radius=nearest_gap*scale;
-    let plane_radius=0.5*nearest_gap/max(length(depth_gradient),1e-12);
-    let radius=min(physical_radius,plane_radius);
-    if radius*extent.x<=0.5 {
-        return shadow_filter(index,uv,p.z,reference,depth_gradient,extent,uv,window);
-    }
-    var visible=0.0;
-    for(var i=0u;i<16u;i++) {
-        let q=uv+SHADOW_DISK[i*2u+1u]*radius;
-        visible+=shadow_filter(index,q,p.z,reference,depth_gradient,extent,uv,window);
-    }
-    return visible/16.0;
+    return visible / 9.0;
 }
 
-// Receiver-plane reconstruction follows each physical disk sample. The
-// cascade bounds its extrapolation by the nearest blocker separation.
-fn shadow_filter(index:u32,uv:vec2<f32>,receiver_depth:f32,reference:f32,
-    gradient:vec2<f32>,extent:vec2<f32>,origin:vec2<f32>,window:vec3<f32>) -> f32 {
-    if any(uv<vec2(0.0)) || any(uv>vec2(1.0)) { return 1.0; }
-    let pixel = uv*extent-0.5;
-    let first = floor(pixel);
-    let blend = fract(pixel);
-    var visible = 0.0;
-    for (var i = 0u; i < 4u; i++) {
-        let offset = vec2(f32(i & 1u),f32(i >> 1u));
-        let tap = (clamp(first+offset,vec2(0.0),extent-1.0)+0.5)/extent;
-        let weight = mix(1.0-blend,blend,offset);
-        let tap_depth = max(0.0,reference+dot(gradient,tap-origin));
-        let texel=vec2<i32>(clamp(first+offset,vec2(0.0),extent-1.0));
-        let depth=textureLoad(shadow_maps,texel,i32(index),0);
-        let plane_depth=receiver_depth+dot(gradient,tap-origin);
-        let epsilon=select(shadows.penumbra.w,shadows.penumbra.z,index==0u)+4e-7;
-        let same_plane=depth-plane_depth<=epsilon+surface_tolerance(index,gradient,tap-origin);
-        let outside=!blocker_in_window(depth,depth-plane_depth,window);
-        visible += weight.x*weight.y*select(0.0,1.0,tap_depth>=depth || same_plane || outside || depth<=receiver_depth+epsilon);
+fn penumbra_layer(first: u32, world_radius: f32) -> u32 {
+    let last = u32(shadows.profile.x) - 1u;
+    var layer = first;
+    while layer < last && shadows.cascade_metrics[layer].y * SUN_SEARCH_TEXELS < world_radius {
+        layer += 1u;
     }
-    return visible;
+    return layer;
+}
+
+fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
+    let size = f32(textureDimensions(shadow_maps).x);
+    let local = cascade_receiver(index, receiver, size);
+    let maximum_gap = max(0.0, 1.0 - local.depth) / local.metres_to_depth;
+    var gap_bound = maximum_gap;
+    if shadows.height_support.y > 1e-6 {
+        gap_bound = min(maximum_gap, max(0.0, shadows.height_support.x - receiver.position.y)
+            / shadows.height_support.y);
+    }
+    let search_layer = penumbra_layer(index, gap_bound * SUN_TAN_RADIUS);
+    let local_radius = min(SUN_SEARCH_TEXELS, gap_bound * SUN_TAN_RADIUS / local.texel_metres);
+    let split = select(NO_BLOCKER, SUN_SEARCH_TEXELS * local.texel_metres / SUN_TAN_RADIUS,
+        search_layer != index);
+    let near = nearest_blocker(index, local, size, local_radius, 0.0, split);
+    let near_radius = clamp(near.x * SUN_TAN_RADIUS / local.texel_metres, SUN_MIN_FILTER_RADIUS,
+        SUN_SEARCH_TEXELS);
+    let near_filtered = filtered_shadow(index, local, size,
+        select(near_radius, SUN_MIN_FILTER_RADIUS, near.x == NO_BLOCKER), 0.0, split);
+    if near_filtered <= 0.0 || search_layer == index { return near_filtered; }
+    let remote = cascade_receiver(search_layer, receiver, size);
+    let far = nearest_blocker(search_layer, remote, size,
+        min(SUN_SEARCH_TEXELS, gap_bound * SUN_TAN_RADIUS / remote.texel_metres), split, NO_BLOCKER);
+    let nearest = min(far.x, select(NO_BLOCKER, near.y, near.y > split));
+    if nearest == NO_BLOCKER { return near_filtered; }
+    let world_radius = nearest * SUN_TAN_RADIUS;
+    let filter_layer = penumbra_layer(index, world_radius);
+    let filtered = cascade_receiver(filter_layer, receiver, size);
+    let radius = clamp(world_radius / filtered.texel_metres, SUN_MIN_FILTER_RADIUS, SUN_SEARCH_TEXELS);
+    return min(near_filtered, filtered_shadow(filter_layer, filtered, size, radius, split, NO_BLOCKER));
 }
 
 const HORIZON_STEPS: u32 = 96u;
@@ -410,29 +386,23 @@ fn horizon_visibility(receiver: ShadowReceiver) -> f32 {
     return disk_above((sun_elevation-atan(steepest))/solar_radius);
 }
 
-fn sun_visibility(input: VertexOutput, receiver: ShadowReceiver) -> f32 {
-    let near = view_aux.near_far.x;
-    let far = view_aux.near_far.y;
-    let depth = near*far/(near+input.position.z*(far-near));
-    let split = shadows.split_overlap.x;
-    let overlap = shadows.split_overlap.y;
-    if depth < split-overlap { return low_sun_terrain(near_visibility(receiver),receiver); }
-    if depth > split+overlap {
-        let reach = shadows.split_overlap.z;
-        if reach > 0.0 {
-            if depth >= reach { return horizon_visibility(receiver); }
-            let cascade = cascade_visibility(1u,receiver);
-            let fade_start = shadows.split_overlap.w;
-            if depth <= fade_start { return low_sun_terrain(cascade,receiver); }
-            let horizon = horizon_visibility(receiver);
-            let visibility = select(cascade,min(cascade,horizon),light.direction_to_light.y<LOW_SUN_SINE);
-            return mix(visibility,horizon,smoothstep(fade_start,reach,depth));
-        }
-        return low_sun_terrain(cascade_visibility(1u,receiver),receiver);
+fn mapped_sun_visibility(eye: vec3<f32>, receiver: ShadowReceiver) -> f32 {
+    let choice = sun_cascade_choice(shadows.profile, shadows.cascade_metrics[0].x, distance(receiver.position, eye));
+    if choice.fade >= 1.0 { return horizon_visibility(receiver); }
+    var visibility = cascade_visibility(choice.layer, receiver);
+    if choice.blend > 0.0 {
+        visibility = mix(visibility, cascade_visibility(choice.layer + 1u, receiver), choice.blend);
     }
-    let first = near_visibility(receiver);
-    let second = cascade_visibility(1u,receiver);
-    return low_sun_terrain(mix(first,second,clamp((depth-split+overlap)/(2.0*overlap),0.0,1.0)),receiver);
+    if choice.fade > 0.0 {
+        let horizon = horizon_visibility(receiver);
+        visibility = select(visibility, min(visibility, horizon), light.direction_to_light.y < LOW_SUN_SINE);
+        return mix(visibility, horizon, choice.fade);
+    }
+    return low_sun_terrain(visibility, receiver);
+}
+
+fn sun_visibility(_input: VertexOutput, receiver: ShadowReceiver) -> f32 {
+    return mapped_sun_visibility(view.camera_xyz_time.xyz, receiver);
 }
 
 // Within a few degrees of the horizon, rays that clip a distant crest cross a

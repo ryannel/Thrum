@@ -581,7 +581,12 @@ fn simulate_draw_gpu_orders_clears_blends_and_retains_each_layer() {
                     assert_eq!(record.kind, Some(PassKind::Render));
                     draws.push(PASS_NAMES[index as usize]);
                 }
-                Some(PassKey::ShadowNear | PassKey::ShadowFar | PassKey::HorizonHeights) => {
+                Some(
+                    PassKey::ShadowNear
+                    | PassKey::ShadowFar
+                    | PassKey::SunCascade(_)
+                    | PassKey::HorizonHeights,
+                ) => {
                     assert_eq!(draws, PASS_NAMES, "draws precede {}", record.name);
                     sun = true;
                 }

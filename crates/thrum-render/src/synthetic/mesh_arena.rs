@@ -90,6 +90,7 @@ pub(super) struct MeshRow {
     pub(super) vertex_count: u32,
     /// Local-space minimum and maximum corners.
     pub(super) bounds: [[f32; 3]; 2],
+    pub(super) cast_width: f32,
 }
 
 impl MeshRow {
@@ -317,6 +318,7 @@ impl MeshArena {
             base_vertex,
             vertex_count,
             bounds,
+            cast_width: super::shadow::cast_width::measure(vertices, indices, bounds),
         };
         self.vertices.extend_from_slice(vertices);
         self.indices.extend_from_slice(indices);

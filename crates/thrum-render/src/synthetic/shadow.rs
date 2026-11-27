@@ -1,4 +1,4 @@
-//! Two prepared finite reverse-Z Sun cascades and one top-down caster height
+//! Camera-centred reverse-Z Sun cascades and one top-down caster height
 //! map for the synthetic perspective view. Receivers beyond the cascades' reach
 //! march the height map toward the Sun. One depth array belongs to each target;
 //! the prepared pipelines and light matrices belong to its device generation and
@@ -8,14 +8,14 @@ use crate::binding;
 use glam::{Mat4, Vec3, Vec4};
 use wgpu::util::DeviceExt;
 
-use super::view::{Projection, SyntheticView};
+use super::view::SyntheticView;
 use super::{InstanceRecord, RenderError};
 use crate::contribution::{
     SceneContribution, SceneShadowSurface, SecondaryShadowCascade, ShadowBounds,
 };
 use crate::graph::{CompiledPass, GraphDepthAttachment, ResourceId};
 use crate::records::{ShadowCascades, ShadowView};
-use crate::shader_constants::{SHADOW_HEIGHT_LAYER, SUN_ANGULAR_RADIUS};
+use crate::shader_constants::{SHADOW_HEIGHT_LAYER, SUN_ANGULAR_RADIUS, SUN_CASCADE_COUNT};
 
 pub(super) const SIZE: u32 = 1024;
 pub(super) const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
@@ -23,7 +23,7 @@ pub(super) const SAMPLE_BYTES: usize = size_of::<ShadowCascades>();
 const CASTER_VIEW_BYTES: usize = size_of::<ShadowView>();
 /// The caster view uniform's bytes, for graph ranges.
 pub(super) const CASTER_VIEW_RANGE: u64 = CASTER_VIEW_BYTES as u64;
-/// Two Sun cascades, then the top-down caster height map.
+/// Sun cascades, then the top-down caster height map.
 pub(super) const MAPS: usize = LAYERS as usize;
 pub(super) const HEIGHT_LAYER: usize = SHADOW_HEIGHT_LAYER as usize;
 /// The same layer count for graph ranges and pipeline roles.
@@ -31,18 +31,14 @@ pub(super) use crate::shader_constants::SHADOW_MAP_LAYERS as LAYERS;
 /// Half-extent of the height map around the camera. At 1024 texels this keeps
 /// 32 m terrain texels while covering peaks more than 12 km upstream.
 const HORIZON_RADIUS: f32 = 16384.0;
-const RECEIVER_REACH: f32 = 512.0;
-const BIAS_MIN_WORLD: f32 = 0.006;
-const BIAS_MAX_WORLD: f32 = 0.15;
-const BIAS_SLOPE_WORLD: f32 = 0.06;
-// Bound the near-only blocker range by an eight-texel solar penumbra.
-// The last cascade represents more distant blockers and their broader support.
-const LOCAL_PENUMBRA_TEXELS: f32 = 8.0;
+const RECEIVER_REACH: f32 = 2048.0;
+const CASCADE_GUARD_TEXELS: f32 = 16.0;
+const CASCADE_SNAP_TEXELS: f32 = 0.5;
+const MINIMUM_DEPTH_BIAS: f32 = 4e-7;
+pub(super) mod cast_width;
 mod secondary;
 
-fn split_depth(near: f32, far: f32) -> f32 {
-    near.midpoint(far).midpoint((near * far).sqrt())
-}
+const CAST_WIDTH_TEXELS: f32 = 1.5;
 
 #[derive(Clone)]
 struct Cascade {
@@ -58,19 +54,31 @@ struct Cascade {
 pub(super) struct CasterBox {
     pub(super) center: [f32; 3],
     pub(super) half: [f32; 3],
+    pub(super) cast_width: f32,
 }
 
 impl CasterBox {
     pub(super) const UNIT: Self = Self {
         center: [0.0; 3],
         half: [1.0; 3],
+        cast_width: 2.0,
     };
 
-    pub(super) fn from_bounds([minimum, maximum]: [[f32; 3]; 2]) -> Self {
+    pub(super) fn from_mesh(row: &super::mesh_arena::MeshRow) -> Self {
+        let [minimum, maximum] = row.bounds;
         Self {
             center: std::array::from_fn(|axis| minimum[axis].midpoint(maximum[axis])),
             half: std::array::from_fn(|axis| (maximum[axis] - minimum[axis]) * 0.5),
+            cast_width: row.cast_width,
         }
+    }
+
+    pub(super) fn world_cast_width(local: f32, instance: &InstanceRecord) -> f32 {
+        let scale = instance.current[..3]
+            .iter()
+            .map(|column| Vec4::from_array(*column).truncate().length())
+            .fold(f32::INFINITY, f32::min);
+        local * scale
     }
 
     /// The box's half-extent along `axis` and its centre at each translation
@@ -127,22 +135,31 @@ pub(super) enum CasterContribution<'a> {
 
 #[derive(Clone)]
 struct FittedShadow {
+    count: u32,
     matrices: [Mat4; MAPS],
     samples: ShadowCascades,
-    partitioned: bool,
 }
 
 impl FittedShadow {
     fn contains_caster(&self, instance: &InstanceRecord, caster: CasterBox) -> bool {
-        self.matrices.iter().enumerate().all(|(index, matrix)| {
-            matrix_contains_caster(*matrix, instance, caster, index == 0 && self.partitioned)
-        })
+        self.matrices[..self.count as usize]
+            .iter()
+            .chain(std::iter::once(&self.matrices[HEIGHT_LAYER]))
+            .all(|matrix| matrix_contains_caster(*matrix, instance, caster))
     }
 
     fn caster_view(&self, index: usize) -> ShadowView {
         ShadowView {
             light_view_proj: self.matrices[index].to_cols_array_2d(),
-            clip_upstream: [u32::from(index == 0 && self.partitioned), 0, 0, 0],
+            minimum_cast_width: [
+                self.samples
+                    .cascade_metrics
+                    .get(index)
+                    .map_or(0.0, |metrics| CAST_WIDTH_TEXELS * metrics[1]),
+                0.0,
+                0.0,
+                0.0,
+            ],
         }
     }
 }
@@ -150,21 +167,15 @@ impl FittedShadow {
 struct CascadeFit {
     matrix: Mat4,
     span: f32,
-    upstream_depth: f32,
-    excluded_depth: f32,
+    texel: f32,
 }
 
-fn matrix_contains_caster(
-    matrix: Mat4,
-    instance: &InstanceRecord,
-    caster: CasterBox,
-    clip_upstream: bool,
-) -> bool {
+fn matrix_contains_caster(matrix: Mat4, instance: &InstanceRecord, caster: CasterBox) -> bool {
     let row = matrix.row(2);
     let (extent, centers) = caster.along(row.truncate(), instance);
     centers.iter().all(|center| {
         let depth = row.truncate().dot(*center) + row.w;
-        depth - extent >= -1e-4 && (clip_upstream || depth + extent <= 1.0 + 1e-4)
+        depth - extent >= -1e-4 && depth + extent <= 1.0 + 1e-4
     })
 }
 
@@ -190,6 +201,12 @@ pub(super) struct ShadowTarget<const MAP_COUNT: usize = MAPS> {
 }
 
 impl ShadowPrepared {
+    pub(super) fn count(&self) -> u32 {
+        self.inputs
+            .profile
+            .map_or(SUN_CASCADE_COUNT, |(count, _)| count)
+    }
+
     pub(super) fn contains_caster(&self, instance: &InstanceRecord, caster: CasterBox) -> bool {
         self.fitted.contains_caster(instance, caster)
     }
@@ -355,8 +372,9 @@ impl ShadowPrepared {
     pub(super) fn write_recording(&self, bounds: Option<ShadowBounds>, cascades: bool) -> bool {
         let cooked = bounds.and_then(|bounds| self.inputs.fit(Some(bounds)).ok());
         let fitted = cooked.as_ref().unwrap_or(&self.fitted);
-        let first = if cascades { 0 } else { HEIGHT_LAYER };
-        for (index, cascade) in self.cascades.iter().enumerate().skip(first) {
+        let count = if cascades { self.count() as usize } else { 0 };
+        for index in (0..count).chain(std::iter::once(HEIGHT_LAYER)) {
+            let cascade = &self.cascades[index];
             self.queue.write_buffer(
                 &cascade.buffer,
                 0,
@@ -461,7 +479,7 @@ impl<const MAP_COUNT: usize> ShadowTarget<MAP_COUNT> {
             texture.create_view(&wgpu::TextureViewDescriptor {
                 label: Some("synthetic Sun cascade layer"),
                 dimension: Some(wgpu::TextureViewDimension::D2),
-                base_array_layer: u32::try_from(index).expect("three map layers"),
+                base_array_layer: u32::try_from(index).expect("Sun map layer index"),
                 array_layer_count: Some(1),
                 ..Default::default()
             })
@@ -477,7 +495,6 @@ impl<const MAP_COUNT: usize> ShadowTarget<MAP_COUNT> {
 
 #[derive(Clone)]
 struct FitInputs {
-    projection: Projection,
     camera: Vec3,
     rotation: Mat4,
     caster_depth: Option<(f32, f32)>,
@@ -498,7 +515,6 @@ impl FitInputs {
         let rotation = light_rotation(light_direction);
         let set = (instances, casters);
         Ok(Self {
-            projection: view.projection(),
             camera: Vec3::from_array(view.camera_position()),
             rotation,
             caster_depth: caster_depth_bounds(rotation, set),
@@ -508,30 +524,7 @@ impl FitInputs {
     }
 
     fn fit(&self, bounds: Option<ShadowBounds>) -> Result<FittedShadow, RenderError> {
-        let Projection::Perspective {
-            view: camera_view,
-            fx,
-            fy,
-            near,
-            far,
-        } = self.projection
-        else {
-            return Err(RenderError::InvalidView);
-        };
-        let limit = self
-            .profile
-            .map_or(near + RECEIVER_REACH, |(_, reach)| reach.max(near * 1.01));
-        let receiver_far = if limit > near { far.min(limit) } else { far };
-        let split = if receiver_far < far {
-            // A long view spends most of its first map on close receivers.
-            let logarithmic = (near * receiver_far).sqrt();
-            logarithmic.mul_add(0.875, near.midpoint(receiver_far) * 0.125)
-        } else {
-            split_depth(near, receiver_far)
-        };
-        let overlap = (split * 0.05)
-            .max(0.05)
-            .min((split - near).min(receiver_far - split) * 0.5);
+        let (count, reach) = self.profile.unwrap_or((SUN_CASCADE_COUNT, RECEIVER_REACH));
         let rotation = self.rotation;
         let caster_depth = match (self.caster_depth, bounds) {
             (depth, None) => depth,
@@ -552,47 +545,25 @@ impl FitInputs {
         });
         let (heights, height_span) = height_matrix(self.camera, caster_height)?;
         debug_assert!((heights.row(2).y * height_span - 1.0).abs() < 1e-3);
-        let local = cascade_matrix(
-            camera_view,
-            fx,
-            fy,
-            near,
-            split + overlap,
-            rotation,
-            caster_depth,
-            caster_height,
-            false,
-        )?;
-        // The last map also serves near receivers when their blocker falls
-        // outside the near map. Include those receivers in its finite-Sun fit.
-        let distant = cascade_matrix(
-            camera_view,
-            fx,
-            fy,
-            near,
-            receiver_far,
-            rotation,
-            caster_depth,
-            caster_height,
-            true,
-        )?;
-        let matrices = [local.matrix, distant.matrix, heights];
-        let partitioned = local.excluded_depth > 0.0;
+        let mut matrices = [Mat4::IDENTITY; MAPS];
+        matrices[HEIGHT_LAYER] = heights;
         let mut samples = ShadowCascades {
-            light_view_proj: [
-                local.matrix.to_cols_array_2d(),
-                distant.matrix.to_cols_array_2d(),
-            ],
-            split_overlap: [split, overlap, 0.0, 0.0],
+            profile: [count as f32, reach, reach * 0.6, 0.0],
             height_view_proj: heights.to_cols_array_2d(),
-            near_partition: [
-                local.excluded_depth / local.span,
-                1.0 - (local.upstream_depth - distant.upstream_depth) / distant.span,
-                0.0,
-                0.0,
-            ],
             ..bytemuck::Zeroable::zeroed()
         };
+        for (index, matrix) in matrices.iter_mut().enumerate().take(count as usize) {
+            let radius = reach / (1u32 << (count as usize - index - 1)) as f32;
+            let cascade = cascade_matrix(self.camera, radius, rotation, caster_depth)?;
+            *matrix = cascade.matrix;
+            samples.light_view_proj[index] = cascade.matrix.to_cols_array_2d();
+            samples.cascade_metrics[index] = [
+                radius,
+                cascade.texel,
+                cascade.span.recip(),
+                (0.25 * cascade.texel / cascade.span).max(MINIMUM_DEPTH_BIAS),
+            ];
+        }
         if let Some((_, max_y)) = caster_height {
             let sun_y = rotation.row(2).y;
             let minimum_sun_y = sun_y * SUN_ANGULAR_RADIUS.cos()
@@ -606,143 +577,52 @@ impl FitInputs {
             let texel = 2.0 * HORIZON_RADIUS / SIZE as f32;
             samples.horizon = [a, b, uv_per_metre, texel];
         }
-        for (index, CascadeFit { matrix, span, .. }) in [local, distant].into_iter().enumerate() {
-            let scale = 1.0 / span;
-            // The plane correction is exact only within one triangle. Allow half a
-            // texel in metres where filtering spans neighboring receiver triangles.
-            let half_texel = (matrix.row(0).truncate().length() * SIZE as f32).recip();
-            let base = half_texel.clamp(BIAS_MIN_WORLD, BIAS_MAX_WORLD);
-            let uv_per_metre = matrix.row(0).truncate().length() * 0.5;
-            let penumbra = SUN_ANGULAR_RADIUS.tan() * span * uv_per_metre;
-            samples.penumbra[index] = penumbra;
-            samples.penumbra[2 + index] = BIAS_MIN_WORLD * scale;
-            samples.height_support[2 + index] = scale;
-            samples.bias[index] = base * scale;
-            samples.bias[2 + index] = BIAS_SLOPE_WORLD * scale;
-        }
-        if self.profile.is_some_and(|(count, _)| count < 2) {
-            // With one map every positive receiver selects the far layer,
-            // which already fits the whole receiver interval. With none,
-            // the reach sentinel below selects the shared height map.
-            samples.split_overlap[..2].fill(0.0);
-        }
-        if receiver_far < far {
-            let fade_start = receiver_far - (receiver_far - near) * 0.1;
-            samples.split_overlap[2] = receiver_far;
-            samples.split_overlap[3] = fade_start;
-        }
-        if self.profile.is_some_and(|(count, _)| count == 0) {
-            samples.split_overlap[2] = f32::MIN_POSITIVE;
-            samples.split_overlap[3] = 0.0;
-        }
         Ok(FittedShadow {
+            count,
             matrices,
             samples,
-            partitioned,
         })
     }
 }
 
 fn cascade_matrix(
-    camera_view: Mat4,
-    fx: f32,
-    fy: f32,
-    near: f32,
-    far: f32,
+    eye: Vec3,
+    radius: f32,
     rotation: Mat4,
     caster_depth: Option<(f32, f32)>,
-    caster_height: Option<(f32, f32)>,
-    sun_cone: bool,
 ) -> Result<CascadeFit, RenderError> {
-    let camera_world = camera_view.inverse();
-    let corners: [Vec3; 8] = std::array::from_fn(|index| {
-        let depth = if index < 4 { near } else { far };
-        let x = if index & 1 == 0 { -1.0 } else { 1.0 };
-        let y = if index & 2 == 0 { -1.0 } else { 1.0 };
-        camera_world.transform_point3(Vec3::new(x * depth / fx, y * depth / fy, -depth))
-    });
-    let center = corners.into_iter().sum::<Vec3>() / 8.0;
-    let receiver_radius = corners
-        .into_iter()
-        .map(|corner| corner.distance(center))
-        .fold(0.0, f32::max);
-    // A finite Sun's cone reaches outside the central-ray receiver footprint.
-    // The last cascade includes the maximum axial gap before snapping. At low Sun
-    // that gap reaches kilometres, so the near map stays unpadded for contact
-    // resolution and leaves blockers beyond its own support to the last cascade.
-    let receiver_max_depth = corners
-        .into_iter()
-        .map(|corner| -rotation.transform_point3(corner).z)
-        .fold(f32::NEG_INFINITY, f32::max);
-    let blocker_min_depth = caster_depth.map_or(receiver_max_depth, |(lo, _)| lo);
-    let mut maximum_gap = (receiver_max_depth - blocker_min_depth).max(0.0);
-    if let Some((_, maximum_y)) = caster_height {
-        let sun_y = rotation.row(2).y;
-        let low = sun_y * SUN_ANGULAR_RADIUS.cos()
-            - (1.0 - sun_y * sun_y).max(0.0).sqrt() * SUN_ANGULAR_RADIUS.sin();
-        if low > 1e-6 {
-            let receiver_min_y = corners
-                .into_iter()
-                .map(|p| p.y)
-                .fold(f32::INFINITY, f32::min);
-            maximum_gap = maximum_gap.min((maximum_y - receiver_min_y).max(0.0) / low);
-        }
-    }
-    let cone_guard = if sun_cone {
-        maximum_gap * SUN_ANGULAR_RADIUS.tan()
-    } else {
-        0.0
-    };
-    let padded_radius = (receiver_radius + cone_guard) / (1.0 - 4.0 / SIZE as f32);
-    let radius = (padded_radius * 16.0).ceil() / 16.0;
-    let center_light = rotation.transform_point3(center);
-    let texel = 2.0 * radius / SIZE as f32;
-    let snapped_x = (center_light.x / texel).round() * texel;
-    let snapped_y = (center_light.y / texel).round() * texel;
-    let light_view = Mat4::from_translation(Vec3::new(-snapped_x, -snapped_y, 0.0)) * rotation;
-    let mut min_depth = f32::INFINITY;
-    let mut max_depth = f32::NEG_INFINITY;
-    for corner in corners {
-        let depth = -light_view.transform_point3(corner).z;
-        min_depth = min_depth.min(depth);
-        max_depth = max_depth.max(depth);
-    }
-    let full_min_depth = min_depth.min(blocker_min_depth);
-    if let Some((caster_min, caster_max)) = caster_depth {
-        let caster_limit = if sun_cone {
-            caster_min
-        } else {
-            let local_gap = LOCAL_PENUMBRA_TEXELS * texel / SUN_ANGULAR_RADIUS.tan();
-            caster_min.max(min_depth - local_gap)
-        };
-        min_depth = min_depth.min(caster_limit);
-        max_depth = max_depth.max(caster_max);
-    }
-    let excluded_depth = (min_depth - full_min_depth).max(0.0);
-    min_depth -= 0.5;
-    max_depth += 0.5;
+    let half_width =
+        radius / (1.0 - 2.0 * (CASCADE_GUARD_TEXELS + CASCADE_SNAP_TEXELS) / SIZE as f32);
+    let center = rotation.transform_point3(eye);
+    let texel = 2.0 * half_width / SIZE as f32;
+    let x = (center.x / texel).round() * texel;
+    let y = (center.y / texel).round() * texel;
+    let light_view = Mat4::from_translation(Vec3::new(-x, -y, 0.0)) * rotation;
+    let (caster_min, caster_max) = caster_depth.unwrap_or((-center.z - radius, -center.z + radius));
+    let min_depth = (-center.z - radius).min(caster_min) - 0.5;
+    let max_depth = (-center.z + radius).max(caster_max) + 0.5;
     let span = max_depth - min_depth;
-    if !radius.is_finite() || radius <= 0.0 || !span.is_finite() || span <= 0.0 {
+    if !half_width.is_finite()
+        || !texel.is_finite()
+        || texel <= 0.0
+        || !span.is_finite()
+        || span <= 0.0
+    {
         return Err(RenderError::InvalidView);
     }
-    let standard = glam::camera::rh::proj::directx::orthographic(
-        -radius, radius, -radius, radius, min_depth, max_depth,
-    );
-    let reverse = Mat4::from_cols(
-        Vec4::X,
-        Vec4::Y,
-        Vec4::new(0.0, 0.0, -1.0, 0.0),
-        Vec4::new(0.0, 0.0, 1.0, 1.0),
-    );
-    let matrix = reverse * standard * light_view;
-    if !matrix.to_cols_array().iter().all(|value| value.is_finite()) {
+    let matrix = Mat4::from_cols(
+        Vec4::X / half_width,
+        Vec4::Y / half_width,
+        Vec4::Z / span,
+        Vec4::new(0.0, 0.0, max_depth / span, 1.0),
+    ) * light_view;
+    if !matrix.is_finite() {
         return Err(RenderError::InvalidView);
     }
     Ok(CascadeFit {
         matrix,
         span,
-        upstream_depth: min_depth,
-        excluded_depth,
+        texel,
     })
 }
 
@@ -796,7 +676,7 @@ fn depth_axis(rotation: Mat4) -> Vec3 {
     -rotation.row(2).truncate()
 }
 
-/// Exact affine-box extent along light depth, shared by both cascades.
+/// Exact affine-box extent along light depth, shared by all cascades.
 /// XY texel snapping does not change this depth axis. Each caster's box is
 /// its mesh bounds, or the unit cube when the scene selects no meshes.
 fn caster_depth_bounds(
@@ -826,186 +706,26 @@ fn caster_depth_bounds(
 mod tests {
     mod disk;
     mod horizon;
+    mod nested;
     mod observer;
     mod penumbra;
     mod scene_view_anchor;
 
     use super::*;
 
-    #[test]
-    fn only_the_last_cascade_pads_for_distant_finite_sun_blockers() {
-        // A Sun 2° up behind kilometres of caster: the cone guard is metres to
-        // tens of metres. The near map must keep its receiver-fitted texels.
-        let direction = Vec3::new(0.0, 2f32.to_radians().sin(), 2f32.to_radians().cos());
-        let view = SyntheticView::perspective(
-            [0.0, 2.0, 0.0],
-            [0.0, 1.0, -10.0],
-            [0.0, 1.0, 0.0],
-            0.8,
-            16.0 / 9.0,
-            0.1,
-            2000.0,
-        )
-        .expect("perspective receiver");
-        let inputs = FitInputs::new(&view, (&[], None), direction).expect("no casters");
-        let low = ShadowBounds::new([-50.0, -1.0, -50.0], [50.0, 1.0, 50.0]).expect("low caster");
-        let tall = ShadowBounds::new([-50.0, -1.0, -3000.0], [50.0, 400.0, 3000.0])
-            .expect("tall distant caster");
-        let half_extent = |fitted: &FittedShadow, index: usize| {
-            fitted.matrices[index].row(0).truncate().length().recip()
-        };
-        let low = inputs.fit(Some(low)).expect("low fit");
-        let tall = inputs.fit(Some(tall)).expect("tall fit");
-        assert!((half_extent(&low, 0) - half_extent(&tall, 0)).abs() <= 1e-3);
-        assert!(half_extent(&tall, 1) > half_extent(&low, 1) + 10.0);
-        let remote_caster = direction * 1000.0;
-        assert!(tall.partitioned);
-        assert!(tall.matrices[0].project_point3(remote_caster).z > 1.0);
-        assert!((0.0..=1.0).contains(&tall.matrices[1].project_point3(remote_caster).z));
-        assert!((0.0..=1.0).contains(&tall.matrices[0].project_point3(Vec3::ZERO).z));
-    }
+    mod layout;
 
     #[test]
-    fn fitted_sun_support_and_surface_tolerance_keep_world_units() {
-        let direction = Vec3::new(1.0, 1.0, 1.0).normalize();
-        let view = SyntheticView::perspective(
-            [0.0, 2.0, 3.0],
-            [0.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0],
-            1.0,
-            1.0,
-            0.1,
-            100.0,
-        )
-        .expect("perspective receiver");
-        let inputs = FitInputs::new(&view, (&[], None), direction).expect("no casters");
-        let bounds = ShadowBounds::new([-100.0; 3], [100.0, 2000.0, 100.0]).expect("finite caster");
-        let fitted = inputs.fit(Some(bounds)).expect("finite fit");
-        let value = |offset| {
-            f32::from_le_bytes(
-                bytemuck::bytes_of(&fitted.samples)[offset..offset + 4]
-                    .try_into()
-                    .unwrap(),
-            )
-        };
-        assert!((value(176) - 2000.0).abs() < 1e-5);
-        let minimum_y = value(180);
-        assert!(minimum_y < direction.y && minimum_y > 0.0);
-        let tangent = direction.cross(Vec3::Y).normalize();
-        let bitangent = direction.cross(tangent);
-        for index in 0..32 {
-            let phase = index as f32 * std::f32::consts::TAU / 32.0;
-            let sample = direction * SUN_ANGULAR_RADIUS.cos()
-                + (tangent * phase.cos() + bitangent * phase.sin()) * SUN_ANGULAR_RADIUS.sin();
-            assert!(sample.y >= minimum_y - 1e-7);
-        }
-        for (index, matrix) in fitted.matrices[..2].iter().enumerate() {
-            let span = matrix.row(2).truncate().length().recip();
-            assert!((value(168 + index * 4) * span - BIAS_MIN_WORLD).abs() < 1e-6);
-            assert!((value(184 + index * 4) * span - 1.0).abs() < 1e-6);
-        }
-    }
-
-    #[test]
-    fn last_cascade_covers_a_narrow_view_receiver_with_an_excluded_caster() {
-        let view = SyntheticView::perspective(
-            Vec3::ZERO.to_array(),
-            Vec3::NEG_Z.to_array(),
-            Vec3::Y.to_array(),
-            2.0 * 0.1_f32.atan(),
-            1.0,
-            0.1,
-            100.0,
-        )
-        .expect("narrow perspective receiver");
-        let bounds =
-            ShadowBounds::new([59.0, -1.0, -6.0], [61.0, 1.0, -4.0]).expect("upstream caster");
-        let fitted = FitInputs::new(&view, (&[], None), Vec3::X)
-            .expect("no casters")
-            .fit(Some(bounds))
-            .expect("partitioned shadow fit");
-        let receiver = Vec3::new(0.0, 0.0, -5.0);
-        let caster = receiver + 60.0 * Vec3::X;
-        let near = fitted.matrices[0];
-        let last = fitted.matrices[1];
-        assert!(fitted.partitioned);
-        assert!(near.project_point3(caster).z > 1.0);
-        let outside =
-            ShadowBounds::new([59.0, -1.0, 9000.0], [61.0, 1.0, 9002.0]).expect("outlying caster");
-        let near_volume = SecondaryShadowCascade::new(near);
-        let last_volume = SecondaryShadowCascade::new(last);
-        assert!(!near_volume.overlaps(outside));
-        assert!(!last_volume.overlaps(outside));
-        assert!(!near_volume.overlaps(bounds));
-        // The caster is outside the narrow camera frustum but can shadow the receiver.
-        assert!(last_volume.overlaps(bounds));
-        let far_receiver = last.project_point3(receiver);
-        let far_caster = last.project_point3(caster);
-        let clip_depth = fitted.samples.near_partition[1];
-        assert!(far_receiver.truncate().abs().max_element() < 1.0);
-        assert!((0.0..clip_depth).contains(&far_receiver.z));
-        assert!((clip_depth..=1.0).contains(&far_caster.z));
-    }
-
-    #[test]
-    fn both_cascades_use_32_bit_float_depth() {
+    fn sun_cascades_use_reverse_32_bit_float_depth() {
         assert_eq!(FORMAT, wgpu::TextureFormat::Depth32Float);
-    }
-
-    #[test]
-    fn practical_split_and_reverse_light_depth() {
-        let near = 0.1_f32;
-        let far = 20.0_f32;
-        let split = split_depth(near, far);
-        assert!((split - 5.732).abs() < 0.001);
-        let camera =
-            glam::camera::rh::view::look_at_mat4(Vec3::new(0.0, 0.0, 3.0), Vec3::ZERO, Vec3::Y);
-        let light = Vec3::new(1.0, 0.0, 1.0).normalize();
-        let matrix = cascade_matrix(
-            camera,
-            1.0,
-            1.0,
-            near,
-            split,
-            light_rotation(light),
-            None,
-            None,
-            true,
-        )
-        .expect("finite cascade")
-        .matrix;
+        let direction = Vec3::new(1.0, 0.0, 1.0).normalize();
+        let matrix = cascade_matrix(Vec3::ZERO, 8.0, light_rotation(direction), None)
+            .unwrap()
+            .matrix;
         let receiver = matrix.project_point3(Vec3::ZERO);
-        let caster = matrix.project_point3(Vec3::new(1.0, 0.0, 1.0));
-        assert!((receiver.x - caster.x).abs() < 1e-5);
-        assert!((receiver.y - caster.y).abs() < 1e-5);
-        assert!(
-            caster.z > receiver.z,
-            "upstream caster must win reverse depth"
-        );
-    }
-
-    #[test]
-    fn sub_texel_camera_translation_keeps_shadow_xy_stable() {
-        let light = Vec3::new(1.0, 0.0, 1.0).normalize();
-        let first =
-            glam::camera::rh::view::look_at_mat4(Vec3::new(0.0, 0.0, 3.0), Vec3::ZERO, Vec3::Y);
-        let shifted = glam::camera::rh::view::look_at_mat4(
-            Vec3::new(0.0, 0.0001, 3.0),
-            Vec3::new(0.0, 0.0001, 0.0),
-            Vec3::Y,
-        );
-        let rotation = light_rotation(light);
-        let a = cascade_matrix(first, 1.0, 1.0, 0.1, 5.732, rotation, None, None, true)
-            .expect("first cascade")
-            .matrix;
-        let b = cascade_matrix(shifted, 1.0, 1.0, 0.1, 5.732, rotation, None, None, true)
-            .expect("shifted cascade")
-            .matrix;
-        let point = Vec3::new(0.2, -0.1, 0.0);
-        let before = a.project_point3(point);
-        let after = b.project_point3(point);
-        assert!((before.x - after.x).abs() < 1e-5);
-        assert!((before.y - after.y).abs() < 1e-5);
+        let caster = matrix.project_point3(direction);
+        assert!((receiver.truncate() - caster.truncate()).length() < 1e-5);
+        assert!(caster.z > receiver.z);
     }
 
     #[test]

@@ -3,8 +3,8 @@
 use super::{
     AirShadowPrepared, Arc, AtmospherePrepared, BucketRoute, CasterCulling, CloudPrepared,
     ContributionPasses, CullMode, DeviceCapabilities, PipelineKey, PreparedSynthetic, SdrToneStage,
-    ShadowSelection, StarPrepared, SunShadowMethod, SyntheticView, TextureClasses,
-    VisibilityPrepared, mesh_arena, mesh_route, secondary, taau, temporal,
+    StarPrepared, SyntheticView, TextureClasses, VisibilityPrepared, mesh_arena, mesh_route,
+    secondary, taau, temporal,
 };
 
 /// Device resources retain their original handles. Only extent-dependent
@@ -31,7 +31,6 @@ pub(crate) struct SyntheticTargetInputs {
     pub(super) uses_shadow_rays: bool,
     pub(super) ambient: Option<super::raytrace::ambient::Pipelines>,
     pub(super) soft_sun: Option<super::raytrace::soft::SoftPipelines>,
-    pub(super) shadow_selection: ShadowSelection,
     pub(super) bucket_route: Option<mesh_route::TargetMembers>,
     pub(super) caster_culling: Option<CasterCulling>,
     pub(super) display: SdrToneStage,
@@ -54,6 +53,7 @@ pub(crate) struct SyntheticTargetInputs {
     pub(super) cluster_head_bytes: u64,
     pub(super) cluster_index_bytes: u64,
     pub(super) shadow: Option<wgpu::Buffer>,
+    pub(super) sun_cascade_count: u32,
     pub(super) air_shadow: Option<AirShadowPrepared>,
     pub(super) atmosphere: Option<AtmospherePrepared>,
     pub(super) contribution_passes: ContributionPasses,
@@ -86,7 +86,6 @@ impl PreparedSynthetic {
                 .as_ref()
                 .map(|ambient| ambient.pipelines.clone()),
             soft_sun: self.soft_sun.as_ref().map(|soft| soft.pipelines.clone()),
-            shadow_selection: self.shadow_selection,
             bucket_route: self.bucket_route.as_ref().map(BucketRoute::target_members),
             caster_culling: self
                 .caster_culling
@@ -118,6 +117,7 @@ impl PreparedSynthetic {
                 .shadow
                 .as_ref()
                 .map(|shadow| shadow.sample_buffer.clone()),
+            sun_cascade_count: self.shadow_cascade_count(),
             air_shadow: self.air_shadow.clone(),
             atmosphere: self.atmosphere.clone(),
             contribution_passes: self.contribution_passes,
@@ -130,10 +130,6 @@ impl PreparedSynthetic {
 }
 
 impl SyntheticTargetInputs {
-    pub(super) fn surface_uses_cascades(&self) -> bool {
-        self.shadow_selection.sun == SunShadowMethod::Maps
-    }
-
     pub(super) fn camera_culling(&self) -> CullMode {
         self.visibility
             .as_ref()

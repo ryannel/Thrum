@@ -28,9 +28,17 @@ fn a_below_horizontal_sun_is_partially_hidden_by_distant_lower_terrain() {
         let texel = 2.0 * HORIZON_RADIUS / SIZE as f32;
         let depth = matrix.row(2);
         let mut samples = [0.0; SAMPLE_FLOATS];
-        samples[48..64].copy_from_slice(&matrix.to_cols_array());
-        samples[64..68].copy_from_slice(&[depth.y, depth.w, 0.5 / HORIZON_RADIUS, texel]);
-        let maps = constant_depth_maps(&device, &queue, SIZE, &[0.0, 0.0, depth.w]);
+        let height_offset = std::mem::offset_of!(super::ShadowCascades, height_view_proj) / 4;
+        samples[height_offset..height_offset + 16].copy_from_slice(&matrix.to_cols_array());
+        samples[height_offset + 16..height_offset + 20].copy_from_slice(&[
+            depth.y,
+            depth.w,
+            0.5 / HORIZON_RADIUS,
+            texel,
+        ]);
+        let mut depths = [0.0; super::MAPS];
+        depths[super::HEIGHT_LAYER] = depth.w;
+        let maps = constant_depth_maps(&device, &queue, SIZE, &depths);
         let elevation = -0.1_f32.to_radians();
         let (sin, cos) = elevation.sin_cos();
         let observed = read_visibility(
