@@ -337,3 +337,14 @@
   camera follows whitewater from the rock's lee into thinning lace. The gauge take shows the
   wider foam band at the upper sample. The paired 1440p Metal record retains the WP4
   comparison and the cost investigations. [Target evidence](../../../.orchestrate/evidence/RIVERS/WP5/README.md)
+
+- 2026-11-27 WP5 review repair. Varying solved currents now use bounded departures over
+  the full current rather than accumulating spatial shear with uptime. The bound includes
+  cells wetting at different gauges. The exact 0.500 and 1.500 m/s lane fits still hold.
+  Sustained Metal footage from both sides of the rock keeps curved ripples and open foam
+  lace past one minute of continuous submissions.
+- 2026-11-27 WP5 review repair. The river water type begins breaking at 24 W/m² and
+  reaches 0.0011 m²/J at 40 W/m². The lower threshold sits above the raw losses in the
+  glide and pool, which peaked at 19.365 W/m² across the measured gauge bounds. Metal
+  records zero local births there, transported foam in the pool and more cover below
+  the ledge at the high gauge in same-age runs. [Target evidence](../../../.orchestrate/evidence/RIVERS/WP5-repair/README.md)
