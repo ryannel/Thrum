@@ -11,13 +11,15 @@ use thrum_render::{
 const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
 const MIPS: u32 = SIDE.ilog2() + 1;
 const MEAN_PASSES: u32 = 2;
-pub(super) const PASSES: u32 = MIPS + MEAN_PASSES;
+pub(super) const PASSES: u32 = MIPS + MEAN_PASSES + 1;
 const WORKGROUP: u32 = 8;
 
 pub(super) struct Filter {
     pub(super) texture: wgpu::Texture,
+    scratch: wgpu::Texture,
     mean: Mean,
-    blur: wgpu::ComputePipeline,
+    horizontal: wgpu::ComputePipeline,
+    vertical: wgpu::ComputePipeline,
     reduce: wgpu::ComputePipeline,
     bindings: Vec<wgpu::BindGroup>,
 }
@@ -42,6 +44,16 @@ impl Filter {
                     | wgpu::TextureUsages::COPY_SRC,
                 view_formats: &[],
             })
+        });
+        let scratch = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("water caustic horizontal blur"),
+            size: drawn.size(),
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: FORMAT,
+            usage: wgpu::TextureUsages::STORAGE_BINDING | wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
         });
         let mean = Mean::new(device, drawn);
         let stages = wgpu::ShaderStages::COMPUTE;
@@ -106,42 +118,41 @@ impl Filter {
                 ..Default::default()
             })
         };
-        let bindings = (0..MIPS)
-            .map(|mip| {
-                let input = if mip == 0 {
-                    view(drawn, 0)
-                } else {
-                    view(&texture, mip - 1)
-                };
-                let output = view(&texture, mip);
-                device.create_bind_group(&wgpu::BindGroupDescriptor {
-                    label: Some("water caustic filter images"),
-                    layout: &images,
-                    entries: &[
-                        wgpu::BindGroupEntry {
-                            binding: 0,
-                            resource: wgpu::BindingResource::TextureView(&input),
-                        },
-                        wgpu::BindGroupEntry {
-                            binding: 1,
-                            resource: wgpu::BindingResource::Sampler(&sampler),
-                        },
-                        wgpu::BindGroupEntry {
-                            binding: 2,
-                            resource: wgpu::BindingResource::TextureView(&output),
-                        },
-                        wgpu::BindGroupEntry {
-                            binding: 3,
-                            resource: mean.values.as_entire_binding(),
-                        },
-                    ],
-                })
+        let bind = |input: wgpu::TextureView, output: wgpu::TextureView| {
+            device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("water caustic filter images"),
+                layout: &images,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(&input),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::Sampler(&sampler),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 2,
+                        resource: wgpu::BindingResource::TextureView(&output),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 3,
+                        resource: mean.values.as_entire_binding(),
+                    },
+                ],
             })
-            .collect();
+        };
+        let mut bindings = vec![
+            bind(view(drawn, 0), view(&scratch, 0)),
+            bind(view(&scratch, 0), view(&texture, 0)),
+        ];
+        bindings.extend((1..MIPS).map(|mip| bind(view(&texture, mip - 1), view(&texture, mip))));
         Self {
             texture,
+            scratch,
             mean,
-            blur: pipeline("blur"),
+            horizontal: pipeline("blur_horizontal"),
+            vertical: pipeline("blur_vertical"),
             reduce: pipeline("reduce"),
             bindings,
         }
@@ -157,6 +168,15 @@ impl Filter {
                 initialized: false,
             },
         ));
+        let scratch = graph.resources.len();
+        graph.resources.push((
+            ResourceDescriptor::of_texture(&self.scratch),
+            ResourceScope::Persistent {
+                owner: 0x6361_7568,
+                epoch: 0,
+                initialized: false,
+            },
+        ));
         let access = |resource, mip, kind| EffectAccess {
             resource,
             range: u64::from(mip * RUNGS)..u64::from((mip + 1) * RUNGS),
@@ -167,9 +187,18 @@ impl Filter {
         let means = self
             .mean
             .declare(graph, access(drawn, 0, AccessKind::SampledRead));
+        graph.passes.push(EffectPass {
+            name: "blur water caustics horizontally".into(),
+            cadence: EffectCadence::Skippable,
+            async_eligible: false,
+            accesses: vec![
+                access(drawn, 0, AccessKind::SampledRead),
+                access(scratch, 0, AccessKind::StorageWrite),
+            ],
+        });
         for mip in 0..MIPS {
             let input = if mip == 0 {
-                (drawn, 0)
+                (scratch, 0)
             } else {
                 (resource, mip - 1)
             };
@@ -211,9 +240,15 @@ impl Filter {
             self.mean.encode(step, pass, rungs);
             return;
         }
-        let mip = step - MEAN_PASSES;
-        pass.set_pipeline(if mip == 0 { &self.blur } else { &self.reduce });
-        pass.set_bind_group(0, &self.bindings[mip as usize], &[]);
+        let filter_step = step - MEAN_PASSES;
+        let pipeline = match filter_step {
+            0 => &self.horizontal,
+            1 => &self.vertical,
+            _ => &self.reduce,
+        };
+        let mip = filter_step.saturating_sub(1);
+        pass.set_pipeline(pipeline);
+        pass.set_bind_group(0, &self.bindings[filter_step as usize], &[]);
         pass.set_bind_group(1, frame, &[]);
         let groups = (SIDE >> mip).div_ceil(WORKGROUP);
         pass.dispatch_workgroups(groups, groups, rungs);
@@ -225,6 +260,7 @@ impl Filter {
             .sum::<u64>()
             * u64::from(RUNGS)
             * 8
+            + u64::from(SIDE).pow(2) * u64::from(RUNGS) * 8
             + self.mean.bytes()
     }
 }
