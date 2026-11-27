@@ -167,12 +167,12 @@ A planner or the lead chose each of these where your words left it open. Each st
 - CLOUDS assumes: clouds are shown through a selection inside `examples/v1-game` and `examples/water`, off by default; the V1 exit scene is unchanged. ([plan](CLOUDS/PLAN.md))
 - CLOUDS assumes: finished excludes the Broadsides game's ten genera, squall and warm front, rain, a cloud a simulation writes, a cloud held against the wind, and lamps glowing in fog. ([plan](CLOUDS/PLAN.md))
 - CLOUDS assumes: time-lapse runs from 1× to 60×, and "continuous to the horizon" means about 200 km. ([plan](CLOUDS/PLAN.md))
-- CLOUDS assumes: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item (brief decision 3), except in WP20: by the OS-reported presented times, the weather sky loses at most one refresh in 20 seconds beyond the same game without clouds, and stalls at most one refresh longer. Only a run's longest stall is compared, not how many it has. ([plan](CLOUDS/PLAN.md))
+- CLOUDS assumes: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item (brief decision 3), except in WP20, by [its rule](CLOUDS/DESIGN.md#holding-the-displays-refresh-while-clouds-drift-wp19-and-wp20). ([plan](CLOUDS/PLAN.md))
 - CLOUDS assumes: what the game loses with clouds absent stops nothing here; it is listed for `PLATFORM-RUNTIME-MAC` and the performance phase. ([plan](CLOUDS/PLAN.md))
 - CLOUDS assumes: only the fair preset's sky is held to the refresh. The broken and overcast skies' cost and the finished sky's presented cadence are recorded and investigated (WP7.8, WP12.5, WP12.6), and the rest is the performance phase's. ([plan](CLOUDS/PLAN.md))
-- CLOUDS assumes: the fair cumulus's close-up form (shelves, folds, repeated caps) waits for WP17, just before the module closes; every sky until then shows those flaws. ([plan](CLOUDS/PLAN.md))
-- CLOUDS assumes: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX work packages. Fog waits for `ATMOSPHERE` WP8, and the sea for `WATERS` WP8. ([plan](CLOUDS/PLAN.md))
-- CLOUDS assumes: the game WP20 measures is the release V1 game in its 1920×1080 window, on the Apple recipe with TAAU under the fair preset. WP20 comes before WP8 and pauses every other agent for one attended series of eleven recorded runs. ([plan](CLOUDS/PLAN.md))
+- CLOUDS assumes: "each cloud holds up on its own" is met by a new form for the weather's own clouds (heaps held in a 3D volume, about 40 MiB more), not by library shapes filling the fair sky. From WP24 until WP17 passes, main shows it unjudged. ([plan](CLOUDS/PLAN.md))
+- CLOUDS assumes: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX work packages. ([plan](CLOUDS/PLAN.md))
+- CLOUDS assumes: the game WP20 measures is the release V1 game in its 1920×1080 window, on the Apple recipe with TAAU under the fair preset. ([plan](CLOUDS/PLAN.md))
 - CLOUDS assumes: the finished sky closes at WP12 with weak noon relief on broad lobes of library shapes as a listed weakness ([risk 14](CLOUDS/DESIGN.md#risks)). The relief work is no work package: [the noon-relief follow-up](CLOUDS/DESIGN.md#the-noon-relief-follow-up) holds it, and waits for the lead to schedule it. ([plan](CLOUDS/PLAN.md))
 - CLOUDS assumes: WP14 to WP12 pass without a shaft of sunlight followed inside mist below broken cloud ([risk 15](CLOUDS/DESIGN.md#risks)); WP22, last, takes it up. ([plan](CLOUDS/PLAN.md))
 - CLOUDS assumes: a scene that declares Ground pays its full-refresh trace at every fog amount, zero included. With no mist it is held to the look of the same scene without Ground, not to the bytes it drew before WP15. ([plan](CLOUDS/PLAN.md))
@@ -390,13 +390,15 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A name in the glossary waits for your agreement: Profile (the planner chose the name, to say whose a save is)
 - A name in the glossary waits for your agreement: Extension map (the planner chose the names, in place of "reserved shapes")
 - A name in the glossary waits for your agreement: Output scale (the planner chose the name)
+- A name in the glossary waits for your agreement: Puff (the planner chose "puff" over "sphere", "lobe" and "turret", which the design used for the form)
+- A name in the glossary waits for your agreement: Weather volume (the planner chose the name, after the weather map)
 - A name in the glossary waits for your agreement: Cast width (the planner chose the name)
 
 ### Now and next
 
 - Sun shadows hold still as the Sun moves, start at the foot of what casts them, and thin out with distance with no line where they stop, on the Mac and in Chrome (ATMOSPHERE WP13): Not Started · [plan](ATMOSPHERE/PLAN.md)
 - WATERS's design: Design Changes Requested · [design](WATERS/DESIGN.md) · [plan](WATERS/PLAN.md)
-- CLOUDS WP17 Each fair-weather cloud holds up on its own: a cluster of heaps of different heights, with no shelf, fold or repeated outline: Blocked: Needs Context: The lead needs to reopen the cloud-form design using the separate findings for overlapping cells and isolated cloud shape. The lead finds the missing fact, or asks you for it
+- CLOUDS's design: Design Ready for Review · [design](CLOUDS/DESIGN.md) · [plan](CLOUDS/PLAN.md)
 - RIVERS's design: Design Changes Requested · [design](RIVERS/DESIGN.md) · [plan](RIVERS/PLAN.md)
 - RAY-TRACING's design: Design Ready for Review · [design](RAY-TRACING/DESIGN.md) · [plan](RAY-TRACING/PLAN.md)
 - GATE-TIME WP5 The post-rollout record shows a five-minute median for Rust landings: Blocked: Needs Context: WP5.1 needs 17 more qualifying ordinary Rust landings before the fixed window can be judged. The lead finds the missing fact, or asks you for it
@@ -525,7 +527,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - No script, bench or test reads or writes under `docs/evidence`, and the culling route test carries no tool nothing arms (DEAD-TOOLS WP4), 21 Nov · review `.orchestrate/evidence/DEAD-TOOLS/WP4-review.md` (cleared)
 - The records nobody reads are out of the tree, the test data the check reads is in fixtures, and one manifest lists what left (DEAD-TOOLS WP3), 21 Nov · review `.orchestrate/evidence/DEAD-TOOLS/WP3-review.md` (cleared)
 - The simulation no longer writes a change history every tick, and the sea no longer builds a buffer ladder every frame, for readers that do not exist (DEAD-CODE WP1), 21 Nov · review `.orchestrate/evidence/DEAD-CODE/WP1-review.md` (cleared)
-- Benches and a command that nothing runs are gone: nine benches, and `./dev baseline-inventory` with the two benches only it ran (DEAD-TOOLS WP2), 20 Nov · review `.orchestrate/evidence/DEAD-TOOLS/WP2-review.md` (cleared)
 
 ## All modules
 
@@ -547,7 +548,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH WP2 for the field on the GPU | Done 14 Nov |
 | 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA WP1 to start; SEA WP2, EFFECT-GRAPH WP3, ATMOSPHERE WP5 and WP9 and CREATOR WP1 for its first frame; CONTENT-LOOP WP1 for foam; APPLE-PRESENTATION WP3 for the whole range in motion; SCENE-VIEWS WP3 for mirrored scenery; EFFECT-GRAPH WP6 for floats in the surf with the game running; EFFECT-GRAPH WP7 for the Sun's net and shafts under water; APPLE-PRESENTATION's governor and MetalFX work packages to close | Design Changes Requested |
 | 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING WP1, ATMOSPHERE WP5 and EFFECT-GRAPH WP3 | Done 23 Nov |
-| 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH WP2 and WP4 and ATMOSPHERE WP5 for its shade; EFFECT-GRAPH WP3 for its first frame; CONTENT-LOOP WP1 for placed volumes, and DEAD-TOOLS WP5 for the record of the library it copies; APPLE-PRESENTATION WP3 and CREATOR WP1 for controls and motion; ATMOSPHERE WP8 for mist and fog; WATERS WP8 for the sea; APPLE-PRESENTATION's governor and MetalFX work packages to close | WP17 of 21 · Blocked: Needs Context |
+| 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH WP2 and WP4 and ATMOSPHERE WP5 for its shade; EFFECT-GRAPH WP3 for its first frame; CONTENT-LOOP WP1 for placed volumes, and DEAD-TOOLS WP5 for the record of the library it copies; APPLE-PRESENTATION WP3 and CREATOR WP1 for controls and motion; ATMOSPHERE WP8 for mist and fog; WATERS WP8 for the sea; APPLE-PRESENTATION's governor and MetalFX work packages to close | Design Ready for Review |
 | 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS WP1 for its flow on the CPU; WATERS WP9 for its first running stream; WATERS WP10 and WP16 to close | Design Changes Requested |
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS WP1 for its puddles and wet ground on the CPU; WATERS WP8 for its first puddle; SHOWCASE WP5 for the valley; WATERS WP10, WP14 and WP16 to close | Waiting: On Dependency, WATERS:WP10, WATERS:WP14, WATERS:WP16 |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | Done 18 Nov |
