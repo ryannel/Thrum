@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-24 of 39 modules done · 11 in progress · 4 to come
+23 of 39 modules done · 12 in progress · 4 to come
 
 ### Needs you now
 
@@ -46,6 +46,11 @@ A planner or the lead chose each of these where your words left it open. Each st
 - ATMOSPHERE assumes: WP12.3 counts the saving as kept when four-frame refreshes cover at least three quarters of the frames of the Mac route's moving segment. The planner chose the fraction. The first build's fixed spread covered about 94%. ([plan](ATMOSPHERE/PLAN.md))
 - ATMOSPHERE assumes: with the governor off, a cloud's reflection under a cloud producer that has stopped writing keeps the old sunlight after a change of the Sun's brightness or colour, until the producer next writes. That is today's behaviour, kept so that no governor-off picture changes. Under the governor it is corrected. ([plan](ATMOSPHERE/PLAN.md))
 - ATMOSPHERE assumes: WP12 judges the knob at 4 in the Mac window and at 8 in Chrome, the longest spread at the slower display. Chrome at 4 is not captured. ([plan](ATMOSPHERE/PLAN.md))
+- ATMOSPHERE assumes: WP13 judges whether an object looks grounded in sunlight, by its shadow starting at its foot. In shade nothing darkens where an object meets the ground, because [decision 34](ARCHITECTURE.md#owner-decisions) keeps ambient occlusion off the default path. The other choice is a screen-space contact or occlusion pass on the default path, which changes that decision and is the owner's. ([plan](ATMOSPHERE/PLAN.md))
+- ATMOSPHERE assumes: under WP13 a small thing stops casting a shadow at a distance set by its size, where the shadow would be under about a texel and a half, and every Sun shadow fades out by 2,048 m into the caster height map's ground shadows. The other choice is every prop casting to the horizon, which costs more maps or a different technique. ([plan](ATMOSPHERE/PLAN.md))
+- ATMOSPHERE assumes: WP13 starts from nine 2048² cascades, about 150 MB of depth against 12 MB today. These are the planner's starting values, and the builder tunes count, size and reach by eye against WP13.4 to WP13.6 and by the cost record. ([plan](ATMOSPHERE/PLAN.md))
+- ATMOSPHERE assumes: "mind the cost" is a paired cost record on the Mac with named ways to cut it (WP13.8), not a budget. The record feeds `APPLE-PRESENTATION` WP17, which owns 120 Hz full screen. ([plan](ATMOSPHERE/PLAN.md))
+- ATMOSPHERE assumes: WP13 is not behind a selection and has no governor knob. A cascade redrawn every few frames was rejected: on the game's clock a balloon's shadow crosses the ground at about 20 m/s, so a held map would judder. ([plan](ATMOSPHERE/PLAN.md))
 - BASELINE-GUARD assumes: the key-narrowing work of the earlier WP2, nine commits on the branch `build/baseline-guard`, is set aside and not merged. No proof is asked before a merge now, so a proof that survives more rebases saves nothing. The branch is kept as the record. ([plan](BASELINE-GUARD/PLAN.md))
 - BASELINE-GUARD assumes: the run on main may start every 30 minutes, not every hour as the lead's task said. The script waits 55 minutes for a claim's check, a run takes 16, and a claim that arrives just after a start waits for the next one. At one hour about a third of claims would fail as pending. The lead's hourly `main-check --due` is still what starts a run when no claim asks. ([plan](BASELINE-GUARD/PLAN.md))
 - BASELINE-GUARD assumes: the run on main holds `chrome` as well as `gpu` (the task said `gpu`), because it drives Chrome and the settings give Chrome one run at a time. Chrome items can wait up to 16 minutes behind it. ([plan](BASELINE-GUARD/PLAN.md))
@@ -366,6 +371,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
+- ATMOSPHERE's design: Design Ready for Review · [design](ATMOSPHERE/DESIGN.md) · [plan](ATMOSPHERE/PLAN.md)
 - WATERS's design: Design Ready for Review · [design](WATERS/DESIGN.md) · [plan](WATERS/PLAN.md)
 - Each fair-weather cloud holds up on its own: a cluster of heaps of different heights, with no shelf, fold or repeated outline (CLOUDS WP17): Not Started · [plan](CLOUDS/PLAN.md)
 - RIVERS's design: Design Changes Requested · [design](RIVERS/DESIGN.md) · [plan](RIVERS/PLAN.md)
@@ -507,7 +513,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE WP0 and WP1, PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 | Done 25 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE WP3 | Done 24 Nov |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13; ATMOSPHERE WP12 and SHOWCASE WP7 for its WP17 | WP17 of 22 · Blocked: Needs Access |
-| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6; APPLE-PRESENTATION WP7 for its WP12 | Done 27 Nov |
+| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6; APPLE-PRESENTATION WP7 for its WP12 | Design Ready for Review |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 25 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 | Done 17 Nov |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame, and answer a game's questions every tick even when a frame is skipped | APPLE-TILE WP2 and WP3, APPLE-PRESENTATION WP2, BASELINE-GUARD WP1 | Done 27 Nov |
