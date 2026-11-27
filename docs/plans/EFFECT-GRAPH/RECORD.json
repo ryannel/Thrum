@@ -762,7 +762,7 @@
         {
           "verdict": "fail",
           "commit": "2dc6cde517600fed0a7ddd5acdca260419470ea1",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP7-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP7-review-3.md",
           "items": {
             "WP7.1": "pass",
             "WP7.2": "pass",
@@ -792,6 +792,40 @@
             "turns": 1
           },
           "at": "2026-11-27T11:02:39Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "7940fc2c6d8a47620066bf69c713a0b7375e858b",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP7-review.md",
+          "items": {
+            "WP7.1": "pass",
+            "WP7.2": "pass",
+            "WP7.3": "pass",
+            "WP7.4": "pass"
+          },
+          "findings": [
+            {
+              "name": "A simulate draw that writes the registered sky overlay leaves diffuse lighting and reflections stale",
+              "repeat": false
+            }
+          ],
+          "summary": "The four WP7 items pass, and the previous detached-capture failure is resolved. WP7 fails on a new integration defect outside the items. On M3 Max Metal, a drawing pass changed the registered sky overlay from clear to cloudy, but forward shading still sampled the previous diffuse lighting and reflections.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 136193,
+            "cached": 4960896,
+            "output": 14754,
+            "turns": 1
+          },
+          "at": "2026-11-27T13:34:43Z"
         }
       ],
       "authorised": {
