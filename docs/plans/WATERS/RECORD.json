@@ -2486,7 +2486,7 @@
         {
           "verdict": "fail",
           "commit": "5d94b5e8c68cebdb65fc7be82868d9319c1b7cec",
-          "review": ".orchestrate/evidence/WATERS/WP15-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP15-review-1.md",
           "items": {
             "WP15.1": "fail",
             "WP15.11": "fail",
@@ -2575,6 +2575,71 @@
             "turns": 1
           },
           "at": "2026-11-26T22:24:22Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "0eb70b1058c903c5040d2172ec358638a294734d",
+          "review": ".orchestrate/evidence/WATERS/WP15-review.md",
+          "items": {
+            "WP15.1": "fail",
+            "WP15.11": "pass",
+            "WP15.3": "fail",
+            "WP15.4": "pass",
+            "WP15.5": "fail",
+            "WP15.6": "pass",
+            "WP15.7": "pass",
+            "WP15.8": "fail",
+            "WP15.9": "pass"
+          },
+          "findings": [
+            {
+              "name": "The carried-crest test cannot detect footprint-only gains or weights",
+              "item": "WP15.1",
+              "repeat": true
+            },
+            {
+              "name": "Registered objects above water show outside Snell\u2019s window",
+              "item": "WP15.3",
+              "different": "The bank outline and whitecaps are now visible. An above-water object contributes light outside the sky window.",
+              "repeat": false
+            },
+            {
+              "name": "Wet pixels show the above-water hull during the crossing",
+              "item": "WP15.5",
+              "different": "The torn stripe is repaired. A wet pixel now takes the direct colour of an object above the reflecting surface.",
+              "repeat": false
+            },
+            {
+              "name": "Chrome shows the above-water hull through the reflecting underside",
+              "item": "WP15.8",
+              "different": "The bank, foam and continuous stripe are visible. The new hull shortcut transmits the dry hull into wet pixels outside the window.",
+              "repeat": false
+            },
+            {
+              "name": "The dry surface shows submerged bodies that the refracted ray misses",
+              "repeat": false
+            },
+            {
+              "name": "An empty scene gather acquires a synthetic bank material",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 240752,
+            "cached": 12788480,
+            "output": 37682,
+            "turns": 1
+          },
+          "at": "2026-11-27T00:25:19Z"
         }
       ],
       "authorised": {
