@@ -13,7 +13,7 @@ use thrum_water_model::{Map, PathPoint};
 
 pub(in crate::falls) const ROWS: usize = 32;
 pub(crate) const PASS: &str = "waterfall sheet";
-const VERTICES_PER_SEGMENT: usize = 12 * (ROWS + 3);
+const VERTICES_PER_SEGMENT: usize = 12 * (ROWS + 6);
 const ATTRIBUTES: [wgpu::VertexAttribute; 4] =
     wgpu::vertex_attr_array![0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4];
 
@@ -436,17 +436,60 @@ fn mesh(
             .chain((1..=rows).map(|row| row as f64 / rows as f64))
         {
             let bottom = strip(fraction);
-            for edge in 0..2 {
-                vertices.extend([
-                    top[edge],
-                    top[edge + 1],
-                    bottom[edge],
-                    top[edge + 1],
-                    bottom[edge + 1],
-                    bottom[edge],
-                ]);
-            }
+            stitch(vertices, top, bottom);
             top = bottom;
         }
+        if segment.plunge.is_some() {
+            splash(vertices, top);
+        }
+    }
+}
+
+fn stitch(vertices: &mut Vec<Vertex>, top: [Vertex; 3], bottom: [Vertex; 3]) {
+    for edge in 0..2 {
+        vertices.extend([
+            top[edge],
+            top[edge + 1],
+            bottom[edge],
+            top[edge + 1],
+            bottom[edge + 1],
+            bottom[edge],
+        ]);
+    }
+}
+
+// The thin crown above the sump belongs to the visible fall. The foam and
+// wave fields still receive the original impact at the receiving level.
+fn splash(vertices: &mut Vec<Vertex>, foot: [Vertex; 3]) {
+    use glam::{Vec2, Vec3};
+
+    let crown = |distance: f32, height: f32| {
+        foot.map(|mut vertex| {
+            let [x, y, z, age] = vertex.world_time;
+            let [vx, _, vz, lip] = vertex.velocity_along;
+            let direction = Vec2::new(vx, vz).normalize_or_zero();
+            let thickness = vertex.discharge[3];
+            let reach = (6.0 * thickness.sqrt()).clamp(0.12, 1.2);
+            let bubble_height = (1.8 * thickness).clamp(0.025, 0.16);
+            let drift = direction * (distance * reach - 0.08);
+            vertex.world_time = [
+                x + drift.x,
+                height.mul_add(bubble_height, y),
+                z + drift.y,
+                age,
+            ];
+            vertex.velocity_along = Vec3::new(direction.x, 0.025, direction.y)
+                .extend(lip)
+                .to_array();
+            vertex.across_fraction[1] = -1.0;
+            vertex.across_fraction[3] = distance;
+            vertex
+        })
+    };
+    let mut top = crown(0.0, 0.8);
+    for (distance, height) in [(0.22, 1.0), (0.55, 0.58), (1.0, 0.0)] {
+        let row = crown(distance, height);
+        stitch(vertices, top, row);
+        top = row;
     }
 }

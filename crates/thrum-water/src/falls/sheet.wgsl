@@ -29,7 +29,8 @@ fn sheet_fold(lip: f32, birth: f32, across: vec2<f32>) -> vec3<f32> {
     @location(3) across_fraction: vec4<f32>,
 ) -> SheetVertex {
     let birth = sheet_age(sheet_clock.x - world_time.w);
-    let fold = sheet_fold(velocity_along.w, birth, across_fraction.xz) * fold_weight(across_fraction.w);
+    let weight = select(fold_weight(across_fraction.w), 0.0, across_fraction.y < 0.0);
+    let fold = sheet_fold(velocity_along.w, birth, across_fraction.xz) * weight;
     let world = vec4(world_time.xyz + fold, world_time.w);
     return SheetVertex(view.view_proj * vec4(world.xyz, 1.0), world, velocity_along, discharge, across_fraction);
 }
@@ -38,6 +39,27 @@ struct FallOutput {
     @location(0) colour: vec4<f32>,
     @location(1) motion: vec2<f32>,
     @location(2) reactive: f32,
+}
+
+fn splash_shade(input: SheetVertex, birth: f32, solid: bool) -> FallOutput {
+    let distance = input.across_fraction.w;
+    let lip = input.velocity_along.w;
+    let motion = sheet_noise(vec2(lip, birth - distance * 0.23), FALL_LOOP,
+        vec2(2.9, 4.4), vec2(32.0, 0.0));
+    let pockets = sheet_noise(vec2(lip + distance * 0.55, birth), FALL_LOOP,
+        vec2(5.9, 3.4), vec2(5.0, 0.0));
+    let froth = smoothstep(0.22, 0.78, 0.66 * motion + 0.34 * pockets);
+    let support = smoothstep(0.0, 0.10, distance) * (1.0 - smoothstep(0.25, 1.0, distance));
+    let strength = smoothstep(0.008, 0.055, input.discharge.w);
+    let alpha = strength * support * (0.20 + 0.68 * froth);
+    if solid || alpha < 0.012 { discard; }
+    let up = vec3(0.0, 1.0, 0.0);
+    let point = input.world_time.xyz;
+    let direct = sun_irradiance(point) * fall_cloud(point) * max(0.0, environment_sun_direction().y);
+    let foam = (environment_diffuse(up) + direct) * vec3(0.82, 0.89, 0.88) / 3.14159265;
+    let air = environment_aerial(point, input.clip.xy * view_aux.viewport_inv_viewport.zw);
+    let colour = (foam * air.transmission + air.scatter) * environment_storage_scale();
+    return FallOutput(vec4(colour, alpha), vec2(0.0), alpha);
 }
 
 fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
@@ -55,6 +77,9 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let fine = sheet_noise(xy, span, vec2(8.7), vec2(0.0));
     let rank = 0.28 * coarse + 0.10 * fine + 0.62 * grouped;
     let pixel = max(length(dpdx(xy)), length(dpdy(xy)));
+    if input.across_fraction.y < 0.0 {
+        return splash_shade(input, birth, solid);
+    }
     let width = max(0.025, min(0.27, 0.10 * pixel));
     let tangent = normalize(input.velocity_along.xyz + vec3(1e-8, -1e-8, 0.0));
     let across = input.across_fraction.xz;
