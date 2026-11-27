@@ -1764,6 +1764,7 @@ try {
     const diveDepth=routeParams.get('location')==='swash'?0.35:0.6;
     const diveHold=process.env.THRUM_WATER_DIVE_HOLD?.split(',').map(Number);
     const diveBearing=Number(process.env.THRUM_WATER_DIVE_BEARING??90);
+    const diveSetback=Number(process.env.THRUM_WATER_DIVE_SETBACK??0);
     const diveSun=Number(process.env.THRUM_WATER_DIVE_SUN??60);
     const diveFov=Number(process.env.THRUM_WATER_DIVE_FOV??105);
     const diveTravel=Number(process.env.THRUM_WATER_DIVE_TRAVEL??diveDepth);
@@ -1781,7 +1782,8 @@ try {
         {sweep_depth:diveDepth,maximum_depth:diveTravel,pitch,bearing:diveBearing,sun:diveSun};
       const surfaceFollow=depthTour||(process.env.THRUM_WATER_ROUTE==='under-light'&&diveView?.[0]===0);
       result.dive_camera.surface_follow=surfaceFollow;
-      await evaluate(`game.edit_control('camera.surface_follow',${Number(surfaceFollow)});game.edit_control('camera.setback',${surfaceFollow?1.7:0});game.edit_control('camera.pitch',${pitch});game.edit_control('camera.depth',${depth});
+      result.dive_camera.setback=diveSetback;
+      await evaluate(`game.edit_control('camera.surface_follow',${Number(surfaceFollow)});game.edit_control('camera.setback',${diveSetback+(surfaceFollow?1.7:0)});game.edit_control('camera.pitch',${pitch});game.edit_control('camera.depth',${depth});
         game.edit_control('camera.bearing',${diveBearing});game.edit_control('camera.fov',${diveFov});game.edit_control('sun.elevation',${diveSun})`);
       await until(async()=>{
         const status=await evaluate('game.frame(performance.now());game.report()');
@@ -1837,7 +1839,7 @@ try {
             ${-diveDepth}*Math.cos(2*Math.PI*elapsed/${duration});
           if(${depthTour}){
             const below=Math.max(0,depth-${diveDepth});
-            game.edit_control('camera.setback',1.7+0.9*below);
+            game.edit_control('camera.setback',${diveSetback}+1.7+0.9*below);
             game.edit_control('camera.pitch',32*Math.min(1,below/4));
             const release=Math.min(1,below/1.5);
             game.edit_control('camera.surface_follow',1-release*release*(3-2*release));

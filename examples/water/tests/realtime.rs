@@ -151,6 +151,10 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         .ok()
         .and_then(|value| value.parse::<f64>().ok())
         .unwrap_or(90.0);
+    let dive_setback = std::env::var("THRUM_WATER_DIVE_SETBACK")
+        .ok()
+        .and_then(|value| value.parse::<f64>().ok())
+        .unwrap_or(0.0);
     let dive_fov = std::env::var("THRUM_WATER_DIVE_FOV")
         .ok()
         .and_then(|value| value.parse::<f64>().ok())
@@ -276,7 +280,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             dive_travel.is_some()
                 || (route == "under-light" && held_dive.is_some_and(|(depth, _)| depth == 0.0)),
         );
-        let setback = 1.7 * f64::from(follow);
+        let setback = dive_setback + 1.7 * f64::from(follow);
         runtime
             .parameters(&format!(
                 r#"{{"camera.depth":{depth},"camera.pitch":{pitch},"camera.bearing":{dive_bearing},"camera.fov":{dive_fov},"camera.surface_follow":{follow},"camera.setback":{setback},"sun.elevation":{dive_light}}}"#
@@ -556,7 +560,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
                 -crossing * (elapsed * std::f64::consts::TAU / interval).cos()
             };
             if dive_travel.is_some() {
-                let distance = 1.7 + 0.9 * (depth - crossing).max(0.0);
+                let distance = dive_setback + 1.7 + 0.9 * (depth - crossing).max(0.0);
                 let pitch = 32.0 * ((depth - crossing) / 4.0).clamp(0.0, 1.0);
                 let release = ((depth - crossing) / 1.5).clamp(0.0, 1.0);
                 let follow = 1.0 - release * release * (3.0 - 2.0 * release);
@@ -817,6 +821,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
                 || (route == "under-light" && held_dive.is_some_and(|(depth, _)| depth == 0.0))
         );
         record["bearing"] = json!(dive_bearing);
+        record["setback"] = json!(dive_setback);
         record["fov"] = json!(dive_fov);
         record
     });
