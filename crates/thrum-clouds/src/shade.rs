@@ -528,6 +528,9 @@ impl SceneContribution for Shade {
                 } else {
                     false
                 };
+                if surface_changed && let Some(sky) = &mut gpu.sky {
+                    sky.invalidate_ground();
+                }
                 ground.field.set_upper_heights(gpu.sun.frame_heights);
                 ground.field.upload(&gpu.queue, &state, travel);
                 ground

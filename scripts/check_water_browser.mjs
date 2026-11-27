@@ -68,11 +68,17 @@ const lensObserver = `
   watchLensPipeline(GPURenderPassEncoder.prototype,'water through lens','composition');
   watchLensPipeline(GPUComputePassEncoder.prototype,'water lens cut','cut');
 `;
-// Read only the published Ground inputs from the same ordinary scene submission.
+// Read the published Ground and sky lighting products from ordinary scene submissions.
 const cloudObserver = `
   let groundSurface;
+  const lighting = {};
   const createTexture=GPUDevice.prototype.createTexture;
   GPUDevice.prototype.createTexture=function(desc){
+    if(['sky overlay','atmosphere specular cube'].includes(desc.label)){
+      const texture=createTexture.call(this,{...desc,usage:desc.usage|GPUTextureUsage.COPY_SRC});
+      lighting[desc.label]=texture;
+      return texture;
+    }
     if(desc.label!=='cloud surface field')return createTexture.call(this,desc);
     groundSurface=createTexture.call(this,{...desc,usage:desc.usage|GPUTextureUsage.COPY_SRC});
     return groundSurface;
@@ -99,6 +105,31 @@ const cloudObserver = `
     const values=Array.from(new Float32Array(stage.getMappedRange(),0,12));
     stage.unmap();stage.destroy();
     return {surface:values.slice(0,3),lattice:values.slice(4,7),amount:values[9]};
+  };
+  globalThis.__readGroundLighting=async()=>{
+    const device=__devices.at(-1);
+    const hashes={};
+    for(const name of ['sky overlay','atmosphere specular cube']){
+      const texture=lighting[name];
+      const {width,height,depthOrArrayLayers}=texture;
+      const pitch=Math.ceil(width*8/256)*256;
+      const stage=device.createBuffer({size:pitch*height*depthOrArrayLayers,
+        usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+      const commands=device.createCommandEncoder();
+      commands.copyTextureToBuffer({texture},{buffer:stage,bytesPerRow:pitch,rowsPerImage:height},
+        [width,height,depthOrArrayLayers]);
+      device.queue.submit([commands.finish()]);
+      await stage.mapAsync(GPUMapMode.READ);
+      const bytes=new Uint8Array(width*8*height*depthOrArrayLayers);
+      const mapped=new Uint8Array(stage.getMappedRange());
+      for(let row=0;row<height*depthOrArrayLayers;row++){
+        bytes.set(mapped.subarray(row*pitch,row*pitch+width*8),row*width*8);
+      }
+      stage.unmap();stage.destroy();
+      const digest=await crypto.subtle.digest('SHA-256',bytes);
+      hashes[name]=Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('');
+    }
+    return hashes;
   };
 `;
 // Change only reflection mip zero immediately before the real water pass.
@@ -806,18 +837,41 @@ try {
     }
     if(cloudControls){
       const read=()=>evaluate('__readGround()');
+      const lighting=()=>evaluate('__readGroundLighting()');
+      const settle=async()=>{
+        for(let frame=0;frame<12;frame++){
+          await until(()=>evaluate('game.frame_ready()'),'held lake stage frame');
+          await drive(0);
+        }
+      };
       const stage=[];
+      await evaluate("game.edit_control('sun.elevation',1)");
       for(const level of [0,0.35,1,0]){
         await evaluate(`game.edit_control('lake.stage',${level})`);
+        await settle();
         const frame=await capture(`lake-stage-${stage.length}`,0);
         const ground=await read();
         assert(frame.tick===0, 'stage proof must hold the clock');
         assert(ground.lattice.join(',')==='-320,-225,2.5',JSON.stringify(ground));
         assert(Math.abs(ground.surface[0]-(12+level))<1e-5,JSON.stringify({level,ground}));
-        stage.push({level,ground,submission:frame.submission});
+        const hashes=await lighting();
+        // Force an independent refresh at the same Sun and weather tick.
+        await evaluate("game.edit_control('sun.elevation',2)");
+        await settle();
+        await evaluate("game.edit_control('sun.elevation',1)");
+        await settle();
+        const refreshed=await lighting();
+        assert(JSON.stringify(hashes)===JSON.stringify(refreshed),
+          JSON.stringify({level,hashes,refreshed}));
+        assert(frameInfo(await evaluate('game.frame_info()')).tick===0,'lighting comparison must hold the clock');
+        stage.push({level,ground,hashes,refreshed,submission:frame.submission});
       }
       assert(stage[2].ground.surface[2]>stage[0].ground.surface[2], 'raised lake should move the sampled shore');
       assert(JSON.stringify(stage[0].ground.surface)===JSON.stringify(stage[3].ground.surface), 'original lake stage should restore the same ground');
+      for(const name of Object.keys(stage[0].hashes)){
+        assert(stage[0].hashes[name]!==stage[2].hashes[name],name+' did not respond to the raised lake');
+        assert(stage[0].hashes[name]===stage[3].hashes[name],name+' did not return with the lake');
+      }
       const sun=[];
       for(const elevation of [-8,60]){
         const sunRoute=route+`&sun-proof=${elevation}`;

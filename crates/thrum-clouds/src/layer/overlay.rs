@@ -188,6 +188,12 @@ impl Overlay {
         }
     }
 
+    pub(super) fn invalidate_ground(&mut self) {
+        // The previous rows sample the old surface. Keep the invalidation
+        // until a complete replacement is submitted.
+        self.committed = None;
+    }
+
     pub(super) fn upload(
         &mut self,
         queue: &wgpu::Queue,
@@ -220,6 +226,7 @@ impl Overlay {
         // earlier Sun makes the diffuse light and haze meter lag behind the
         // current clear sky during a fast time-of-day edit.
         let full = reset
+            || self.committed.is_none()
             || (changed && frame.time.capture)
             || self.committed.is_some_and(|old| old.solar_step(input));
         let row = if full {

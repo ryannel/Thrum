@@ -513,6 +513,12 @@ impl Layer {
         Ok(())
     }
 
+    pub(crate) fn invalidate_ground(&mut self) {
+        if let Some(overlay) = &mut self.overlay {
+            overlay.invalidate_ground();
+        }
+    }
+
     pub(crate) fn encode_overlay(
         &self,
         pass: &mut wgpu::ComputePass<'_>,
