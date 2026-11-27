@@ -841,7 +841,7 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   active refresh when it exceeds its tolerance. A governed light edit with an allocated overlay also
   refreshes cloudy reflection levels when the overlay producer skips its write. The kept Sun tolerance
   is 0.2° away from the horizon and 0.009° at elevations −2.9° to +6°, with a taper to the widest value
-  at −4.2° and +10°. Altitude and light stay at 10 m and 1%. The Mac route covered 348 of 356 moving
+  at −4.2° and +10°. Altitude and light stay at 10 m and 1%. The Mac route covered 348 of 354 moving
   submissions with complete four-submission refreshes. The Mac window and Chrome captures passed their
   matched-pose inspections. The Chrome fast scrub matched its control's submitted RGBA on all 16
   scrub submissions. No protected reference changed.

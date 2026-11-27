@@ -398,7 +398,7 @@
         "implementation": "WP12 chooses a spread for the nine Sun-following chart stages from submitted changes in Sun direction, altitude and light. It retains a shared input snapshot for each refresh. Governed reflections track the encoding of each level, and the governed aerial path has a separate writer for its haze scale.",
         "correctness": "The Mac CPU schedule and Metal probes cover spread choice, motion cuts, recovery, per-level reflection handoffs, stationary cloud light edits, the aerial haze scale and creation-free tier changes.",
         "visuals": "Paired Mac window and Chrome WebGPU captures passed the clock, scrub, climb and hour-jump inspections. Chrome rendered all 16 fast-scrub frames byte-for-byte with the governor-off take, including the original twilight defect and the first frame after a motion cut.",
-        "device": "On Apple M3 Max, 550 submissions per arm gave chart GPU times p50/p95 of 1.122/1.781 ms with the governor off and 0.436/0.850 ms with the knob at 4. Complete four-submission refreshes covered 348 of 356 moving submissions.",
+        "device": "On Apple M3 Max, 550 submissions per arm gave chart GPU times p50/p95 of 1.111/1.523 ms with the governor off and 0.309/0.484 ms with the knob at 4. Complete four-submission refreshes covered 348 of 354 moving submissions.",
         "evidence": [
           "../../.orchestrate/evidence/ATMOSPHERE/WP12/adaptive-mac.md",
           "../../.orchestrate/evidence/ATMOSPHERE/WP12/adaptive-chrome.md"

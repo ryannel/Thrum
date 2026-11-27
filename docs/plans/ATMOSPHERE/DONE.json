@@ -764,7 +764,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP12/adaptive-route-cost/chart-cost.json",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP12/adaptive-held-route-cost/chart-cost.json",
           "verdict": "",
           "review": ""
         },
