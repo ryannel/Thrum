@@ -612,8 +612,8 @@
           "ask": "Is the read composed into the shader as the cloud factor is, with no change to the light, the shadows, the air or the cloud factor? Does a material hook run before the wetness, so that a hook's colours are wetted too?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP5/after-review/README.md#dry-provider",
           "verdict": "fail",
           "review": ".orchestrate/evidence/PUDDLES/WP5-review.md"
         },
@@ -623,8 +623,8 @@
           "check": "cargo test --locked --offline -p thrum-water --test wetness_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP5/after-review/README.md#model-agreement",
           "verdict": "fail",
           "review": ".orchestrate/evidence/PUDDLES/WP5-review.md"
         },
@@ -635,7 +635,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP5/README.md#wet-materials",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP5/after-review/README.md#wet-materials",
           "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP5-review.md"
         },
@@ -646,8 +646,8 @@
           "ask": "Is the film the pass `WATERS` built, given a second support, and not a second pass or a term in the ground's material?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP5/after-review/README.md#standing-film",
           "verdict": "fail",
           "review": ".orchestrate/evidence/PUDDLES/WP5-review.md"
         },
@@ -657,7 +657,7 @@
           "inspect": "`realtime` sequences of the yard from 1.7 m at three places through a shower from dry, with the rates the sequence names, one framed on the roof's edge; `fixed` stills at 0.5 m and 1.7 m, looking down and at a grazing view, dry, damp and with a full sheen, at noon and at a low Sun.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP5/README.md#shower",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP5/after-review/README.md#shower",
           "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP5-review.md"
         },
@@ -667,7 +667,7 @@
           "inspect": "`realtime` sequences from 1.7 m and from 15 m above while the yard dries from soaked to dry, with the rate the sequence names; `fixed` stills at four stages, cropped at native size on the joints and on a puddle's margin.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP5/README.md#drying",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP5/after-review/README.md#drying",
           "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP5-review.md"
         },
@@ -678,8 +678,8 @@
           "inspect": "`fixed` stills of the beach from 2 m in a calm, a trade wind and a gale, and a `realtime` sequence as the tide falls through its range.",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP5/after-review/README.md#shore",
           "verdict": "fail",
           "review": ".orchestrate/evidence/PUDDLES/WP5-review.md"
         },
@@ -690,7 +690,7 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP5/README.md#chrome",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP5/after-review/README.md#chrome",
           "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP5-review.md"
         },
@@ -700,8 +700,8 @@
           "check": "python3 scripts/water_cost.py check --scene rain-ground",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP5/after-review/README.md#paired-cost",
           "verdict": "fail",
           "review": ".orchestrate/evidence/PUDDLES/WP5-review.md"
         }

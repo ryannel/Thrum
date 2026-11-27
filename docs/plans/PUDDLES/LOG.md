@@ -307,3 +307,10 @@
   Metal verifies dry pixel identity, 4,096 wetness samples, materials and film depth. Chrome verifies the
   wetting and drying checkpoints with the film at its 16-texture limit. The 1440p Metal record was taken
   under shared load. [Target evidence and tuning values](../../../.orchestrate/evidence/PUDDLES/WP5/README.md)
+
+- 2026-11-27 WP5 review corrections. Metal verifies the exact dry camera matrix, the receding-hollow model
+  comparison, both optics profiles and mixed shore support. Dry and off-screen film leave the ordinary gather
+  region mask and dispatch intact. One relief texture supplies the paving mesh and mortar and the film's
+  coverage; the shifted joint is visible and read back on Chrome. The shallow basin grade preserves a gradual
+  retreat with the model's exact damp band. The cost record accounts for each pass crossing the tripwire.
+  [Review correction evidence](../../../.orchestrate/evidence/PUDDLES/WP5/after-review/README.md)
