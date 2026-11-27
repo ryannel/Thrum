@@ -57,7 +57,7 @@ fn camera(site: DiveSite, [x, level, z]: [f32; 3], depth: f32, pitch: f32) -> Ca
     let (rise, forward) = pitch.to_radians().sin_cos();
     // The overhead lake inspection includes the shallow air rays that meet
     // the distant bank so the opaque pass can supply their scenery.
-    let vertical = if site == DiveSite::HighLake && pitch > 45.0 {
+    let vertical = if matches!(site, DiveSite::Lake | DiveSite::HighLake) && pitch > 45.0 {
         105.0 + (154.0 - 105.0) * ((pitch - 45.0) / 44.99).min(1.0)
     } else {
         105.0
