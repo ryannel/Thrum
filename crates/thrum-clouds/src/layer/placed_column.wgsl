@@ -1,6 +1,3 @@
-fn cloud_placed(point: vec3<f32>, footprint: f32) -> vec4<f32> {
-    let medium = placed_sample(point - vec3(cloud.weather[0].x, 0.0, cloud.weather[0].y),
-        footprint, cloud_placed_edge_footprint());
     let sample = medium.column;
     if sample.x <= 0.0 {
         return vec4(0.0);

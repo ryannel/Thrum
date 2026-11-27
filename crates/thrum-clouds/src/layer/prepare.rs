@@ -1,3 +1,5 @@
+use std::fmt::Write as _;
+
 use super::{
     AfterOpaqueKind, COMPOSE, Error, FIELD, Layer, SceneSurface, SkyProfile, TRACE, Uniform,
     WeatherMap, declaration,
@@ -398,28 +400,36 @@ pub(crate) fn placed_source(group: u32, shapes: bool, detailed: bool, coarse: bo
     } else {
         String::new()
     };
-    let column = include_str!("placed_column.wgsl");
-    if detailed {
-        source.push_str(if shapes {
-            "fn cloud_placed_edge_footprint() -> f32 { return 60.0 * cloud.physical.y; }"
-        } else {
-            "fn cloud_placed(point: vec3<f32>, footprint: f32) -> vec4<f32> { return vec4(0.0); }"
-        });
+    let variants = [
+        (
+            detailed,
+            "cloud_placed",
+            "60.0 * cloud.physical.y",
+            include_str!("placed.wgsl"),
+        ),
+        (
+            coarse,
+            "cloud_coarse_placed",
+            "0.0",
+            include_str!("placed_coarse.wgsl"),
+        ),
+    ];
+    for (_, name, edge, erosion) in variants.into_iter().filter(|variant| variant.0) {
+        writeln!(
+            source,
+            "\nfn {name}(point: vec3<f32>, footprint: f32) -> vec4<f32> {{"
+        )
+        .expect("shader function header");
         if shapes {
-            source.push_str(column);
-            source.push_str(include_str!("placed.wgsl"));
-        }
-    }
-    if coarse {
-        if shapes {
-            source.push_str(
-                &column
-                    .replace("cloud_placed(", "cloud_coarse_placed(")
-                    .replace("cloud_placed_edge_footprint()", "0.0"),
-            );
-            source.push_str(include_str!("placed_coarse.wgsl"));
+            writeln!(
+                source,
+                "    let medium = placed_sample(point - vec3(cloud.weather[0].x, 0.0, cloud.weather[0].y), footprint, {edge});"
+            )
+            .expect("placed-volume sample");
+            source.push_str(include_str!("placed_column.wgsl"));
+            source.push_str(erosion);
         } else {
-            source.push_str("fn cloud_coarse_placed(point: vec3<f32>, footprint: f32) -> vec4<f32> { return vec4(0.0); }");
+            source.push_str("    return vec4(0.0);\n}\n");
         }
     }
     source
