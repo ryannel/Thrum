@@ -34,8 +34,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - APPLE-PRESENTATION assumes: WP12 also pins wgpu-core 30.0.1, changed only so that a pipeline cache's header can be written and ([plan](APPLE-PRESENTATION/PLAN.md))
 - APPLE-PRESENTATION assumes: WP16 keeps the device safe for timestamp query sets created at the engine's one call site. Code ([plan](APPLE-PRESENTATION/PLAN.md))
 - APPLE-PRESENTATION assumes: a viewer cannot see a brightness difference under 1% of a frame's mean luminance, so D8.3 allows ([plan](APPLE-PRESENTATION/PLAN.md))
-- APPLE-PRESENTATION assumes: "later" for offering the cache upstream means after WP11, not after the V1 exit. So ([plan](APPLE-PRESENTATION/PLAN.md))
-- APPLE-PRESENTATION assumes: agents draft no text for the owner to post upstream, not even a comment to rewrite. The upstream ([plan](APPLE-PRESENTATION/PLAN.md))
 - APPLE-PRESENTATION assumes: until WP17 shows 120 Hz held, a full-screen window asks for 60 Hz by itself and a smaller window ([plan](APPLE-PRESENTATION/PLAN.md))
 - APPLE-PRESENTATION assumes: the owner's "120 upscale for full screen" covers an output scale down to 67% of the panel's size ([plan](APPLE-PRESENTATION/PLAN.md))
 - APPLE-PRESENTATION assumes: the output scale is promoted only if it holds 120 Hz on the populated exit flythrough as well as ([plan](APPLE-PRESENTATION/PLAN.md))
@@ -371,7 +369,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- A launch setting draws the valley below the window's pixel size and the display scales it to fill, with no hitch at the change (APPLE-PRESENTATION WP18): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
+- APPLE-PRESENTATION's design: Design Ready for Review · [design](APPLE-PRESENTATION/DESIGN.md) · [plan](APPLE-PRESENTATION/PLAN.md)
 - ATMOSPHERE's design: Design Changes Requested · [design](ATMOSPHERE/DESIGN.md) · [plan](ATMOSPHERE/PLAN.md)
 - SHOWCASE's design: Design Ready for Review · [design](SHOWCASE/DESIGN.md) · [plan](SHOWCASE/PLAN.md)
 - The camera goes under water: the waterline crosses the lens, and the surface overhead shows the sky through a bright window (WATERS WP15): Ready for Review · [plan](WATERS/PLAN.md) · [latest review](../../.orchestrate/evidence/WATERS/WP15-review.md)
@@ -517,7 +515,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS WP7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE WP0 and WP1, PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 | Done 25 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE WP3 | Done 24 Nov |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13; ATMOSPHERE WP12 and SHOWCASE WP7 for its WP17 | WP18 of 21 · Not Started |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13; ATMOSPHERE WP12 and SHOWCASE WP7 for its WP17 | Design Ready for Review |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6; APPLE-PRESENTATION WP7 for its WP12 | Design Changes Requested |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 25 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 | Done 17 Nov |
