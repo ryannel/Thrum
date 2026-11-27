@@ -355,6 +355,14 @@ fn dive_camera_game(
         )
         .default(0.0)
         .add()?;
+    let lateral = controls
+        .slider(
+            "camera.lateral",
+            "Distance right of dive station (m)",
+            -12.0..=12.0,
+        )
+        .default(0.0)
+        .add()?;
     let surface_follow = controls
         .slider("camera.surface_follow", "Follow local surface", 0.0..=1.0)
         .default(0.0)
@@ -371,9 +379,14 @@ fn dive_camera_game(
         let heading = controls.get(bearing);
         let (east, south) = heading.to_radians().sin_cos();
         let distance = controls.get(setback);
+        let slide = controls.get(lateral);
         let [x, y, z] = eye_at_surface;
         sky.camera = camera(
-            [x - east * distance, y, z + south * distance],
+            [
+                x - east * distance + south * slide,
+                y,
+                z + south * distance + east * slide,
+            ],
             controls.get(depth),
             controls.get(pitch),
             heading,

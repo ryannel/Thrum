@@ -165,6 +165,10 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         .ok()
         .and_then(|value| value.parse::<f64>().ok())
         .unwrap_or(0.0);
+    let dive_lateral = std::env::var("THRUM_WATER_DIVE_LATERAL")
+        .ok()
+        .and_then(|value| value.parse::<f64>().ok())
+        .unwrap_or(0.0);
     let dive_fov = std::env::var("THRUM_WATER_DIVE_FOV")
         .ok()
         .and_then(|value| value.parse::<f64>().ok())
@@ -293,7 +297,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         let setback = dive_setback + 1.7 * f64::from(follow);
         runtime
             .parameters(&format!(
-                r#"{{"camera.depth":{depth},"camera.pitch":{pitch},"camera.bearing":{dive_bearing},"camera.fov":{dive_fov},"camera.surface_follow":{follow},"camera.setback":{setback},"sun.elevation":{dive_light}}}"#
+                r#"{{"camera.depth":{depth},"camera.pitch":{pitch},"camera.bearing":{dive_bearing},"camera.fov":{dive_fov},"camera.surface_follow":{follow},"camera.setback":{setback},"camera.lateral":{dive_lateral},"sun.elevation":{dive_light}}}"#
             ))
             .expect("initial dive view");
     }
@@ -865,6 +869,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         );
         record["bearing"] = json!(dive_bearing);
         record["setback"] = json!(dive_setback);
+        record["lateral"] = json!(dive_lateral);
         if caustic_window {
             record["maximum_setback"] = json!(dive_setback + CAUSTIC_WINDOW_CAMERA_TRAVEL);
         }

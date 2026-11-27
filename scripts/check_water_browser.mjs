@@ -1713,14 +1713,16 @@ try {
       const views=shallow?[['through-shallows',-2,-73,90]]:[
         ['bed-0.5m',0.5,-45,90],['bed-3m',3,-45,90],['level-0.5m',0.5,0,90],['level-1m',1,0,90],['level-3m',3,0,90],
         ['shaft-1m',1,67,228],['away-1m',1,22,228],['sunk-float',0.5,-20,349],
+        ['keel-side',0.82,49,200],
         ['shaft-3m',3,67,228],['away-3m',3,22,228],
         ...(openSea?[['shaft-10m',10,67,228],['away-10m',10,22,228],['level-10m',10,0,90]]:[]),
         ...(site==='deep-sea'?[['bed-20m',20,-35,90],['level-20m',20,0,90]]:[]),
       ];
       checkpoints=views.map(([name,depth,pitch,bearing])=>[name,{
         'camera.depth':depth,'camera.pitch':pitch,'camera.bearing':bearing,
-        'camera.setback':name==='sunk-float'?5.7:0,
-        'camera.fov':/^(shaft|away)-/.test(name)?55:name==='sunk-float'?60:105,'sun.elevation':60,
+        'camera.setback':name==='sunk-float'?5.7:name==='keel-side'?1.55:0,
+        'camera.lateral':name==='keel-side'?-2.2:0,
+        'camera.fov':/^(shaft|away)-/.test(name)?55:name==='sunk-float'?60:name==='keel-side'?85:105,'sun.elevation':60,
       }]);
     }else if(routeParams.has('dive')){
       checkpoints=[
@@ -1799,6 +1801,7 @@ try {
     const causticWindow=dive&&process.env.THRUM_WATER_ROUTE==='caustic-window';
     const diveBearing=Number(process.env.THRUM_WATER_DIVE_BEARING??90);
     const diveSetback=Number(process.env.THRUM_WATER_DIVE_SETBACK??0);
+    const diveLateral=Number(process.env.THRUM_WATER_DIVE_LATERAL??0);
     const diveSun=Number(process.env.THRUM_WATER_DIVE_SUN??60);
     const diveFov=Number(process.env.THRUM_WATER_DIVE_FOV??105);
     const diveTravel=Number(process.env.THRUM_WATER_DIVE_TRAVEL??diveDepth);
@@ -1817,8 +1820,9 @@ try {
       const surfaceFollow=depthTour||(process.env.THRUM_WATER_ROUTE==='under-light'&&diveView?.[0]===0);
       result.dive_camera.surface_follow=surfaceFollow;
       result.dive_camera.setback=diveSetback;
+      result.dive_camera.lateral=diveLateral;
       if(causticWindow)result.dive_camera.maximum_setback=diveSetback+10;
-      await evaluate(`game.edit_control('camera.surface_follow',${Number(surfaceFollow)});game.edit_control('camera.setback',${diveSetback+(surfaceFollow?1.7:0)});game.edit_control('camera.pitch',${pitch});game.edit_control('camera.depth',${depth});
+      await evaluate(`game.edit_control('camera.surface_follow',${Number(surfaceFollow)});game.edit_control('camera.setback',${diveSetback+(surfaceFollow?1.7:0)});game.edit_control('camera.lateral',${diveLateral});game.edit_control('camera.pitch',${pitch});game.edit_control('camera.depth',${depth});
         game.edit_control('camera.bearing',${diveBearing});game.edit_control('camera.fov',${diveFov});game.edit_control('sun.elevation',${diveSun})`);
       await until(async()=>{
         if(!await evaluate('game.frame_ready()'))return false;
