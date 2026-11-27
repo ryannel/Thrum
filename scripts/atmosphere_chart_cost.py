@@ -21,6 +21,7 @@ STAGES = (
     *(f"atmosphere reflection mip {i}" for i in range(7)),
 )
 WHOLE = {"initialization", "camera cut", "air change", "Sun jump", "recovery", "motion cut"}
+TAKE_TIMEOUT = 130
 
 
 def jsonl(path):
@@ -154,9 +155,9 @@ def run_take(output, binary, store, route, cadence):
         env["THRUM_MAC_CHART_CADENCE"] = "4"
     load = LoadRecord(directory)
     try:
-        with awake_display(), (directory / "game.log").open("w") as log:
+        with (directory / "game.log").open("w") as log:
             subprocess.run([binary], cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT,
-                           check=True, timeout=130)
+                           check=True, timeout=TAKE_TIMEOUT)
     finally:
         (directory / "host-load.json").write_text(json.dumps(load.finish(), indent=2) + "\n")
     prepared = json.loads((directory / "prepared.json").read_text())
@@ -191,10 +192,14 @@ def measure(output=None):
     route["overlay"] = "off"
     path = output / "route.json"
     path.write_text(json.dumps(route) + "\n")
+    # The display can turn off after the default five-second user-activity
+    # assertion expires, even while the idle-sleep assertion is held.
+    with awake_display(activity_timeout=2 * TAKE_TIMEOUT + 15):
+        takes = {cadence: run_take(output, binary, store, path, cadence) for cadence in (1, 4)}
     result = {
         "revision": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
         "host": platform.platform(), "cooked_root": route["cooked_root"], "chart_stages": STAGES,
-        "takes": {cadence: run_take(output, binary, store, path, cadence) for cadence in (1, 4)},
+        "takes": takes,
     }
     if result["takes"][4]["p50_ns"] >= result["takes"][1]["p50_ns"]:
         result["tripwire"] = "Governed median did not fall. Check the raw pass and load traces."

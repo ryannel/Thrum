@@ -49,7 +49,7 @@ def sample_changes(samples):
 
 
 @contextmanager
-def awake_display():
+def awake_display(*, activity_timeout=None):
     # The user-activity assertion can take effect after the first console read.
     # Finish waking before starting the timed display hold.
     if display_locked():
@@ -60,8 +60,10 @@ def awake_display():
             sleep(3)
             subprocess.run(wake, check=True, timeout=6)
             require_unlocked_display()
-    keep_awake = subprocess.Popen(
-        ["/usr/bin/caffeinate", "-d", "-i", "-u", "-w", str(os.getpid())])
+    hold = ["/usr/bin/caffeinate", "-d", "-i", "-u", "-w", str(os.getpid())]
+    if activity_timeout is not None:
+        hold.extend(("-t", str(activity_timeout)))
+    keep_awake = subprocess.Popen(hold)
     try:
         yield
     finally:

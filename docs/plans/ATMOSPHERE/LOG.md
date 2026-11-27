@@ -851,3 +851,7 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   the subsequent fade through the resumed spread-8 refreshes. The 120 Hz Mac inspection also passed.
   [Metal review proofs](../../../.orchestrate/evidence/ATMOSPHERE/WP12/review-metal.md) ·
   [Chrome review proofs](../../../.orchestrate/evidence/ATMOSPHERE/WP12/review-chrome/README.md)
+- 2026-11-27 WP12.3 holds Mac display and user-activity assertions through the paired Metal route.
+  The merged check lost display callbacks when macOS turned off the display during the cadence-4 take.
+  A retry confirmed that display sleep could interrupt a take after the default five-second user-activity assertion
+  expired, even with the idle-sleep assertion held. [Route proof](../../../.orchestrate/evidence/ATMOSPHERE/WP12/review-route/README.md)
