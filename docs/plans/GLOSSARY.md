@@ -320,3 +320,14 @@ governor's and sets how many pixels are drawn inside the output extent before re
   resolution and render resolution.
 
 Proposed: the planner chose the name.
+
+### Cast width
+
+How wide a thing is for casting a shadow: the diameter of the largest ball that fits inside its mesh, scaled
+with the instance. It is the width of the thing's thickest part, such as a cactus's trunk, and not the span of
+its bounds. The Sun's shadow maps leave a caster out of a cascade whose texels are too coarse for its cast
+width. Defined in [ATMOSPHERE](ATMOSPHERE/DESIGN.md#the-suns-cascades-round-the-camera-wp13).
+
+- **Source** — close to the field's inscribed-sphere diameter and local thickness.
+
+Proposed: the planner chose the name.

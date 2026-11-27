@@ -11,9 +11,10 @@
 - Assumption: WP12.3 counts the saving as kept when four-frame refreshes cover at least three quarters of the frames of the Mac route's moving segment. The planner chose the fraction. The first build's fixed spread covered about 94%.
 - Assumption: with the governor off, a cloud's reflection under a cloud producer that has stopped writing keeps the old sunlight after a change of the Sun's brightness or colour, until the producer next writes. That is today's behaviour, kept so that no governor-off picture changes. Under the governor it is corrected.
 - Assumption: WP12 judges the knob at 4 in the Mac window and at 8 in Chrome, the longest spread at the slower display. Chrome at 4 is not captured.
-- Assumption: under WP13 a small thing stops casting a shadow at a distance set by its size, where the shadow would be under about a texel and a half, and every Sun shadow fades out by 2,048 m into the caster height map's ground shadows. The other choice is every prop casting to the horizon, which costs more maps or a different technique.
+- Assumption: under WP13 a small thing stops casting a shadow at a distance set by the width of its thickest part, such as a cactus's trunk, where that part would be under about a texel and a half, and every Sun shadow fades out by 2,048 m from the camera, the same in every direction, into the caster height map's ground shadows. The other choice is every prop casting to the horizon, which costs more maps or a different technique.
+- Assumption: WP13 leaves two faint things out: the soft tip of a small prop's long shadow at a low Sun is trimmed, and a flat sheet the Sun grazes edge-on may shimmer. The showcase has no sheet that casts.
 - Assumption: WP13 starts from nine 2048² cascades, about 150 MB of depth against 12 MB today. These are the planner's starting values, and the builder tunes count, size and reach by eye against WP13.4 to WP13.6 and by the cost record.
-- Assumption: "mind the cost" is a paired cost record on the Mac with named ways to cut it (WP13.8), not a budget. The record feeds `APPLE-PRESENTATION` WP17, which owns 120 Hz full screen.
+- Assumption: "mind the cost" is a paired cost record with named ways to cut it (WP13.8), not a budget. Its Apple row is full screen at the 67% output scale. `APPLE-PRESENTATION` WP17 owns 120 Hz at full screen and does not wait for WP13. If its closing sitting predates WP13 and the record shows the full-screen frame slower, WP13's builder asks the lead for the sitting again. The other choice makes WP17 wait for WP13, in `APPLE-PRESENTATION`'s plan.
 - Assumption: WP13 is not behind a selection and has no governor knob. A cascade redrawn every few frames was rejected: on the game's clock a balloon's shadow crosses the ground at about 20 m/s, so a held map would judder.
 - Assumption: "the default path" means the showcase. The valley and the exit scene show screen-space ambient occlusion in every launch, on both of the Mac's recipes and in Chrome, and an engine scene that does not ask gets none, so no other module's tests move. The other choice turns it on for every 3D scene. The starter scene and the SDK's 3D scenes are left to `CREATOR` and `GAME-SDK`.
 - Assumption: the darkening is one frame late, as ray-traced occlusion already is, and follows a thing that arrives or leaves within a few frames. The other choice is a depth prepass, a second draw of the scene every frame.
@@ -34,37 +35,32 @@
 
 ## WP8 A test bank of fog stands in the valley: the land fades into it, sunlight dims inside it, and the camera walks in and out of it, on the Mac and in Chrome
 
-Use the [WP7 probe](../../../.orchestrate/evidence/ATMOSPHERE/WP7-review-2.md#suggestion--verified-scheduled-for-m82) as the starting case for WP8.2.
-
 ## WP3 A renderer developer can reproduce the shadow sampling failure and assess one filter offline
 
-<a id="m3-sunset-crossing"></a>Start with the [reduced stock reproduction](DESIGN.md#which-inputs-survive).
-The [fixed authored-spur screen](DESIGN.md#fixed-witness-and-motion) defines the evidence for a later in-game verdict.
-
 ## WP4 A renderer developer can locate finite-disk shadow errors on reproducible terrain and caster cases
-
-Run the [bounded CPU trial](DESIGN.md#wp4-finite-disk-shadow-diagnostic) on the reconstructed cases.
 
 ## WP12 The sky's charts are rebuilt over several frames under the governor, so they cost each frame a fraction of what they did and nothing in the sky is seen to update
 
 ## WP13 Sun shadows hold still as the Sun moves, start at the foot of what casts them, and thin out with distance with no line where they stop, on the Mac and in Chrome
 
 Read [the Sun's cascades round the camera](DESIGN.md#the-suns-cascades-round-the-camera-wp13) first, then the
-module list's [seam ruling](../ARCHITECTURE.md#seam-ruling-for-atmosphere-wp13) for the files of other modules
-this work package builds in, and its [baseline ruling](../ARCHITECTURE.md#ruling-on-atmosphere-wp13) for the
-references it refreshes in its own landing. Leave `SHOWCASE`'s two thresholded baselines as they are.
+module list's [seam ruling](../ARCHITECTURE.md#seam-ruling-for-atmosphere-wp13) for other modules' files and
+its [baseline ruling](../ARCHITECTURE.md#ruling-on-atmosphere-wp13) for the references this landing refreshes. Leave `SHOWCASE`'s two thresholded baselines as they are.
 
 Start from [the diagnosis](../../../.orchestrate/evidence/ATMOSPHERE/WP13-diagnosis/README.md): its frames
 are the "before" of each inspection, its capture line reproduces them, and its `routes/` are the ones the
 items name. Leave those as they are and keep any changed copy in WP13's own evidence folder. A route's
 `render_extent` must equal the take's game grid, 1280 × 720 as written, so a row that draws another grid
 needs a copy with only that field changed.
-The Chrome takes of WP13.7 use `scripts/capture_v1_browser.mjs --route-file` and the Chrome arm of
-`scripts/run_v1_showcase.py moving`.
+WP13.7's Chrome takes come from `scripts/capture_v1_browser.mjs --route-file`. The Chrome arm of
+`scripts/run_v1_showcase.py moving` keeps images at its five checkpoint holds alone.
 
 The checks of WP13.1 and WP13.2 select tests by name: `sun_cascade_layout` for the CPU rules and
 `sun_cascades_gpu` for the Metal tests. `WATERS` WP16 builds in the same Sun files, so whichever lands
 second carries the other's change. The cost record goes to `.orchestrate/evidence/ATMOSPHERE/WP13/cost.md`.
+Its full-screen takes force the 67% output scale and 120 Hz by launch setting while the registry holds another
+value. Hold the display awake for those takes alone. It ends with
+[the hand-off to WP17](DESIGN.md#wp13-hand-off-to-wp17).
 
 ## WP14 Things standing in shade look grounded: a soft darkening where they meet the ground, steady while flying, on the Mac and in Chrome
 

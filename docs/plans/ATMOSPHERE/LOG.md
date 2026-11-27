@@ -892,3 +892,38 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   [what changed in each file, and what is left for the lead](../../../.orchestrate/evidence/ATMOSPHERE/WP14-plan/README.md)
 - 2026-11-27 WP12 is Done, so its builder's note left the plan file.
   [The note](../../../.orchestrate/evidence/ATMOSPHERE/WP12/builder-note.md)
+- 2026-11-28 Design review 1 of WP13 asked for changes, with seven Must Fix findings. The design, WP13.1 to
+  WP13.4 and WP13.6 to WP13.8 changed; WP13.5 and WP13.9 to WP13.11 stand.
+  [Review](../../../.orchestrate/evidence/ATMOSPHERE/design-review.md)
+- 2026-11-28 Finding 1, a thin caster passes the size rule by its bounds. The size rule now measures a
+  caster's cast width, the largest ball inside its mesh, fixed for each mesh and never under √2 texels; the
+  design shows why a caster a cascade holds always draws into it. WP13.1 gained the measure, the review's
+  cactus case and a coverage test, and WP13.2 a thin-part case and a steady case.
+- 2026-11-28 Finding 2, two meanings of reach. A receiver's cascade, blend and fade now follow its distance
+  from the eye of the view being drawn and nothing else; a cascade's square is only what its map covers.
+  Settled for surfaces, the view volume and the lent Sun lookup. WP13.2 tests a 5° Sun with a receiver 500 m
+  out inside a 128 m cascade's square, and blends where the two sides give different answers.
+- 2026-11-28 Finding 3, a far blocker outside the fine cascade. The read has two parts split by the blocker's
+  distance along the ray: near blockers in the receiver's own cascade, far ones found by a second search in
+  the cascade that spans the widest penumbra and filtered where their penumbra is a few texels. WP13.2 tests
+  a wide box 260 m up beside a thin post, and WP13.4 judges a balloon's shadow beside a rock.
+- 2026-11-28 Finding 4, the motion lists failed credible shadows. WP13.4, WP13.6 and WP13.7 judge crawl,
+  drop-out, jumps in sharpness and detached contact at playback size, allow continuous change, and claim
+  that shadows stay put only of still casters.
+- 2026-11-28 Finding 5, the Chrome cube take. WP13.7 takes `cubes.json` and `balloons.json` with the T2
+  capture of submitted images, the files the Mac takes, and pairs frames by recorded eye, heading and solar
+  hour.
+- 2026-11-28 Finding 6, the cost record. WP13.8's Apple row is full screen at the 67% output scale with the
+  governor's render scale recorded, the Sun's caster cull is timed and summed, and the record ends with a
+  hand-off that says when `APPLE-PRESENTATION` WP17's sitting is to be taken again. Making WP17 wait for
+  WP13 is `APPLE-PRESENTATION`'s plan to change and is left for the lead.
+- 2026-11-28 Finding 7, the half-disc test. WP13.3 names it a check of the offline reference, lists nine
+  rendered behaviours each guarded by a test of production code, and holds the shader to no fraction of the
+  reference's.
+- 2026-11-28 Suggestions. Taken: the design names the one fixed ratio and what the builder tunes. Not taken:
+  who refreshes `SHOWCASE`'s two thresholded baselines if its WP8 closes first, which is `SHOWCASE`'s plan.
+- 2026-11-28 The plan file lost the builder notes of WP3, WP4 and WP8, which are Done: WP3 started from the
+  [reduced stock reproduction](DESIGN.md#which-inputs-survive) with the
+  [fixed authored-spur screen](DESIGN.md#fixed-witness-and-motion) as the evidence for a later in-game verdict,
+  WP4 ran the [bounded CPU trial](DESIGN.md#wp4-finite-disk-shadow-diagnostic), and WP8.2 started from the
+  [WP7 probe](../../../.orchestrate/evidence/ATMOSPHERE/WP7-review-2.md#suggestion--verified-scheduled-for-m82).

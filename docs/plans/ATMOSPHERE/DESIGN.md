@@ -1826,8 +1826,10 @@ round the camera. [The caster height map](#what-the-caster-height-map-holds) and
 
 ### Cues
 
-- **Shadows hold still.** With the game's clock running, an edge slides across the ground as the Sun moves and
-  never steps, crawls or changes outline from one frame to the next, with the camera still, flying or turning.
+- **Shadows are steady.** With the game's clock running, an edge slides across the ground as the Sun moves and
+  bends over what it falls on. It never steps, crawls, flickers or drops out and comes back, with the camera
+  still, flying or turning. A shadow may change continuously: with the Sun, with a caster that moves, with what
+  it crosses, and by fading with distance.
 - **Shadows meet what casts them.** A cube, a rock or a balloon's basket standing on sunlit ground has its shadow
   start at its base, at every hour the Sun is up.
 - **No line where shadows end.** Looking across the valley, shadows thin out with distance by the size of what
@@ -1883,56 +1885,104 @@ them (`synthetic.wgsl`). With the showcase camera (46° tall, near plane 0.1 m) 
 ### Mechanism
 
 **The Sun cascades become a nested set of square maps centred on the camera.** Each has the same number of
-texels and covers twice the ground of the one inside it. The planner's starting set is nine cascades of 2048²,
-with half-widths from 8 m to 2,048 m and so texels from 0.8 cm to 2 m. The builder tunes the count, the size and
-the step between cascades by eye against WP13's lists and by the cost record; what binds is the five rules
-below.
+texels and serves twice the distance of the one inside it. The planner's starting set is nine cascades of 2048²,
+with radii from 8 m to 2,048 m and so texels from about 0.8 cm to 2 m. What binds is the six rules below.
 
-1. **Layout.** A cascade is a square in the Sun's frame, centred on the camera's position and laid out in whole
-   texels of its own, as each map is today, so camera travel moves it a texel at a time. Its place depends on the
-   camera's position, the Sun's direction and the casters' depth range, and on nothing else: turning the camera
-   or changing its field of view changes no cascade. Every cascade keeps every caster up-Sun of its square in
-   its depth range, so a far blocker is in each cascade that holds its receiver. The near map's partition, its
-   bounded blocker range and the last cascade's padding for the Sun's cone go.
-2. **Which cascade a receiver reads.** The finest cascade that holds the receiver and its whole filter
-   footprint. Across the outer quarter of each cascade (a starting value) the answer blends into the next
-   cascade's, so no line marks where one ends.
-3. **The filter's width is bounded in texels, both ways.** Every read is at least about two and a half texels
-   wide (a starting value), so an edge is a ramp and never the texel staircase. The penumbra from the blocker's
-   distance widens it, as now. A penumbra wider than the taps can cover in the cascade chosen is read in the
-   coarser cascade where it is a few texels wide. Shadows still sharpen toward contact and soften with the
-   blocker's distance.
-4. **Bias is counted in texels of the cascade read.** Every term of the receiver's offset scales with that
+Three words are used throughout. A receiver's **distance** is the straight-line distance from the eye of the
+view being drawn to the receiver: the main camera's position, or a secondary view's own. A cascade's **radius**
+is the largest distance it serves. A caster's [**cast width**](../GLOSSARY.md#cast-width) is the diameter of
+the largest ball that fits inside its mesh, times the instance's smallest axis scale.
+
+1. **Layout.** A cascade is a square in the Sun's frame, centred on the eye and laid out in whole texels of its
+   own, as each map is today, so camera travel moves it a texel at a time. Its half-width is its radius plus a
+   guard band, the same number of texels in every cascade (16 to start). A ball of a cascade's radius round the
+   eye is a disc of that radius in the Sun's frame at any Sun elevation, so the square holds every receiver the
+   cascade serves, with the guard band to spare for the search and the filter. A cascade's place depends on the
+   eye's position, the Sun's direction and the casters' depth range, and on nothing else: turning the camera or
+   changing its field of view changes no cascade. Every cascade keeps every caster up-Sun of its square in its
+   depth range. The near map's partition, its bounded blocker range and the last cascade's padding for the
+   Sun's cone go.
+2. **Which cascade a receiver reads is decided by its distance, and by nothing else.** It reads the finest
+   cascade whose radius is at least its distance. Across the outer quarter of each radius (a starting value) the
+   answer blends into the next cascade's, so no line marks where one ends. Whether a point falls inside a
+   cascade's square does not choose it. The square is only what the map covers, and at a low Sun it covers
+   ground far past the radius along the Sun's bearing: at 5° a point 500 m out lies 44 m from the centre of the
+   Sun's frame. Surfaces, the view volume's samples and the lent Sun lookup all take the cascade, the blend and
+   the fade below from this one function of distance. Because the choice ignores where the camera looks, turning
+   the camera changes no receiver's answer.
+3. **A blocker is found and filtered at the scale of its penumbra.** The Sun's disc gives a blocker a penumbra
+   whose radius on the receiver is the blocker's distance along the ray times 0.00465 (`SUN_ANGULAR_RADIUS`). A
+   cascade can find a blocker only within its search, a few taps over at most eight texels (a starting value),
+   and that is all its guard band holds. So the read has two parts, split at the distance along the ray where
+   the penumbra's radius is eight texels of the receiver's cascade, about 14 m in the finest:
+   - **Near blockers**, inside that distance, are found and filtered in the receiver's own cascade. Contact
+     shadows, and the shadows of props the size rule keeps out of coarse cascades, come from here.
+   - **Far blockers**, beyond it, cast a penumbra wider than the receiver's cascade can search, and their
+     outline can lie wholly outside its square: a balloon 260 m up at a 10° Sun is 1,500 m along the ray and
+     shades ground 7 m to the side of its outline. They are found by a second search, in the finest cascade
+     whose eight texels span the widest penumbra any caster can throw on that receiver, which the casters'
+     depth range gives. The first search also reports a far blocker that stands directly over the receiver.
+     The nearest far blocker found sets the cascade the far part is filtered in: the one where its penumbra is
+     four to eight texels in radius. That part counts far blockers only, so no blocker is counted twice.
+   - The receiver's answer is the darker of the two parts. Where the receiver's own cascade already spans the
+     widest penumbra, there is one part and one read.
+
+   So a soft balloon shadow and a rock's sharp contact shadow are both present on the same ground, each read
+   at its own scale. Shadows still sharpen toward contact and soften with the blocker's distance. A caster the
+   size rule keeps out of the second search's cascade is found as a far blocker only where it stands over the
+   receiver, so the outermost part of a small caster's wide penumbra is trimmed. That is the faint tip of a long
+   thin shadow at a low Sun, and it is [not built](#not-built-by-wp13).
+4. **The filter is never narrower than about two and a half texels** (a starting value), in either part, so an
+   edge is a ramp and never the texel staircase.
+5. **Bias is counted in texels of the cascade read.** Every term of the receiver's offset scales with that
    cascade's texel, and none is a fixed length in metres. Near the camera the lit strip at a base shrinks from
    centimetres to millimetres with the texel.
-5. **A cascade holds only casters it can hold steady.** A caster whose bounds are narrower than about one and a
-   half texels of a cascade (a starting value) is left out of that cascade and of every coarser one. Its shadow
-   then ends across the blend band of the last cascade that holds it. Terrain and a contribution's casters,
-   which give no bounds for each caster, are in every cascade. An aloft row is held to the same rule and is
-   still never in the caster height map.
+6. **A cascade holds only casters it can hold steady, by their cast width.** A caster whose cast width is under
+   about one and a half texels of a cascade (a starting value, never under √2) is left out of that cascade and
+   of every coarser one. The measure is the caster's thickest part and not its bounds: a cactus's bounds are
+   its arms' span, but its shadow is as wide as its trunk. A disc at least √2 texels across covers a texel's
+   centre wherever the grid lies, and a ball inside the mesh shows as a disc of its diameter from every Sun
+   direction, so a caster a cascade holds always draws into it. The cast width is measured once from a mesh's
+   triangles, when the mesh is cooked or registered, and does not change with the Sun, so no caster enters or
+   leaves a cascade as the Sun turns. An estimate may fall short of the true ball, which only shortens a
+   shadow, and never exceeds it. A sheet, which has no inside, takes the largest disc that fits on it. The
+   shadow of a caster ends across the blend band of the last cascade that holds it: there it is still at
+   least one and a half texels wide, and it fades with the receiver's distance before the next cascade would
+   lose it. Parts of a mesh thinner than its thickest part can lose texels in that last cascade; the filter's
+   width makes that a change of tone inside a soft shadow. If WP13.4 shows such parts breaking up, the builder
+   raises the threshold. Terrain and a contribution's casters, which give no mesh for each caster, are in every
+   cascade. An aloft row is held to the same rule and is still never in the caster height map.
 
-**Reach.** The coarsest cascade's half-width is the reach: 2,048 m to start, where it was 512 m. Over the outer
-two fifths of the coarsest cascade (a starting value) the answer blends into the caster height map's alone, as
-the last tenth of the reach does today. Past the reach only the ground and what stands on it cast, at the
-height map's 32 m scale, as now. The low-Sun rule, that the height map's horizon may only darken a cascade's
-answer when the Sun is within about 6° of the horizon, stays.
+**Reach.** The reach is the coarsest cascade's radius, a distance from the eye: 2,048 m to start, where it was
+512 m of view depth. Over the outer two fifths of the reach (a starting value) the answer blends into the
+caster height map's alone, as the last tenth of the reach does today. Past the reach a receiver reads only the
+height map, whatever the coarsest cascade's square covers there: only the ground and what stands on it cast,
+at the height map's 32 m scale, as now. The low-Sun rule, that the height map's horizon may only darken a
+cascade's answer when the Sun is within about 6° of the horizon, stays.
 
-So shadows end by size. With the starting set a cactus's shadow ends between 128 and 512 m by the width of its
-trunk, a standing rock's or a small boulder's between 512 m and the reach, and a large boulder's and a
-balloon's fade out with the reach. No distance is the end for everything, which is what made the line.
+So shadows end by size. With the starting set a cactus's or a scrub's shadow ends between about 100 and 250 m
+by the width of its trunk or its stems, a standing rock's or a small boulder's between about 400 m and the reach, and
+a large boulder's and a balloon's fade out with the reach. No distance is the end for everything, which is
+what made the line.
+
+**What the builder tunes.** One ratio is fixed: each cascade's radius is twice the next finer one's, which the
+profile's meaning and WP13.1 hold. The builder tunes the rest by eye against WP13's lists and by the cost
+record: the count, the map size, the reach, the guard band, the blend and fade fractions, the least filter
+width, the search's eight texels and the size threshold down to √2.
 
 **A scene's profile.** `SyntheticView::with_sun_shadow_profile(count, reach)` keeps its meaning and admits up to
-the engine's full count: `count` cascades, the coarsest of half-width `reach`, each inner one half the next. One
-cascade is a single square of that half-width, and none leaves the height map alone, as today. A view that sets
-no profile gets the full set to the default reach.
+the engine's full count: `count` cascades, the coarsest of radius `reach`, each inner one half the next. One
+cascade is a single cascade of that radius, and none leaves the height map alone, as today. A view that sets
+no profile gets the full set to the default reach. The reach was a view depth and is now a distance from the
+eye. The two agree on the view's axis and differ off it, where a receiver at the same depth is farther away.
 
 | What a neighbour relies on | What it sees |
 |---|---|
-| `SCENE-VIEWS`: a view's Sun shadows come from one cascade of its own, and its picture equals the ordinary main draw at the same camera and profile | The same, because both sides lay the cascade out by the rule above. Its tests keep passing |
-| `CULLING`: the caster lists of each Sun pass draw what the unculled route draws | The same for more passes. The size rule applies alike under Direct, Frustum and Occlusion, as the aloft mark does |
+| `SCENE-VIEWS`: a view's Sun shadows come from one cascade of its own, inside the view's shadow reach, with the height map beyond, and its picture equals the ordinary main draw at the same camera and profile | The same. Both sides lay the cascade out by rule 1 and choose by rule 2, each from its own eye, so a secondary view's 128 m cascade shades nothing past 128 m from that view's eye. Its tests keep passing; one that places a receiver off the axis between the old depth and the new distance is restated at the same claim |
+| `CULLING`: the caster lists of each Sun pass draw what the unculled route draws | The same for more passes. The size rule applies alike under Direct, Frustum and Occlusion, as the aloft mark does, and reads a cast width kept with each mesh's bounds |
 | `RAY-TRACING`: a scene that asked for the traced method records no Sun map pass, and `sun_visibility` is the one operation it replaces | Unchanged |
-| `WATERS` WP16, when it builds the lent Sun visibility: one tap of the cascades and the height map at a world point | The tap reads the cascade the rule above picks for that point |
-| The view volume, the air's shadow heights and a contribution's `draw_shadow` | The view volume reads the cascade that holds each sample. The height map's readers and the contribution interface are unchanged: a contribution is asked to draw into each cascade |
+| `WATERS` WP16, when it builds the lent Sun visibility: one tap of the cascades and the height map at a world point | The tap reads the cascade rule 2 picks for the point's distance from the eye of the view the effect is drawn in, with the same blend and fade, and the height map alone past the reach |
+| The view volume, the air's shadow heights and a contribution's `draw_shadow` | A view-volume sample is a receiver: its distance from the eye picks its cascade and its fade. The height map's readers and the contribution interface are unchanged: a contribution is asked to draw into each cascade |
 
 ### Alternatives considered
 
@@ -1949,19 +1999,31 @@ no profile gets the full set to the default reach.
 ### Check that it can work
 
 - **Texels against pixels.** A pixel covers 0.57 to 0.79 mm for each metre of distance at 1,497 and 1,080 rows
-  (full screen at 67%, and the window). A cascade of the starting set has texels of `r / 1024` and is read
-  from about half its half-width `r` outward, so a texel there is about 1.2 to 3.4 pixels. The finest is read
-  from the camera out: its 0.8 cm texel is about ten pixels at one metre, where the near map's is a hundred.
-  At 40 m today's far texel is 31 to 44 pixels. With a filter two and a half texels wide, what
-  redrawing at a new Sun angle can change is under a texel of edge position spread across the ramp, where
-  today it is a whole step of the staircase.
-- **Nothing thinner than the grid.** A caster at least one and a half texels wide covers a texel's centre at
-  every angle of the grid, so it cannot blink. The frames' blinking cactus shadow is a 0.25 to 0.8 m trunk in
-  1 m texels.
+  (full screen at 67%, and the window). A cascade of the starting set has texels of about `r / 1008` for its
+  radius `r` and serves receivers from three eighths of `r` out to `r`, so a texel there is about 1.3 to 4.6
+  pixels. The finest is read from the eye out: its 0.8 cm texel is about ten pixels at one metre, where the
+  near map's is a hundred. At 40 m today's far texel is 31 to 44 pixels. With a filter two and a half texels
+  wide, what redrawing at a new Sun angle can change is under a texel of edge position spread across the ramp,
+  where today it is a whole step of the staircase.
+- **Nothing thinner than the grid, by the thickest part and not the bounds.** The design review projected the
+  exit's cactus of layout entry 1548 (scale 0.926, 16 h) onto 0.5 m texels: its bounds span 1.86 by 4.06
+  texels, which passes a rule on bounds, and its triangles cover four texel centres at one place of the grid
+  and none at another. Its trunk, the thickest part, is about 0.3 m, 0.6 of a texel, so rule 6 leaves it out
+  of that cascade and of the 0.25 m one, and keeps it in the 0.125 m cascade, where the trunk is over two
+  texels. The frames' blinking cactus shadow is this trunk in 1 m texels.
 - **The base.** With every term in texels, the offset along the ray in the finest cascade at 10° of Sun is
   about 2.3 cm for the depth step, where the near map's is 27 cm.
-- **The far end.** With the starting values a caster's shadow ends where the caster is about two to five
-  pixels wide on screen, across a band a quarter of a cascade deep, and each size ends at its own distance.
+- **The reach is a distance.** A secondary view with one 128 m cascade at a 5° Sun: ground 500 m from its eye
+  along the Sun's bearing lies 44 m from the centre of that cascade's square, inside it, and a prop standing
+  there is drawn into the map. Rule 2 does not read the map for that ground, because it is 500 m away, so it
+  gets the height map alone, as the profile promises.
+- **A balloon's penumbra reaches ground its outline does not.** Near the camera the finest cascade's square is
+  about 8 m in half-width, and a balloon's shadow edge is soft over 7 m to each side. The second search runs
+  in the 1,024 m cascade, whose eight texels span 8 m, and whose square holds every balloon within a kilometre
+  of the eye in the Sun's frame. A cactus beside the same receiver is not in that cascade and is found by the
+  first search, in the finest.
+- **The far end.** With the starting values a caster's shadow ends where its thickest part is about two to seven
+  pixels wide on screen, across a band a quarter of a radius deep, and each size ends at its own distance.
 - **If it does not work.** If WP13.4 or WP13.6 still shows crawl with the starting set tuned, the cause is not
   texel density and the builder ends `BLOCKED` with frames. It does not hold the Sun still for the maps or add
   a pass that smooths shadows over time.
@@ -1990,50 +2052,90 @@ in the far map and all 8,500 still props in the height map.
 
 The starting set draws the terrain nine times and each prop into the few cascades that hold it at its size:
 by the same estimate about 1.35 million triangles with the height map as it is, twice today's, and four times
-the texels in each map. So it is expected to cost more than today, by an amount nobody has measured. WP13.8
-records it, paired before and after, with the forward pass, whose Sun read changes too. No figure is a
-budget. If the Sun's passes or the forward pass come out more than about a quarter over their time before,
-the builder pulls these levers in order, and records what each bought:
+the texels in each map. Three more things change with it. The Sun's caster cull, a compute pass ahead of the
+maps (`PassKey::CasterCull`), prepares a list for nine cascades where it prepared two and applies the size
+rule. The forward pass's Sun read changes: a receiver near the camera makes two searches and two filtered
+reads where it made one or two, and a receiver in a blend band reads two cascades. So the change is expected
+to cost more than today, by an amount nobody has measured.
+
+WP13.8 records it, paired before and after. The record counts the Sun's work as every cascade's pass, the
+caster height map, the air's shadow pass and the caster cull, and takes the forward opaque pass beside it.
+Its Apple row is the workload the owner named: full screen on the built-in display at the 67% output scale,
+which is the owner's floor and the step WP17 is trying, with MetalFX, EDR and the governor on, and with the
+governor's render scale and the drawn extent recorded through each take. A window would understate the
+forward pass. No figure is a budget. If the Sun's summed work, the caster cull alone or the forward pass comes
+out more than about a quarter over its time before, the builder pulls these levers in order, and records what
+each bought:
 
 1. Fewer, wider cascades, while WP13's lists still pass.
 2. Skip a contribution's draw into a cascade its `shadow_bounds` do not overlap, and redraw the caster height
    map only on a frame when something in it could have changed (it scrolled a texel, or a caster that is not
    aloft moved or changed), where the builder can show the skipped frame's map would be the same bytes.
-3. A cheaper read where the receiver is far from any edge.
+3. A cheaper read where the receiver is far from any edge: no second search where the first finds nothing
+   and the second's cascade is empty over the receiver, and one read in place of two.
 
 Drawing the coarse cascades less often than every frame is not one of them. It needs a schedule that follows
 how fast each cascade's shadows move, which on this clock is fast, and a governor knob. If the record after the
 three levers is still over, the builder says so in its handoff and the lead takes it to a planner.
+
+<a id="wp13-hand-off-to-wp17"></a>**The hand-off to WP17.** The verdict on 120 Hz at full screen is
+`APPLE-PRESENTATION` WP17's, from its closing sitting, and that sitting qualifies the frame it was taken on.
+WP17 does not wait for WP13 in the plan, so the sitting can come first. WP13's record therefore ends with the
+whole frame's timed span on the full-screen row before and after, the 120 Hz intervals served and missed in
+each take, and the commit of WP17's closing sitting if one has been taken. It then says which of three holds.
+The sitting has not been taken, and is then taken on a frame with this change. Or it was taken on a commit
+without this change and the span after is no higher than before, beyond the spread between the record's own
+repeats: it stands. Or it was taken without this change and the span is higher: WP17's sitting is to be
+taken again, and the builder's handoff asks the lead for it in those words. WP13.8 fails without that
+section.
 
 The maps take about 150 MB where they took 12 MB. If the workspace's GPU tests slow or run short of memory, the
 builder gives their small scenes a smaller profile through the existing call. It does not shrink the default.
 
 ### How WP13 is proved
 
-- **WP13.1**, tests on the CPU, for the layout and for which cascade holds which caster.
-- **WP13.2**, small tests on Metal, for what only the drawn maps and the shader's read can show.
-- **WP13.3**, a reviewer's question: each behaviour the two-cascade tests guarded and the design keeps still
-  has a test.
+- **WP13.1**, tests on the CPU, for the layout, the cast width and which cascade holds which caster.
+- **WP13.2**, small tests on Metal, for what only the drawn maps and the shader's read can show: the choice by
+  distance, the blends, the reach, and near and far blockers together.
+- **WP13.3**, a reviewer's question: each rendered behaviour the two-cascade tests guarded and the design keeps
+  still has a test of the production code.
 - **WP13.4 to WP13.6**, a reviewer's inspection of each of the owner's three views on the Mac, with the clock
   running, against the take from before.
-- **WP13.7**, the same three lists in Chrome.
-- **WP13.8**, the cost record.
+- **WP13.7**, the same lists in Chrome, on the same routes.
+- **WP13.8**, the cost record and the hand-off to WP17.
 - **WP13.9 and WP13.10**, the planned refresh of the exact baselines and a look at what moved.
 - **WP13.11**, the maturity ledger.
+
+What a moving shadow may do. The inspections judge four faults at the size the take plays at: crawl along an
+edge, a shadow that drops out and comes back, a jump in sharpness or darkness, and a shadow that comes away
+from the foot of its caster. A shadow that changes continuously is not at fault: it slides with the Sun,
+moves with a drifting balloon, bends over a rock it crosses, is hidden by what stands in front of it, and
+fades with distance under rule 6 and the reach. In the exit scene the 1,500 balloons drift whether or not
+the Sun is held, so a claim that shadows stay put is made of the still props there, and of everything at the
+valley's cubes, where nothing moves.
+
+Where the offline reference stands. The half-disc test in `synthetic/shadow/tests/disk.rs` traces f64 rays
+through triangles in test code and never runs the shader. It checks WP4's diagnostic and protects no rendered
+behaviour. WP13 keeps it as that, and holds the shader to no fraction it gives: the exact finite-disk match
+stays open. What the shader does with soft shadows and hand-overs is proved on the device, by WP13.2 and the
+inspections.
 
 The routes are in [the diagnosis folder](../../../.orchestrate/evidence/ATMOSPHERE/WP13-diagnosis/routes/), in
 the working folder every worktree shares. Each is written for a 1280 × 720 game grid and cuts from the authored
 camera to its pose. A route's `start.hold_solar` holds the Sun, and without it the
-game's clock runs.
+game's clock runs. The Mac takes a route with `scripts/capture_v1_runtime.py --route` and Chrome takes the
+same file with `scripts/capture_v1_browser.mjs --route-file`. Both keep every submitted image with its tick,
+eye, heading and solar hour, so a Mac frame and a Chrome frame are at a matching pose when those records
+agree.
 
 | Route | Scene | What it is for |
 |---|---|---|
-| `balloons.json` | exit | The owner's first view: 15 s toward the beige and red balloons from 16 h, looking down on rocks and cacti |
-| `e2-held-sunruns.json` | exit | That view with the camera held, so only the Sun moves |
+| `balloons.json` | exit | The owner's first view: 15 s toward the beige and red balloons from 16 h, looking down on rocks and cacti. Mac and Chrome |
+| `e2-held-sunruns.json` | exit | That view with the camera held, so only the Sun and the balloons move |
 | `e4-turn-sunheld.json` | exit | That view turning in place with the Sun held |
 | `valley-floor.json` | exit | The owner's second view: down to the valley floor and level across it, the ground running out to the ridges |
 | `c1-held-sunruns.json` | valley, `proof` overlay | The owner's third view from 15 h, camera held above the cubes beside the sphere |
-| `cubes.json` | valley, `proof` overlay | Round the cubes from 17.3 h to sunset |
+| `cubes.json` | valley, `proof` overlay | Round the cubes from 17.3 h to sunset. Mac and Chrome |
 | `c2-moving-sunheld.json` | valley, `proof` overlay | Moving round the cubes with the Sun held |
 
 A route names the cooked root it was cut for. If the root has moved, the builder cuts the route again at the
@@ -2046,8 +2148,12 @@ same poses and says so.
 | The staircase is traded for blur | Contact shadows of the cubes are soft smears wider than the cubes' edges are sharp | Passing "no steps" on a filter many texels wide |
 | Shimmer hidden by the reconstructor | The takes with reconstruction off still crawl and the MetalFX take does not | Judging the flicker points with reconstruction on |
 | The size rule draws its own line | All shadows of one kind of prop stop at one distance in a band a reviewer can point to | Lowering the threshold until thin casters blink again |
+| A thin caster passes by its bounds | A cactus's or a scrub's shadow comes and goes at about 150 to 400 m | Measuring the size rule by bounds, or by a box round the mesh |
 | The gap at the base returns at a low Sun | At 17.3 h a cube's shadow starts a visible way from its base | Judging at 15 h only |
 | A blend band shows | A faint ring round the camera where shadows change sharpness or strength | Judging stills only: fly through it |
+| A square is read past its radius | At a low Sun, props far along the Sun's bearing cast through a fine cascade, and their shadows change as the Sun's bearing swings | Choosing a receiver's cascade by which square holds it |
+| A balloon's shadow has a hard outline or a cut edge near the camera | The soft edge stops at a line about 8 m from the camera, or shows a sharp core | One read in the receiver's own cascade for every blocker |
+| A long shadow's tip is cut | At a low Sun a cactus's shadow ends in a step where it should fade out | Widening the first search until it is a few taps over tens of texels |
 | Cost is carried by the governor | The exit's Apple row holds its rate only because the render scale dropped | Recording the frame rate and not the Sun passes' time and the scale |
 | Far terrain shadows move | Ridge shadows past the reach differ from before | Refreshing the baselines without WP13.10's look |
 
@@ -2061,6 +2167,10 @@ same poses and says so.
 - **Screen-space contact shadows** for the last millimetres at a base. They need the opaque depth before
   shading, which the forward pass does not have.
 - **Shadows of props past the reach**, and a cadence for the coarse cascades (above).
+- **The outermost penumbra of a small caster far up the ray.** Rule 3 trims it where the caster is too small
+  for the second search's cascade. The shadow there is already mostly light.
+- **A sheet edge-on to the Sun.** Its shadow is a line thinner than any texel and may shimmer. The showcase has
+  no sheet that casts.
 - **The moving edge on the authored west-lookout spur** between 17.40 and 17.80 h, which stays open under G3s
   with [WP3's record](#wp3-surface-sun-visibility). WP13 replaces the filter that record studied and does not
   judge the spur.
