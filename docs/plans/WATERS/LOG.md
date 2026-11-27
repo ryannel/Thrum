@@ -1895,7 +1895,7 @@
   Shared-load GPU sums exceeded one refresh in both arms and each tripwire
   has its matching pass comparison in the record.
   [Receiver checks](../../../.orchestrate/evidence/WATERS/WP16/metal-checks.md) ·
-  [Paired cost](../../../.orchestrate/evidence/WATERS/WP16/under-light-cost-3da0f7adfa4b.json).
+  [Paired cost](../../../.orchestrate/evidence/WATERS/WP16/under-light-cost-7c960f84c1d8.json).
 - Hardware Chrome confirmed unity in calm water, a moving normalized Trade
   ladder, a directly lit receiver and a zero signed march in calm without a
   blocker. Its east-lit box shadow darkened both the bed and the water just
