@@ -4,6 +4,7 @@ mod bed;
 mod conformance;
 mod cut;
 mod fall;
+mod fall_bank;
 mod flow;
 mod hollows;
 mod map;

@@ -4,7 +4,7 @@ use crate::{Declaration, Grid, Manning, Profile};
 use thrum_water_model::{Below, EndKind, Fall, RIVER_FORMAT, RIVER_MAGIC, RiverFile};
 
 /// The solver's version. Any change that can move a solve's output changes it, and so every key.
-pub const SOLVER_VERSION: u32 = 3;
+pub const SOLVER_VERSION: u32 = 4;
 
 /// The key of a solve's inputs: a hash of the bed inside the rectangle, the declaration, the
 /// solve's profile and the solver's version.

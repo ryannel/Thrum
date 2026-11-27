@@ -115,3 +115,55 @@ fn pixel(point: glam::Vec3, [width, height]: [u32; 2]) -> [usize; 2] {
         ((1.0 - point.y) * 0.5 * height as f32).floor() as usize,
     ]
 }
+
+#[cfg(target_os = "macos")]
+#[path = "../../../tests/fixtures/rivers/brink_receiver.rs"]
+mod brink_receiver;
+
+#[cfg(target_os = "macos")]
+#[path = "../../../crates/thrum-water/tests/probe_support.rs"]
+mod map_probe;
+
+thrum_test_support::macos_gpu_test! {
+fn metal_map_agrees_with_the_model_down_the_rock_below_a_brink() {
+    use brink_receiver::{CENTRE, LEVEL, RISE, fixture, points, rock};
+    let Some(gpu) = thrum_test_support::open(
+        "brink receiver map", Some(wgpu::Backend::Metal), thrum_test_support::Profile::Portable,
+    ) else {
+        return;
+    };
+    for width in [1, 4] {
+        let locations: Vec<_> = points(width).collect();
+        #[expect(clippy::cast_possible_truncation, reason = "quarter-cell positions are exact in shader metres")]
+        let input: Vec<_> = locations.iter().map(|[x, _]| [*x as f32, CENTRE as f32, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]).collect();
+        for basin in [false, true] {
+            let (mut map, receiver) = fixture(width, basin);
+            for stage in [0.0, RISE] {
+                map.set_stage(receiver, stage).expect("receiver stage");
+                let answers = map_probe::probe(&gpu, &map, &input);
+                for (&place, [answer, _, _]) in locations.iter().zip(answers) {
+                    let want = map.sample(place);
+                    let bed = rock(width, place[0]);
+                    let got = answer.map(f64::from);
+                    assert!((got[2] - bed).abs() < map_probe::EPS_METRES);
+                    let owner = match want.map(|water| water.body) {
+                        Some(0) => 0.0,
+                        Some(1) => 1.0,
+                        None => -1.0,
+                        other => panic!("unexpected body {other:?}"),
+                    };
+                    assert_eq!(got[0], owner, "width {width}, basin={basin}, stage {stage}, at {place:?}");
+                    if let Some(water) = want {
+                        assert!((got[1] - water.row.level).abs() < map_probe::EPS_METRES);
+                        assert!((got[3] - water.depth).abs() < map_probe::EPS_METRES);
+                        if water.body == receiver {
+                            assert!((got[3] - (LEVEL + stage - bed)).abs() < map_probe::EPS_METRES);
+                        }
+                    }
+                }
+                eprintln!("Metal and f64 agree at {} quarter-cell stations, width {width}, basin={basin}, stage {stage}", input.len());
+            }
+        }
+    }
+}
+}

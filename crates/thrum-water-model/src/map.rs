@@ -46,7 +46,8 @@ impl Row {
 /// The `body` of a brink end: a stretch of a chart footprint's edge where the ground drops away
 /// and the water leaves as a fall. A brink end joins no body. Preparation does not refuse a
 /// footprint cell on it for lower ground outside the footprint beside it, the chart's row there
-/// is its own with no mix, and the ground below is in no body. Its `length` is not used and its
+/// is its own with no mix. Receiving water and its shore margin can reach the rock below.
+/// Its `length` is not used and its
 /// `mouth` flag is ignored; a chart may have several, beside one source end and one mouth.
 pub const BRINK: usize = usize::MAX;
 
@@ -148,6 +149,9 @@ pub struct Map {
     pub(crate) surf: Option<Arc<crate::surf::Surf>>,
     // Each margin centre remembers the water centre whose row it carries.
     pub(crate) support: Vec<Arc<[Option<usize>]>>,
+    // Upper brink centres that bound each receiving chart on its uphill side.
+    brink_banks: Vec<Arc<[usize]>>,
+    brink_lips: Arc<[usize]>,
     /// Number of stage requests held at a range endpoint.
     pub clamped_stages: u64,
     pub(crate) hollows_profile: HollowsProfile,
@@ -184,6 +188,11 @@ impl Map {
     /// Prepared support at each bed centre, as the index of its water origin.
     pub fn support_origins(&self, body: usize) -> &[Option<usize>] {
         &self.support[body]
+    }
+
+    /// Upper brink centres next to this receiving chart, in bed index order.
+    pub fn brink_banks(&self, body: usize) -> &[usize] {
+        &self.brink_banks[body]
     }
 
     /// Bounds of a finite surface over its declared stage range, including its margin.
@@ -225,6 +234,8 @@ impl Map {
             profile,
             surf: None,
             support: Vec::new(),
+            brink_banks: Vec::new(),
+            brink_lips: Arc::new([]),
             clamped_stages: 0,
             generations: Vec::new(),
             hollows_profile,
@@ -240,6 +251,7 @@ impl Map {
         map.generations = vec![0; map.bodies.len()];
         map.sampled = vec![None; map.bodies.len()];
         map.validate_inputs()?;
+        map.prepare_brink_banks();
         let stages: Vec<_> = map.bodies.iter().map(|b| b.stage.value).collect();
         for b in &mut map.bodies {
             b.stage.value = b.stage.min;
@@ -474,15 +486,17 @@ impl Map {
                 })
             });
             // A chart declares its water pointwise; it has no seeded component.
-            let chart_water = matches!(&b.kind, BodyKind::Chart(c)
-                if self.in_chart(c, point) && bed.is_some_and(|height| height < row.level));
+            let inside_chart = matches!(&b.kind, BodyKind::Chart(c) if self.in_chart(c, point));
+            let shared_bank = !inside_chart
+                && supported
+                && matches!(&b.kind, BodyKind::Chart(c)
+                if weights.is_some_and(|w| self.below_brink(id, c, w)));
+            let chart_water =
+                (inside_chart || shared_bank) && bed.is_some_and(|height| height < row.level);
             if !(supported || chart_water || bed.is_none() && matches!(b.kind, BodyKind::Sea)) {
                 continue;
             }
-            if let BodyKind::Chart(c) = &b.kind
-                && !self.in_chart(c, point)
-                && bed.is_some_and(|h| h < row.level)
-            {
+            if rank == 2 && !chart_water && bed.is_some_and(|h| h < row.level) {
                 continue;
             }
             if bed.is_some_and(|h| h > row.level + self.profile.margin_height) {
@@ -677,6 +691,67 @@ impl Map {
             .is_some_and(|w| w.iter().all(|&(i, a)| a <= 1e-12 || c.footprint[i]))
     }
 
+    fn brink_above(&self, chart: &Chart, upper: usize, lower: usize) -> bool {
+        chart.footprint[upper]
+            && self.bed.heights[lower] < self.bed.heights[upper]
+            && chart
+                .ends
+                .iter()
+                .any(|end| end.is_brink() && end.distance(self.bed.point(upper)) <= 1e-8)
+    }
+
+    fn prepare_brink_banks(&mut self) {
+        let mut banks = vec![Vec::new(); self.bodies.len()];
+        let mut lips = Vec::new();
+        for b in &self.bodies {
+            let BodyKind::Chart(upper) = &b.kind else {
+                continue;
+            };
+            if !upper.ends.iter().any(End::is_brink) {
+                continue;
+            }
+            for (i, &inside) in upper.footprint.iter().enumerate() {
+                if !inside {
+                    continue;
+                }
+                for j in self.bed.neighbours(i) {
+                    if upper.footprint[j] || !self.brink_above(upper, i, j) {
+                        continue;
+                    }
+                    lips.push(i);
+                    for (id, b) in self.bodies.iter().enumerate() {
+                        if matches!(&b.kind, BodyKind::Chart(lower) if lower.footprint[j]) {
+                            banks[id].push(i);
+                        }
+                    }
+                }
+            }
+        }
+        self.brink_banks = banks
+            .into_iter()
+            .map(|mut indices| {
+                indices.sort_unstable();
+                indices.dedup();
+                indices.into()
+            })
+            .collect();
+        lips.sort_unstable();
+        lips.dedup();
+        self.brink_lips = lips.into();
+    }
+
+    fn below_brink(&self, id: usize, chart: &Chart, weights: [(usize, f64); 4]) -> bool {
+        // The supported lower corners supply the water. The upper brink
+        // corners describe the rock but contribute none of their chart's row.
+        !self.brink_banks[id].is_empty()
+            && weights.iter().all(|&(i, w)| {
+                w <= 1e-12 || chart.footprint[i] || self.brink_banks[id].binary_search(&i).is_ok()
+            })
+            && weights
+                .iter()
+                .any(|&(i, w)| w > 1e-12 && chart.footprint[i])
+    }
+
     fn flood(&self, id: usize) -> Vec<bool> {
         let b = &self.bodies[id];
         if let BodyKind::Chart(c) = &b.kind {
@@ -763,6 +838,8 @@ impl Map {
                 );
                 if origins[j].is_none()
                     && !self.waits(id, j)
+                    && (self.brink_lips.binary_search(&j).is_err()
+                        || matches!(&self.bodies[id].kind, BodyKind::Chart(c) if c.footprint[j]))
                     && h >= row.level
                     && self.bed.reaches(i, weights, row.level)
                     && h <= row.level + self.profile.margin_height
@@ -912,6 +989,7 @@ impl Map {
                         for other in &self.bodies {
                             if let BodyKind::Chart(c) = &other.kind
                                 && c.footprint[j]
+                                && !self.brink_above(c, j, i)
                                 && !c.ends.iter().any(|e| {
                                     e.body == id
                                         && e.distance(self.bed.point(j)) <= self.bed.spacing * 1.01
@@ -1050,6 +1128,7 @@ impl Map {
                             && self.bed.heights[j] < self.bed.heights[i]
                     });
                     let joined = brink
+                        || self.brink_banks[id].binary_search(&j).is_ok()
                         || c.ends.iter().filter(|e| !e.is_brink()).any(|e| {
                             let b = &self.bodies[e.body];
                             let min = b.level + b.stage.min;

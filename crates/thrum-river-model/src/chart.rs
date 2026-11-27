@@ -32,8 +32,8 @@ impl Solution {
     /// footprint beside it, so the chart's banks contain its water.
     ///
     /// A reach ends at each run of its brinks in a brink end, through the centres of its lip
-    /// cells along one row or column. No footprint crosses a brink or takes a cell on a cliff's
-    /// face, and no two footprints share a cell. A body the reach's water meets is joined over
+    /// cells along one row or column. No footprint crosses a brink. The receiving reach can take
+    /// the rock at its bank below the brink, and no two footprints share a cell. A body the reach's water meets is joined over
     /// the profile's join length; a body it borders only across a brink or dry ground, as a pool
     /// at a cliff's foot, is joined within half a cell, a seam.
     /// # Errors
@@ -41,21 +41,34 @@ impl Solution {
     pub fn reaches(&self) -> Result<Vec<RiverReach>, RiverError> {
         let n = self.wet.len();
         let mut claimed = self.wet.clone();
-        for b in self.brinks.iter().filter(|b| self.wet[b.cell]) {
-            for c in b.face_cells(&self.grid) {
-                claimed[c] = true;
-            }
-        }
         let mut out = Vec::with_capacity(self.reach_names.len());
         for r in 0..self.reach_names.len() {
             let wet: Vec<bool> = (0..n).map(|i| self.reach_of[i] == Some(r)).collect();
-            let reach = self.one_reach(r, &wet, &claimed, None)?;
+            let banks = self.claim_faces_for(r, &claimed, &self.wet);
+            let reach = self.one_reach(r, &wet, &banks, None)?;
             for (c, &f) in claimed.iter_mut().zip(&reach.footprint) {
                 *c |= f;
             }
             out.push(reach);
         }
         Ok(out)
+    }
+
+    pub(crate) fn claim_faces_for(
+        &self,
+        reach: usize,
+        claimed: &[bool],
+        wet: &[bool],
+    ) -> Vec<bool> {
+        let mut banks = claimed.to_vec();
+        for brink in self.brinks.iter().filter(|b| wet[b.cell]) {
+            if self.reach_of[brink.foot] != Some(reach) {
+                for cell in brink.face_cells(&self.grid) {
+                    banks[cell] = true;
+                }
+            }
+        }
+        banks
     }
 
     /// Whether the face between two neighbouring cells is a brink.

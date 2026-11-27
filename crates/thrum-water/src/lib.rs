@@ -93,6 +93,8 @@ pub enum WaterError {
     InvalidInteractionLimits,
     /// Fall records do not match the map or the declared physical settings.
     InvalidFalls,
+    /// The map refused a named fall.
+    FallMap(thrum_water_model::WaterError),
     /// Surface detail cannot renew at a zero period.
     InvalidCarriagePeriod,
 }
@@ -109,6 +111,7 @@ impl std::fmt::Display for WaterError {
             Self::InvalidLevel => f.write_str("water level must be finite"),
             Self::UnsupportedMap(reason) => f.write_str(reason),
             Self::InvalidFalls => f.write_str("falls require mapped water, valid settings and a unique river with fall records"),
+            Self::FallMap(error) => write!(f, "{}: {}", error.name, error.reason),
             Self::InvalidCarriagePeriod => f.write_str("carriage period must be positive"),
             Self::InvalidInteractionLimits => {
                 f.write_str("interaction requires 1–16 solves and at most 64 sources of each kind; the fine level requires interaction")
@@ -425,6 +428,9 @@ impl Water {
             })
         {
             return Err(WaterError::InvalidFalls);
+        }
+        for (_, samples) in &records {
+            map.validate_falls(samples).map_err(WaterError::FallMap)?;
         }
         self.falls = Some(falls::Falls::new(records, profile));
         Ok(())

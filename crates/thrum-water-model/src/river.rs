@@ -87,6 +87,12 @@ impl FallSamples {
     pub fn at(&self, gauge: f64) -> Vec<Fall> {
         falls_at(&self.lowest, &self.upper, &self.gauges, gauge)
     }
+
+    pub(crate) fn records(&self) -> impl Iterator<Item = &Fall> {
+        self.lowest
+            .iter()
+            .chain(self.upper.iter().flat_map(|sample| &sample.falls))
+    }
 }
 
 /// A reach's row in a sample above the lowest, on its rectangle.

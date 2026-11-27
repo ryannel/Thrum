@@ -403,7 +403,7 @@ impl Map {
     /// river's gauge range for a river's chart, else over its stage's range. A river chart's
     /// level is linear in the gauge between its samples' gauges and its cells' wetting gauges,
     /// so its extremes lie at those and at the range's ends.
-    fn chart_level_range(&self, body: usize, place: [f64; 2]) -> [f64; 2] {
+    pub(crate) fn chart_level_range(&self, body: usize, place: [f64; 2]) -> [f64; 2] {
         let b = &self.bodies[body];
         let (BodyKind::Chart(chart), Some(w)) = (&b.kind, self.bed.weights(place)) else {
             return [b.level + b.stage.min, b.level + b.stage.max];

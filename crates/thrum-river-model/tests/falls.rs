@@ -147,7 +147,7 @@ fn the_reach_below_carries_the_discharge_of_the_reach_above() {
 }
 
 #[test]
-fn the_river_is_cut_into_reaches_at_its_fall_and_the_cliffs_face_is_in_no_chart() {
+fn the_river_is_cut_into_reaches_at_its_fall_and_the_lower_reach_can_bank_on_the_rock() {
     // A face that slopes at 4 m over 2 m, so the cliff has cells on its face.
     let cliff = Cliff {
         height: 4.0,
@@ -175,6 +175,7 @@ fn the_river_is_cut_into_reaches_at_its_fall_and_the_cliffs_face_is_in_no_chart(
         assert_eq!(s.reach_of[landing], Some(1));
         assert!(landing % nx >= c.foot, "lands below the face");
     }
+    let mut receiving_bank = 0;
     for b in s.brinks.iter().filter(|b| s.wet[b.cell]) {
         let below = b.below(grid);
         for r in &reaches {
@@ -182,8 +183,18 @@ fn the_river_is_cut_into_reaches_at_its_fall_and_the_cliffs_face_is_in_no_chart(
                 !(r.footprint[b.cell] && r.footprint[below]),
                 "a chart crosses a brink"
             );
-            for f in b.face_cells(grid) {
-                assert!(!r.footprint[f], "the cliff's face is in a chart");
+        }
+        for f in b.face_cells(grid) {
+            assert!(
+                !reaches[0].footprint[f],
+                "the upstream chart extends down the rock"
+            );
+            if reaches[1].footprint[f] {
+                assert!(
+                    grid.heights()[f] >= reaches[1].levels[f],
+                    "receiving shore margin"
+                );
+                receiving_bank += 1;
             }
         }
     }
@@ -196,14 +207,13 @@ fn the_river_is_cut_into_reaches_at_its_fall_and_the_cliffs_face_is_in_no_chart(
         assert!(reaches.iter().filter(|r| r.footprint[i]).count() <= 1);
     }
     println!(
-        "{} reaches; the fall lands at x = {:.2} m, {} face cells in no chart",
+        "{} reaches; the fall lands at x = {:.2} m, {receiving_bank} face cells in the lower chart's bank",
         reaches.len(),
-        fall.segments[0].path.last().unwrap().place[0],
-        s.brinks
-            .iter()
-            .filter(|b| s.wet[b.cell])
-            .map(|b| b.face_cells(grid).len())
-            .sum::<usize>()
+        fall.segments[0].path.last().unwrap().place[0]
+    );
+    assert!(
+        receiving_bank > 0,
+        "the receiving chart carries a bank onto the rock"
     );
 }
 

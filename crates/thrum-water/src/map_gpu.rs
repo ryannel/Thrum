@@ -316,6 +316,7 @@ pub struct MapGpu {
     hollows: Option<HollowsGpu>,
     rivers: [Option<rivers::ChartLayers>; BODY_LIMIT],
     flow: bool,
+    brink_banks: bool,
     sea_receives_river: bool,
 }
 
@@ -402,10 +403,10 @@ pub fn declarations() -> String {
 
 /// Map shader declarations with the specified resource group.
 pub fn declarations_at(group: u32) -> String {
-    map_source(group, false, false, false)
+    map_source(group, false, false, false, false)
 }
 
-fn map_source(group: u32, hollows: bool, rivers: bool, flow: bool) -> String {
+fn map_source(group: u32, hollows: bool, rivers: bool, flow: bool, brink_banks: bool) -> String {
     let sample_hollows = if hollows {
         "    let local = hollows_sample(point);\n    if local.has_bed { return local; }\n"
     } else {
@@ -450,7 +451,7 @@ fn map_source(group: u32, hollows: bool, rivers: bool, flow: bool) -> String {
     } else {
         steady_reference.to_owned()
     };
-    let source = format!(
+    let mut source = format!(
         "const BODY_LIMIT = {BODY_LIMIT}u;\nconst WATER_MAP_GROUP = {group}u;\n{}{cell_coordinates}{}            let raw = {chart_cell};\n{before}{chart_join}{after}{sample_hollows}{map_head}{wave_reference}{map_tail}\n{}{river_source}",
         include_str!("map_gpu/body_record.wgsl").to_owned()
             + if flow {
@@ -463,6 +464,18 @@ fn map_source(group: u32, hollows: bool, rivers: bool, flow: bool) -> String {
         include_str!("map_gpu/map_cell_body.wgsl"),
         include_str!("gains.wgsl"),
     );
+    if brink_banks {
+        source = source
+            .replace(
+                "i32(body.layers.z), 0).w == 0.0",
+                "i32(body.layers.z), 0).w <= 0.0",
+            )
+            .replace(
+                "if cell.bed < row.water.x { continue; }",
+                "if cell.bed < row.water.x && !chart_brink_bank(cell, body) { continue; }",
+            )
+            + include_str!("map_gpu/brink_bank.wgsl");
+    }
     if hollows {
         source + include_str!("map_gpu/hollows.wgsl")
     } else {
@@ -623,12 +636,17 @@ impl MapGpu {
             .take(record.size_count_sea[2] as usize)
         {
             if let Some(BodyKind::Chart(chart)) = map.body(id).map(|b| &b.kind) {
+                let banks = map.brink_banks(id);
                 for (i, pixel) in support.iter_mut().enumerate() {
                     *pixel = [
                         chart.levels[i] as f32,
                         chart.currents[i][0] as f32,
                         chart.currents[i][1] as f32,
-                        f32::from(chart.footprint[i]),
+                        if banks.binary_search(&i).is_ok() {
+                            -1.0
+                        } else {
+                            f32::from(chart.footprint[i])
+                        },
                     ];
                 }
                 write_layer(queue, &texture, body.layers[2], &support);
@@ -680,6 +698,8 @@ impl MapGpu {
             hollows,
             rivers,
             flow,
+            brink_banks: (0..record.size_count_sea[2] as usize)
+                .any(|id| !map.brink_banks(id).is_empty()),
             sea_receives_river: river_receivers(map)
                 .get(record.size_count_sea[3] as usize)
                 .copied()
@@ -696,7 +716,13 @@ impl MapGpu {
 
     /// Map shader declarations specialized to the products that were prepared.
     pub fn source(&self, group: u32) -> String {
-        let source = map_source(group, self.hollows.is_some(), self.has_rivers(), self.flow);
+        let source = map_source(
+            group,
+            self.hollows.is_some(),
+            self.has_rivers(),
+            self.flow,
+            self.brink_banks,
+        );
         if self.flow {
             source + include_str!("map_gpu/flow.wgsl")
         } else {

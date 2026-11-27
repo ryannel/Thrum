@@ -5,6 +5,7 @@
 mod support;
 
 mod brink_end;
+mod brink_receiver;
 mod brinks;
 mod chart;
 mod chop;

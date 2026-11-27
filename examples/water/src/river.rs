@@ -111,6 +111,10 @@ fn prepare_map(
             .map_err(|error| model_error(&error))?;
         map.add_river(river).map_err(|error| model_error(&error))?;
     }
+    for file in &files {
+        map.validate_falls(&file.fall_samples())
+            .map_err(|error| model_error(&error))?;
+    }
     map.set_forcing(forcing)
         .map_err(|error| model_error(&error))?;
     Ok((map, files))

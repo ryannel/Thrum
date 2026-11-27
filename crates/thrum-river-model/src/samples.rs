@@ -216,19 +216,14 @@ impl Samples {
     )]
     fn assemble(&self) -> Result<(Vec<RiverReach>, Vec<Vec<(u64, f64)>>, Union), RiverError> {
         let u = self.union();
-        let grid = self.grid();
         let n = u.any.len();
         let views: Vec<Solution> = (0..self.solutions.len())
             .map(|k| self.view(k, &u))
             .collect();
         let mut claimed = u.any.clone();
-        for b in views[0].brinks.iter().filter(|b| u.any[b.cell]) {
-            for c in b.face_cells(grid) {
-                claimed[c] = true;
-            }
-        }
         let mut out = Vec::with_capacity(u.names.len());
         for r in 0..u.names.len() {
+            let banks = views[0].claim_faces_for(r, &claimed, &u.any);
             let wet_r = |k: usize| -> Vec<bool> {
                 (0..n)
                     .map(|i| u.wet[k][i] && u.reach_of[i] == Some(r))
@@ -236,7 +231,7 @@ impl Samples {
             };
             let mut solved = vec![false; n];
             for (k, v) in views.iter().enumerate() {
-                let own = v.one_reach(r, &wet_r(k), &claimed, None)?;
+                let own = v.one_reach(r, &wet_r(k), &banks, None)?;
                 for ((s, &f), h) in solved.iter_mut().zip(&own.footprint).zip(&u.held) {
                     *s |= f && h.is_none();
                 }
@@ -246,7 +241,7 @@ impl Samples {
                 .collect();
             let mut rows = Vec::with_capacity(views.len());
             for (k, v) in views.iter().enumerate() {
-                rows.push(v.one_reach(r, &wet_r(k), &claimed, Some((&solved, &any)))?);
+                rows.push(v.one_reach(r, &wet_r(k), &banks, Some((&solved, &any)))?);
             }
             let mut reach = rows.remove(0);
             for row in rows {
