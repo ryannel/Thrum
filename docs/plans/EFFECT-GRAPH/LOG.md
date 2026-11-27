@@ -315,3 +315,7 @@
   transient storage, because detached capture skips that draw. Metal verified the refusal and all 128 pixels
   of the all-transient control in both submitted colour and detached capture. All four pinned checks passed.
   [Target evidence](../../../.orchestrate/evidence/EFFECT-GRAPH/WP7/third-review/README.md).
+- 2026-11-27 Builder, WP7 fourth review. A draw that writes the registered sky overlay now triggers the
+  same lighting refresh as a compute producer. Metal verified that the skip keeps the prior outputs and
+  that writing refreshes overlay lighting, diffuse irradiance and all reflection mips before forward.
+  All four pinned checks passed. [Target evidence](../../../.orchestrate/evidence/EFFECT-GRAPH/WP7/fourth-review/README.md).
