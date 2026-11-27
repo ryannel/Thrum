@@ -62,7 +62,7 @@ fn march_shafts(@builtin(global_invocation_id) slot: vec3<u32>) {
             let depth = max(0.0, level_here - point.y);
             let exit = water_sun_exit(point, level_here, sun);
             let focused = caustic_field_at(exit.xz, depth, footprint, shaft_mapping.window, shaft_field, shaft_sampler, shaft_mapping.quality.y);
-            let visibility = point_sun_visibility(exit);
+            let visibility = point_sun_visibility(exit, shaft_sampler);
             let transmission = exp(-beam.loss * depth - optics.extinction_sight.xyz * t);
             result += transmission * (focused * visibility - 1.0);
         }
