@@ -1075,12 +1075,12 @@
       ]
     },
     "WP7": {
-      "definitions": "e955a0d5caf7c4fe1759927f5339c4864e7b273e6234f3c9157095625ad3476d",
+      "definitions": "1e13bf39a02c9e2d2a7853662d53f4b40494c61f2e06c32cc6868b5dd8dbf627",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner, asked whether to park the heavy-flood waterfall look (Rivers WP6 flood cues, which a planner earlier moved to",
-        "at": "2026-11-27T21:50:48Z"
+        "task": "The design review of RIVERS at .orchestrate/evidence/RIVERS/design-review.md asked for changes, with its 4 Must Fix find",
+        "at": "2026-11-27T22:21:33Z"
       },
       "ends_stretch": true
     },
@@ -1330,12 +1330,12 @@
       }
     },
     "WP11": {
-      "definitions": "b8767a7129650816c50e01a9070f7814c356386b380363b1f205dce8c977ebc1",
+      "definitions": "c00715b1bc4ae0a23524d72fdad79e2c740138e8a95793ee9e4ed2693601c068",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner, asked whether to park the heavy-flood waterfall look (Rivers WP6 flood cues, which a planner earlier moved to",
-        "at": "2026-11-27T21:50:48Z"
+        "task": "The design review of RIVERS at .orchestrate/evidence/RIVERS/design-review.md asked for changes, with its 4 Must Fix find",
+        "at": "2026-11-27T22:21:33Z"
       }
     }
   },
@@ -1419,11 +1419,15 @@
     {
       "task": "The owner, asked whether to park the heavy-flood waterfall look (Rivers WP6 flood cues, which a planner earlier moved to WP11), said: \"keep trying, pass it to a planner and see if they can help.\" Three builder attempts failed: optics/lighting tuning, island profile tuning, and separating strands with their own pool contacts (594fe0a62, reverted at 7bafabb80); the lower sheet still ends in long glossy tongues and hard strand ends through the boil. Evidence: .claude/worktrees/rivers/.orchestrate/evidence/RIVERS/WP6-handoff.md and WP6/strand-pass/README.md. Research how shipped high-end games render heavy waterfalls and plunge pools today (modern techniques only: e.g. layered flow-mapped strand cards, particle spray and mist volumes, foam at contact, temporal noise breakup) and pick an approach that fits the Rivers design, with the reason. Bring the flood cues back into the next work to build (WP6 or WP11 moved forward, whichever keeps WP6's passing work mergeable), with a builder note that names the technique and a clear stop rule. Bar: a plausible shipped-game waterfall, not physical accuracy.",
       "at": "2026-11-27T21:50:48Z"
+    },
+    {
+      "task": "The design review of RIVERS at .orchestrate/evidence/RIVERS/design-review.md asked for changes, with its 4 Must Fix findings.",
+      "at": "2026-11-27T22:21:33Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T21:50:48Z"
+    "at": "2026-11-27T22:21:33Z"
   },
   "design_history": [
     {
