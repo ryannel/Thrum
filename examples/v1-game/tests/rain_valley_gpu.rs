@@ -124,84 +124,91 @@ fn read(
 }
 
 #[test]
-fn gpu_valley_wetness_and_puddles_follow_the_model() {
+fn dry_valley_matches_the_model() {
+    compare_model(RainSelection::Shower);
+}
+
+#[test]
+fn soaked_valley_matches_the_model() {
+    compare_model(RainSelection::Soaked);
+}
+
+#[test]
+fn receding_valley_matches_the_model() {
+    compare_model(RainSelection::HalfDry);
+}
+
+fn compare_model(selection: RainSelection) {
     let Some(gpu) = rain::open("valley model on Metal") else {
         return;
     };
     let store = rain::Store::cook();
     pollster::block_on(async {
-        for selection in [
-            RainSelection::Shower,
-            RainSelection::Soaked,
-            RainSelection::HalfDry,
-        ] {
-            let mut host = store
-                .host(
-                    &gpu,
-                    GameSetup {
-                        content: GameContent::Exit,
-                        rain: selection,
-                        ..GameSetup::default()
-                    },
-                )
-                .await;
-            let pixels = host.capture_pixels().expect("real valley submission");
-            assert_eq!(
-                pixels.len(),
-                (rain::EXTENT[0] * rain::EXTENT[1] * 4) as usize
+        let mut host = store
+            .host(
+                &gpu,
+                GameSetup {
+                    content: GameContent::Exit,
+                    rain: selection,
+                    ..GameSetup::default()
+                },
+            )
+            .await;
+        let pixels = host.capture_pixels().expect("real valley submission");
+        assert_eq!(
+            pixels.len(),
+            (rain::EXTENT[0] * rain::EXTENT[1] * 4) as usize
+        );
+        let (provider, map) = host
+            .source()
+            .rain_proof_products()
+            .expect("production rain projection");
+        let field =
+            PreparedWetness::new(&gpu.device, &gpu.queue, &provider).expect("wetness field");
+        let map = MapGpu::new(&gpu.device, &gpu.queue, &map).expect("production hollows bindings");
+        let expected = rain_witness_points(selection).expect("f64 model samples");
+        let points = expected
+            .iter()
+            .map(|sample| sample.point)
+            .collect::<Vec<_>>();
+        let output = read(&gpu, &field, &map, &points);
+        let mut wet = 0;
+        for ([actual, water], sample) in output.into_iter().zip(&expected) {
+            let position = sample.point[0];
+            let model = sample.wetness;
+            assert!(
+                (f64::from(actual[0]) - model.pores).abs() < FILL,
+                "{selection:?} {position:?} {actual:?} {model:?}"
             );
-            let (provider, map) = host
-                .source()
-                .rain_proof_products()
-                .expect("production rain projection");
-            let field =
-                PreparedWetness::new(&gpu.device, &gpu.queue, &provider).expect("wetness field");
-            let map =
-                MapGpu::new(&gpu.device, &gpu.queue, &map).expect("production hollows bindings");
-            let expected = rain_witness_points(selection).expect("f64 model samples");
-            let points = expected
-                .iter()
-                .map(|sample| sample.point)
-                .collect::<Vec<_>>();
-            let output = read(&gpu, &field, &map, &points);
-            let mut wet = 0;
-            for ([actual, water], sample) in output.into_iter().zip(&expected) {
-                let position = sample.point[0];
-                let model = sample.wetness;
+            assert!(
+                (f64::from(actual[1]) - model.surface).abs() < SURFACE,
+                "{selection:?} {position:?} {actual:?} {model:?}"
+            );
+            if let Some([level, depth]) = sample.puddle {
+                wet += usize::from(depth > 0.0);
+                assert!(water[0].abs() < f32::EPSILON, "{position:?} {water:?}");
                 assert!(
-                    (f64::from(actual[0]) - model.pores).abs() < FILL,
-                    "{selection:?} {position:?} {actual:?} {model:?}"
+                    (f64::from(water[1]) - level).abs() < DEPTH,
+                    "{position:?} {water:?} {level}"
                 );
                 assert!(
-                    (f64::from(actual[1]) - model.surface).abs() < SURFACE,
-                    "{selection:?} {position:?} {actual:?} {model:?}"
+                    (f64::from(water[2]) - depth).abs() < DEPTH,
+                    "{position:?} {water:?} {depth}"
                 );
-                if let Some([level, depth]) = sample.puddle {
-                    wet += usize::from(depth > 0.0);
-                    assert!(water[0].abs() < f32::EPSILON, "{position:?} {water:?}");
-                    assert!(
-                        (f64::from(water[1]) - level).abs() < DEPTH,
-                        "{position:?} {water:?} {level}"
-                    );
-                    assert!(
-                        (f64::from(water[2]) - depth).abs() < DEPTH,
-                        "{position:?} {water:?} {depth}"
-                    );
-                } else if sample.patch {
-                    assert!(water[0] < 0.0, "{position:?} {water:?}");
-                }
+            } else if sample.patch {
+                assert!(water[0] < 0.0, "{position:?} {water:?}");
             }
-            if selection == RainSelection::Soaked {
-                assert!(wet > 60, "visible filled hollows");
-                assert!(
-                    expected[2].wetness.pores - expected[3].wetness.pores > 0.2,
-                    "rock column requires the exposure field"
-                );
-                assert!(
-                    expected[0].wetness.surface - expected[1].wetness.surface > SURFACE,
-                    "cooked terrain requires the slope response"
-                );
-            }
+        }
+        if selection == RainSelection::Soaked {
+            assert!(wet > 60, "visible filled hollows");
+            assert!(
+                expected[2].wetness.pores - expected[3].wetness.pores > 0.2,
+                "rock column requires the exposure field"
+            );
+            assert!(
+                expected[0].wetness.surface - expected[1].wetness.surface > SURFACE,
+                "cooked terrain requires the slope response"
+            );
         }
     });
 }
