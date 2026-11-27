@@ -300,13 +300,12 @@ impl super::SceneContext<'_> {
                 .begin_compute(self.encoder, self.generation, self.timings.as_deref_mut())?
                 .ok_or(RenderError::GraphPassMismatch)?;
             contribution.encode_effect(index, &mut pass, &self.contribution_frame);
-            self.overlay_written |= declaration.accesses.iter().any(|access| {
-                access.kind == AccessKind::StorageWrite
-                    && graph.sky_overlays.contains(&access.resource)
-            });
             drop(pass);
             contribution.encode_effect_readback(index, self.encoder);
         }
+        self.overlay_written |= declaration.accesses.iter().any(|access| {
+            access.kind == AccessKind::StorageWrite && graph.sky_overlays.contains(&access.resource)
+        });
         Ok(())
     }
 }

@@ -1,4 +1,6 @@
 //! Exact attachment and forward tests. Scripted positions are independent of the renderer.
+mod overlay;
+
 use super::StaticWorld;
 use crate::{
     capabilities::{DeviceCapabilities, DeviceProfile, DeviceRestriction},
@@ -321,7 +323,7 @@ impl SceneContribution for Field {
     }
 }
 
-struct SunScene(SyntheticView);
+struct SunScene(SyntheticView, FrameLighting);
 
 impl SceneSource<SourceTick> for SunScene {
     fn extract(&self, into: &mut RenderExtractor, page: &SourceTick) -> ExtractReport {
@@ -339,7 +341,7 @@ impl SceneSource<SourceTick> for SunScene {
     ) -> Result<SceneFrame, FrameError> {
         Ok(SceneFrame {
             view: self.0,
-            lighting: FrameLighting::Diagnostic(SyntheticLight::default()),
+            lighting: self.1,
         })
     }
 }
@@ -347,8 +349,22 @@ impl SceneSource<SourceTick> for SunScene {
 type Host = FrameHost<StaticWorld, SunScene>;
 
 async fn host(gpu: &crate::test_device::Opened) -> Host {
+    host_with_lighting(
+        gpu,
+        FrameLighting::Diagnostic(SyntheticLight::default()),
+        false,
+    )
+    .await
+}
+
+async fn host_with_lighting(
+    gpu: &crate::test_device::Opened,
+    lighting: FrameLighting,
+    sky_overlay: bool,
+) -> Host {
     let mut scene = SyntheticScene::grid(1).unwrap();
-    scene.sun_shadows = true;
+    scene.sun_shadows = !sky_overlay;
+    scene.sky_overlay = sky_overlay;
     scene.view = SyntheticView::perspective(
         [0.0, 2.0, 5.0],
         [0.0; 3],
@@ -364,7 +380,7 @@ async fn host(gpu: &crate::test_device::Opened) -> Host {
         timeline: 3,
         tick: 0,
     };
-    let policy = SunScene(scene.view);
+    let policy = SunScene(scene.view, lighting);
     let mut host = FrameHost::new(
         &gpu.capabilities,
         &gpu.queue,
