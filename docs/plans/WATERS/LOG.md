@@ -1605,3 +1605,12 @@
   `BLOCKED`. The meter on `build/waters` at `e67b55584` stands. WP16.8's 20 m is reached in the example's
   own scene: its dive site and the height it lifts the sea to are the example's, and the sky's altitude
   range is not changed for it.
+
+## WP16 shallow beams
+
+- 2026-11-27 Planner, after WP16's builder ended `BLOCKED needs_context` on the three-look rule: WP16.7's
+  beams from 1 m at noon are narrowed to a glow, and no technique is added. Part S3 puts the streaks under 1%
+  of the picture there, against about 10% from 3 m. Beams stay asked from 3 m and 10 m and from 1 m with the
+  Sun low, and the hull line is the design's: its shadow darker than the lit water beside it. WP16.6, WP16.8
+  and WP16.11 are unchanged.
+  [The decision](../../../.orchestrate/evidence/WATERS/WP16-shallow-beams-decision.md).

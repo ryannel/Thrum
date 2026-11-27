@@ -152,7 +152,7 @@ contract and what one pass hands another are still tested.
 | **W8** Scenery the camera cannot see: water mirrors what stands round it, the far shore, hills, trees and the craft, each joined to its foot at the waterline and blurring as the water roughens | Calm to a breeze on the lake and the pond, calm to a trade wind on the sea under the island; camera 1 m to 40 m up, looking down so the source is above the frame and panning so it leaves the side; two levels in one view; dawn to night | A trace of what is on screen, or a probe at the camera. Rejected by a view whose reflected hill is wholly off screen, and by a tree's reflection that must meet its trunk at the waterline, which a probe's parallax misses |
 | **W9** Under water: the waterline crosses the lens; below it the water has its colour and murk and darkens with depth, the bed and hulls show through it, and the surface overhead shows the sky through a bright window with the deep mirrored round it | Every body; the lens from 0.1 m to 20 m under; calm to gale; half in, crossing both ways, and in the swash; looking up, level and down; dawn to night | A tint over the whole frame once the camera's centre is under. Rejected by a lens half under, where each pixel is judged alone, by the window's edge at 48.6° from the surface's normal, and by a panel under water whose light falls with the length of water in front of it once and not twice |
 | **W10** Caustics: under a rippled surface the Sun draws a moving net of light on the bed, on hulls and on whatever else is under water. The net is fine and sharp in the shallows and wider and softer deeper, it travels with the waves, and it shows from above through clear shallows as it does from below | Every body; receivers from 0.1 m to 16 m under; glassy calm to a trade wind; the Sun from 10° up to overhead; the lake's water and the sea's | A played texture projected down the Sun's direction. Rejected by a glassy calm, where there is no net, by a net that is sharper on a receiver in the shallows than on one in the deep, with the model's contrast as a diagnostic, by the mean light over a patch, which focusing cannot change, and by a hull's shadow, which holds no net |
-| **W11** Shafts: looking up toward the Sun from under water, beams of light stand in the water round its direction. They lean with the refracted Sun, never more than 48.6° from the vertical, sweep as the waves pass, and are missing beneath a hull, where the water is darker than beside it | The lens from 0.5 m to 20 m under; a breeze to a trade wind; the Sun from 10° up to overhead; the sea and the lake | Streaks blurred outward from the Sun's place on the screen. Rejected by beams that stand with the Sun's direction out of frame, by the dark water under a hull seen from the side, and by a calm, where the water's light is even |
+| **W11** Shafts: looking up toward the Sun from under water, beams of light stand in the water round its direction. They lean with the refracted Sun, never more than 48.6° from the vertical, sweep as the waves pass, and are missing beneath a hull, where the water is darker than beside it. Just under the surface with the Sun high the waves have not yet gathered the light, and the water round the Sun's direction carries a glow that shifts with the waves in the beams' place | Beams: the lens from 3 m to 20 m under with the Sun from 10° up to overhead, and from 1 m with the Sun 15° up or lower. The glow: the lens from 0.5 m to 1 m under a higher Sun. Between the two, what the same march gives. A breeze to a trade wind; the sea and the lake | Streaks blurred outward from the Sun's place on the screen. Rejected by beams that stand with the Sun's direction out of frame, by the dark water under a hull seen from the side, and by a calm, where the water's light is even |
 | **W12** The camera follows the light down: the picture stays readable from the surface to the deep, deeper water is darker by a share and never black, and crossing the surface makes no jump | The sea to 20 m under and the lake to its bed; dawn, noon and twilight; half in, and crossing both ways | An exposure metered from the sky, which leaves deep water black, or a gain taken from the picture, which pumps as pale sand comes into view. Rejected by the descent, and by the resolved exposure against the model's light at the lens |
 
 ## Research and selection
@@ -344,7 +344,8 @@ Reproductions A to G were run for the sea design and are kept with their output 
 [this module's](../../../.orchestrate/evidence/WATERS/design-proof/): H the interaction step at depth, I shelter, J dry ground,
 K joins, L the swash and M foam in the swash. Parts N to Q were run for the revision and are in
 `surf_view_proof.py` there: N the shore transform, O breaking, P the mirror lookup and Q light under water. Parts R to T were run for the second revision and are in
-`under_light_proof.py` there: R caustics, S shafts and T the meter. Two design reviews of 14 November are kept in
+`under_light_proof.py` there: R caustics, S shafts and T the meter. Part S3, shafts by the lens's depth, was run on
+27 November for WP16's stop and is in `shallow_shafts_proof.py` there. Two design reviews of 14 November are kept in
 [the evidence folder](../../../.orchestrate/evidence/WATERS/), each with its own reproduction. After the first, H was run again
 and J to L added. The second found a step at a shallow mouth and no carriage for foam up a beach: K now
 assembles the surface after its depth limit and reproduces that review's case, and M was added.
@@ -439,6 +440,7 @@ Neither stops the work packages after it.
 | W10 | Rays traced from the Sun through the surface (NVIDIA) | Right. Not portable |
 | W10 | **The surface's light carried down its refracted rays onto a ladder of depths, each cell spread over where it lands** | **Selected.** It conserves light by construction, crossing sheets add, it is made from the waves the surface is drawn from, and it is what Wallace's and HDRP's methods do at one depth |
 | W11 | Streaks blurred outward from the Sun's place on screen | Fails with the Sun out of frame, and knows nothing of a hull |
+| W11 | For beams from 1 m under a high Sun, where the march gives a glow (WP16's stop of 27 November): streaks drawn over the march, a field sharpened for the shafts alone, or a finer grid for the ripples under 7 cm | None taken. The water has no beams there to draw (part S3), so the first two paint a light the net on the bed does not have, and the second makes two fields of one light. A finer grid adds draws to a field [risk 25](#risks) already watches, for streaks seen through a metre of water that hides a quarter of the surface behind it |
 | W11 | The water as a medium in `ATMOSPHERE`'s view volume | Not selected. C08 gives water a declared boundary and this design composes the water's segments in its own pass; the volume's Sun path is straight where the water's bends at the surface; and a lens half under would put two media in one volume |
 | W11 | **The beam's once-scattered light, marched through the caustic field and the scene's Sun visibility in the water's own composition** | **Selected** |
 | W12 | A meter on the rendered picture | Not selected: V4's meter is a physical incident meter, and a picture meter pumps |
@@ -1925,6 +1927,21 @@ Sun's direction and nowhere else. A march of 16 steps is within 1.4% of a fine i
 and within 3% off them and across them once each step reads the mean of what it crosses, where point
 samples across them are 10% off (parts R and S).
 
+Beams need depth. A look up along the refracted Sun gathers the beam's scattered light over the water
+between the lens and the surface, and the waves gather the light into sheets only some way down. With the
+Sun 60° up, from 1 m down that path is 1.1 m long and hides a quarter of the surface behind it, and the
+light scattered on it varies from ray to ray by 1.4% to 3.5% in winds of 1 to 8 m/s, where from 3 m it
+varies by 14% to 18% on a path that hides over half. As a share of the picture the streaks are under 1%
+from 1 m, about 10% from 3 m and about 20% from 10 m. A murky lake hides more on the same path and still
+shows under 3% from 1 m. With the Sun 15° up the light crosses the surface at a slant, the waves focus it
+sooner, and the same share from 1 m is 5% to 8% in the sea and 12% to 20% in the lake (part S3). So from
+1 m under a high Sun the water round the Sun's direction is a glow, which is the direction's closed form
+with a little of the march in it, and it changes as the waves pass. That is what a swimmer just under the
+surface at noon sees too: the Sun broken up on the surface overhead with a glow round it, and the beams
+standing in the deeper water. WP16's builder found the same in the frame: three looks from 1 m at noon in
+a breeze each gave the glow, while beams stood from 3 m and 10 m and from 1 m under the lake with the Sun
+low. Nothing is added to draw beams where the water has none.
+
 The field's own contrast does not fall with depth. It climbs to the depth where the waves focus and stays
 high below it: at 4 m/s the map's is 0.31 at 0.5 m and 0.40 at 8 m (part R2). What softens with depth is the
 net on a receiver, `D(z) · (C − 1)`, whose contrast there goes from 0.28 to 0.09, together with the blur. So
@@ -1937,7 +1954,7 @@ below that only soften it. Beyond the window the bed is evenly lit. A blocker sh
 light enters, so the part of a hull below the waterline shadows nothing its waterline shape does not. A
 receiver under water is shaded with the Sun's direction above the water; only where its shadow falls
 follows the bend. The Moon makes no net. Seen from above the water, the water's own light stays even: the
-net on the bed shows, shafts do not. The meter's depth takes the wave field and not the interaction waves.
+net on the bed shows, shafts do not. From 1 m under a high Sun the shafts are a glow and not separate beams. The meter's depth takes the wave field and not the interaction waves.
 
 ### Capabilities, recipes, limits and knobs
 
@@ -2090,7 +2107,8 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
   vertical section in f64, so a net of lines and not of cells. That the net reads as sunlight on sand is
   unrun; WP16 is the first look.
 - **W11.** Part S: where shafts stand, and the march against a fine integral. A section with one water
-  type and no hull. Under a hull the marched part is the equation's own arithmetic, negative where the
+  type and no hull. Part S3: how far the beams stand out by the lens's depth, at two Suns in a clear sea and
+  a murky lake, in the same section; its lake's `c` is assumed. Under a hull the marched part is the equation's own arithmetic, negative where the
   beam is blocked ([light under water](#light-under-water-caustics-shafts-and-the-meter)); WP16
   tests its place against the bed's shadow and not its size. The look, and noise under reconstruction, are
   unrun; WP16 and WP10 are the first.
@@ -2491,7 +2509,7 @@ builder starts from main and proves all nine again, because WP15.3 changed.
 | Can Thrum's renderer draw a second view of the scene, and at what cost? | `SCENE-VIEWS`' planning and its first work package; WP14 records the water's share |
 | Does exposure need to know the camera is under water? | Yes: [the meter](#light-under-water-caustics-shafts-and-the-meter), in WP16 |
 | What do the caustic field and the shafts cost, and how many rungs does the look need? | WP16 records it; [risk 25](#risks) |
-| What adaptation share reads right from the shallows to 20 m? | WP16.7; the example's 0.75 is a starting value |
+| What adaptation share reads right from the shallows to 20 m? | WP16.8; the example's 0.75 is a starting value |
 | How does a river's reach answer a change of its source's stage? | `RIVERS`' planning; here the ends follow and the reach stays as prepared |
 | How do basins that overflow into each other merge and part? | `PUDDLES`' planning, with this module |
 | Does one mean current a window serve interaction waves in running water? | `RIVERS`' planning, on WP9's channel |
