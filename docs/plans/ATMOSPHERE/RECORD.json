@@ -1,27 +1,14 @@
 {
   "module": "ATMOSPHERE",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/ATMOSPHERE/design-review.md",
-    "commit": "9ca9b41e1a561cdbf6e6f1738af60297bf2408ca",
-    "hash": "fe76d29e2e6f22725f53168da90788a2f7c15bcf80981c070ff4991f77a3e8cb",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.171.0-alpha.13.2",
-    "path": "headless",
-    "usage": {
-      "input": 140666,
-      "cached": 3638272,
-      "output": 13778,
-      "turns": 1
-    },
-    "at": "2026-11-27T23:09:07Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "159f10dbd52742828720e4bb1895db71515e2821a7def301e1c99050dc888017",
+    "after": [
+      ".orchestrate/evidence/ATMOSPHERE/design-review-1.md",
+      ".orchestrate/evidence/ATMOSPHERE/design-review.md"
+    ],
+    "at": "2026-11-27T23:20:18Z"
   },
   "work_packages": {
     "WP5": {
@@ -1087,12 +1074,12 @@
       }
     },
     "WP13": {
-      "definitions": "72032fe0195085bf44f7bd159bf32427155d6c12e0c8618878ca0f5091777b0e",
+      "definitions": "685090714bcc2e7008b7b0131fb02de43180df96e71319922934b23765c5057e",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner decision change, 27 Nov 2026. I told the owner the shadow diagnosis (ATMOSPHERE WP13, .orchestrate/evidence/ATMOSP",
-        "at": "2026-11-27T23:02:39Z"
+        "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 7 Must ",
+        "at": "2026-11-27T23:20:18Z"
       }
     },
     "WP14": {
@@ -1230,11 +1217,15 @@
     {
       "task": "Owner decision change, 27 Nov 2026. I told the owner the shadow diagnosis (ATMOSPHERE WP13, .orchestrate/evidence/ATMOSPHERE/WP13-diagnosis/README.md, cause 7) found that in shade nothing darkens where an object meets the ground, because the default path has no ambient occlusion (ARCHITECTURE owner decision 34: AO only where rays are traced, no screen-space stand-in), and asked whether to revisit decision 34 so the default path gets cheap screen-space ambient occlusion. The owner said: \"Yes, add screen-space ambient occlusion to the default path\".\n\nAmend owner decision 34 with those words: screen-space ambient occlusion is on the default (portable) path, on the Mac and in Chrome; ray-traced AO from RAY-TRACING stays the higher tier where rays run, and replaces SSAO there rather than stacking. Decide which module owns it (ATMOSPHERE's shading of the scene, EFFECT-GRAPH as an effect, or another, with the reason and one authority), choose the modern technique shipped high-end games use (for example GTAO or similar, half resolution with temporal accumulation and a bilateral upsample; say which and why), and plan it as that module's next work package, after ATMOSPHERE WP13 if they touch the same passes. Items: objects on the ground in shade read as grounded on the showcase routes (the cube scene and the exit desert), judged against shipped games; no halos or shimmer while flying; a paired Metal cost record with the frame budget at 120 Hz full screen in mind (APPLE-PRESENTATION WP17 holds 67%); and Chrome. Update the seam and contract rows that decision 34 touches.",
       "at": "2026-11-27T23:02:39Z"
+    },
+    {
+      "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 7 Must Fix findings.",
+      "at": "2026-11-27T23:20:18Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T23:02:39Z"
+    "at": "2026-11-27T23:20:18Z"
   },
   "design_history": [
     {
@@ -1822,6 +1813,29 @@
         "turns": 1
       },
       "at": "2026-11-27T22:08:47Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/ATMOSPHERE/design-review.md",
+      "commit": "9ca9b41e1a561cdbf6e6f1738af60297bf2408ca",
+      "hash": "fe76d29e2e6f22725f53168da90788a2f7c15bcf80981c070ff4991f77a3e8cb",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13.2",
+      "path": "headless",
+      "usage": {
+        "input": 140666,
+        "cached": 3638272,
+        "output": 13778,
+        "turns": 1
+      },
+      "at": "2026-11-27T23:09:07Z"
     }
   ]
 }
