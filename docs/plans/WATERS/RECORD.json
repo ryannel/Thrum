@@ -2804,12 +2804,12 @@
       }
     },
     "WP16": {
-      "definitions": "0fc6f7ebf1ee92dd82e102256b91fbb3e85cf6e3946928e028069792789369fc",
+      "definitions": "071bf5df4dc9dd47ea92c671acfbf56bdfb8ce4c7cbf63987534d4d226edbb09",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Lead ruling for WATERS WP16 (blocked again at the three-look limit on WP16.7, six looks in all on shallow beams; handoff",
-        "at": "2026-11-27T18:01:17Z"
+        "task": "Lead ruling for WATERS WP16 (blocked at the three-look stop on WP16.6, the moving caustic net on the hull and float; han",
+        "at": "2026-11-27T20:44:21Z"
       }
     },
     "WP17": {
@@ -3488,12 +3488,12 @@
       }
     },
     "WP26": {
-      "definitions": "b7c9016631c15659a40349e7a54f6f2fc980a374eae3ff257e66fb62cb5e6811",
+      "definitions": "3ed86c717998635db13c5cae6b353ed4eb203075237f87f036b29ead0f333395",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 2 Must Fix find",
-        "at": "2026-11-27T18:18:35Z"
+        "task": "Lead ruling for WATERS WP16 (blocked at the three-look stop on WP16.6, the moving caustic net on the hull and float; han",
+        "at": "2026-11-27T20:44:21Z"
       }
     }
   },
@@ -3721,11 +3721,15 @@
     {
       "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 2 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
       "at": "2026-11-27T18:18:35Z"
+    },
+    {
+      "task": "Lead ruling for WATERS WP16 (blocked at the three-look stop on WP16.6, the moving caustic net on the hull and float; handoff .claude/worktrees/waters/.orchestrate/evidence/WATERS/WP16-handoff.md, branch build/waters at d072eb924): park the connected-net cue on the hull and float, as the shallow beams were. Keep in WP16.6 what reads now (moving light on the bed and on the hull and float, stable placement, clean controls), so WP16 can close on its passing items. Move the connected hull-and-float net into WATERS WP26 with the shallow beams, as one study of underwater light on receivers and shafts that researches how shipped high-end games do it (modern techniques only) before building, not blocking SHOWCASE. Leave WP16 ready to resume and merge.",
+      "at": "2026-11-27T20:44:21Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T18:18:35Z"
+    "at": "2026-11-27T20:44:21Z"
   },
   "design_history": [
     {
