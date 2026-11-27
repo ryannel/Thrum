@@ -132,14 +132,18 @@ fn underside_light(world: vec3<f32>, n: vec3<f32>, v: vec3<f32>, variance: f32,
         let scene_reach = select(reach, dot(body.point - world, ray), body.edge >= 1.0);
         let hit = trace(world, ray, vec2(0.03, scene_reach), scenery, false, vec2(0.0), 1.0);
         transmitted = environment_sky_radiance(normalize(vec3(ray.x, max(0.001, ray.y), ray.z)));
-        if body.distance > 0.0 {
-            transmitted = mix(transmitted,
-                air_path_to(hit_light(body), world, body.point, optics_uv(body.pixel)), body.edge);
+        // Both sources can contribute where a body hit fades. Composite the
+        // nearer source last so scenery behind the hull cannot erase it.
+        let body_along = dot(body.point - world, ray);
+        let scene_along = dot(hit.point - world, ray);
+        var back = hit;
+        var front = body;
+        if hit.distance > 0.0 && scene_along < body_along {
+            back = body;
+            front = hit;
         }
-        if hit.distance > 0.0 {
-            transmitted = mix(transmitted,
-                air_path_to(hit_light(hit), world, hit.point, optics_uv(hit.pixel)), hit.edge);
-        }
+        transmitted = refracted_air_hit(transmitted, back, world);
+        transmitted = refracted_air_hit(transmitted, front, world);
         transmission = window * (1.0 - interface_fresnel(c, out_cos));
     }
     let reflected = reflect(-v, normal);
@@ -171,6 +175,11 @@ fn underside_light(world: vec3<f32>, n: vec3<f32>, v: vec3<f32>, variance: f32,
     let start_depth = max(0.0, eye.surface - camera.y);
     return water_path(mix(light, ceiling, foam), incident, length_m, start_depth, 0.0)
         + shaft_scattering(optics_project(world).xy, eye.surface, -v, length_m, start_depth, 0.0);
+}
+
+fn refracted_air_hit(background: vec3<f32>, hit: GatherHit, world: vec3<f32>) -> vec3<f32> {
+    if hit.distance <= 0.0 { return background; }
+    return mix(background, air_path_to(hit_light(hit), world, hit.point, optics_uv(hit.pixel)), hit.edge);
 }
 
 fn water_underside(input: VertexOut, n: vec3<f32>, v: vec3<f32>, variance: f32, foam: f32) -> vec4<f32> {

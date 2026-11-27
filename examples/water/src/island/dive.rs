@@ -470,9 +470,11 @@ fn dive_meshes(
     );
     let [x, level, z] = eye_at_surface;
     if !matches!(site, DiveSite::Swash | DiveSite::Pond) {
+        // Keep the top of the sunk float in the shallow rungs, with the
+        // curved sides reaching into the softer light below.
         meshes.push(
             MeshPlacement::new("meshes/float", "textures/white")
-                .at([x + 0.65, level - 1.55, z + 3.4])
+                .at([x + 0.65, level - 1.30, z + 3.4])
                 .scale(1.65),
         );
     }

@@ -148,6 +148,7 @@ fn trace(
             let error = length(offset_from_origin - along * ray) / footprint;
             if along > 0.0 && along <= interval.y && error < near_error {
                 near_texel = hit;
+                near_texel.edge *= 1.0 - smoothstep(0.5, 1.0, error);
                 near_error = error;
             }
         }
