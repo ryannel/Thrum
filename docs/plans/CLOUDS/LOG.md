@@ -1240,3 +1240,13 @@ forwards both resize hooks and slices the replacement handles in member order.
   same pixel in the first frame after a cut, it is the cloud's opacity there. (3) At a sky pixel where the
   cloud's transmittance has moved from the history's by more than the test's stated step, with the camera
   still and the history valid, it is above case 1's tolerance." The review made no suggestions.
+
+## WP15 diagnosis repair
+
+Ground uses one full trace at every fog amount. Opaque pixels compose their own depth stops and sky pixels
+interpolate whole-ray stops. Sky reactive coverage follows the cloud's reprojected history. The frame host
+keeps legacy secondary-only resize admission and combines secondary preparation with Ground growth when needed.
+
+Metal verified the 15-item package's depth, reactive coverage, one-stop Sky byte comparison and resize cases.
+T2 captures on Metal and Chrome support the mist and deck inspections. The 1440p Metal cost record was taken
+under shared load. [Builder proof](../../../.orchestrate/evidence/CLOUDS/WP15/diagnosis-repair/PROOF.md)
