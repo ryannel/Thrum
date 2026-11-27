@@ -1687,8 +1687,9 @@ try {
       await until(async()=>{
         if(!await evaluate('game.frame_ready()'))return false;
         await drive(1000/60);
-        const status=await evaluate('game.report()');
-        if(status.startsWith('Asset load failed:')) throw Error(status);
+        const {status, faults}=await evaluate('({status:game.report(),faults:__faults})');
+        assert(!faults.length,JSON.stringify(faults));
+        if(/^(Asset load failed:|Graphics device unavailable:)/.test(status)) throw Error(status);
         return /^Cooked generation [0-9]+ drawn/.test(status);
       },'optics content drawn');
     }
@@ -1699,13 +1700,13 @@ try {
       const openSea=['sea','deep-sea'].includes(site);
       const views=shallow?[['through-shallows',-2,-73,90]]:[
         ['bed-0.5m',0.5,-45,90],['bed-3m',3,-45,90],['level-0.5m',0.5,0,90],['level-3m',3,0,90],
-        ['shaft-1m',1,67,228],['away-1m',1,67,273],['sunk-float',0.5,-14,169],
-        ...(openSea?[['shaft-3m',3,67,228],['away-3m',3,67,273],['shaft-10m',10,67,228],['away-10m',10,67,273]]:[]),
+        ['shaft-1m',1,67,228],['away-1m',1,22,228],['sunk-float',0.5,-14,169],
+        ['shaft-3m',3,67,228],['away-3m',3,22,228],
+        ...(openSea?[['shaft-10m',10,67,228],['away-10m',10,22,228],['level-10m',10,0,90]]:[]),
         ...(site==='deep-sea'?[['bed-20m',20,-35,90],['level-20m',20,0,90]]:[]),
       ];
       checkpoints=views.map(([name,depth,pitch,bearing])=>[name,{
-        'camera.depth':depth,'camera.pitch':name.startsWith('away-')?22:pitch,
-        'camera.bearing':name.startsWith('away-')?228:bearing,
+        'camera.depth':depth,'camera.pitch':pitch,'camera.bearing':bearing,
         'camera.fov':/^(shaft|away)-/.test(name)?55:name==='sunk-float'?60:105,'sun.elevation':60,
       }]);
     }else if(routeParams.has('dive')){
@@ -1804,9 +1805,13 @@ try {
       await evaluate(`game.edit_control('camera.surface_follow',${Number(surfaceFollow)});game.edit_control('camera.setback',${diveSetback+(surfaceFollow?1.7:0)});game.edit_control('camera.pitch',${pitch});game.edit_control('camera.depth',${depth});
         game.edit_control('camera.bearing',${diveBearing});game.edit_control('camera.fov',${diveFov});game.edit_control('sun.elevation',${diveSun})`);
       await until(async()=>{
-        const status=await evaluate('game.frame(performance.now());game.report()');
+        if(!await evaluate('game.frame_ready()'))return false;
+        const {status,faults}=await evaluate('game.frame(performance.now());({status:game.report(),faults:__faults})');
+        assert(!faults.length,JSON.stringify(faults));
+        if(/^(Asset load failed:|Graphics device unavailable:)/.test(status))throw Error(status);
         return /^Cooked generation [0-9]+ drawn/.test(status);
       },'cooked dive scene drawn');
+      await until(()=>evaluate('game.frame_ready()'),'dive warm-up completion');
     }
     if(surfInspection){
       assert(Number.isInteger(view)&&view>=0&&view<=8,'invalid surf camera');
@@ -1878,7 +1883,12 @@ try {
         if(game.capture_omissions())throw Error('submitted motion observer omitted an image');
         if(elapsed<${duration})__requestCaptureFrame(loop);else {__expected=presented()-__firstPresented;drain();}
       };game.begin_capture();__requestCaptureFrame(loop);`);
-    await until(()=>evaluate('__motionDone'),'realtime pan');
+    await until(async()=>{
+      const {done,faults}=await evaluate('({done:__motionDone,faults:__faults})');
+      const observed=[...cdp.faults,...faults];
+      assert(!observed.length,JSON.stringify(observed));
+      return done;
+    },'realtime pan');
     const motionFaults=[...cdp.faults,...await evaluate('__faults')];
     assert(motionFaults.length===0,JSON.stringify(motionFaults));
     if(handoffCut){

@@ -56,7 +56,10 @@ fn march_shafts(@builtin(global_invocation_id) slot: vec3<u32>) {
     var result = vec3(0.0);
     if shaft_mapping.window.w > 0.0 && length_m > 0.0 {
         for (var index = 0u; index < count; index++) {
-            let t = (f32(index) + noise) * step;
+            // Adjacent intervals use opposite offsets so a bright sheet
+            // crossing both does not inherit the pixel's jitter pattern.
+            let jitter = select(noise, 1.0 - noise, (index & 1u) != 0u);
+            let t = (f32(index) + jitter) * step;
             let point = camera + ray * (entry + t);
             let column = caustic_column(point.xz, window, shaft_columns);
             let level_here = select(level, column.x, column.w > 0.0);
