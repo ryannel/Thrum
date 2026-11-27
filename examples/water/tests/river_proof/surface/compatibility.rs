@@ -29,10 +29,10 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
     forcing.wind_direction = 0.42;
     let spectrum = thrum_sea_model::Spectrum::build(&forcing).expect("trade spectrum");
     let run = |map| {
-        let mut probe = TradeDepth::new(gpu, map, spectrum.clone());
+        let mut probe = TradeDepth::with_optics(gpu, map, spectrum.clone(), None);
         *probe.camera.lock().expect("chart camera") = TradeView::Above.camera(POINT, 3.0, 0);
         let mut heights = Vec::new();
-        for tick in 112..=120 {
+        for tick in 1..=9 {
             probe.submit_tick(tick);
             let answer = probe.query_at(POINT);
             assert!(answer.surface.wet);
@@ -62,7 +62,7 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
         .max()
         .expect("submitted water pixels");
     println!(
-        "Metal one-sample chart: 9 matched ticks (112–120), height delta {max_height_delta:.7} m,          maximum submitted pixel channel delta {max_pixel_delta}"
+        "Metal one-sample chart: 9 matched ticks (1–9), height delta {max_height_delta:.7} m,          maximum submitted pixel channel delta {max_pixel_delta}"
     );
     assert!(
         max_height_delta < 1e-6,

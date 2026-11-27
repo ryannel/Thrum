@@ -429,8 +429,8 @@
           "ask": "Is a river reached only through declarations any game can make, with no path in `thrum-water` that knows the island? Does the test fail when the GPU's map reads one sample for every gauge, and when it ignores the wetting gauge, on the hollow and on the dry reach alike? Does it fail when the map is right and the draw wets the hollow, or the reach, from the upper sample at a gauge below its wetting?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP4/one-sample/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RIVERS/WP4-review.md"
         },

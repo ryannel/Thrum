@@ -297,3 +297,9 @@
   highlights cross the former spring-pool seam in the bank view. At the two seven-second tidal
   stations, the maximum depth differences were 0.0701 mm from above and 0.5057 mm from the bank.
   [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/pool-seam/README.md)
+
+- 2026-11-27 WP4.3 review fix. The sampled wave reference belongs to its shared track.
+  A track that includes a one-sample chart keeps the steady reference so joined reaches
+  agree on phase. Ordinary chart draws still read their material-space row on mixed maps.
+  The Metal regression compares the same chart with and without samples on a separate chart.
+  [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/one-sample/README.md)

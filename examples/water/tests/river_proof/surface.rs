@@ -76,8 +76,17 @@ struct TradeDepth {
 
 impl TradeDepth {
     fn new(gpu: &thrum_test_support::Gpu, map: Map, spectrum: thrum_sea_model::Spectrum) -> Self {
+        Self::with_optics(gpu, map, spectrum, Some(thrum_water::Optics::default()))
+    }
+
+    fn with_optics(
+        gpu: &thrum_test_support::Gpu,
+        map: Map,
+        spectrum: thrum_sea_model::Spectrum,
+        optics: Option<thrum_water::Optics>,
+    ) -> Self {
         let mut profile = water_scene::profile(&spectrum);
-        profile.optics = Some(thrum_water::Optics::default());
+        profile.optics = optics;
         profile.query = Some(QueryLimits {
             points: 1,
             max_age: 8,
