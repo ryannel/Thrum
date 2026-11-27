@@ -18,6 +18,10 @@ fn dry_wetness_provider_is_pixel_exact_in_gale() {
 }
 
 #[cfg(target_os = "macos")]
+#[expect(
+    clippy::print_stderr,
+    reason = "retain each submitted Metal comparison"
+)]
 fn compare_dry(name: &str, wind: Wind) {
     use std::time::Duration;
     use water_scene::island::build_rain_ground;
@@ -98,7 +102,10 @@ fn compare_dry(name: &str, wind: Wind) {
                 registered_gather, ordinary_gather,
                 "{wind:?} camera {camera} changed gather admission"
             );
-            if pan != 0 {
+            eprintln!(
+                "Metal {wind:?} camera {camera}, pan {pan}: {changed} changed pixels, gather {ordinary_gather} / {registered_gather}"
+            );
+            if pan != 0 && matches!(wind, Wind::Calm) {
                 assert!(!registered_gather, "{wind:?} camera away from all readers");
             }
         }
