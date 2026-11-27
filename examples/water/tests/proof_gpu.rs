@@ -1,5 +1,7 @@
 //! Opt-in submitted-output capture and paired GPU measurement driver.
 #[cfg(target_os = "macos")]
+mod fall_observation;
+#[cfg(target_os = "macos")]
 mod ground_inspection;
 #[cfg(target_os = "macos")]
 mod optics_cost;
@@ -228,6 +230,15 @@ fn driver(gpu: &thrum_test_support::Gpu) {
     let mode = std::env::var("THRUM_WATER_PROOF").expect("mode");
     let directory = PathBuf::from(std::env::var("THRUM_WATER_OUTPUT").expect("output"));
     std::fs::create_dir_all(&directory).expect("output folder");
+    if mode == "fall-witness" {
+        let record = fall_observation::pool_witness(gpu);
+        std::fs::write(
+            directory.join("fall-witness.json"),
+            serde_json::to_vec_pretty(&record).expect("pool witness JSON"),
+        )
+        .expect("pool witness");
+        return;
+    }
     if mode == "rain-ground-cost" {
         std::fs::write(
             directory.join("rain-ground-cost.json"),

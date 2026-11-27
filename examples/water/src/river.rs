@@ -420,6 +420,14 @@ fn build_selection(
         .slider("sun.elevation", "Sun elevation", -15.0..=90.0)
         .default(48.0)
         .add()?;
+    let azimuth = falls
+        .then(|| {
+            controls
+                .slider("sun.azimuth", "Sun azimuth", 0.0..=360.0)
+                .default(165.0)
+                .add()
+        })
+        .transpose()?;
     let stage_map = Arc::clone(&map);
     let initial = fall.as_ref().map_or(VIEWS[0].1, |fall| fall.cameras[0]);
     let game = SkyGame::new(controls, initial, move |values, sky| {
@@ -433,7 +441,7 @@ fn build_selection(
             .as_ref()
             .map_or_else(|| VIEWS[view].1, |fall| fall.cameras[view]);
         sky.sun_elevation_degrees = values.get(sun);
-        sky.sun_azimuth_degrees = 165.0;
+        sky.sun_azimuth_degrees = azimuth.map_or(165.0, |control| values.get(control));
         sky.exposure_compensation_ev = 0.3;
         sky.temporal_inputs = true;
         let mut map = stage_map.lock().expect("river map");
