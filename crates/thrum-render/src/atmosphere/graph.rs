@@ -286,7 +286,7 @@ impl AtmospherePrepared {
         diffuse_reads.push(Access::new(
             chart_lighting.clone(),
             0..CHART_LIGHTING_BYTES,
-            AccessKind::UniformRead,
+            AccessKind::StorageReadWrite,
         ));
         self.append_diffuse(
             graph,

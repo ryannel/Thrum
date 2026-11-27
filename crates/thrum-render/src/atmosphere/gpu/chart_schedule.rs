@@ -202,10 +202,6 @@ impl ChartSubmission {
 }
 
 impl ChartSchedule {
-    pub(super) fn was_governed(&self) -> bool {
-        self.cadence > 1
-    }
-
     fn due(&self, index: usize, snapshot: Source, live: Source, overlay_light: bool) -> bool {
         self.sources[index].is_none_or(|previous| {
             !previous.inputs.same_air(snapshot.inputs)

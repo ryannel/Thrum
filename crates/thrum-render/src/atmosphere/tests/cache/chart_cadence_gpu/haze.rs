@@ -44,14 +44,14 @@ fn governed_haze_and_diffuse_share_one_classification_for_a_registered_write() {
     pollster::block_on(async {
         let air = sun(30.0, 90_000.0, [1.0; 3]);
         let dim = sun(30.0, 45_000.0, [1.0; 3]);
-        for cloudy in [false, true] {
+        for (cloudy, initial_cadence) in [(false, 8), (true, 1)] {
             let mut scene = SyntheticScene::grid(1).unwrap();
             scene.sky_overlay = true;
             scene.sun_shadows = false;
             scene.sun_optical_depth = Some(cloud_field(0.0));
             let mut spread = Probe::prepare(&caps, &queue, air, scene).await;
             let mut overlay = OneOverlay::register(&mut spread, cloudy);
-            spread.cadence(8);
+            spread.cadence(initial_cadence);
             overlay.submit_frame(&mut spread, air);
             assert_eq!(classifications(&spread), [u32::from(cloudy), 1]);
             let products = spread
@@ -68,6 +68,7 @@ fn governed_haze_and_diffuse_share_one_classification_for_a_registered_write() {
                 || probe.sample(&device, &queue, &products, &[[0.5, 0.5, 0.0, 0.0]], 0)[0][0];
             let before = read();
             overlay.runs = false;
+            spread.cadence(8);
             for submission in 0..8 {
                 if submission == 0 {
                     spread.scene.sun_optical_depth = Some(cloud_field(2.0));

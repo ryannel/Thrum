@@ -8,9 +8,8 @@ fn overlay_open_sun() -> f32 {
 @group(0) @binding(2) var aerial_sampler: sampler;
 @group(0) @binding(3) var<storage,read_write> environment_light: EnvironmentLight;
 @group(0) @binding(7) var overlay_faces: texture_2d_array<f32>;
-@group(0) @binding(8) var<uniform> overlay_chart: ChartLighting;
+@group(0) @binding(8) var<storage, read_write> overlay_chart: ChartLighting;
 var<workgroup> clear_meter: array<f32,64>;
-var<workgroup> has_cloud: u32;
 var<workgroup> irradiance: array<vec4<f32>,64>;
 var<workgroup> moments: array<array<vec4<f32>,9>,64>;
 
@@ -18,17 +17,15 @@ var<workgroup> moments: array<array<vec4<f32>,9>,64>;
 fn diffuse_main(@builtin(local_invocation_index) index: u32) {
     // Preserve the existing horizontal incident meter, including sample order
     // and reduction. It is not reconstructed from the truncated SH expansion.
-    var active_overlay = overlay_chart.cloudy != 0u;
-    if overlay_chart.mode == 0u {
-        clear_meter[index] = f32(overlay_face_has_cloud(index));
-        workgroupBarrier();
-        if index == 0u {
-            has_cloud = 0u;
-            for (var i = 0u; i < 64u; i++) {
-                has_cloud |= u32(clear_meter[i]);
-            }
-        }
-        active_overlay = workgroupUniformLoad(&has_cloud) != 0u;
+    if index == 0u { active_overlay = overlay_chart.mode; }
+    let governed = workgroupUniformLoad(&active_overlay) != 0u;
+    var cloudy: bool;
+    if governed {
+        cloudy = overlay_chart.cloudy != 0u;
+    } else {
+        // Keep the legacy scan and seed a later governed submission if the
+        // overlay producer skips its write at the handoff.
+        cloudy = classify_overlay(index);
     }
     let solar=atmosphere.sun_lux.w*atmosphere.colour_pre_exposure.rgb;
     var sum=vec4(0.0);
@@ -38,7 +35,7 @@ fn diffuse_main(@builtin(local_invocation_index) index: u32) {
         let mu = direction.y;
         let uv=sky_uv(direction,atmosphere.sun_lux.xyz);
         let clear=textureSampleLevel(sky,aerial_sampler,uv,0.0);
-        if active_overlay {
+        if cloudy {
             let layer = textureSampleLevel(sky_overlay, aerial_sampler, direction, 0.0);
             let clear_rgb = overlay_clear(clear);
             sum += vec4(clear_rgb * layer.a + layer.rgb, 0.0) * (mu*2.0*PI/256.0);
@@ -63,7 +60,7 @@ fn diffuse_main(@builtin(local_invocation_index) index: u32) {
         let direction=vec3(radius*cos(phi),mu,radius*sin(phi));
         let clear=textureSampleLevel(sky,aerial_sampler,sky_uv(direction,atmosphere.sun_lux.xyz),0.0);
         var radiance=clear;
-        if active_overlay {
+        if cloudy {
             radiance=vec4(overlay_radiance(direction,clear,aerial_sampler),0.0);
         }
         let weighted=radiance*(2.0*span*node.x*node.y*2.0*PI/32.0);
@@ -89,7 +86,7 @@ fn diffuse_main(@builtin(local_invocation_index) index: u32) {
     var coefficients: array<vec4<f32>,9>;
     for(var i=0u;i<9u;i++) {
         var rgb = moments[0][i].rgb;
-        if !active_overlay { rgb = decode_sky_light(moments[0][i], solar); }
+        if !cloudy { rgb = decode_sky_light(moments[0][i], solar); }
         coefficients[i] = vec4(rgb, 0.0);
     }
     // Diagnostic only: count negative raw RGB on 64 fixed sphere normals, not
@@ -102,11 +99,11 @@ fn diffuse_main(@builtin(local_invocation_index) index: u32) {
     workgroupBarrier();
     if index==0u {
         var horizontal = irradiance[0].rgb;
-        if !active_overlay { horizontal = decode_sky_light(irradiance[0], solar); }
+        if !cloudy { horizontal = decode_sky_light(irradiance[0], solar); }
         environment_light.horizontal_irradiance=vec4(horizontal,1.0);
         environment_light.sky_diffuse=coefficients;
-        environment_light.sky_diffuse[2].w = select(0.0, 1.0, active_overlay);
-        write_overlay_light(horizontal, clear_meter[0], active_overlay);
+        environment_light.sky_diffuse[2].w = select(0.0, 1.0, cloudy);
+        write_overlay_light(horizontal, clear_meter[0], cloudy);
     }
     workgroupBarrier();
     irradiance[index]=vec4(select(0.0,1.0,any(probe<vec3(0.0))),min(probe.x,min(probe.y,probe.z)),0.0,0.0);

@@ -765,8 +765,7 @@ impl AtmospherePrepared {
             return Ok(());
         }
         let due = if stage == AtmosphereStage::OverlayLighting {
-            self.quality()[1].value > 1
-                && (overlay_written || self.uses_haze_scale() || !self.schedule.was_governed())
+            self.quality()[1].value > 1 && (overlay_written || self.uses_haze_scale())
         } else {
             self.pending_charts[usize::from(overlay_written)]
                 .writes(stage)
@@ -792,7 +791,7 @@ impl AtmospherePrepared {
                 let (pipeline, group) = self
                     .chart_lighting
                     .as_ref()
-                    .and_then(|pass| pass.select(overlay_written || !self.schedule.was_governed()))
+                    .and_then(|pass| pass.select(overlay_written))
                     .ok_or(RenderError::GraphPassMismatch)?;
                 (pipeline, group, [1, 1, 1])
             }
