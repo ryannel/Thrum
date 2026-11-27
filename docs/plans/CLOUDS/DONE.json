@@ -1547,8 +1547,8 @@
           "ask": "Would the nearest and farthest stops blended to the middle depth fail the bank cases? Is the unchanged frame compared with one from the commit this work package started at, or with a retained image?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP15/review-repair-r3/REPAIR.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
@@ -1641,7 +1641,7 @@
           "ask": "Does the row claim only what this work package proved, on the targets it ran on, with visuals apart from correctness?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP15/review-repair-r2/REPAIR.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP15/review-repair-r3/REPAIR.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         }

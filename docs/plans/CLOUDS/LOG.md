@@ -1158,3 +1158,10 @@ transmittance as its neighbours move in front of the placed cloud. The Mac exten
 prepares the larger trace and history targets with existing pipelines. The switch records
 zero pipeline creations and the first grown frame has all 2,405 fresh surface stops.
 [Review repair evidence](../../../.orchestrate/evidence/CLOUDS/WP15/review-repair-r2/REPAIR.md)
+
+With clear Ground rows, a ray free of surfaces inside or behind the elevated cloud band
+uses the Sky march. Sky pixels interpolate the original depth taps, and opaque pixels use
+the stop at their own depth. The cooked valley's Clear Ground frame matches its
+pre-WP15 Mac Metal capture at all 921,600 RGBA bytes. The public contribution list
+forwards both resize hooks and slices the replacement handles in member order.
+[Clear Ground and resize evidence](../../../.orchestrate/evidence/CLOUDS/WP15/review-repair-r3/REPAIR.md)
