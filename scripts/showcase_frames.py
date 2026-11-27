@@ -349,7 +349,8 @@ def chrome_record(output, wasm_hash, day):
         raise ValueError('Chrome had no completed frames with timestamp queries requested')
     measured = [row for row in callbacks if first <= row['tick'] <= last]
     misses = chrome_callback_misses(callbacks, presented, first, last, day)
-    misses.extend(chrome_present_gaps(callbacks, presented, first, last, day, runtime['presented_at_start']))
+    misses.extend(chrome_present_gaps(callbacks, presented, first, last, day,
+                                      runtime['initial_report']['presented']))
     misses.sort(key=lambda miss: miss['preceding_callback']['raf_ms'])
     content = runtime.get('exit_cooked', {})
     return {'selections': runtime['exit_selections'], 'cooked_root': content.get('cooked_root'),
