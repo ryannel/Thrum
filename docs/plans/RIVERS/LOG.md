@@ -364,7 +364,7 @@
   through a trickle and two running levels. The late sheet supplies the same depth and colour read by
   the pool's gather. The sheet's runtime spacing is listed as `river.fall_path_spacing` in
   millimetres with no history invalidation. Plunge power feeds the shared foam stocks and its
-  departure-time pattern drives interaction impulses. The scene uses a wave share of 0.28.
+  departure-time pattern drives interaction impulses. The scene uses a wave share of 0.5.
 - 2026-11-27 WP6. Metal carriage trials put each of the two ring sets within 0.33 m after five
   seconds. Fivefold riffle forcing moved the pool centre by at most 0.024 m. The blend retained
   98.5% of the still-water ring energy on the straight and 77.6% on the bend. Those five-second

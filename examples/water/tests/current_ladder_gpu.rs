@@ -145,7 +145,7 @@ mod current_ladder {
                     footprint: [0.25; 2],
                     force: 0.0,
                 }],
-            )
+            );
         };
         follow(0);
         scene.frame_without_timings(0.0);

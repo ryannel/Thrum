@@ -4,6 +4,7 @@ use thrum_water_model::Map;
 
 mod currents;
 mod hollows;
+mod joins;
 pub(super) use currents::{CARRIAGE_COUNTS, CellCarriage};
 pub(super) use hollows::WetHollows;
 
@@ -30,6 +31,7 @@ struct Wet {
     body: usize,
     component: Option<u32>,
     depth: f32,
+    level: f64,
     current: [f64; 2],
 }
 
@@ -130,6 +132,11 @@ impl Window {
             .key
             .filter(|(_, previous_revision)| *previous_revision == revision)
             .map(|(old, _)| old);
+        let joins = if self.carriage.is_some() {
+            joins::Join::prepared(map)
+        } else {
+            Vec::new()
+        };
         self.next_wet.clear();
         self.next_wet.extend((0..CELLS).map(|i| {
             let x = origin[0] + (i % SIDE) as i32;
@@ -155,6 +162,7 @@ impl Window {
                 body: sample.body,
                 component,
                 depth: sample.depth as f32,
+                level: sample.row.level,
                 current: sample.row.current,
             })
         }));
@@ -216,10 +224,36 @@ impl Window {
                     depths |= 1 << cell.low;
                 }
                 let x = at % SIDE;
+                let from = self.wet[at].expect("labelled wet cell");
                 let mut visit = |next: usize| {
                     if self.cells[next].region == DRY
                         && self.wet[next].is_some_and(|other| {
-                            other.body == wet.body && other.component == wet.component
+                            if other.body == from.body {
+                                return other.component == from.component;
+                            }
+                            if joins.is_empty()
+                                || from.component.is_some()
+                                || other.component.is_some()
+                                || (from.level - other.level).abs() > 0.15
+                            {
+                                return false;
+                            }
+                            let metres = f64::from(metres);
+                            let midpoint = glam::DVec2::new(
+                                f64::from(origin[0])
+                                    + f64::midpoint(
+                                        f64::from(x as u32),
+                                        f64::from((next % SIDE) as u32),
+                                    ),
+                                f64::from(origin[1])
+                                    + f64::midpoint(
+                                        f64::from((at / SIDE) as u32),
+                                        f64::from((next / SIDE) as u32),
+                                    ),
+                            ) * metres;
+                            joins
+                                .iter()
+                                .any(|join| join.connects(from.body, other.body, midpoint))
                         })
                     {
                         self.cells[next].region = region;
@@ -244,14 +278,15 @@ impl Window {
         if let Some(carriage) = &mut self.carriage {
             carriage.label(&self.cells, &self.wet, self.depths.len());
         }
-        if level == 2 && self.wet.iter().flatten().any(|wet| wet.component.is_some()) {
-            self.absorb_at_shore();
+        let fine_shore = level == 2 && self.wet.iter().flatten().any(|wet| wet.component.is_some());
+        if fine_shore || level == 0 && !joins.is_empty() {
+            self.absorb_at_shore(fine_shore);
         }
         self.key = Some((origin, revision));
         true
     }
 
-    fn absorb_at_shore(&mut self) {
+    fn absorb_at_shore(&mut self, fine: bool) {
         // Fade the fine wave into the bank over eight samples. A gradual
         // sponge absorbs energy before the support mask cuts the field.
         const WIDTH: f32 = 8.0;
@@ -283,8 +318,15 @@ impl Window {
             self.cells[i].shore_loss = d;
         }
         for (cell, wet) in self.cells.iter_mut().zip(&self.wet) {
-            cell.shore_loss = if wet.is_some_and(|wet| wet.component.is_some()) {
-                28.0 * (1.0 - cell.shore_loss / WIDTH).powi(2)
+            let varying = !fine
+                && self
+                    .carriage
+                    .as_ref()
+                    .and_then(|carriage| carriage.regions.get(cell.region as usize))
+                    .is_some_and(|region| region.count > 1);
+            cell.shore_loss = if varying || wet.is_some_and(|wet| wet.component.is_some()) {
+                let rate = if fine { 28.0 } else { 8.0 };
+                rate * (1.0 - cell.shore_loss / WIDTH).powi(2)
             } else {
                 0.0
             };

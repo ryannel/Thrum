@@ -37,10 +37,14 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
         + 0.32 * sheet_noise(xy, span, vec2(8.7), vec2(0.0));
     let pixel = max(length(dpdx(xy)), length(dpdy(xy)));
     let width = max(0.025, min(0.27, 0.10 * pixel));
-    let cloud = fall_cloud(point);
+    let world_dx = dpdx(point);
+    let world_dy = dpdy(point);
     let tangent = normalize(input.velocity_along.xyz + vec3(1e-8, -1e-8, 0.0));
     let normal = normalize(cross(input.across_fraction.xyz, tangent));
-    var face = select(-normal, normal, dot(normal, look) >= 0.0);
+    let facet = normalize(cross(world_dx, world_dy));
+    let aligned = select(-facet, facet, dot(facet, normal) >= 0.0);
+    let contour = normalize(mix(normal, aligned, 0.68 * smoothstep(0.012, 0.12, input.discharge.w)));
+    var face = select(-contour, contour, dot(contour, look) >= 0.0);
     let breakout = input.discharge.y;
     let broken = smoothstep(rank - 0.14 - width, rank + 0.06 + width, breakout);
     let white = mix(pow(breakout, 1.35), broken, 0.65);
@@ -59,7 +63,7 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let fresnel = 0.02 + 0.98 * pow(1.0 - nv, 5.0);
     let mirror = environment_reflection(reflect(-look, face), mix(0.055, 0.39, white), nv).radiance;
     let light = environment_sun_direction();
-    let direct = sun_irradiance(point) * cloud;
+    let direct = sun_irradiance(point) * fall_cloud(point);
     let diffuse = mix(environment_diffuse(face), environment_diffuse(vec3(0.0, 1.0, 0.0)), 0.35);
     let foam = (diffuse + direct * (0.24 + 0.76 * max(dot(face, light), 0.0))) * (0.22 + 0.36 * grain);
     let translucence = mix(vec3(0.97, 1.0, 1.04), vec3(0.71, 0.94, 1.0), breakout * (0.36 - grain));
@@ -69,7 +73,9 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let uv = input.clip.xy * view_aux.viewport_inv_viewport.zw;
     let aerial = environment_aerial(point, uv);
     let colour = (mix(glass, churn, white) * aerial.transmission + aerial.scatter) * environment_storage_scale();
-    let foot = mix(1.0, 0.50, smoothstep(0.91, 1.0, input.across_fraction.w));
+    let spread = sheet_noise(xy, span, vec2(0.71, 0.5), vec2(12.0, 7.0));
+    let contact = 0.80 + 0.09 * spread;
+    let foot = mix(1.0, 0.12, smoothstep(contact, 1.0, input.across_fraction.w));
     let opacity = (clear * min(0.88, fresnel + 0.07 + 1.7 * input.discharge.w + 0.35 * breakout) + white * (0.90 + 0.18 * grain))
         * presence * mix(0.62, 1.0, seam) * foot;
     let displacement = input.velocity_along.xyz * sheet_clock.y;
