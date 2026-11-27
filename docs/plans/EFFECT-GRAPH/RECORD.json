@@ -685,7 +685,7 @@
         {
           "verdict": "fail",
           "commit": "79deba379ee5d1df633b4510d49914b0ad490f8c",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP7-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP7-review-1.md",
           "items": {
             "WP7.1": "fail",
             "WP7.2": "pass",
@@ -720,6 +720,44 @@
             "turns": 1
           },
           "at": "2026-11-27T08:13:32Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "a27601954332e9fb30c1b2486ae97ec7a6920dde",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP7-review.md",
+          "items": {
+            "WP7.1": "pass",
+            "WP7.2": "pass",
+            "WP7.3": "pass",
+            "WP7.4": "pass"
+          },
+          "findings": [
+            {
+              "name": "Detached capture advances persistent storage written by a transient draw",
+              "repeat": false
+            },
+            {
+              "name": "One declared array can draw its layers into different backing textures",
+              "repeat": false
+            }
+          ],
+          "summary": "All four WP7 items pass, and both Must Fix findings from the first review are resolved. WP7 still fails on two defects outside the items. On the M3 Max, a detached endpoint capture changed committed effect state, and preparation accepted two layers of one declared array backed by different textures, leaving half of the submitted field dark.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 119895,
+            "cached": 3047552,
+            "output": 11144,
+            "turns": 1
+          },
+          "at": "2026-11-27T10:11:28Z"
         }
       ],
       "authorised": {

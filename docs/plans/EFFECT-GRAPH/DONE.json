@@ -537,7 +537,7 @@
     {
       "id": "WP7",
       "name": "A test effect draws into a texture of its own before the scene is shaded, and the scene's shading reads it in the same frame, on the Mac and in Chrome",
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "A raster pass declared as in Unreal's RDG or Unity's render graph: a module draws into a target of its own, and the one executor orders it, clears it, stores it and times it. A wrong declaration is refused when the scene is prepared, with a named error, and never becomes a lost frame or a texture holding an earlier frame's light.",
       "items": [
         {
@@ -545,9 +545,9 @@
           "statement": "A contribution declares a `simulate` pass that draws, and preparation holds the stage's rules for it. It accepts two passes, one for each of two layers of their effect's own persistent, single-sample 2D-array texture, each clearing one mip of its layer as its one colour attachment, one run every frame and one skippable, with a later `simulate` pass and the opaque reads sampling that texture. It refuses each of these with a named error: a drawing pass that loads its attachment; one with two colour attachments; one whose attachment spans two layers; one whose attachment another pass of the effect also writes, once as a second drawing pass and once as a storage write; one that is time-sliced; one that is skippable and attaches a transient; one declared async-eligible; one that attaches a history side; one with a depth attachment; one that attaches a 3D texture; one that attaches a multisampled texture; one whose attachment's format the capability record does not allow as a colour attachment; one that says it blends into a format the record does not allow blending into; and one declared in a 2D scene. In a contribution list of two members, the first member's drawing pass whose attachment names the index one past that member's own resources is refused with a named error, though the second member declares a renderable texture that the joined declarations hold at that place. Guard: CPU tests of the declaration checks in `thrum-render`.",
           "check": "cargo nextest run --locked --offline -p thrum-render -E 'test(/simulate_draw_rules/)' --no-tests=fail",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP7/review-fix/README.md",
-          "verdict": "fail",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/EFFECT-GRAPH/WP7-review.md"
         },
         {
@@ -557,8 +557,8 @@
           "ask": "Are the expected texels, and the expected lit places in scene colour, written from the script's places and never read from the engine? Would the test fail in each of three cases: forward sampling the texture before the passes ran, the executor loading where a pass declared a clear, and both passes drawing into the first layer? Is the scene's executor the only code that begins the pass and chooses its load and store, with the effect handed an open render pass and no encoder of its own in `simulate`?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP7/review-fix/README.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/EFFECT-GRAPH/WP7-review.md"
         },
@@ -568,8 +568,8 @@
           "check": "node scripts/check_v1_browser.mjs --case effect-simulate-draw",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP7/review-fix/effect-simulate-draw.json",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/EFFECT-GRAPH/WP7-review.md"
         },
@@ -579,22 +579,21 @@
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render -E 'test(/simulate_draw_list_gpu/)' --no-tests=fail",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP7/review-fix/WP7.4.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/EFFECT-GRAPH/WP7-review.md"
         }
       ],
-      "failed_reviews": 1,
+      "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "findings": [
         {
-          "name": "Two draw passes can clear the same physical subresource under different resource indices",
-          "item": "WP7.1",
+          "name": "Detached capture advances persistent storage written by a transient draw",
           "repeat": false
         },
         {
-          "name": "Preparation reports success with an invalid memoryless attachment view",
+          "name": "One declared array can draw its layers into different backing textures",
           "repeat": false
         }
       ]
