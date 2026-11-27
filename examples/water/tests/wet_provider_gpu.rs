@@ -34,17 +34,27 @@ fn compare_dry(name: &str, wind: Wind) {
             let (game, report, _, _) = build_rain_ground(wind, true, enabled).expect("yard");
             let mut f = support::Fixture::from_game(&gpu, [384, 216], game, report);
             f.parameters(r#"{"camera.island":0,"rain.rate":0,"rain.drying":0,"sun.elevation":30}"#);
-            f.warm_cooked();
+            let mut drawn = false;
             thrum_test_support::wait::until(
                 "cooked grass texture",
                 Duration::from_secs(30),
                 || {
-                    f.frame_without_timings(1.0);
+                    // Keep the simulation endpoint fixed while streaming both arms.
+                    f.frame_without_timings(0.0);
+                    match f.game.poll_status() {
+                        Some(thrum_app::sky::ContentStatus::Drawn(_)) => drawn = true,
+                        Some(thrum_app::sky::ContentStatus::Failed(error)) => panic!("{error}"),
+                        _ => {}
+                    }
+                    if !drawn {
+                        return None;
+                    }
                     let pixels = f.image();
                     let grass = (60 * 384 + 32) * 4;
                     (pixels[grass + 1].saturating_sub(pixels[grass + 2]) > 15).then_some(())
                 },
             );
+            f.frame_without_timings(1.0);
             f
         };
         let mut absent = make(false);
@@ -94,6 +104,16 @@ fn compare_dry(name: &str, wind: Wind) {
                 .zip(registered.as_chunks::<4>().0)
                 .filter(|(left, right)| left != right)
                 .count();
+            if changed != 0 {
+                let first = ordinary
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .zip(registered.as_chunks::<4>().0)
+                    .enumerate()
+                    .find(|(_, (left, right))| left != right);
+                eprintln!("Metal first mismatch at {first:?}");
+            }
             assert_eq!(
                 changed, 0,
                 "{wind:?} camera {camera} changed submitted pixels"
