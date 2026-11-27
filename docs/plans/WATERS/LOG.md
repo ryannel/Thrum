@@ -1474,12 +1474,10 @@
 
 - 2026-11-26 WP15 Trade sea gap. The fixed 1440p Metal tags leave 182–184
   centre-column rows of bare bed between the dry sheet and the underwater
-  draw. Both heights are reconstructed on the CPU to about two rows.
-  The drawn rest grid cuts the summed displacement. The lens adds short
-  waves sampled in world coordinates to a long-wave cut, as the existing
-  body query does. The builder proposes making the lens and reference
-  model use a combined world-column cut, with the body-query contract
-  resolved by the planner. All configured checks pass at `237ffe0bd`.
+  draw. The drawn rest grid cuts the summed displacement, and the lens adds
+  short waves in world coordinates to a long-wave cut, as the body query
+  does. The builder proposes one combined cut for the lens and its model,
+  with the body-query contract the planner's. Checks pass at `237ffe0bd`.
   [Target evidence](../../../.orchestrate/evidence/WATERS/WP15/residual-line/README.md).
 
 - 2026-11-26 WP15 mapped admission. The dry proof now bounds the short-wave
@@ -1563,3 +1561,21 @@
 
 - 2026-11-27 Restored the real bank in the ordinary lake's overhead window for WP15.3 and WP15.8. The 1 m camera uses the raised-stage route's widening above 45°, which keeps the bank in the opaque gather. The matching capped-terrain shots remove the terrain strip on both targets. All five configured item checks passed, and the paired 1440p cost record includes the shared-load tripwire investigations.
   [Target stills, elapsed captures and checks](../../../.orchestrate/evidence/WATERS/WP15/bank-repair/README.md).
+
+## WP15 diagnosis
+
+- 2026-11-27 Planner, after four failed reviews, three on WP15.3 and WP15.8. The plan was at fault in one
+  clause: WP15.3 asked for the bank inside the sky window. Cue W9 asks for the sky through the window, and
+  [the window's refracted ray](DESIGN.md#under-water) is traced on screen, where a straight-up view never
+  holds a far bank: 76° off the axis of a view that reaches 69°. Each repair went round that. Review 2 found
+  a bank colour made up from the bed's slope. Review 3 found the bank only where the camera had been widened
+  to 154°. Review 4 found the ordinary lake widened too, and strips of sky across the hull where the march,
+  stretched to 128 m for the bank, stepped over hits 2 to 12 cm along the ray. With the camera at 105°,
+  review 3 passed every line but the bank's.
+- 2026-11-27 WP15.3 rewritten, from "the sky, the bank and the craft's hull at its waterline show inside a
+  bright disc": the bank is gone, the hull in the disc is one unbroken shape, the views are at 105°, and the
+  inspection is five numbered questions. WP15.8 reads WP15.3's list and is unchanged. The design declares
+  that the window shows what the camera's own view holds, gives the refracted ray the reflected ray's rule
+  for registered bodies, and fixes the inspected field of view.
+  [Finishing WP15](DESIGN.md#finishing-wp15-after-its-diagnosis) replaces the note on resuming its branch.
+  The other seven items stand as written and passed reviews 3 and 4.

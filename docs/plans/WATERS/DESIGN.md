@@ -1767,9 +1767,14 @@ while it is not admitted none of its work is done.
   under water is never the bound's to say: the lens cut decides it.
 - **The surface from beneath.** The surface is drawn two-sided. Its underside is shaded by Fresnel's law
   from the water's side, with a refractive index of 1.333. Within 48.6° of the surface's normal a ray leaves
-  the water, which is Snell's window. It reads the gather where it meets copied geometry that stands above
-  the water, and otherwise the environment product in the refracted direction, with the air beyond the
-  surface applied once. Outside the window all of the light is reflected. The reflected ray is traced on
+  the water, which is Snell's window. The refracted ray is traced in air on screen as
+  [a reflected ray is above water](#optics): against each registered body it can meet, across that body's
+  box, and against the copied scene over the reach. It reads the gather where it meets copied geometry that
+  stands above the water, and otherwise the environment product in the refracted direction, with the air
+  beyond the surface applied once. A hull beside the lens is met a few centimetres along the ray, just above
+  its own waterline, so a body is found along its whole box from the surface point on and never by a march
+  whose steps are sized for the reach: its image in the window is whole up to the waterline, where it meets
+  the hull seen directly through the water. Outside the window all of the light is reflected. The reflected ray is traced on
   screen as it is above water, against registered bodies and the copied scene, and where it finds neither it
   takes the water's own light along the reflected path down to the map's bed. The slope covariance softens
   the window's edge. Foam dims what the window lets through and scatters the water's light back, so from
@@ -1799,6 +1804,15 @@ Sunlight's path down to a body in the gather is taken vertically. Under a crest 
 wave the lens reads as under water. Anything transparent that a scene draws after the water takes none of
 the water's murk.
 
+**The window shows what the camera's own view holds.** The refracted ray is traced on screen, so scenery
+above the water that lies outside the frame shows as sky, as it does in a reflection on water with no mirror
+view. Looking straight up, that is everything near the horizon. From the example's lake camera the island's
+bank stands 47 m off and 12 m above the lens, 76° from the view's axis, and a 105° view reaches 69° at its
+corners. In the true window that bank would be a strip under 2° wide against the rim. So a far shore is not
+drawn in the disc, and a hull beside the lens is. No colour is made up for scenery the copy lacks, and no
+view is widened to bring it into the gather. A second view for the window is not built: cue W9 asks for
+the sky through the window, and a game that needs the shore in it is a planner's to add, on `SCENE-VIEWS`.
+
 Declared cost: a camera over a live wake window is admitted while it is dry, so a camera that follows a
 craft pays the whole-screen gather and a composition that keeps no pixel in every frame. The gather
 measured about 0.2 ms at 1440p on the M3 Max
@@ -1810,7 +1824,8 @@ enough to matter, a planner adds it.
 
 The views an item calls straight up are taken 0.01° off the vertical. The example's camera takes +Y for up
 and refuses a look along it, and 0.01° moves the centre of a 105° view 0.096 px at 1440p. No up vector is
-added to the camera for this.
+added to the camera for this. Every view WP15 inspects from under water is taken at the dive camera's 105°
+field of view, at every pitch and on both lake stages.
 
 ### Light under water: caustics, shafts and the meter
 
@@ -2440,20 +2455,26 @@ decides nothing. [WP19](#a-surf-query-a-running-game-can-use-wp19) uses it.
 - **Maturity.** A ledger row for `E1.water` is added in WP2 and kept current, with implementation, correctness,
   visuals and device apart.
 
-## Resuming WP15 from its branch
+## Finishing WP15 after its diagnosis
 
-WP15's builder stopped on 26 November 2026 with `build/waters` at `eb9042bce`, unmerged, and
-[a handoff](../../../.orchestrate/evidence/WATERS/WP15-handoff.md). The next builder continues that branch.
+WP15's work is merged on main, and four reviews failed it
+([the diagnosis](LOG.md#wp15-diagnosis)). Seven of its nine items passed the last two reviews. The next
+builder starts from main and proves all nine again, because WP15.3 changed.
 
-- **What was ruled.** [The lens cut, admission and the straight-up views](#under-water), and
-  [the query, which stays layer by layer](#bodies-and-the-query). The calm, breeze and trade matrix, fixed
-  and elapsed, the bank inside the disc and the bands on the held lake's hull stay as the items have them.
-- **Before merging**, run on the merge candidate and not the old base: the seven serial tests in
-  match-proof, rain-model and river-model that timed out in the branch's last workspace run, and Clippy on
-  the shared app, which reported an unused `self`. One that fails on main alone goes to its owner's log and
-  is not repaired here.
-- **Against `PUDDLES` WP4**, keep main's `surface_lighting.wgsl` composition and both modules' check arms,
-  and take the inspected captures again on the integrated renderer.
+- **What changed.** WP15.3 no longer asks for the bank inside the disc:
+  [the window shows what the camera's own view holds](#under-water). The dive camera returns to 105° at every
+  pitch on both lake stages, and the refracted ray's trace is sized for what a 105° view holds, not for a
+  shore outside it.
+- **What is left to repair.** The hull seen through the surface from beneath. Three reviews found it wrong
+  in three ways: torn into bands under the waterline, shown where no optical ray meets it, and cut by strips
+  of sky in the window, where a march sized for the far bank stepped over a hit 2 to 12 cm along the ray
+  ([the last reading](../../../.orchestrate/evidence/WATERS/WP15-review/613abaf/hull-rays.txt)). Each repair
+  met the review's one view. [The surface from beneath](#under-water) gives the one rule: the refracted ray
+  finds a registered body across its box, as a reflected ray does above water. Check the hull in every view
+  WP15.3 and WP15.5 name before review, on both targets, and not only the view the last review named.
+- **What stays.** The lens cut, admission, the water between, the crossing, the frame contract and the cost
+  record passed as they are. Change them only where the repair above needs it, and run their checks again
+  if it does.
 
 ## Open questions
 

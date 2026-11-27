@@ -1,8 +1,6 @@
 # WATERS plan
 
-[Design](DESIGN.md), [done-when file](DONE.json), [log](LOG.md), [module list](../ARCHITECTURE.md)
-
-First read [the handoff](DESIGN.md#proof-and-builder-handoff) and
+[Done-when file](DONE.json), [log](LOG.md). First read [the handoff](DESIGN.md#proof-and-builder-handoff) and
 [Exact baselines](../ARCHITECTURE.md#exact-baselines).
 
 ## Open for the human
@@ -20,17 +18,17 @@ First read [the handoff](DESIGN.md#proof-and-builder-handoff) and
 - Assumption: delivery, not a view's time, decides two-tick answers; no second path past the view is built; with no new answer a float rides its last one, to the maximum age.
 - Assumption: surf on a lake is proved against the model, not by eye: the example's lake raises no long waves.
 - Assumption: "scenery reflections" is met by drawing the scene mirrored for the two water levels with most water in view; a third reflects only what is on screen, and otherwise the sky or the ground beside it.
-- Assumption: under water there are no lens drops, particles or bubbles, and the picture darkens with depth by a quarter of the light lost. One water surface in any column still holds.
+- Assumption: under water there are no lens drops, particles or bubbles, the sky window shows a far shore as sky, and the picture darkens with depth by a quarter of the light lost. One water surface per column still holds.
 - Assumption: the owner's "it should start from first principles", said of clouds, governs water too, and "bring that across when it makes sense" (13 November) lets work packages start once their dependencies are Done, even before G7.
 - Assumption: "you can copy that code out and reuse as is if it's useful" licenses what Broadsides' authors wrote; third-party material keeps its own licence, and nothing GPL or share-alike is copied.
 - Assumption: every part beyond open water (surf, the mirror, the underwater view) is a capability a scene can leave out at no cost.
 - Assumption: the three sea cues the 10 November spikes left open stay parked.
 - Assumption: "persists after the hull stops or turns" is met inside windows that follow the craft: short waves to about 30 m behind, longer to about 250 m.
 - Assumption: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item (brief decision 3).
-- Assumption: only WP14 and the close wait for `SCENE-VIEWS`, and the close for `APPLE-PRESENTATION`'s governor and MetalFX work packages.
+- Assumption: only WP14 and the close wait for `SCENE-VIEWS`, and the close for `APPLE-PRESENTATION`'s governor and MetalFX.
 - Assumption: under the owner's bar of 17 November, tests cover what a game reads, the frame contract and what one pass hands another; wakes, foam and underwater light are judged by eye, and a defect found only by enlarging, reading pixels or instrumenting fails no inspection.
 - Assumption: carried ripples are proved on four named charts (WP9.2); their speed on a sheared chart is a known gap, left to `RIVERS`.
-- Assumption: only the lens is cut from the drawn sheet, a float's query staying 33 mm off; over a live wake a dry camera pays the underwater gather.
+- Assumption: the lens alone is cut from the drawn sheet, floats staying 33 mm off; a dry camera over a live wake pays the gather.
 
 ## WP1 Where water lies is worked out on the CPU alone: a sea, a lake in a hollow and a channel with a current each have a level, a depth and a flow at every point
 
@@ -102,11 +100,9 @@ First read [the handoff](DESIGN.md#proof-and-builder-handoff) and
 
 ## WP25 A few stations check the Metal surf query against the model
 
-[Design](DESIGN.md#a-small-metal-cut-check-wp25).
-
 ## WP15 The camera goes under water: the waterline crosses the lens, and the surface overhead shows the sky through a bright window
 
-[Resuming](DESIGN.md#resuming-wp15-from-its-branch).
+[Finishing WP15](DESIGN.md#finishing-wp15-after-its-diagnosis).
 
 ## WP16 Under water the Sun casts a moving net of light on the bed and the hull, shafts of light stand in the water, and the picture stays readable as the camera goes down
 
