@@ -29,7 +29,7 @@ fn atmosphere_lighting(
     sun: crate::environment::SunSample,
     camera_altitude_m: f32,
     #[cfg(feature = "proving")] haze: Option<thrum_render::atmosphere::Aerosol>,
-    medium_epoch: Option<u64>,
+    medium: Option<MediumSource>,
 ) -> FrameLighting {
     let frame = AtmosphereFrame::new(
         sun.toward_sun,
@@ -46,7 +46,14 @@ fn atmosphere_lighting(
     let frame = haze.map_or(frame, |aerosol| {
         frame.with_aerosol(aerosol).with_view_volume()
     });
-    let frame = medium_epoch.map_or(frame, |epoch| frame.with_view_volume_medium(epoch));
+    let frame = match medium {
+        None => frame,
+        Some(MediumSource::Ground) => frame
+            .with_view_volume_medium(1)
+            .with_overlay_exposure_adaptation(),
+        #[cfg(feature = "proving")]
+        Some(MediumSource::TestBank) => frame.with_view_volume_medium(1),
+    };
     FrameLighting::Atmosphere(frame)
 }
 
@@ -1041,7 +1048,7 @@ impl SceneSource<PublishedPage> for GameScene {
                 camera_altitude_m,
                 #[cfg(feature = "proving")]
                 self.haze,
-                self.medium.is_some().then_some(1),
+                self.medium,
             )
         });
         let view = if self.valley_stars

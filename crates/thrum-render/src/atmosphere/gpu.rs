@@ -374,6 +374,10 @@ impl AtmospherePrepared {
         self.overlay_lighting() == super::overlay::Lighting::OverlayAndHaze
     }
 
+    pub(crate) fn uses_overlay_exposure_adaptation(&self) -> bool {
+        self.has_overlay() && (self.uses_haze_scale() || self.frame.overlay_exposure_adaptation)
+    }
+
     pub(crate) fn overlay_target(&self) -> Option<wgpu::Texture> {
         self.overlay.as_ref().map(|overlay| overlay.texture.clone())
     }
@@ -522,6 +526,7 @@ impl AtmospherePrepared {
         self.view_volume.is_some() == frame.view_volume()
             && self.frame.volume_depth_factor == frame.volume_depth_factor
             && self.frame.medium_epoch.is_some() == frame.medium_epoch.is_some()
+            && self.frame.overlay_exposure_adaptation == frame.overlay_exposure_adaptation
             && (!frame.variable_aerosol() || self.aerosol.is_some())
     }
 

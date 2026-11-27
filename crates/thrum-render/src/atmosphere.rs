@@ -120,6 +120,7 @@ pub struct AtmosphereFrame {
     aerosol: Option<Aerosol>,
     view_volume: bool,
     medium_epoch: Option<u64>,
+    overlay_exposure_adaptation: bool,
     volume_depth_factor: u8,
     // One prepared CPU result serves the packed light and the lent identity.
     surface_irradiance_lux: [f32; 3],
@@ -166,6 +167,7 @@ impl AtmosphereFrame {
             aerosol: None,
             view_volume: false,
             medium_epoch: None,
+            overlay_exposure_adaptation: false,
             volume_depth_factor: 1,
             surface_irradiance_lux: std::array::from_fn(|i| {
                 solar_colour[i] * solar_illuminance_lux * transmission[i]
@@ -208,6 +210,15 @@ impl AtmosphereFrame {
     pub fn with_view_volume_medium(mut self, source_epoch: u64) -> Self {
         self = self.with_view_volume();
         self.medium_epoch = Some(source_epoch);
+        self
+    }
+
+    /// Use the sky overlay's open-sky display exposure when a view volume is present.
+    /// Keep this declaration in subsequent frame samples. The incident meter still
+    /// measures local light.
+    #[must_use]
+    pub fn with_overlay_exposure_adaptation(mut self) -> Self {
+        self.overlay_exposure_adaptation = true;
         self
     }
 
