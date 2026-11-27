@@ -1735,10 +1735,10 @@
     {
       "id": "WP15",
       "name": "The camera goes under water: the waterline crosses the lens, and the surface overhead shows the sky through a bright window",
-      "status": "in_progress",
-      "failed_reviews": 4,
-      "failed_reviews_with_repeat": 3,
-      "diagnoses": 0,
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 1,
       "depends_on": [],
       "quality_bar": "Under water as in Sea of Thieves: a clean waterline across the lens with each side right at once, colour that deepens and darkens with depth, hulls and the bed fading into the water's own colour, and overhead a bright disc of sky ringed by the mirrored deep, moving with the waves. The net of light on the bed, the shafts and the meter that follows the light down are WP16's, so here the bed is evenly lit and the exposure is the sky's.",
       "items": [
@@ -1749,10 +1749,10 @@
           "ask": "Is the expected side of each pixel worked out from the model's surface at that pixel's own near-plane point, and would a test of the camera's centre alone fail? Does the lip's case put the lens in a column that holds three surfaces? Would adding the short waves at the world column to a cut of the long waves alone fail the trade wind's case? Would a bound that took a layer's highest value, a gain or a short-wave weight over the lens's own footprint, and not over the rest places that can reach the lens, fail the carried crest's case? Is the lens admitted wherever a wake window that is not at rest overlaps those rest places, with no ceiling standing in for the wake's height? For the cascades on a current, does the bound take a ceiling and never a value sampled on the CPU? On a chart with a current, do the lens cut and the draw read each cascade through the same carried place, worked out from the same row, clock and carriage values of the submitted frame, so that the lens cannot cut a ripple where it would lie on still water while the draw shows it carried downstream?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP15/optical-repair-admission-proof.md",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/WP15-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP15.11",
@@ -1761,10 +1761,10 @@
           "ask": "Would composing the water over an under-water pixel twice, and multiplying the exposure scale twice, each fail?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP15/optical-final-metal-water-path.log",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/WP15-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP15.3",
@@ -1773,28 +1773,28 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/WATERS/WP15-review.md"
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP15.4",
           "statement": "Under water the bed, the hull and a sunk float are seen through water that takes their colour toward its own with distance. Deeper water is darker, the lake differs from the sea as their water types do, and nothing clips to flat black or white at dawn, noon or twilight.",
           "inspect": "`fixed` stills from 0.5 m, 3 m and 10 m under the sea and from 0.5 m and 3 m under the lake, looking level and down, at the three hours: the bed near and far, the hull and the open water.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP15/optical-repair-visual-proof.md",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/WP15-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP15.5",
           "statement": "The camera sinks through the surface and rises again. The waterline crosses the lens as one clean line with a thin meniscus, each side of it is right in the same frame, the line follows the waves, and nothing flashes, pops or shows a gap: in a calm, in a trade wind, on the lake and in the swash on the beach.",
           "inspect": "`realtime` sequences of the camera lowered through the surface and raised again in each of those places, and held half under in a trade wind: the line on the lens and both sides of it, frame by frame.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP15/optical-repair-visual-proof.md",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/WP15-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP15.6",
@@ -1802,10 +1802,10 @@
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test under_frame_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP15/optical-final-metal-attachments.log",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/WP15-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP15.7",
@@ -1813,10 +1813,10 @@
           "check": "node scripts/check_water_browser.mjs --case under",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP15/optical-final-browser-lens/run.json",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/WP15-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP15.8",
@@ -1825,8 +1825,8 @@
           "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/WATERS/WP15-review.md"
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP15.9",
@@ -1834,24 +1834,10 @@
           "check": "python3 scripts/water_cost.py check --scene under",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP15/optical-final-cost-proof.md",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/WP15-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "Refracted sky cuts stripes through the hull at the lake waterline",
-          "item": "WP15.3",
-          "different": "The ordinary bank now appears inside the window. These stripes cross the solid craft inside the disc while the camera is fully submerged.",
-          "repeat": false
-        },
-        {
-          "name": "Chrome shows sky through the hull inside the lake window",
-          "item": "WP15.8",
-          "different": "The bank is visible in Chrome. The refracted trace misses the nearby hull inside the disc, including in calm water with the lens wholly under.",
-          "repeat": false
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ]
     },

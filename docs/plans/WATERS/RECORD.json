@@ -2481,7 +2481,7 @@
       }
     },
     "WP15": {
-      "definitions": "aec8061128981daa34f0544d420e3422b0bed28706de34bcaec05880b25b29b9",
+      "definitions": "3904edc12aad2fe0fb1e93e21eb1975ac82d6f5f65d29e791b7ef2dc700bcb83",
       "reviews": [
         {
           "verdict": "fail",
@@ -2736,34 +2736,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 3 Must Fix find",
-        "at": "2026-11-26T17:05:37Z"
-      },
-      "ready_for_review": {
-        "commit": "317829c8d41bf4a92d75bc6a5ffb42659147615d",
-        "checked": "317829c8d41bf4a92d75bc6a5ffb42659147615d",
-        "at": "2026-11-27T02:43:20Z",
-        "host": "codex",
-        "model": "gpt-6.2-sol",
-        "effort": "medium",
-        "observed": {
-          "model": "gpt-6.2-sol",
-          "effort": "medium"
-        },
-        "cli": "codex-cli 0.171.0-alpha.13.2",
-        "path": "visible",
-        "usage": {
-          "input": 222205,
-          "cached": 16928384,
-          "output": 29860,
-          "turns": 1
-        },
-        "session_usage": {
-          "input": 222205,
-          "cached": 16928384,
-          "output": 29860,
-          "turns": 1
-        }
+        "task": "Diagnose WATERS WP15. It has failed review 4 times, 3 of them on an item or a finding an earlier review had failed, so t",
+        "at": "2026-11-27T03:04:28Z"
       }
     },
     "WP14": {
@@ -3656,11 +3630,15 @@
     {
       "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 3 Must Fix findings.",
       "at": "2026-11-26T17:05:37Z"
+    },
+    {
+      "task": "Diagnose WATERS WP15. It has failed review 4 times, 3 of them on an item or a finding an earlier review had failed, so the same items keep failing: the fixes aren't holding, or each fix meets a new defect in an item that may ask for more than the vision and scope document does. Its reviews, oldest first: .orchestrate/evidence/WATERS/WP15-review-1.md, .orchestrate/evidence/WATERS/WP15-review-2.md, .orchestrate/evidence/WATERS/WP15-review-3.md, .orchestrate/evidence/WATERS/WP15-review.md. What failed in each review: review 1 (2026-11-26): Enabling rain flattens the wind-wave cascades (outside the items), new; The solved river lens cuts a different surface from the draw (WP15.1), new; Dry admission ignores the drawn rain-ring height (WP15.1), new; The carried-crest test cannot detect footprint-only gains or weights (WP15.1), new; The exposure proof compares identical GPU storage scales (WP15.11), new; The bank is unreadable in the straight-up lake window (WP15.3), new; The Trade lake inspection disables whitecaps (WP15.3), new; The submerged hull breaks into long bands during crossings (WP15.5), new; Chrome loses the bank in the straight-up lake window (WP15.8), new; Chrome shows bands across the hull in the held lake view (WP15.8), new; The Chrome lake route cannot show the required overhead foam (WP15.8), new; The cost record skips water-surface tripwires after pass renumbering (WP15.9), new | review 2 (2026-11-27): The carried-crest test cannot detect footprint-only gains or weights (WP15.1), repeated; Registered objects above water show outside Snell\u2019s window (WP15.3), new; Wet pixels show the above-water hull during the crossing (WP15.5), new; Chrome shows the above-water hull through the reflecting underside (WP15.8), new; The dry surface shows submerged bodies that the refracted ray misses (outside the items), new; An empty scene gather acquires a synthetic bank material (outside the items), new | review 3 (2026-11-27): The bank is unreadable in the straight-up lake window (WP15.3), repeated; Chrome loses the bank in the straight-up lake window (WP15.8), repeated | review 4 (2026-11-27): Refracted sky cuts stripes through the hull at the lake waterline (WP15.3), new; Chrome shows sky through the hull inside the lake window (WP15.8), new. A plan you keep ends with `KEEP WATERS WP15: ...`.",
+      "at": "2026-11-27T03:04:28Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T17:05:37Z"
+    "at": "2026-11-27T03:04:28Z"
   },
   "design_history": [
     {
