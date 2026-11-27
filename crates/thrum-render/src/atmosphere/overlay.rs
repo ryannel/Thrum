@@ -16,7 +16,7 @@ pub(crate) struct ChartLighting {
     pub(crate) mode: u32,
     pub(crate) cloudy: u32,
     pub(crate) haze: f32,
-    pub(crate) padding: u32,
+    pub(crate) classifications: u32,
 }
 
 #[repr(C, align(16))]

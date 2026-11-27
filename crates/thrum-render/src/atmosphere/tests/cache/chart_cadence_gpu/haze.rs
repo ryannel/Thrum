@@ -24,7 +24,8 @@ fn classifications(probe: &Probe<'_>) -> [u32; 2] {
         ..,
     );
     let bytes = copy.wait(device, probe.queue.submit([encoder.finish()]));
-    [4, 12].map(|offset| u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap()))
+    let record = bytemuck::pod_read_unaligned::<crate::atmosphere::overlay::ChartLighting>(&bytes);
+    [record.cloudy, record.classifications]
 }
 
 #[test]
