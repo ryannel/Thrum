@@ -33,7 +33,8 @@ pool below.
 
 **Commissioned:** the flow solver and its stored charts; a river that answers its source's level; the flow's own
 roughness; foam from the flow; waterfalls. Cues R1 to R8 below, on `mac-metal` and `chrome-webgpu`, on the water
-example's island behind a selection.
+example's island behind a selection. One part of R5 is built last, by a mechanism not yet chosen:
+[the heavy fall at the highest gauge](#the-heavy-fall-at-the-highest-gauge) (WP11).
 
 **Not built**, with the reason:
 
@@ -533,6 +534,54 @@ Each tick, for each segment of a fall whose path meets water, at the place it me
 Rings exist where the interaction windows are, which is round the body the game names
 ([`WATERS`' reach](../WATERS/DESIGN.md#interaction-waves)). A path that lands on bare ground gives neither.
 
+### The heavy fall at the highest gauge
+
+**Parked, and built last.** Lead's ruling, 27 November 2026. At the island's highest gauge the sheet reads from
+beside it and from the bank as a curtain, and its strands end hard at the pool. Three bounded attempts left both
+as they were: the sheet's optics and light; the island profile's lengths and tear thickness, which draw the
+flood 0.97 to 0.99 white at its foot; and strands parted by the time they left the lip, each with its own
+contact and spray at the pool, which also moved a depth the frame contract's test pins and was taken out
+([handoff](../../../.orchestrate/evidence/RIVERS/WP6-handoff.md),
+[the trial](../../../.orchestrate/evidence/RIVERS/WP6/strand-pass/README.md)). All three tuned one mechanism, a
+single surface along the water's path with a pattern thresholded on it and a cut at the pool's level, so a
+fourth pass of that kind is not the remedy. WP6 closes on the lowest and middle gauges, where the sheet passes.
+At the highest gauge the sheet draws as it does, and no item judges its look there until WP11.
+
+**What WP11 decides.** Which mechanism draws a fall too heavy for the sheet to carry. Its first item is research
+into how high-end games shipped in 2020 or later draw a heavy waterfall, from published accounts and from the
+games' own frames, and a selection made from it before anything is built. A technique is taken because a
+current game ships it and it answers the two failures, never because code or an older talk for it exists.
+[The candidates above](#the-candidates-decided-against-the-cues) were judged for R5's whole range before any
+fall was drawn, and they do not bind the selection: particles, and mist, were set aside there for want of an
+owner, which is a fact about the build order and not about the look. The research judges them on the look and
+says what each would need. It also answers the question this design left open, whether a fall needs mist to
+meet its bar. The selection and its reasons go in the log, with the research record linked from it.
+
+**What holds whatever is selected.**
+
+- *One source.* [The fall record](#what-a-solve-writes) still says where the water goes, how fast, how thick and
+  how much. What is drawn is made from it. Nothing drawn is a body or answers a query.
+- *What a game reads does not move.* The plunge's births and impulses stay the fall record's, at the same places
+  and amounts whatever the camera sees and whichever recipe draws the fall, on every machine ([the plunge](#the-plunge)).
+- *The frame contract.* Whatever is drawn writes depth, motion from unjittered positions and reactive coverage
+  as [the sheet](#the-falls-sheet) does, holds on a pause and shows a capture's time
+  ([ruling 7](../ARCHITECTURE.md#seam-rulings-for-rivers)).
+- *The lower gauges.* The lowest and middle gauges keep the look WP6 passed, and the fall thickens from the
+  middle gauge to the highest with no jump (R6).
+- *Both targets.* By [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md) the
+  approach is a recipe the registry selects, with a portable fallback, and Chrome draws the fall at the highest
+  gauge by one or the other.
+- *Cost.* Recorded as a tripwire beside WP6's ([cost account](#cost-account)); no figure decides it.
+
+**What it may not build alone.** Water that leaves the surface as drops is still
+[not this module's](#purpose-and-scope): the air's medium is the weather's (`CLOUDS`, through `ATMOSPHERE`), and
+the engine has no particle owner. The selection is made on the look, and not on what this module may build
+today. If it needs either, or a change no [ruling](../ARCHITECTURE.md#seam-rulings-for-rivers) gives, the builder
+records the selection and stops with what is needed and of whom, and a planner places it. If the selected
+approach is built and the fall still fails either cue, the builder says so in the log and stops for the lead.
+
+WP11 is the last of this module's work packages, after WP7, and nothing outside this module waits for it.
+
 ### Rings on running water
 
 `WATERS` carries a window's interaction waves by the mean current of its wet cells. A pool joined to a riffle
@@ -646,9 +695,10 @@ product: the map needs them on the CPU, and a lease lends views on the GPU.
   blend costs a ring's height energy, in plan, from the step's multiplier, with one set of weights in every
   cell. The ladder stepped in plan and on the GPU, and a ring crossing weights that change along a bend, are
   unrun; WP6.10 is the first.
-- **What the looks cover.** The island's fall is about 4 m, and WP6 judges it from 2 m to 200 m at three
-  gauges. Falls of other heights in R5's range, 0.75 m to 12 m, are held to the sheet's closed forms (WP2.4)
-  and are not judged by eye: the ledger says so until a game shows one.
+- **What the looks cover.** The island's fall is about 4 m. WP6 judges it from 2 m to 200 m at its lowest and
+  middle gauges, and WP11 at its highest ([the heavy fall](#the-heavy-fall-at-the-highest-gauge)). Falls of
+  other heights in R5's range, 0.75 m to 12 m, are held to the sheet's closed forms (WP2.4) and are not judged
+  by eye: the ledger says so until a game shows one.
 - **Cost.** Unrun. WP1 records the solve and WP4 the first frame.
 
 ## The system as it runs
@@ -737,7 +787,10 @@ module adds, and `scripts/river_cost.py` for the solve. No timing figure decides
 4. **The sheet reads as a card**: flat, evenly lit, hard at its foot. Early sign: WP6's captures. The designed
    remedies are the pattern's relief as displacement, the white share and presence with
    [the profile's lengths](#the-falls-sheet), and the plunge's foam and air at the foot. Three failed looks on
-   one cue go to the log. Mist is the remedy this plan does not have.
+   one cue go to the log. Mist is the remedy this plan does not have. It happened at the highest gauge: three
+   attempts left a curtain with hard strand ends, and the lead parked that look to WP11, which chooses a
+   mechanism from research first ([the heavy fall](#the-heavy-fall-at-the-highest-gauge)). The wrong fix is a
+   fourth tuning of the sheet.
 5. **A seam where a river meets a lake, a fall's foot or the sea.** Early sign: WP4's joins. The map's joins are
    `WATERS`'; the solve gives a level at each end that already matches the body there. WP6 found one at the
    fall's foot, where the pool began a cell out from the cliff, and
@@ -863,7 +916,16 @@ dependencies. In addition:
   the refusal is one comparison for every kind of receiver, over the whole of each range, which is why a sea
   has no case of its own. `brink_end` and `falls` were written to the rule this replaces: a case of theirs that pins ground under
   the receiving level, or on the receiving body's shore margin, as no body changes to this rule, and nothing
-  else in them does.
+  else in them does. The island's plunge pool stays a reach, because a basin has no current to carry the foam
+  off, which WP6.3 and WP6.5 need.
+- **The fall at the highest gauge (WP6, WP7 and WP11).** Until WP11 is Done no item judges how the fall looks
+  at the highest gauge, or how its falling water ends at the pool there
+  ([the heavy fall](#the-heavy-fall-at-the-highest-gauge)). WP6.4 takes its views at the lowest and middle
+  gauges. WP6.5 judges the pool at the middle and highest gauges and the sheet's meeting with it at the middle
+  gauge alone. WP7's views of the fall are taken at the middle gauge, and a curtain or a hard strand end seen at
+  the highest gauge is not a finding against WP6 or WP7. Until WP11 closes the ledger says that look is
+  unjudged. WP11's two inspections are written from what the three attempts left on screen, and they pass any
+  mechanism that removes it: neither names how the fall is drawn.
 - **Maturity.** A ledger row for `E1.rivers` is added in WP4 and kept current.
 
 ## Open questions
@@ -875,8 +937,9 @@ dependencies. In addition:
 | Does the shallows' birth constant serve a river? | WP5 records the cover; [risk 3](#risks) |
 | What wave share makes rings that read? | WP6.5's look, tuned by eye from 0.1 and recorded. The fall's power is a diagnostic ([the plunge](#the-plunge)), and no item asserts it |
 | How many reaches does a winding river need? | WP4's bytes; [risk 7](#risks) |
-| What whitening length and tear thickness read right on the island's fall? | WP6.4's look, tuned by eye from the first profile's and recorded ([the fall's sheet](#the-falls-sheet)) |
-| Does a fall need mist to meet its bar? | WP6's review; the owner ([plan](PLAN.md#open-for-the-human)) |
+| What whitening length and tear thickness read right on the island's fall? | WP6.4's look at the lowest and middle gauges, tuned by eye from the first profile's and recorded ([the fall's sheet](#the-falls-sheet)) |
+| Does a fall need mist to meet its bar? | WP11.1's research, for a heavy fall; then the owner ([plan](PLAN.md#open-for-the-human)) |
+| What draws a fall too heavy for the sheet? | WP11.1's research and selection ([the heavy fall](#the-heavy-fall-at-the-highest-gauge)) |
 
 ## Compact river solver fixtures (WP8)
 

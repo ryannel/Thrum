@@ -397,3 +397,22 @@
 - 2026-11-27 Planner, design review 14, suggestion taken. The footprint's words no longer call the brink's
   cells the lower reach's margin on narrow rock: the footprint stops at them, and they bank it and stay the
   upper reach's alone, as the rule above them says.
+
+- 2026-11-27 Lead's ruling, WP6: park the look of the fall at the flood gauge. Three bounded attempts (optics
+  and light, the island profile's lengths, strands parted with their own contacts) all left the side and bank
+  views reading as a curtain with hard strand ends ([handoff](../../../.orchestrate/evidence/RIVERS/WP6-handoff.md),
+  `build/rivers` at `7bafabb80`). WP6 closes on what passes; the two flood cues move to a spike, last among this
+  module's work, that researches how shipped high-end games draw heavy waterfalls today, modern techniques
+  only, and selects an approach before it builds. It does not block `SHOWCASE`.
+- 2026-11-27 Planner, WP6 split. WP6.4 is written again for the lowest and middle gauges, and WP6.5 for the
+  pool at the middle and highest gauges with the sheet's meeting judged at the middle gauge alone. The nine
+  items with a check are unchanged. Added WP11, after WP7, with seven items: the research and selection, the
+  heavy fall's look, its foot at the pool, the frame contract and plunge as WP6 proved them, Chrome, the cost
+  record and the ledger. [The design](DESIGN.md#the-heavy-fall-at-the-highest-gauge) says what holds whatever
+  WP11 selects and that the earlier candidates, particles and mist among them, do not bind it. No other module
+  names a `RIVERS` work package in its `depends_on`, so nothing waits for WP11. WP7's items are unchanged: its
+  views of the fall are at the middle gauge.
+- 2026-11-27 Planner. WP6's plan note shrank to what is left to do. The rules it carried for the foot of a fall
+  are in [the design](DESIGN.md#proof-and-builder-handoff), which gained why the island's plunge pool stays a
+  reach. The trial that parted the strands is `594fe0a62` on `build/rivers`, kept as a record of what did not
+  work and not as a start for WP11. The earlier note is in git at `d22018303`.

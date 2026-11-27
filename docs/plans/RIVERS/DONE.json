@@ -620,7 +620,7 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
-      "quality_bar": "A waterfall as in Horizon Forbidden West, without its mist: falling water that speeds up and stretches as it drops, glassy at the lip and white below, a trickle as strands and a flood as a sheet, and a pool that answers it with foam, pale water and rings.",
+      "quality_bar": "A waterfall as in Horizon Forbidden West, without its mist: falling water that speeds up and stretches as it drops, glassy at the lip and white below, a trickle as a few strands and a middling flow as a fuller fall of them, and a pool that answers it with foam, pale water and rings. The heavy fall at the highest gauge is WP11's.",
       "items": [
         {
           "id": "WP6.1",
@@ -659,8 +659,8 @@
         },
         {
           "id": "WP6.4",
-          "statement": "The fall reads as falling water. At the lip it is a smooth tongue that shows the rock behind it; it whitens down its length and breaks into strands that stretch as they gather speed, with gaps where it is thin; at the lowest gauge it is a few strands and at the highest a heavy sheet. No pattern slides at one speed, nothing tiles or repeats, and it does not read as a card.",
-          "inspect": "`realtime` sequences of the fall from 2 m and 5 m in front, from beside it, from behind it and from 60 m and 200 m off, at the gauge's lowest, middle and highest, at noon; stills cropped at native size of the lip, the middle and the foot.",
+          "statement": "At its lowest and middle gauges the fall reads as falling water. At the lip it is a smooth tongue that shows the rock behind it; it whitens down its length and breaks into strands that stretch as they gather speed, with gaps where it is thin; at the lowest gauge it is a few strands and at the middle gauge a fuller fall of them. No pattern slides at one speed, nothing tiles or repeats, and it does not read as a card. At the highest gauge the fall draws, and its look there is WP11's and decides nothing here.",
+          "inspect": "`realtime` sequences of the fall from 2 m and 5 m in front, from beside it, from behind it and from 60 m and 200 m off, at the gauge's lowest and middle, at noon; stills cropped at native size of the lip, the middle and the foot. 1. At the lip the water is a smooth tongue and the rock behind shows through it. 2. Down its length the fall whitens and breaks into strands, with gaps where it is thin. 3. Followed through a sequence, a streak stretches and moves faster near the foot than near the lip, and no pattern slides at one speed. 4. At the lowest gauge the fall is a few strands; at the middle gauge it is fuller, and still strands with gaps. 5. Nothing tiles or repeats across the fall, and from no view does it read as a card. No view at the highest gauge is judged: a curtain there, or strands that end hard, is WP11's cue.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -669,8 +669,8 @@
         },
         {
           "id": "WP6.5",
-          "statement": "The pool answers the fall: a white boil at the foot, pale water spreading from it, foam drawn off downstream in streaks, and rings that cross the pool and die at its banks. The fall on screen shows in the pool's calmer water. The pool lies against the rock at the foot of the cliff, behind the falling water and to each side of it, with a waterline like any bank's, whether the fall runs or the lip is dry. There is no hard line where the sheet meets the pool.",
-          "inspect": "`realtime` sequences of the plunge pool from its bank at 2 m, looking along the foot of the cliff, and from 15 m above, with the interaction windows on the pool, at the gauge's middle and highest; one as the gauge falls to a dry lip and the pool calms.",
+          "statement": "The pool answers the fall: a white boil at the foot, pale water spreading from it, foam drawn off downstream in streaks, and rings that cross the pool and die at its banks. The fall on screen shows in the pool's calmer water. The pool lies against the rock at the foot of the cliff, behind the falling water and to each side of it, with a waterline like any bank's, whether the fall runs or the lip is dry. At the middle gauge there is no hard line where the sheet meets the pool. How the falling water ends at the pool at the highest gauge is WP11's and decides nothing here.",
+          "inspect": "`realtime` sequences of the plunge pool from its bank at 2 m, looking along the foot of the cliff, and from 15 m above, with the interaction windows on the pool, at the gauge's middle and highest; one as the gauge falls to a dry lip and the pool calms. 1. A white boil stands at the foot of the fall and pale water spreads from it. 2. Foam is drawn off downstream in streaks. 3. Rings leave the foot, cross the pool and die at its banks. 4. The fall on screen shows in the pool's calmer water. 5. The pool lies against the rock at the foot of the cliff, behind the falling water and to each side of it, with a waterline like any bank's. 6. As the gauge falls to a dry lip the pool calms and keeps that waterline. 7. At the middle gauge no hard line shows where the sheet meets the pool. At the highest gauge judge points 1 to 5 only: the ends of the falling water there, and any line they draw above or through the boil, are WP11.3's cue and do not decide this item.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -881,6 +881,89 @@
           "id": "WP7.11",
           "statement": "The ledger's `E1.rivers` row, the provenance file and the log are current. The ledger says the fall's look was judged on the island's fall of about 4 m, and that falls of other heights in the declared 0.75 m to 12 m are drawn by the same sheet and are unjudged by eye. The log lists what this module does not build: mist and spray, a rise that travels, rain as a source, standing waves that overturn.",
           "ask": "Does the ledger claim no more than the items proved, with visuals and device apart, and name the fall heights no one has looked at? Does the log name each thing not built?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
+      "id": "WP11",
+      "name": "With the lake at its highest the waterfall reads as heavy falling water from the side and the bank, with no curtain and no strand that ends hard at the pool, drawn the way shipped games draw a heavy fall today",
+      "status": "not_started",
+      "depends_on": [],
+      "quality_bar": "A heavy waterfall as a high-end game shipped in 2020 or later draws one, Horizon Forbidden West's falls first: a mass of falling white water with depth to it from the side, whose foot is lost in white water and never shows where a strand ends. WP11.1's research names the games it is judged against and what each shows; mist is in the bar only if that research selects it and an owner builds it.",
+      "items": [
+        {
+          "id": "WP11.1",
+          "statement": "Before any change to how the fall is drawn, the builder researched how shipped high-end games draw a heavy waterfall today and selected an approach from that. The research record, linked from the log, covers at least three games shipped in 2020 or later, each from a published account that was read or from the builder's own study of the game's frames or footage, and says how far each was read or studied. For each technique found it says what the technique does about the two failures WP6 left at the highest gauge, a curtain from the side and strands that end hard at the pool, and how it stands against what the design's section on the heavy fall holds fixed. It selects one approach that a game shipped in 2020 or later uses, and says what that changes in mechanism from WP6's sheet, whether it needs water in the air or anything else this module does not own, and why each other technique was not selected. The log's entry names the selection.",
+          "ask": "Does the record cover at least three games shipped in 2020 or later, each from an account or a study it says was read or made, and is the selected approach one such a game uses, and not one taken because older code or an older talk has it? Does the selection say what it changes in mechanism from WP6's sheet, and why that answers the curtain from the side and the hard strand ends where three tuning passes of the sheet did not? Is the log's entry for the selection committed before the first change to how the fall is drawn?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP11.2",
+          "statement": "At the highest gauge the island's fall reads as heavy falling water and not as a curtain. From beside it the falling water has depth and an uneven outline that changes as it falls, with no comb of tongues or ribbons. From in front nothing holds its place or shape through a sequence and nothing repeats at a regular spacing. It is whiter and fuller than at the middle gauge, faster at the foot than at the lip, and still a smooth tongue at the lip. Raised from the middle gauge to the highest in one take, the fall thickens with no jump. At the lowest and middle gauges the fall still shows what WP6.4's review passed.",
+          "inspect": "`realtime` sequences of the fall at the gauge's highest, at noon, from 2 m and 5 m in front, from beside it, from behind it and from 60 m and 200 m off, with stills cropped at native size of the lip, the middle and the foot; one take from 5 m in front as the gauge rises from the middle to the highest; and sequences at the lowest and middle gauges from 5 m in front and from beside, set beside WP6.4's reviewed captures. 1. From beside, the falling water has depth and an uneven outline that changes as it falls; it is not a flat sheet, and no comb of long tongues or ribbons hangs from it. 2. From 2 m and 5 m in front no scallop, ribbon or gap holds its place or shape through the sequence, and nothing repeats at a regular spacing across the fall. 3. The fall is whiter and fuller than at the middle gauge. 4. Followed through a sequence, the water moves faster near the foot than near the lip. 5. At the lip it is a smooth tongue. 6. From behind and from 60 m and 200 m it reads as the same fall, with no card, edge or layer showing. 7. As the gauge rises from the middle to the highest the fall thickens with no jump or swap that can be seen. 8. At the lowest and middle gauges the fall shows each point WP6.4's review passed.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP11.3",
+          "statement": "At the highest gauge the falling water meets the pool in white water. No strand or sheet shows a cut, flat or pointed end above the boil or through it, and no hard line runs where the water lands, from the bank, along the foot of the cliff, from beside the fall or from above. The pool keeps the boil, the foam, the rings and the waterline on the rock that WP6.5's review passed.",
+          "inspect": "`realtime` sequences of the plunge pool at the gauge's highest, with the interaction windows on the pool, from its bank at 2 m, looking along the foot of the cliff, from beside the fall and from 15 m above; stills cropped at native size where the falling water lands. 1. No strand or sheet shows a cut, flat or pointed end above the boil or through it. 2. No hard line runs along where the falling water meets the pool. 3. The white of the falling water runs into the white of the boil, with no dark gap or step between them. 4. The pool's boil, its foam streaks, its rings and its waterline on the rock are there as in WP6.5's reviewed captures.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP11.4",
+          "statement": "With the heavy fall in place, what the frame and the pool receive is as WP6 proved it. Whatever draws the fall at the highest gauge writes depth where it hides the scene, motion from unjittered positions and reactive coverage where it is white; a pause holds it and a capture shows it at the capture's time. The plunge's births and impulses are the fall record's, at the same places and amounts whatever the camera sees and whichever recipe draws the fall. A scene whose profile does not name falls compiles to the shader text, passes and storage it had before this work package.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test falls_gpu && cargo test --locked --offline -p water-scene --test plunge_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP11.5",
+          "statement": "In Chrome the fall at the highest gauge draws from lip to pool, by the selected approach or by the fallback its recipe names, the water moves faster at the foot than at the lip, and the pool below it foams.",
+          "check": "node scripts/check_water_browser.mjs --case fall-flood",
+          "lock": "chrome",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP11.6",
+          "statement": "With the fall at the highest gauge filling a third of the view the paired cost record is taken again at 2560\u00d71440, beside WP6's. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "check": "python3 scripts/water_cost.py check --scene fall-flood",
+          "ask": "Is the record taken on this work package's work at the highest gauge, and does each tripped wire's investigation say what was measured and what was fixed or logged?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP11.7",
+          "statement": "The ledger's `E1.rivers` row, the provenance file and the log are current. The ledger says the fall's look at the highest gauge was judged on the island's fall, names what draws it there on the Mac and in Chrome, and still says that falls of other heights are unjudged by eye. The log names the research record, the selection and anything the selection asked for that was not built.",
+          "ask": "Does the ledger claim no more than this work package's items proved, with visuals and device apart? Does the log name the research record, the selection and each thing it asked for that was not built?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
