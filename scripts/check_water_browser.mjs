@@ -795,7 +795,7 @@ try {
   await installWasmReceipt(cdp,sid);
   const surfRoute=mode==='surf'||surfInspection;
   await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(cloudControls?cloudObserver:'')+(cloudReflection?reflectionObserver:'')+(['under','under-light'].includes(mode)?lensObserver:'')+(mode==='under-light'?underLightObserver:'')+(['island','surf','channel','river','river-calm','rain-puddles','rain-rings','rain-footfall','rain-ground'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
-  const route=cloudRoute??diveRoute??opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='river-calm'?'?river=calm':mode==='river'?'?river=trade':['rain-puddles','rain-rings','rain-footfall','rain-ground'].includes(mode)?'?rain=calm':mode==='under'?lensRoute('sea','baseline'):mode==='under-light'?'?dive=calm&location=sea':mode==='clouds'?'?clouds=fair':'');
+  const route=cloudRoute??diveRoute??opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='river-calm'?'?river=calm':mode==='river'?'?river=trade':['rain-puddles','rain-rings','rain-footfall','rain-ground'].includes(mode)?'?rain=calm':mode==='under'?lensRoute('sea','baseline'):mode==='under-light'?'?under-light-probe=clear-water':mode==='clouds'?'?clouds=fair':'');
   result.route=route;
   const navigate=async search=>{
     await cdp.call('Page.navigate',{url:url+search},sid);
@@ -982,7 +982,9 @@ try {
     const field=()=>evaluate("__readUnderLight('Sun-path irradiance field',512,512,13)");
     const shafts=()=>evaluate("__readUnderLight('underwater Sun shafts',160,90,1)");
     const lookingDown={'camera.depth':3,'camera.pitch':-45,'sun.elevation':60};
-    await sample('calm-bed',route,lookingDown);
+    // The authored dive craft casts a shadow even in calm water. Use the
+    // bare witness for the unblocked zero-remainder check.
+    await sample('calm-bed',route,{'camera.station':-6});
     const flat=await field();
     assert(flat.rungs.every(row=>row.deviation===0),'a flat field must be exactly one on each rung');
     const calmMarch=await shafts();
