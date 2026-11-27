@@ -113,6 +113,17 @@ fn metal_keeps_wind_displacement_in_the_shared_rain_array() {
 
 thrum_test_support::macos_gpu_test! {
 fn metal_admits_rain_rings_that_reach_a_dry_still_water_lens() {
+    check_rain_ring_lens(50.0, true);
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+fn metal_keeps_the_lens_dry_above_still_water_without_rain() {
+    check_rain_ring_lens(0.0, false);
+}
+}
+
+fn check_rain_ring_lens(rate: f64, active: bool) {
     let Some((_serial, gpu)) = super::metal::gpu("rain ring lens admission") else {
         return;
     };
@@ -131,24 +142,22 @@ fn metal_admits_rain_rings_that_reach_a_dry_still_water_lens() {
         )
         .expect("downward camera"),
     );
-    for (rate, active) in [(0.0, false), (50.0, true)] {
-        let mut rig = Rig::with_extent(&gpu, &view, sun(0.0, 0.0), &[], None, extent);
-        let water = rain_sea(Some(rate), 0.0, true);
-        let report = water.report();
-        attach(&mut rig, water);
-        rig.frame();
-        let clipped = rig.submitted_depth()
-            .iter()
-            .filter(|&&depth| depth == 0.0)
-            .count();
-        let admitted = report.lock().expect("committed water").underwater_admitted;
-        eprintln!(
-            "{rate} mm/h at {height:.7} m above still water: {clipped} clipped pixels, lens admission {admitted:?}"
-        );
-        assert_eq!(admitted, Some(active));
-        assert_eq!(clipped > 0, active);
-    }
-}
+    let mut rig = Rig::with_extent(&gpu, &view, sun(0.0, 0.0), &[], None, extent);
+    let water = rain_sea(Some(rate), 0.0, true);
+    let report = water.report();
+    attach(&mut rig, water);
+    rig.frame();
+    let clipped = rig
+        .submitted_depth()
+        .iter()
+        .filter(|&&depth| depth == 0.0)
+        .count();
+    let admitted = report.lock().expect("committed water").underwater_admitted;
+    eprintln!(
+        "{rate} mm/h at {height:.7} m above still water: {clipped} clipped pixels, lens admission {admitted:?}"
+    );
+    assert_eq!(admitted, Some(active));
+    assert_eq!(clipped > 0, active);
 }
 
 // Each station submits three independent render hosts. Keep the station
