@@ -775,3 +775,9 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
   the sitting. The suggestion on D18.1 was taken. No assumption was added and no other module's file changed.
   [Review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md) ·
   [what changed for each finding](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP17-plan/REVISED-2026-11-27.md)
+- 2026-11-27 Planner, second design review of the output scale, one Must Fix, settled in the design and items.
+  The Mac publishes no extent or scale while AppKit animates a full-screen change, and one request when it
+  completes. D18.5 now runs AppKit's own change, and new D18.6 covers five sequences on the CPU. No
+  assumption was added and no other module's file changed.
+  [Review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md) ·
+  [what changed for the finding](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP17-plan/REVISED-2-2026-11-27.md)

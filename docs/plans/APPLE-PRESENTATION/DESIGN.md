@@ -26,7 +26,7 @@ asked that 60 Hz at full screen not be taken for the bar. Revised 27 November fo
 [the output scale](#the-output-scale-wp18) and [the full refresh at full screen](#reaching-the-full-refresh-at-full-screen-wp17),
 after the owner answered the question
 [the WP17 planner's record](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP17-plan/README.md) put, and again that
-day after [that revision's design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md). It answers the three independent reviews of revision 1
+day after [that revision's design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md), and a third time that day after the review that followed, for the hold across a full-screen change. It answers the three independent reviews of revision 1
 (`86ec3b6b`) and the re-reviews of revision 2 (`c507ad3d`) recorded in [the log](LOG.md). Interface and path names below are
 proposals.
 
@@ -470,11 +470,13 @@ render thread, and the lifecycle below is the Mac's.
 
 A **request** is what a generation is built for: the backing extent, the display mode (EDR float or 8-bit) and
 the device generation, and from WP18 [the output scale](#the-output-scale-wp18). The frame host holds the latest request, and one build at most.
+From WP18 the Mac publishes no new extent or scale while AppKit animates a window into or out of full screen: the
+request changes once, when that change is complete ([the output scale](#the-output-scale-wp18) says how).
 
 | State | Entered when | What the render thread does |
 |---|---|---|
 | Steady | A generation is current and matches the request | Draws it |
-| Debouncing | The request's extent changed during a live resize, or from WP18 its output scale changed | Draws the current generation at its own extent. The surface stays as configured, and the layer scales the picture to the window |
+| Debouncing | The request's extent changed during a live resize, or from WP18 a completed mode change published a new extent and output scale | Draws the current generation at its own extent. The surface stays as configured, and the layer scales the picture to the window |
 | Building | The extent, and from WP18 the output scale, have been stable for 100 ms, or the request changed for any other reason (backing scale, display mode, a recovered device), which starts at once | The same. The preparation thread creates the new generation's targets, frame buffers, bind groups and providers from the shared, immutable prepared part. The governor holds |
 | Ready | The build finished and its request is still the latest for the current device generation | Draws the current generation until a frame boundary where the switch may be entered: no surface texture held, and no job on the preparation thread. There it reconfigures the surface for the new generation, swaps the generation in and resets history and reconstruction |
 | Unmet | The build for the latest request failed, or its switch ended in a configure error, and the request has not changed | Draws the current generation at its own extent; the surface stays as configured and the layer scales the picture. No build runs, and the governor runs |
@@ -1141,18 +1143,49 @@ the output scale.
   off the render thread, the surface is reconfigured once in the switch, history and reconstruction reset
   there, and nothing is created on the render thread. The governor holds through the build as through any
   other, and afterwards its render scale applies inside the new output extent.
-- **Entering or leaving full screen during play is one change of request.** The launch setting is fixed for the
-  process, so a window changing mode is the only thing that changes the output scale during play, and it
-  changes the backing extent with it.
-  - The platform resolves the scale each time it reads the window, from the window's mode at that read, with
-    the backing extent it reads beside it. It keeps no scale resolved at launch.
-  - The lifecycle debounces the request as a whole: a build starts when the backing extent and the output
-    scale have both been stable for the debounce. A window still animating between modes starts no build, and
-    neither does a read that sees one of the two changed before the other.
+- **Entering or leaving full screen during play is one change of request, published when the change is
+  complete.** The launch setting is fixed for the process, so a window changing mode is the only thing that
+  changes the output scale during play, and it changes the backing extent with it. While AppKit animates the
+  change the two do not move together. In the pinned winit, 0.30.13, the green button sets the window's
+  full-screen flag in `windowWillEnterFullScreen:`, before the frame has moved, and on the way out the flag is
+  restored in `windowDidExitFullScreen:`, after it has. A read in between can pair the window's extent with the
+  full-screen scale for as long as the animation lasts, which is several times the debounce, so the debounce
+  cannot be what keeps that pair from being built. The platform keeps it out of the request:
+  - *The platform holds the window's mode itself.* It is full screen or not, read from the window at launch,
+    and afterwards only a completed change moves it. The output scale and
+    [the requested frame rate](#the-requested-frame-rate-at-full-screen-wp11) both resolve from it, so the two
+    never disagree about the mode. The platform keeps no scale resolved at launch, and it does not read
+    winit's flag while a change runs.
+  - *A change AppKit animates is held from its start to its completion.* That is the green button, the menu's
+    Enter Full Screen and its key, and `toggleFullScreen:` from any caller. AppKit posts
+    `NSWindowWillEnterFullScreenNotification` or `NSWindowWillExitFullScreenNotification` when one starts, and
+    `NSWindowDidEnterFullScreenNotification` or `NSWindowDidExitFullScreenNotification` when it is complete
+    and the window has its final frame. The platform observes the four for its window. winit stays the
+    window's delegate and has no event for any of them. From the start to the completion the platform
+    publishes no backing extent and no output scale: the request keeps the pair it had, whatever the window
+    reports meanwhile and for however long. The host therefore stays Steady, and the old generation goes on
+    presenting at its own extent, scaled by the layer as in a live resize.
+  - *At the completion the platform publishes once.* In one turn of the main thread it sets the mode the
+    completion names, reads the backing extent from the window itself, not from a resize event's payload,
+    resolves the scale from the two and publishes them as one request. The lifecycle debounces and builds that
+    request as it does any change of extent.
+  - *A change that never completes ends at a limit.* AppKit reports a failed change to the window's delegate
+    alone, and the delegate is winit's. If no completion follows a start within 3 s, where the animation takes
+    under one, the platform takes the mode from the window's style mask, reads the backing extent, publishes
+    that pair once, and the record names the limit.
+  - *Only the extent and the scale are held.* A change of display mode or a recovered device during the hold
+    is published at once, with the held extent and scale.
+  - *A change with no animation needs no hold.* The proof options' simple full screen returns with the window
+    already in its new mode and frame. The platform sets the mode and reads the extent when that call returns,
+    and publishes them together.
   - So the host takes one generation for each mode change, from one request that names the new backing extent
     and the new scale together. A window that enters full screen is never presented by a generation at the
-    full-screen backing extent and the window's 100%, and one that leaves is never presented by a generation at
-    the window's backing extent and the full-screen step.
+    full-screen backing extent and the window's 100%, or at the window's backing extent and the full-screen
+    step, and neither is one that leaves.
+  - A drag of the window's edge is not a mode change. It is published as it moves and debounced, as WP4 built
+    it.
+  - The display record names each mode change: its direction, the times of its start and its completion or
+    limit, each backing extent the window reported in between, and the request published at its end.
 - **What resolves it.** The platform resolves the output scale with the request, on the main thread, where it
   reads the window and the display record, as it does the requested frame rate:
   - a window that is not full screen resolves 100%;
@@ -1173,6 +1206,10 @@ the output scale.
   ([display overrides](#evidence-conventions)). That input stands in for the registry's row and for nothing
   else: it applies only where the registry's value would, the record names it as given for a proof, and it is
   not the launch setting, so the record says not forced. Nothing a player launches sets it.
+- **The mode change in a proof.** D18.5's run changes the window's mode from its proof options, by sending the
+  window `toggleFullScreen:`, which is the action the green button sends, so the change it proves is the
+  player's. The simple full screen that the earlier proofs enter at launch posts none of AppKit's four
+  notifications and shows nothing about the hold.
 - **One value for the device.** The registry holds one full-screen output scale for this Mac. WP17 measures it
   on the Apple recipe, which is the row the claim is made for. The portable recipe on the same Mac resolves the
   same value, so that `SHOWCASE`'s rows compare at one extent, and what it holds there is recorded and not
@@ -1377,7 +1414,8 @@ The physical iPhone and external-display rows stay owed in the same way.
   the frame is dropped and history resets. Each outcome is
   counted in the proof.
 - *Resize or backing-scale change:* a generation transition.
-- *Output scale change, entering or leaving full screen included:* a generation transition.
+- *Output scale change, entering or leaving full screen included:* a generation transition, one for each mode
+  change, requested when AppKit's change is complete.
 - *Refresh change:* governor budget only.
 - *Requested frame rate change:* governor budget only, with an empty sample window, as after a hold.
 - *Headroom change or a move to an SDR display:* H only.
@@ -1420,6 +1458,9 @@ pixels of the window, which is why the governor exists before the paired proof.
 - **The output scale is resolved once and kept.** Early sign: a game launched in a window and taken to full
   screen keeps 100% and misses 120 Hz, or a window left from full screen stays soft. Guard: D18.5's mode
   change in the running game.
+- **A mode change is built twice.** Early sign: two configure calls and two reconstruction resets on one press
+  of the green button, the first at the old extent with the new scale. Guard: D18.6's sequences on the CPU,
+  and D18.5's run through AppKit's own change.
 - **The promoted step holds the bare valley and not the showcase.** Guard: the sitting's second route.
 - **The governor oscillates or hides regressions.** Guard: hysteresis plus a minimum period. Tripwires compare at a
   replayed scale trace.
