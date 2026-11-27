@@ -517,7 +517,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP5/README.md#submitted-depth-and-opt-out",
+          "evidence": ".orchestrate/evidence/RIVERS/WP5/renewal/README.md#automated-checks",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RIVERS/WP5-review.md"
         },
@@ -528,7 +528,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP5/flow-metal.log",
+          "evidence": ".orchestrate/evidence/RIVERS/WP5/renewal/flow-metal.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RIVERS/WP5-review.md"
         },
@@ -540,7 +540,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP5/flow-metal.log",
+          "evidence": ".orchestrate/evidence/RIVERS/WP5/renewal/flow-metal.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RIVERS/WP5-review.md"
         },
@@ -552,7 +552,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP5-repair/foam-metal.log",
+          "evidence": ".orchestrate/evidence/RIVERS/WP5/renewal/foam-metal.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RIVERS/WP5-review.md"
         },
@@ -561,8 +561,8 @@
           "statement": "In a dead calm the stream reads as running water: the riffle and the narrows are rough and glitter, the pool lies glassy and mirrors its banks, ripples travel downstream and faster through the narrows, and the water piled in front of a rock stays put while ripples pass over it. There is no sheet sliding at one speed, no pulse at the carriage's period, and no look of a small sea.",
           "inspect": "`realtime` sequences in a dead calm from the bank at 2 m, across and along the riffle, the pool and the narrows, and one from 40 m above the stream, at noon and with the Sun at 15\u00b0; the same views in a trade wind.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP5/renewal/README.md#wp54-running-water",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RIVERS/WP5-review.md"
         },
@@ -571,8 +571,8 @@
           "statement": "Foam reads as made by the flow: white below the ledge and behind each rock, drawn out into streaks that thin, break into lace and vanish downstream, gathering in the pool's slack water; none on the glide or the pool but what drifts in; no stamped or tiled pattern.",
           "inspect": "`realtime` sequences from the bank at 2 m of the ledge, a rock in the narrows and the pool below them, and one from 40 m above, in a calm; then the same rock's reach after the gauge is taken to its lowest and highest.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP5/renewal/README.md#wp55-whitewater",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RIVERS/WP5-review.md"
         },
@@ -584,7 +584,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP5/flow-metal.log",
+          "evidence": ".orchestrate/evidence/RIVERS/WP5/renewal/flow-metal.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RIVERS/WP5-review.md"
         },
@@ -595,7 +595,7 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP5/chrome/run.json",
+          "evidence": ".orchestrate/evidence/RIVERS/WP5/renewal/chrome/run.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RIVERS/WP5-review.md"
         },

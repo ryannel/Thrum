@@ -348,3 +348,14 @@
   glide and pool, which peaked at 19.365 W/m² across the measured gauge bounds. Metal
   records zero local births there, transported foam in the pool and more cover below
   the ledge at the high gauge in same-age runs. [Target evidence](../../../.orchestrate/evidence/RIVERS/WP5-repair/README.md)
+
+- 2026-11-27 WP5 review repair. Bounded departures stagger their renewal across the
+  chart. The game query includes the spatial derivative of that phase. Metal still
+  fits 0.500 and 1.500 m/s in the uniform lanes. In the solved riffle the component
+  at the old renewal cadence falls from 6.9 mm to 0.5 mm peak to peak with mean
+  height RMS near 26 mm in both runs.
+- 2026-11-27 WP5 review repair. Foam renews its grain before forming the lace, uses
+  the chart's bound on departure and fades over the shallow rock contact. The
+  minute-old lee keeps its lace while separate pieces thin at different times. The
+  early pool shows foam entering from the upstream side. Same-age Metal checks keep
+  local births at zero in the pool and glide. [Target evidence](../../../.orchestrate/evidence/RIVERS/WP5/renewal/README.md)
