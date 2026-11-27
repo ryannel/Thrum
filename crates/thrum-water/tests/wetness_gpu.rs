@@ -33,7 +33,6 @@ fn shelter(name: &str, low: [f64; 3], high: [f64; 3], share: f64) -> Shelter {
 #[expect(
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss,
-    clippy::print_stderr,
     reason = "fixture projects f64 state to GPU metres"
 )]
 fn run(opened: &thrum_test_support::Opened) {
@@ -217,6 +216,20 @@ fn run(opened: &thrum_test_support::Opened) {
     let prepared =
         PreparedWetness::new(&opened.device, &opened.queue, &field.provider()).expect("field");
     let output = probe(opened, &prepared, &points);
+    compare(&points, &output, &expected, slope_wrong, exposure_wrong);
+}
+
+#[expect(
+    clippy::print_stderr,
+    reason = "retain the Metal error and negative controls"
+)]
+fn compare(
+    points: &[[[f32; 4]; 2]],
+    output: &[[f32; 4]],
+    expected: &[thrum_rain_model::Wetness],
+    slope_wrong: usize,
+    exposure_wrong: usize,
+) {
     let mut largest_fill = 0_f64;
     let mut largest_surface = 0_f64;
     for (i, (gpu, cpu)) in output.iter().zip(expected).enumerate() {
