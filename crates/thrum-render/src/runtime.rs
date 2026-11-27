@@ -1618,6 +1618,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.visual_revision = candidate.revision;
         if let Some((extent, presenter)) = candidate.extent.take() {
             self.render_extent = extent;
+            if self
+                .surface_output_policy
+                .is_some_and(|output| output.output_extent != presenter.extent())
+            {
+                self.surface_output_policy = None;
+            }
             self.presenter = Some(presenter);
             self.presenter_generation += 1;
         }
