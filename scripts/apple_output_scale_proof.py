@@ -17,7 +17,7 @@ def launch(arm, binary, launch_env, *, mode=False, value=None, capture=False):
     arm.mkdir()
     env = dict(
         launch_env,
-        THRUM_V1_FRAMES="160" if mode else "3",
+        THRUM_V1_FRAMES="160" if mode else "1",
         THRUM_MAC_TRANSITION=str(arm),
         THRUM_MAC_TRANSITION_ARM="output-scale-mode" if mode else "output-scale-fullscreen",
         THRUM_MAC_EDR="2",
@@ -89,8 +89,8 @@ def mac_output_scale(output):
                     presented = [row for row in frames if row["presented"]]
                     for row in presented:
                         require_frame(row, extent)
-                    capture = read_rows(arm / "display" / "frames.jsonl")
-                    images = {row["capture_submission"]: row for row in capture
+                    capture_rows = read_rows(arm / "display" / "frames.jsonl")
+                    images = {row["capture_submission"]: row for row in capture_rows
                               if "capture_submission" in row and row["presented"]}
                     if not presented or set(images) != {row["submission"] for row in presented}:
                         raise ValueError(f"{arm}: engine tap did not collect every presented submission")

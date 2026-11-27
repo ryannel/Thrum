@@ -1137,6 +1137,9 @@ impl<G: WindowGame + 'static> App<G> {
         match reply.platform.surface_status {
             SurfaceStatus::Presented => {
                 self.presented += 1;
+                if let Some(request) = self.output_mode.current() {
+                    self.toggle_for_proof(request);
+                }
                 self.begin_fullscreen_route()?;
                 #[cfg(feature = "interface")]
                 self.step_interface_script()?;
@@ -1296,7 +1299,6 @@ impl<G: WindowGame + 'static> App<G> {
             })
             .to_bits();
         let output = self.sample_output()?;
-        self.toggle_for_proof(output);
         #[cfg(feature = "interface")]
         if self.game.wants_interface_output() {
             let window = self.window.as_ref().ok_or("window missing")?;
