@@ -25,6 +25,7 @@ pub(super) fn shot() -> Option<Shot> {
     let [along, up, across] = match angle {
         "above" => [-4.2, 6.0, 4.2],
         "bank" => [-4.5, 2.0, 3.6],
+        "lee" if station == "rock" => [3.2, 2.0, 3.5],
         _ => panic!("unknown river inspection angle {angle}"),
     };
     let [x, y, z] = target;

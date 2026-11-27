@@ -206,8 +206,8 @@ and their wetting thresholds. The sample layout and gauge rules are in the
 ### Solved rivers
 
 Run `THRUM_WATER_RIVER=trade ./dev scene examples/water` to see the spring stream and the
-lake's solved outlet. Use `calm` to inspect the still waterline. The river view control visits the
-pool, sill, narrows, joins and overlooks. The spring, lake and tide controls set their stages.
+lake's solved outlet. Use `calm` to see current-driven chop and chart-loss foam in the
+spring stream. The river view control visits the riffle, pool, sill, narrows, joins and overlooks. The spring, lake and tide controls set their stages.
 The floats start at the spring and just below the lake outlet.
 
 The Mac prepares the two keyed river files beside the cooked store and prints a line for each cold
