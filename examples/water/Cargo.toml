@@ -60,6 +60,7 @@ js-sys = "=0.3.106"
 thrum-river-model = { path = "../../crates/thrum-river-model" }
 
 [dev-dependencies]
+thrum-fixtures = { path = "../../crates/thrum-fixtures" }
 thrum-render = { path = "../../crates/thrum-render", features = ["creation-counters"] }
 thrum-sea = { path = "../../crates/thrum-sea" }
 pollster = "=1.0.1"

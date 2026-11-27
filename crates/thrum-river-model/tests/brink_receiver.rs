@@ -1,5 +1,4 @@
 //! The receiving body's bank, including stage ranges and interior backwater maxima.
-#[path = "../../../tests/fixtures/rivers/brink_receiver.rs"]
 mod setup;
 
 use thrum_water_model::{

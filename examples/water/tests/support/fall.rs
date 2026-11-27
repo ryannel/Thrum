@@ -232,3 +232,80 @@ pub(crate) fn scene(gauge: f64, enabled: bool, interaction: bool, camera: Camera
         wake,
     }
 }
+
+pub(crate) fn receiver_bank(width: u32, basin: bool) -> Map {
+    use thrum_fixtures::brink_receiver::{
+        CENTRE, LEVEL, LIP, MARGIN, RISE, SIZE, TOP, bed_heights,
+    };
+    let heights = bed_heights(width, 4.0);
+    let count = heights.len();
+    let chart =
+        |inside: fn(usize, usize) -> bool, level: f64, ends: Vec<thrum_water_model::End>| {
+            let footprint: Vec<_> = (0..count)
+                .map(|i| inside(i % SIZE[0], i / SIZE[0]))
+                .collect();
+            let levels = heights
+                .iter()
+                .zip(&footprint)
+                .map(|(&bed, &inside)| {
+                    if inside || ends.is_empty() {
+                        level
+                    } else {
+                        bed - 0.2
+                    }
+                })
+                .collect();
+            BodyKind::Chart(Chart {
+                levels,
+                footprint,
+                ends,
+                currents: vec![[0.0; 2]; count],
+            })
+        };
+    let body = |name: &str, kind, level, max| Body {
+        name: name.into(),
+        kind,
+        level,
+        stage: Stage {
+            min: 0.0,
+            max,
+            value: 0.0,
+        },
+        fetch: 100.0,
+        gains: [0.0; 4],
+    };
+    let upper = chart(
+        |x, z| (1..=2).contains(&x) && (2..=4).contains(&z),
+        TOP,
+        vec![thrum_water_model::End {
+            body: thrum_water_model::BRINK,
+            segment: [[f64::from(LIP), 2.0], [f64::from(LIP), 4.0]],
+            length: 1.0,
+            mouth: false,
+        }],
+    );
+    let receiving = if basin {
+        BodyKind::Basin {
+            seed: [f64::from(LIP + width + 2), CENTRE],
+        }
+    } else {
+        chart(
+            |x, z| (3..=10).contains(&x) && (2..=4).contains(&z),
+            LEVEL,
+            vec![],
+        )
+    };
+    let basin_level = if basin { LEVEL } else { 0.0 };
+    Map::prepare(
+        Bed::new([0.0, 0.0], 1.0, SIZE, heights).expect("receiver bed"),
+        vec![
+            body("Lip", upper, 0.0, 0.0),
+            body("Plunge pool", receiving, basin_level, RISE),
+        ],
+        thrum_water_model::Profile {
+            margin_height: MARGIN,
+            swash_ratio: 0.7,
+        },
+    )
+    .expect("receiver bank")
+}

@@ -1,14 +1,7 @@
-//! Shared CPU and Metal declarations for the waterline below a brink.
+//! CPU declarations for the waterline and drowned-fall tests.
 use thrum_water_model::{BRINK, Bed, Body, BodyKind, Chart, End, Map, Profile, Stage};
 
-pub(super) const MARGIN: f64 = 0.65;
-pub(super) const LIP: u32 = 2;
-pub(super) const CENTRE: f64 = 3.0;
-pub(super) const TOP: f64 = 4.1;
-pub(super) const LEVEL: f64 = 0.2;
-pub(super) const RISE: f64 = 0.25;
-const SIZE: [usize; 2] = [14, 7];
-const BOTTOM: f64 = -0.7;
+pub(super) use thrum_fixtures::brink_receiver::*;
 
 pub(super) fn fixture(width: u32, basin: bool) -> (Map, usize) {
     let foot = LIP + width;
@@ -28,49 +21,6 @@ pub(super) fn fixture(width: u32, basin: bool) -> (Map, usize) {
     let level = if basin { LEVEL } else { 0.0 };
     let receiving = body("Plunge pool", kind, level, RISE);
     (prepare(heights, vec![upper, receiving]), 1)
-}
-
-pub(super) fn points(width: u32) -> impl Iterator<Item = [f64; 2]> {
-    (0..=4 * width).map(|quarter| [f64::from(LIP) + f64::from(quarter) * 0.25, CENTRE])
-}
-
-pub(super) fn flanks() -> [[f64; 2]; 2] {
-    [[2.953_125, 1.953_125], [2.953_125, 4.046_875]]
-}
-
-pub(super) fn rock(width: u32, x: f64) -> f64 {
-    let heights = ramp(width, 4.0);
-    let offset = x - f64::from(LIP);
-    for (d, endpoints) in (0..width).zip(heights.windows(2)) {
-        let t = offset - f64::from(d);
-        if t <= 1.0 {
-            return (endpoints[1] - endpoints[0]).mul_add(t, endpoints[0]);
-        }
-    }
-    BOTTOM
-}
-
-fn ramp(width: u32, lip: f64) -> Vec<f64> {
-    match width {
-        1 => vec![lip, BOTTOM],
-        4 => vec![lip, 2.6, 1.6, 0.9, BOTTOM],
-        _ => unreachable!("fixture cliff widths"),
-    }
-}
-
-pub(super) fn bed_heights(width: u32, lip: f64) -> Vec<f64> {
-    let heights = ramp(width, lip);
-    cells()
-        .map(|(x, z)| {
-            if x == 0 || x > 10 || !(2..=4).contains(&z) {
-                10.0
-            } else if x <= LIP {
-                lip
-            } else {
-                heights.get((x - LIP) as usize).copied().unwrap_or(BOTTOM)
-            }
-        })
-        .collect()
 }
 
 pub(super) fn upper_chart(heights: &[f64], level: f64) -> Body {

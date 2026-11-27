@@ -32,7 +32,7 @@ pub(crate) fn probe(
         "water map probe answers",
         wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
     );
-    let source = map.source(0) + include_str!("map_probe.wgsl");
+    let source = map_gpu::declarations_at(0) + include_str!("map_probe.wgsl");
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("water map proof"),
         source: wgpu::ShaderSource::Wgsl(source.into()),

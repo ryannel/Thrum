@@ -13,6 +13,7 @@ rayon = "=1.12.0"
 thrum-water-model = { path = "../thrum-water-model" }
 
 [dev-dependencies]
+thrum-fixtures = { path = "../thrum-fixtures" }
 thrum-sea-model = { path = "../thrum-sea-model" }
 
 [lints]

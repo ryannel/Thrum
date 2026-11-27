@@ -3442,6 +3442,7 @@ version = "0.1.0"
 dependencies = [
  "blake3",
  "rayon",
+ "thrum-fixtures",
  "thrum-sea-model",
  "thrum-water-model",
 ]
@@ -3987,6 +3988,7 @@ dependencies = [
  "thrum-cloud-model",
  "thrum-clouds",
  "thrum-cook",
+ "thrum-fixtures",
  "thrum-rain-model",
  "thrum-render",
  "thrum-river-model",

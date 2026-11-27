@@ -403,10 +403,16 @@ pub fn declarations() -> String {
 
 /// Map shader declarations with the specified resource group.
 pub fn declarations_at(group: u32) -> String {
-    map_source(group, false, false, false)
+    map_source(group, false, false, false, BankSource::Ordinary)
 }
 
-fn map_source(group: u32, hollows: bool, rivers: bool, flow: bool) -> String {
+#[derive(Clone, Copy)]
+enum BankSource {
+    Ordinary,
+    Brink,
+}
+
+fn map_source(group: u32, hollows: bool, rivers: bool, flow: bool, bank: BankSource) -> String {
     let sample_hollows = if hollows {
         "    let local = hollows_sample(point);\n    if local.has_bed { return local; }\n"
     } else {
@@ -434,10 +440,21 @@ fn map_source(group: u32, hollows: bool, rivers: bool, flow: bool) -> String {
     } else {
         "chart_row(point, body, row, rows)"
     };
-    let chart_tail = include_str!("map_gpu/chart_tail.wgsl");
-    let (before, after) = chart_tail
+    let (before, after) = include_str!("map_gpu/chart_body_join.wgsl")
         .split_once("chart_row(point, body, row, rows)")
         .expect("map body join call");
+    let (contains, sample_chart, brink_source) = match bank {
+        BankSource::Ordinary => (
+            include_str!("map_gpu/chart_contains.wgsl"),
+            include_str!("map_gpu/map_sample_chart.wgsl"),
+            "",
+        ),
+        BankSource::Brink => (
+            include_str!("map_gpu/brink_chart_contains.wgsl"),
+            include_str!("map_gpu/brink_sample_chart.wgsl"),
+            include_str!("map_gpu/brink_bank.wgsl"),
+        ),
+    };
     let map_sample = include_str!("map_sample.wgsl");
     let (map_head, map_tail) = map_sample
         .split_once("        // Bounded wave reference.\n")
@@ -452,7 +469,7 @@ fn map_source(group: u32, hollows: bool, rivers: bool, flow: bool) -> String {
         steady_reference.to_owned()
     };
     let source = format!(
-        "const BODY_LIMIT = {BODY_LIMIT}u;\nconst WATER_MAP_GROUP = {group}u;\n{}{cell_coordinates}{}            let raw = {chart_cell};\n{before}{chart_join}{after}{sample_hollows}{map_head}{wave_reference}{map_tail}\n{}{river_source}",
+        "const BODY_LIMIT = {BODY_LIMIT}u;\nconst WATER_MAP_GROUP = {group}u;\n{}{cell_coordinates}{}            let raw = {chart_cell};\n{before}{chart_join}{after}\n{contains}\n{}{sample_hollows}{}{sample_chart}{map_head}{wave_reference}{map_tail}\n{}{river_source}",
         include_str!("map_gpu/body_record.wgsl").to_owned()
             + if flow {
                 include_str!("map_gpu/flow_record.wgsl")
@@ -462,12 +479,14 @@ fn map_source(group: u32, hollows: bool, rivers: bool, flow: bool) -> String {
             + include_str!("bed_reaches.wgsl")
             + include_str!("map.wgsl"),
         include_str!("map_gpu/map_cell_body.wgsl"),
+        include_str!("map_gpu/chart_tail.wgsl"),
+        include_str!("map_gpu/map_sample_begin.wgsl"),
         include_str!("gains.wgsl"),
     );
     if hollows {
-        source + include_str!("map_gpu/hollows.wgsl")
+        source + include_str!("map_gpu/hollows.wgsl") + brink_source
     } else {
-        source
+        source + brink_source
     }
 }
 
@@ -704,19 +723,18 @@ impl MapGpu {
 
     /// Map shader declarations specialized to the products that were prepared.
     pub fn source(&self, group: u32) -> String {
-        let mut source = map_source(group, self.hollows.is_some(), self.has_rivers(), self.flow);
-        if self.brink_banks {
-            source = source
-                .replace(
-                    "i32(body.layers.z), 0).w == 0.0",
-                    "i32(body.layers.z), 0).w <= 0.0",
-                )
-                .replace(
-                    "if cell.bed < row.water.x { continue; }",
-                    "if cell.bed < row.water.x && !chart_brink_bank(cell, body) { continue; }",
-                )
-                + include_str!("map_gpu/brink_bank.wgsl");
-        }
+        let bank = if self.brink_banks {
+            BankSource::Brink
+        } else {
+            BankSource::Ordinary
+        };
+        let source = map_source(
+            group,
+            self.hollows.is_some(),
+            self.has_rivers(),
+            self.flow,
+            bank,
+        );
         if self.flow {
             source + include_str!("map_gpu/flow.wgsl")
         } else {

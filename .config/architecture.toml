@@ -111,13 +111,13 @@ allowed_workspace_dependencies = ["thrum-asset-gpu", "thrum-render", "thrum-sea"
 
 [packages.water-scene]
 manifest = "examples/water/Cargo.toml"
-allowed_workspace_dependencies = ["thrum-cloud-model", "thrum-clouds", "thrum-app", "thrum-render", "thrum-water", "thrum-water-model", "thrum-rain-model", "thrum-sea-model", "thrum-test-support", "thrum-cook", "thrum-river-model", "thrum-sea"]
+allowed_workspace_dependencies = ["thrum-cloud-model", "thrum-clouds", "thrum-app", "thrum-render", "thrum-water", "thrum-water-model", "thrum-rain-model", "thrum-sea-model", "thrum-test-support", "thrum-cook", "thrum-river-model", "thrum-sea", "thrum-fixtures"]
 
 [packages.thrum-river-model]
 manifest = "crates/thrum-river-model/Cargo.toml"
 # Steady river flow solver, its energy account and the river file's writer; CPU only, no graphics dependencies.
 # thrum-sea-model only as a test dependency, for the wave field the tests read the surface through.
-allowed_workspace_dependencies = ["thrum-sea-model", "thrum-water-model"]
+allowed_workspace_dependencies = ["thrum-sea-model", "thrum-water-model", "thrum-fixtures"]
 
 [packages.thrum-rain-model]
 manifest = "crates/thrum-rain-model/Cargo.toml"

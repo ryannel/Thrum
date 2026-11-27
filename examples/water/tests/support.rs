@@ -5,6 +5,7 @@
 pub(crate) mod depth;
 pub(crate) mod fall;
 pub(crate) mod island;
+pub(crate) mod map_probe;
 pub(crate) mod optics;
 pub(crate) mod surf;
 pub(crate) mod surf_frame;

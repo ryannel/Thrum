@@ -116,17 +116,10 @@ fn pixel(point: glam::Vec3, [width, height]: [u32; 2]) -> [usize; 2] {
     ]
 }
 
-#[cfg(target_os = "macos")]
-#[path = "../../../tests/fixtures/rivers/brink_receiver.rs"]
-mod brink_receiver;
-
-#[cfg(target_os = "macos")]
-#[path = "../../../crates/thrum-water/tests/probe_support.rs"]
-mod map_probe;
-
 thrum_test_support::macos_gpu_test! {
 fn metal_map_agrees_with_the_model_down_the_rock_below_a_brink() {
-    use brink_receiver::{CENTRE, LEVEL, RISE, fixture, flanks, points, rock};
+    use thrum_fixtures::brink_receiver::{CENTRE, LEVEL, RISE, flanks, points, rock};
+    const EPS_METRES: f64 = 0.000_04;
     let Some(gpu) = thrum_test_support::open(
         "brink receiver map", Some(wgpu::Backend::Metal), thrum_test_support::Profile::Portable,
         &thrum_test_support::Restriction::default(),
@@ -139,13 +132,16 @@ fn metal_map_agrees_with_the_model_down_the_rock_below_a_brink() {
             locations.extend(flanks());
         }
         #[expect(clippy::cast_possible_truncation, reason = "quarter-cell positions are exact in shader metres")]
-        let input: Vec<_> = locations.iter().map(|[x, z]| [*x as f32, *z as f32, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]).collect();
+        let input: Vec<_> = locations.iter().map(|[x, z]| [*x as f32, *z as f32]).collect();
         for basin in [false, true] {
-            let (mut map, receiver) = fixture(width, basin);
+            let mut map = support::fall::receiver_bank(width, basin);
+            let receiver = 1;
             for stage in [0.0, RISE] {
                 map.set_stage(receiver, stage).expect("receiver stage");
-                let answers = map_probe::probe(&gpu, &map, &input);
-                for (&place, [answer, _, _]) in locations.iter().zip(answers) {
+                let answers = support::map_probe::sample(
+                    &gpu, &map, &input, include_str!("support/brink_probe.wgsl"), std::convert::identity,
+                );
+                for (&place, answer) in locations.iter().zip(answers) {
                     let want = map.sample(place);
                     let bed = if place[1].to_bits() == CENTRE.to_bits() {
                         rock(width, place[0])
@@ -153,7 +149,7 @@ fn metal_map_agrees_with_the_model_down_the_rock_below_a_brink() {
                         map.bed().height(place).expect("cliff flank")
                     };
                     let got = answer.map(f64::from);
-                    assert!((got[2] - bed).abs() < map_probe::EPS_METRES);
+                    assert!((got[2] - bed).abs() < EPS_METRES);
                     let owner = match want.map(|water| water.body) {
                         Some(0) => 0.0,
                         Some(1) => 1.0,
@@ -162,10 +158,10 @@ fn metal_map_agrees_with_the_model_down_the_rock_below_a_brink() {
                     };
                     assert_eq!(got[0], owner, "width {width}, basin={basin}, stage {stage}, at {place:?}");
                     if let Some(water) = want {
-                        assert!((got[1] - water.row.level).abs() < map_probe::EPS_METRES);
-                        assert!((got[3] - water.depth).abs() < map_probe::EPS_METRES);
+                        assert!((got[1] - water.row.level).abs() < EPS_METRES);
+                        assert!((got[3] - water.depth).abs() < EPS_METRES);
                         if water.body == receiver {
-                            assert!((got[3] - (LEVEL + stage - bed)).abs() < map_probe::EPS_METRES);
+                            assert!((got[3] - (LEVEL + stage - bed)).abs() < EPS_METRES);
                         }
                     }
                 }
