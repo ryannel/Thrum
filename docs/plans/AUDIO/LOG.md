@@ -1,0 +1,12 @@
+# AUDIO log
+
+- 2026-11-27 User: approved the Game SDK's design and answered its scope question 3, audio in the first release, with the planner's recommendation: yes, in the small form, behind an engine module (as the lead's task and [the module list](../ARCHITECTURE.md#track-7-the-game-sdk) record it).
+- 2026-11-27 Lead, in the task for this plan: "No agent can hear, so items that judge sound wait for the owner's ear; keep those few and clearly marked."
+- 2026-11-27 Planned. Design, plan and the items of WP1 and WP2. Five work packages; `GAME-SDK` WP18 waits for WP4.
+- 2026-11-27 [Planning probe](../../../.orchestrate/evidence/AUDIO/planning-probe.md): a mixer-shaped loop gave one digest natively, under Node and inside Chrome's audio worklet at every pull size tried; the worklet ran an import-free WebAssembly module with no cross-origin isolation and kept its rate through a 500 ms stall of the page; the Mac's default output unit took 48 kHz stereo float at 512 frames a pull.
+- 2026-11-27 Chosen: one software mix on every target, pulled; own outputs (an audio unit on Apple, an audio worklet with its own WebAssembly instance in Chrome) and not `cpal`, whose web backends either mix on the page's thread or need cross-origin isolation; QOA for music, decoded inside the pull; 16-bit samples for sounds; `lewton`, `hound` and `rubato` in the cook only. [The design](DESIGN.md#techniques-and-evidence) has the account of each.
+- 2026-11-27 Settled the SDK's open question "which sound formats a `MusicAsset` streams from": either source format, `.wav` or `.ogg`, cooks to the one streamed form.
+- 2026-11-27 For the planner of WP3 to WP5:
+  - WP4 carries the engine's guide to sound, the maturity ledger's entry with "heard" left unjudged, and the Chrome risks the design numbers 1 and 2.
+  - WP5 carries the one `human_feedback` item, drawn from [the design's list of nine](DESIGN.md#what-only-an-ear-can-judge); a check that the listening room's sounds and music are in `docs/provenance/AUDIO.md` with permissive licences; and an item that deletes whatever of `scripts/audio.py` only a Record used, keeping the build of the mix module.
+  - The module list's interface row for sound output says "until `AUDIO`'s design defines it". It now can point at [What AUDIO provides](DESIGN.md#what-audio-provides), and `GAME-SDK` WP18's `depends_on` is `AUDIO:WP4`. Both are the project planner's to write, since this planner changed no other module's file.

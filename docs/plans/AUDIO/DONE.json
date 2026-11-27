@@ -1,0 +1,292 @@
+{
+  "module": "AUDIO",
+  "work_packages": [
+    {
+      "id": "WP1",
+      "name": "A program plays sounds into a buffer with no device, placed, pitched, looped and limited, and a test reads exactly what would be heard",
+      "status": "not_started",
+      "quality_bar": "A mixer as dependable as a shipped game's: a crowded moment degrades by dropping its quietest sounds, and never by crackling, clicking or stalling a frame. Correctness held as `SIM-2D` holds it: one script, one digest, the same on every target. No reference game is named, because no item here is judged by ear or by eye: how it sounds is WP5's, with the owner.",
+      "items": [
+        {
+          "id": "WP1.1",
+          "statement": "The mix, rendered to a buffer with no device at 48 kHz stereo, from sounds the test makes by integer arithmetic. Build this item first: the others rest on it. (1) With nothing playing, every frame is zero. (2) One play of a mono sound at volume 1 and pitch 1 with no place gives the sound's samples, each divided by 32,768, in both channels, bit for bit, from the first frame of the next pull, and zeros after its last frame. This holds for a sound one frame long, one shorter than a pull and one longer than four pulls, and the voice is free after the last frame. (3) A stereo sound with no place gives its first channel in channel 0 and its second in channel 1. (4) Two plays of one sound 480 frames apart give the sum of the two, so the second does not cut the first. (5) A volume `v` gives each sample times `v`. (6) Pitch 2 gives every second source sample exactly and lasts half as long. Pitch 0.5 gives each source sample at every second frame and lasts twice as long. (7) A volume above 1 or below 0, and a pitch above 2 or below 0.5, are clamped to the nearest of those and counted as clamped. A volume or pitch that is not finite drops the play, which is counted as a bad value. (8) The reference script, with each command applied at its frame, gives the same frames bit for bit when pulled 1, 37, 128, 512 and 4,096 frames at a time and in a rotation of those sizes. (9) The reference script's digest equals the digest kept beside the crate's tests. Guard: CPU tests on the buffer, in `./dev check`.",
+          "check": "cargo nextest run --locked --offline -p thrum-audio --test it -E 'test(/^mix::/)' --no-tests=fail",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP1.2",
+          "statement": "A place and the listener, in the buffer. (1) A mono sound placed at the listener's position is centred and has the power of the same sound played with no place. (2) With the place straight ahead at 0, 1/4, 1/2 and 3/4 of its radius, the gain is `(1 - d/radius)²` of the gain at the listener. At the radius and at twice the radius the play is dropped and counted as out of range, which the record keeps apart from every fault. (3) A place on the listener's left, against its right vector, is louder in channel 0, and one on its right is louder in channel 1. At one distance, the summed power of the two channels is the same at five pans from hard left to hard right. (4) A stereo sound with a place is summed to mono before it is panned. (5) Turning the listener's right vector about swaps the two channels' levels. (6) A place moved, in steps between pulls, along a line through the listener's position: the pan passes through the centre, and no frame's gain in either channel differs from the frame before by more than one glide step. (7) The listener moved and turned between pulls while a long sound plays: the gains reach the new values, and no frame's gain moves by more than one glide step. (8) A place or a listener that is not finite is dropped and counted as a bad value, and the listener stays where it was. Each comparison is at the tolerance its test states. Guard: CPU tests on the buffer, in `./dev check`.",
+          "check": "cargo nextest run --locked --offline -p thrum-audio --test it -E 'test(/^place::/)' --no-tests=fail",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP1.3",
+          "statement": "The limit and the pool, in the buffer. (1) Forty plays of one sound, evenly spaced over one second, each with a limit of 4, where the sound lasts 0.3 s: at no frame do more than four voices of that sound sound; every play is either started or counted as dropped by the limit; the two counts sum to forty; and more than four are started over the second. (2) The same forty plays with no limit start forty voices where the pool has room. (3) A limit on one sound does not count another sound's voices. (4) With the pool's share for sounds that happen full, a new play that would be louder than the quietest voice there takes its place: the displaced voice reaches silence by a ramp with no step larger than one ramp step, and is counted as displaced. A new play that would not be louder is dropped and counted against the pool. (5) A sound that happens never displaces an emitter's voice, and an emitter never takes a voice from the other share. Guard: CPU tests on the buffer, in `./dev check`.",
+          "check": "cargo nextest run --locked --offline -p thrum-audio --test it -E 'test(/^limits::/)' --no-tests=fail",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP1.4",
+          "statement": "Emitters, in the buffer. (1) An emitter's voice wraps from its sound's last frame to its first with no gap and no repeated frame, over at least three wraps: the frames are the sound's samples in order, times the gain. This holds for a sound one frame long, one shorter than a pull and one longer than a pull. (2) Setting its volume, setting its pitch and moving it each change the gains or the speed by a glide, and leave its position in the sound where it was. (3) Holding it takes it to silence by a ramp and freezes its position, and letting it go ramps it back from the frame it was held at. Ending it ramps it out and frees its voice. (4) Of emitters with places, only those inside their radius hold a voice. One that comes inside is given a voice at the next update and one that leaves gives it up, and neither makes a step in the output larger than one glide step. An emitter with no place always holds a voice. (5) With more audible emitters than the emitters' share of the pool, the loudest hold the voices. Two equally loud emitters contending for the last voice do not exchange it over 100 updates. (6) With 10,000 emitters laid out from a seed, of which 2,000 move at each of ten updates while the listener moves: after each update the emitters holding voices are the ones a brute-force search of the same data finds audible and loudest. (7) A sound replaced while voices play it: those voices finish on the data they started with, a play made afterwards uses the new data, and the old data is released by a call on the game's side and not inside a pull. Removing a sound ends its emitters. Guard: CPU tests on the buffer, in `./dev check`.",
+          "check": "cargo nextest run --locked --offline -p thrum-audio --test it -E 'test(/^emitters::/)' --no-tests=fail",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP1.5",
+          "statement": "Glides, ramps, the clip and the volumes, in the buffer, read with a sound of constant value so that the output is the gain. (1) The effects volume scales sounds that happen and emitters, and the master volume scales everything. A change to either while a sound plays reaches its new value by a glide: no frame's gain moves by more than one glide step. (2) Stopping, holding, displacing and ending a voice each reach silence within the configured ramp length, in steps no larger than one ramp step. (3) A sound that happens is at its gain in its first frame, and an emitter's voice starts at zero. (4) Below the clip's knee every frame leaves the mix unchanged, bit for bit. (5) With every voice of the pool sounding a full-scale sound at volume 1, every output sample is inside -1 to 1, the output rises wherever the sum rises, and the record counts the frames that reached the knee. (6) The clip is continuous at the knee: outputs just above and just below it differ by no more than their inputs do. Guard: CPU tests on the buffer, in `./dev check`.",
+          "check": "cargo nextest run --locked --offline -p thrum-audio --test it -E 'test(/^gains::/)' --no-tests=fail",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP1.6",
+          "statement": "When nothing pulls, and the record. (1) While the handle has been told that nothing is pulling, by the call a sound output will use, a play is dropped and counted as such, and changes to emitters, volumes and the listener are kept. When pulling starts, the audible emitters sound, the volumes and the listener are the latest set, and none of the dropped plays is heard. (2) A new mix made for a handle that already has sounds, emitters, volumes and a listener is sent that state and sounds the same emitters, and plays made before it existed are not heard. (3) With the command queue full, a play is dropped and counted against the queue, and a change to an emitter, a volume or the listener made while it was full is applied once there is room, as its latest value. No call waits. (4) For a scripted case that makes each of these happen a known number of times, the record gives exactly that number: voices sounding and the most there have been, emitters and how many are audible, plays started, plays dropped by the limit, by the pool, as out of range, for nothing pulling, by a full queue and for a bad value, voices displaced, values clamped, frames that reached the knee, the queue's high-water mark and frames pulled. (5) Adding a sound with no frames, one with a channel count other than 1 or 2, and one more sound than the mix was made for each return a typed error that names the cause and leave the mix as it was. Guard: CPU tests on the buffer, in `./dev check`.",
+          "check": "cargo nextest run --locked --offline -p thrum-audio --test it -E 'test(/^record::/)' --no-tests=fail",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP1.7",
+          "statement": "A pull allocates nothing, and a frame's calls allocate nothing once a scene is set up. (1) Over the reference script, counted on the pulling thread after the mix is made, no pull allocates or frees, including the pulls in which voices start, end, are displaced and are ramped and in which commands are applied. (2) Counted on the calling thread after the script's sounds are added and its emitters started, the handle's play, set, move, hold, listener, volume and update calls allocate nothing. Guard: CPU tests with the test kit's counting allocator, in `./dev check`. C11 asks this of an audio callback.",
+          "check": "cargo nextest run --locked --offline -p thrum-audio --test it -E 'test(/^allocations::/)' --no-tests=fail",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP1.8",
+          "statement": "The mix builds as a WebAssembly module that imports nothing. One documented command builds it for `wasm32-unknown-unknown`, and the built module's import list is empty. Run under Node, that module renders the reference script, with each command applied at its frame, to the digest kept beside the crate's tests, pulled 128 frames at a time and again 512 at a time. Node stands in for Chrome's engine here, and WP4 runs the module inside Chrome's audio worklet. Record: the module's build and its digest under Node. The build command is kept, because a web game's build step calls it.",
+          "check": "python3 scripts/audio.py module",
+          "reads": [
+            "crates/",
+            "scripts/audio.py",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "stand_in:chrome-webgpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP1.9",
+          "statement": "The mix's cost is recorded, with the machine's load at the time. (1) The time to render one minute of the fullest case, every voice of the pool sounding a placed sound at a pitch other than 1 while its gains glide, natively and in the mix module under Node, each as a share of real time. (2) The time of one update of the handle with 10,000 emitters, of which 2,000 moved and the listener moved. (3) The default sizes of the pool, of its two shares, of the command queue and of the table of sounds, each with its reason. (4) The starting values of the ramp length, the glide step, the clip's knee and `near`. The check fails only on a missing measurement, or where a render in (1) takes longer than the sound it renders. Record: tripwire rows taken under load, kept in the working folder.",
+          "check": "python3 scripts/audio.py costs",
+          "reads": [
+            "crates/",
+            "scripts/audio.py",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP1.10",
+          "statement": "The mix is one piece of code that nothing can make wait, it gives the same bits on every target, and it holds nothing of a game's.",
+          "ask": "Read `thrum-audio` and its tests. 1. Is there one implementation of mixing: do the buffer, the mix module and whatever a sound output will pull all compile the same source for voices, gains, the pool and the clip, with no second path behind a `cfg`? 2. Follow a pull from its entry to its return. Does anything it executes take a lock, wait on anything, allocate or free, read a file or a clock, or call the operating system? 3. Does any call on the handle take a lock a pull could hold, or wait for a pull? 4. Does the mix path use only operations whose results are fixed on every target: is there a platform maths function, a fused multiply-add, or a table built with one? 5. Is every gain change a glide or a ramp counted in frames, with none worked out once a pull? 6. Does the crate hold any world state, name any game type, or depend on a renderer, a window or a shell? 7. Are the crate and each outside dependency registered in `.config/architecture.toml` with an exact version, and is every licence permissive?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
+      "id": "WP2",
+      "name": "A .wav or .ogg is cooked into a sound or a music track, and music plays from its compressed form, loops from its loop point and cross-fades",
+      "status": "not_started",
+      "quality_bar": "A cook as strict as the engine's other product kinds: a bad source is named and refused, and a bad product never reaches a frame. Music as a shipped game plays it: it starts at once, loops without a seam and changes without a hole. The codec is held to its specification, bit for bit against its reference. No reference game is named, because no item here is judged by ear or by eye: how it sounds is WP5's, with the owner.",
+      "items": [
+        {
+          "id": "WP2.1",
+          "statement": "The cook turns a source into a sound product: 16-bit samples at 48 kHz with the source's channel count. (1) A 48 kHz 16-bit `.wav`, mono and stereo, cooks to exactly its own samples. (2) A 1 kHz tone as a `.wav` at 22,050, 44,100 and 96,000 Hz, as an 8-bit, a 24-bit and a 32-bit float `.wav` at 48,000 Hz, and as an `.ogg` at 44,100 and 48,000 Hz, each mono and stereo, cooks to a 1 kHz tone. Its length is the source's to within one frame at 48 kHz for a `.wav`, and to within the tolerance the test states for an `.ogg`. Its zero crossings over its length are a 1 kHz tone's to within 1%, and its level is the source's to within 1 dB. (3) A stereo source with a tone in one channel only keeps it in that channel. (4) Each of these is refused with a message that names the file and the cause, and makes no product: three channels; no frames; a `.wav` in an encoding other than integer or float PCM; a `.wav` cut short; an `.ogg` cut short; an `.ogg` that holds a stream other than Vorbis; a file that is neither, whatever its extension. Guard: CPU tests on sources of a second or less, in `./dev check`.",
+          "check": "cargo nextest run --locked --offline -p thrum-cook --test it -E 'test(/^sound_source::/)' --no-tests=fail",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP2.2",
+          "statement": "A sound product and a music product are validated when opened, before any frame is exposed. (1) Each of these is refused with a named error and no panic: another kind's marker; a product cut short, at every length from nothing to one byte less than whole; a frame count the payload does not hold; a channel count other than 1 or 2; a rate other than 48,000; a codec the reader does not know; a loop point at or past the end. (2) For a seeded set of 10,000 single-byte changes to a valid product of each kind, opening either refuses the product or gives one whose every frame is read, and for music decoded, with no panic and no read outside the product. Guard: CPU tests on small products, in `./dev check`. A cooked format is where a fault is silent and costly.",
+          "check": "cargo nextest run --locked --offline -p thrum-cook --test it -E 'test(/^sound_hostile::/)' --no-tests=fail",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP2.3",
+          "statement": "The music codec is QOA as its specification defines it, checked against the reference implementation at the revision the provenance record pins. (1) The engine's decoder gives exactly the samples the reference decoder gives, for fixture streams the reference encoder wrote, mono and stereo, including a last frame that is not full. (2) Streams the cook's encoder writes are decoded by the reference decoder to exactly the samples the engine's decoder gives, checked against a kept digest of the reference's output. (3) On the fixture's source, the cook's encoder leaves no more squared error than the reference encoder does. (4) The engine's decoder allocates nothing. Guard: CPU tests on fixtures of a second or less, in `./dev check`.",
+          "check": "cargo nextest run --locked --offline -p thrum-audio --test it -E 'test(/^codec::/)' --no-tests=fail && cargo nextest run --locked --offline -p thrum-cook --test it -E 'test(/^sound_codec::/)' --no-tests=fail",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP2.4",
+          "statement": "Music in the buffer, from cooked tracks. (1) Saying a track from silence plays it from its first frame, rising over the fade time given. (2) A looping track plays to its end and goes on from its loop point: over at least three passes the frames are the decoded track's frames in exactly that order. This holds for a loop point of zero, one in the middle of the track that falls inside a codec frame, and the last frame. A track with no loop point ends, and its stream is freed. (3) A change from one track to another with a fade of one second: at each of five moments through the fade the output is the first track times one gain plus the second times another, the squares of the two gains sum to 1, and after the fade only the second sounds and the first's stream is freed. (4) Saying the current track again changes nothing: its position goes on, and the record shows one stream. (5) A change made half-way through a fade: the track that was fading out reaches silence within one ramp, the one that was fading in fades out from the gain it had, and the new one fades in. Later than one ramp length after a change, no more than two streams sound. (6) Saying no track fades the current one out over the time given and frees its stream. A fade time of zero changes within one ramp. (7) The music volume and the master volume scale music and glide. The effects volume does not touch it, and holding emitters does not touch it. (8) A track given to the mix in pieces: a stream that reaches the end of what has arrived renders silence, the record counts those frames, and when the next piece arrives the stream goes on from the same frame of the track. (9) Adding a track allocates no more than its cooked bytes and a fixed amount: a track six times as long allocates more only by the difference in cooked bytes. A pull allocates nothing while two streams fade. (10) The record gives the streams sounding, the current track and its position. Each comparison of frames is at the tolerance its test states. Guard: CPU tests on tracks of a few seconds, in `./dev check`.",
+          "check": "cargo nextest run --locked --offline -p thrum-audio --test it -E 'test(/^music::/)' --no-tests=fail",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP2.5",
+          "statement": "Through the cooker as a game uses it, from a source folder to the store. (1) A `.wav` and an `.ogg` are published as sound products under their logical names, and resolve by name and kind through the manifest. (2) A source with the small file beside it that says it is music, with a loop point in seconds, is published as a music product whose loop point is that time at 48 kHz, to the frame. With no loop point the track does not loop. (3) Saving a changed source publishes a new generation with the new product, and saving the small file beside a sound makes it music. (4) A source the cook refuses is named with its cause in the cook's report, and the store keeps the last good product under that name. A loop point at or past the track's end is refused the same way. (5) The same source cooks to the same bytes every time. Guard: CPU tests on sources of a second or less, in `./dev check`.",
+          "check": "cargo nextest run --locked --offline -p thrum-cook --test it -E 'test(/^sound_store::/)' --no-tests=fail",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP2.6",
+          "statement": "The reference script gains a cooked sound played and looped, a looping track through two passes, and a cross-fade. (1) Its new digest is kept beside the crate's tests, WP1.1's test holds it natively, and the log says why it changed. (2) The mix module, built by WP1's command and still importing nothing, renders the script under Node to that digest, with the cooked products handed to it as bytes. (3) Recorded with the machine's load: the time to render one minute with the pool full and two music streams fading, natively and in the module, each as a share of real time; the cooked bytes for one second of a mono and of a stereo sound and of a mono and of a stereo track; and the cook's time for one second of `.wav` and of `.ogg` source. The check fails only on a missing measurement, a digest that differs, or a render that takes longer than the sound it renders. Record: the module's digest under Node and tripwire rows taken under load, kept in the working folder.",
+          "check": "python3 scripts/audio.py module && python3 scripts/audio.py costs",
+          "reads": [
+            "crates/",
+            "scripts/audio.py",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "stand_in:chrome-webgpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP2.7",
+          "statement": "What ships links no authoring code, and a game without sound links no sound code. (1) `thrum-audio`'s normal dependency closure, for the Mac, for `wasm32-unknown-unknown` and for the iPhone simulator, holds none of `thrum-cook`, the cook's decoders or its resampler, and no renderer, window or shell package. (2) The normal closures of `thrum-app` and of the V1 game hold no `thrum-audio`. (3) The repository guards' list of authoring packages names the cook's decoders and its resampler, so a later landing that links one into a shipping package fails `./dev check`. The check first confirms that every package it reads is in the workspace's metadata, so it cannot pass by finding nothing. Guard: the repository guards, in `./dev check`.",
+          "check": "python3 scripts/audio.py closure",
+          "reads": [
+            "crates/",
+            "examples/",
+            "scripts/audio.py",
+            "scripts/repo_check.py",
+            ".config/architecture.toml",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP2.8",
+          "statement": "Everything that came from outside the repository is recorded in `docs/provenance/AUDIO.md` and is permitted.",
+          "check": "test -s docs/provenance/AUDIO.md",
+          "ask": "Read `docs/provenance/AUDIO.md` beside the files it names. 1. Does it list every file copied or translated from elsewhere and every fixture made with an outside tool, each with its source, its revision or version, its licence and the command that made it? Look for QOA's reference in particular: the fixture streams, and any translated code. 2. Is every licence it names permissive, with none GPL or share-alike? 3. Is every outside crate this work package added used by `thrum-cook` alone, and registered in `.config/architecture.toml` with an exact version? 4. Does anything hold a music track decoded: is a stream's memory the cooked bytes and a fixed amount, as the design's mechanism 8 says?",
+          "reads": [
+            "docs/provenance/AUDIO.md"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    }
+  ]
+}

@@ -106,6 +106,50 @@ A component the engine draws: a sprite, a shape, a model, a light.
 
 Proposed: the planner chose the name.
 
+### Mix
+
+The one place in the engine where every sounding voice is summed into the stereo frames that are heard. It is
+pulled, by a sound output or by a test, and never runs by itself. The game SDK's `Mix` setting holds the three
+volumes a player sets, and is not this. Planned by the [AUDIO](AUDIO/DESIGN.md) module.
+
+- **Source** — the field's term (the mix, a mixer).
+
+Proposed: the planner chose it for the engine, as the module list already wrote it.
+
+### Voice
+
+One sounding instance of a sound in the mix. Playing a sound twice makes two voices.
+
+- **Source** — the field's term.
+
+Proposed: the planner chose it for AUDIO.
+
+### Emitter
+
+A looping sound that a thing makes, with a place, a volume and a pitch. It lasts until it is ended, and holds
+a voice only while it can be heard. The game SDK's `Sound` look becomes one.
+
+- **Source** — the field's term (Unreal, FMOD).
+
+Proposed: the planner chose it for AUDIO.
+
+### Listener
+
+The position and facing that a mix hears placed sounds from, normally the screen's camera. A mix has one.
+
+- **Source** — the field's term (Unity, Web Audio).
+
+Proposed: the planner chose it for AUDIO.
+
+### Sound output
+
+What connects a mix to one device and pulls frames from it: an audio unit on the Mac and iOS, an audio worklet
+in Chrome. A mix with no sound output is pulled into a buffer by a test.
+
+- **Source** — coined for AUDIO; the field says "audio backend" or "audio device".
+
+Proposed: the planner chose the name.
+
 ### Placement
 
 In a 3D game written on the game SDK, a model a scene stands somewhere once, with no entity, such as a valley or
