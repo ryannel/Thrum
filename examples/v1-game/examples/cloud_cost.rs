@@ -15,6 +15,7 @@ fn main() -> Result<(), String> {
     let mut store = None;
     let mut library = false;
     let mut mist_day = false;
+    let mut clouds_off_rate = 1.0;
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
         match arg.as_str() {
@@ -22,6 +23,13 @@ fn main() -> Result<(), String> {
             "--dawn" => low_sun = Some(-1.0),
             "--noon" => noon = true,
             "--mist-day" => mist_day = true,
+            "--clouds-off-solar-rate" => {
+                let value = args.next().ok_or("missing clouds-off solar rate")?;
+                clouds_off_rate = value.parse::<f64>().map_err(|error| error.to_string())?;
+                if !(1.0..=60.0).contains(&clouds_off_rate) {
+                    return Err("clouds-off solar rate must be between 1 and 60".into());
+                }
+            }
             "--device-profile" => {
                 profile = match args.next().as_deref() {
                     Some("portable") => DeviceProfile::Portable,
@@ -42,7 +50,14 @@ fn main() -> Result<(), String> {
     if library && (low_sun != Some(1.0) || store.is_none()) {
         return Err("--library needs --low-sun and --placed-store".into());
     }
-    pollster::block_on(measure(low_sun, noon, profile, store, library, mist_day))
+    pollster::block_on(measure(
+        low_sun,
+        noon,
+        profile,
+        store,
+        library,
+        mist_day.then_some(clouds_off_rate),
+    ))
 }
 
 #[expect(
@@ -55,7 +70,7 @@ async fn measure(
     profile: DeviceProfile,
     store: Option<std::path::PathBuf>,
     library: bool,
-    mist_day: bool,
+    mist_day: Option<f64>,
 ) -> Result<(), String> {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
         backends: wgpu::Backends::METAL,
@@ -101,7 +116,7 @@ async fn measure(
     };
     let content = v1_game::attach_cooked_scene(&mut host)?;
     host.set_timing_requested(true);
-    let mut view_angles = if let Some(side) = low_sun.or(mist_day.then_some(-1.0)) {
+    let mut view_angles = if let Some(side) = low_sun.or(mist_day.map(|_| -1.0)) {
         let elevation = 10.0_f32.to_radians();
         let hour_angle = side * (elevation.sin() * std::f32::consts::SQRT_2).acos();
         let solar_time = 0.5 + hour_angle / std::f32::consts::TAU;
@@ -135,11 +150,12 @@ async fn measure(
         setup_pass_peaks,
     } = settle_scene(&mut host, &device, content.as_ref(), has_shapes, library)?;
     v1_game::apply_cloud_quality(&mut host).map_err(|e| e.to_string())?;
-    let day = if mist_day {
+    let day = if let Some(clouds_off_rate) = mist_day {
         Some(prepare_mist_day(
             &mut host,
             setup,
             view_angles.as_mut().expect("mist day camera"),
+            clouds_off_rate,
         )?)
     } else {
         None
@@ -156,7 +172,7 @@ async fn measure(
     let mut minimum_volume_instances = usize::MAX;
     for relative_tick in 1..=measurement_ticks {
         // A quarter tick avoids resolving nanosecond rounding on a tick boundary.
-        let phase = if mist_day { 0.25 } else { 0.0 };
+        let phase = if mist_day.is_some() { 0.25 } else { 0.0 };
         let time = Duration::from_secs_f64((f64::from(last_tick + relative_tick) + phase) / 60.0);
         if day_schedule
             .as_ref()
@@ -188,7 +204,7 @@ async fn measure(
             .map_err(|e| e.to_string())?;
         while let Some(sample) = host.poll_completed()? {
             let clock = day_clocks.remove(&sample.submission_order);
-            if mist_day && clock.is_none() {
+            if mist_day.is_some() && clock.is_none() {
                 continue;
             }
             let timings = sample.gpu_pass_ns.ok_or("GPU counters required")?;
@@ -239,7 +255,7 @@ async fn measure(
             "storage":host.storage_report(), "view":host.scene_camera().map(v1_game::SceneCamera::eye),
             "view_angles":view_angles,
             "minimum_volume_instances":library.then_some(minimum_volume_instances),
-            "day_samples":mist_day.then_some(day_samples),
+            "day_samples":mist_day.map(|_| day_samples),
             "day_clouds":day_clouds,
             "setup_pass_peaks_ns":setup_pass_peaks,
             "first_submission":first,"ray_statistics":ray_statistics(&device,&queue,host.cloud_sky_products().as_ref())?,
@@ -255,6 +271,7 @@ fn prepare_mist_day(
     host: &mut Host,
     setup: v1_game::GameSetup,
     view_angles: &mut serde_json::Value,
+    clouds_off_rate: f64,
 ) -> Result<(bool, Vec<u32>), String> {
     use v1_game::{CloudSelection, GroundWeather};
     let clouds = match setup.clouds {
@@ -265,7 +282,7 @@ fn prepare_mist_day(
     let rate = if clouds {
         setup.cloud_weather.time_scale
     } else {
-        clouds_off_rate()?
+        clouds_off_rate
     };
     let schedule = day_schedule(rate);
     host.set_time_of_day(16.5 / 24.0)?;
@@ -396,17 +413,6 @@ fn day_schedule(rate: f64) -> Vec<u32> {
             tick..tick + 8
         })
         .collect()
-}
-
-fn clouds_off_rate() -> Result<f64, String> {
-    // Off skips weather setup, so read the paired run's rate for the proof clock.
-    let rate = std::env::var("THRUM_CLOUD_TIME_SCALE").map_or(Ok(1.0), |value| {
-        value.parse::<f64>().map_err(|error| error.to_string())
-    })?;
-    if !(1.0..=60.0).contains(&rate) {
-        return Err("mist-day rate must be between 1 and 60".into());
-    }
-    Ok(rate)
 }
 
 #[expect(

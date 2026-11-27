@@ -1146,7 +1146,8 @@ def mist_day_cost():
                                THRUM_CLOUD_WIND='0', THRUM_CLOUD_TIME_SCALE=str(rate), THRUM_CAMERA_X='35',
                                THRUM_CAMERA_Z='16', THRUM_CAMERA_HEIGHT='246')
             arm = json.loads(run(['target/release/examples/cloud_cost', '--device-profile', 'portable',
-                                 '--mist-day'], env=environment, timeout=360))
+                                 '--mist-day', '--clouds-off-solar-rate', str(rate)],
+                                 env=environment, timeout=360))
             arms.append(dict(arm, weather_rate=rate, visual_range_km=60))
     for row, off in zip(rows, controls):
         row['investigations'] = investigate_mist_day(row, off, rows[0], far_mist)

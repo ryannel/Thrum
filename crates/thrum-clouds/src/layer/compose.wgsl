@@ -30,7 +30,7 @@ fn surface_transport(pixel: vec2<u32>, uv: vec2<f32>, distance: f32, own: vec4<f
     let grid = cloud_ground_grid(uv);
     let base = vec2<i32>(floor(grid));
     let blend = fract(grid);
-    var value = vec4(0.0);
+    var value = vec3(0.0);
     var total = 0.0;
     for (var slot = 0u; slot < 4u; slot++) {
         let corner = cloud_stop_offset(slot);
@@ -45,7 +45,7 @@ fn surface_transport(pixel: vec2<u32>, uv: vec2<f32>, distance: f32, own: vec4<f
         let axis = mix(1.0 - blend, blend, vec2<f32>(corner));
         let weight = axis.x * axis.y * (1.0 - smoothstep(0.006, 0.025, relative_delta));
         if weight > 0.0 {
-            var sample = textureLoad(transport, block, neighbor_slot, 0);
+            var sample = textureLoad(transport, block, neighbor_slot, 0).rgb;
             // Estimate this ray's transport at the receiver's stop. Selecting
             // the nearest subpixel alone alternates an early and a late stop
             // on successive rows, even after interpolating the ray directions.
@@ -54,17 +54,17 @@ fn surface_transport(pixel: vec2<u32>, uv: vec2<f32>, distance: f32, own: vec4<f
                 let adjacent = textureLoad(front, block, adjacent_slot, 0).w;
                 let span = adjacent - stop;
                 if adjacent > 0.0 && abs(span) > 1e-6 && abs(span) < 0.025 * stop {
-                    let other = textureLoad(transport, block, adjacent_slot, 0);
+                    let other = textureLoad(transport, block, adjacent_slot, 0).rgb;
                     let phase = clamp((distance - stop) / span, -1.0, 1.0);
-                    sample = max(vec4(0.0), mix(sample, other, phase));
-                    sample.a = min(sample.a, 1.0);
+                    sample = max(vec3(0.0), mix(sample, other, phase));
                 }
             }
             value += weight * sample;
             total += weight;
         }
     }
-    return select(own, value / max(total, 1e-8), total > 0.0);
+    // The receiving pixel retains its own transmittance at its exact stop.
+    return vec4(select(own.rgb, value / max(total, 1e-8), total > 0.0), own.a);
 }
 
 @fragment fn fragment(@builtin(position) position:vec4<f32>)->Output {
