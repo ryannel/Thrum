@@ -1267,3 +1267,11 @@ selects the exposure pipeline and the graph's exposure history. On portable Meta
 Ground matches the pre-WP15 control at 320×180 and 2560×1440 with a 60 km atmospheric view volume and a
 matched submitted warmup. The 30° and 35° Ground relief and exact Sky checkpoint pass again.
 [Metal and Chrome proof](../../../.orchestrate/evidence/CLOUDS/WP15/exposure-scope/PROOF.md)
+
+## WP15 Elevated cloud handover
+
+Ground now contributes elevated cloud and placed volumes to the atmospheric view volume by distance, independent
+of the terrain-height test for distant deck lighting. The near volume and the far trace use the same coarse source
+through the handover. Metal readbacks at a 120 m opaque stop show occupied near cells and unit fresh trace
+transmittance with and without a ridge behind the stop. The clear controls have zero near extinction.
+[Target proof](../../../.orchestrate/evidence/CLOUDS/WP15/near-handover/PROOF.md)

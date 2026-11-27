@@ -154,8 +154,10 @@ fn inside_upper_cloud_compose_interpolates_only_sky_stops() {
             pipeline: None,
         }))
         .expect("foreground edge");
+        // Keep the sky ray in the layer beyond the view-volume handover so
+        // the far transport still distinguishes a sky tap from the 3 m stop.
         host.set_scene_camera(
-            SceneCamera::perspective([0.0, 1850.0, 0.0], [0.0, 1880.0, -100.0], 0.35, 0.1, 4000.0)
+            SceneCamera::perspective([0.0, 1850.0, 0.0], [0.0, 1850.0, -100.0], 0.35, 0.1, 4000.0)
                 .expect("inside upper cloud"),
         )
         .expect("camera");
@@ -195,7 +197,7 @@ fn inside_upper_cloud_compose_interpolates_only_sky_stops() {
             }
             let expected = total.map(|value| value / weights);
             let t = expected[3];
-            assert!(t < 0.8, "the sky ray must contain cloud");
+            assert!(t < 0.8, "the sky ray must contain far cloud: {t}");
             let background = [0.125_f32, 0.25, 0.5, 0.0];
             for (lane, (scatter, behind)) in (0..4).zip(expected.into_iter().zip(background)) {
                 let prediction = behind.mul_add(t, scatter);
