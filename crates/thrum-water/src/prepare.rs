@@ -1096,11 +1096,12 @@ const OPTICAL_PATHS: &str = concat!(
 );
 
 fn lend_shore_support(source: &str) -> String {
-    const REACH: &str = "let reach = 0.175 * row.swash;";
-    let (before, after) = source.split_once(REACH).expect("shore film support");
+    const SUPPORT: &str = "let reach = 0.175 * row.swash;\n    let above = row.bed - row.level;";
+    let (before, after) = source.split_once(SUPPORT).expect("shore film support");
     format!(
         "{before}let authored = wet_shore(ground.xz);
-    let reach = select(0.175 * row.swash, wet_shore_edge(authored) - row.level, authored.w > 0.0);{after}"
+    let reach = select(0.175 * row.swash, wet_shore_edge(authored) - row.level, authored.w > 0.0);
+    let above = select(row.bed, ground.y, authored.w > 0.0) - row.level;{after}"
     )
 }
 
