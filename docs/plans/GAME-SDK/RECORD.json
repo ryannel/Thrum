@@ -12,12 +12,12 @@
   },
   "work_packages": {
     "WP1": {
-      "definitions": "a5fcdd59622d8f74fad7c0a3f6e3362563a8f7340eb30f15b8cafc337c586bb5",
+      "definitions": "f7493c1fae8ae8fc786d2bbff06ea5339f9ea2cc31202dafb96ddf312ad1e8d2",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 7 Must Fix ",
-        "at": "2026-11-27T06:53:06Z"
+        "task": "Revise the GAME-SDK core from dogfood round 3, keeping the owner's aim: lock in the core shape, with an extension map fo",
+        "at": "2026-11-27T07:48:49Z"
       }
     },
     "WP2": {
@@ -31,12 +31,12 @@
       "ends_stretch": true
     },
     "WP11": {
-      "definitions": "c72c3a0d45f0530eed754776c65a6160d2a9fd17bd7c87572eb502280b2eba7c",
+      "definitions": "af71586a3de718bb1c8fe5c092b4d69093d4a1d2c31e0174d5f42c04013ad074",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Revise the GAME-SDK design so its core shape can be locked in. The owner's words (27 Nov 2026): \"Let's just be clear on ",
-        "at": "2026-11-27T05:40:18Z"
+        "task": "Revise the GAME-SDK core from dogfood round 3, keeping the owner's aim: lock in the core shape, with an extension map fo",
+        "at": "2026-11-27T07:48:49Z"
       }
     }
   },
@@ -76,11 +76,15 @@
     {
       "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 7 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
       "at": "2026-11-27T06:53:06Z"
+    },
+    {
+      "task": "Revise the GAME-SDK core from dogfood round 3, keeping the owner's aim: lock in the core shape, with an extension map for features the first release doesn't build (owner's words are in the module log, 27 Nov). Round 3 judged the shape. Three of four games would lock in the core (confidence 7, 8, 7); the online swarm game would not (7/10) because save ownership is wrong. Reports, with source and '// SDK:', '// SDK guess:' and '// SDK ext:' notes beside each (absolute paths, outside Git): /Users/ryannel/Workspace/thrum/tmp/sdk-dogfood-3/swarm-2d-online/REPORT.md, /Users/ryannel/Workspace/thrum/tmp/sdk-dogfood-3/platformer-2d/REPORT.md, /Users/ryannel/Workspace/thrum/tmp/sdk-dogfood-3/arena-3d-online/REPORT.md, /Users/ryannel/Workspace/thrum/tmp/sdk-dogfood-3/explorer-3d/REPORT.md. Fix the core frictions they rank, at shape depth: (1) save ownership: a profile a player keeps on their own machine, beside the host's match save; (2) frame functions reading the tick's clock, so timers and cooldowns can be shown without guessing; (3) what a level or tile map places can be given values, by a spawn function as players' spawns are; (4) predicted spawns get the control function's contract; (5) saving from pause without advancing a tick; plus each report's other core items where they show the core fighting a genre, not a missing feature. Guesses: the games still guessed 10 to 55 names, mostly spellings and methods (PerPlayer<T>, Tally<T>, the source-image-to-sprite route). Give every public type a game touches its methods in one reference place, so a reader finds names instead of guessing. Keep it short. End your report with how each report's top items are answered.",
+      "at": "2026-11-27T07:48:49Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T06:53:06Z"
+    "at": "2026-11-27T07:48:49Z"
   },
   "design_history": [
     {
