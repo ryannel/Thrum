@@ -902,7 +902,7 @@
         {
           "verdict": "fail",
           "commit": "6705e3633c033d68a8eaf88a5641c70bf88e163d",
-          "review": ".orchestrate/evidence/ATMOSPHERE/WP12-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP12-review-1.md",
           "items": {
             "WP12.1": "fail",
             "WP12.2": "fail",
@@ -959,6 +959,42 @@
             "turns": 1
           },
           "at": "2026-11-27T10:53:17Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "2d49fd9e7c2d97fed18f208bf07c05a63f54b826",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP12-review.md",
+          "items": {
+            "WP12.1": "pass",
+            "WP12.2": "pass",
+            "WP12.3": "pass",
+            "WP12.4": "pass",
+            "WP12.5": "pass",
+            "WP12.6": "pass"
+          },
+          "findings": [
+            {
+              "name": "Enabling the governor leaves cloudy reflections at the old illuminance",
+              "repeat": false
+            }
+          ],
+          "summary": "WP12 fails because starting the governor after a light edit under cloud exposes reflections built at twice the current solar illuminance. All six listed items pass, including the Mac and Chrome inspections, and all six findings from the previous review are resolved. A separate Metal probe reproduces the new defect in both forward shading and the lent environment lookup.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 197472,
+            "cached": 12936960,
+            "output": 32320,
+            "turns": 1
+          },
+          "at": "2026-11-27T15:04:48Z"
         }
       ],
       "authorised": {
