@@ -44,6 +44,8 @@
 //! executor opens the prepared view before the Sun and opaque passes and controls load, store and
 //! timing. A skippable draw targets retained state, and its owner runs it on the first frame of
 //! each epoch. A runtime skip creates no graph or pipeline.
+//! Detached capture reuses persistent draw outputs and reruns transient draws. Any storage
+//! written by the draw must share its colour attachment's transient or retained lifetime.
 //!
 //! [`EffectState`] implements the tentative protocol for an effect's clock, anchor and independent
 //! history sides. Start each upload with `begin`; a reset is a full write of every producer and

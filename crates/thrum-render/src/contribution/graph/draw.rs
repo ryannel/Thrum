@@ -189,19 +189,22 @@ impl EffectGraph {
             }) {
                 return Err(reject("cannot declare copy or acceleration build work"));
             }
-            // Capture runs transient draws to reproduce their output. All their writes
-            // must be transient so that submitting a capture preserves committed state.
-            if matches!(scope, ResourceScope::Transient)
-                && pass.accesses.iter().any(|access| {
-                    matches!(
-                        access.kind,
-                        AccessKind::StorageWrite | AccessKind::StorageReadWrite
-                    ) && !matches!(self.resources[access.resource].1, ResourceScope::Transient)
-                })
-            {
-                return Err(reject(
-                    "a draw with a transient colour attachment cannot write retained storage",
-                ));
+            // Capture reruns transient draws and reuses persistent colour. All writes
+            // must follow that choice so capture preserves state and produces scratch inputs.
+            let transient_colour = matches!(scope, ResourceScope::Transient);
+            for access in &pass.accesses {
+                if matches!(
+                    access.kind,
+                    AccessKind::StorageWrite | AccessKind::StorageReadWrite
+                ) && transient_colour
+                    != matches!(self.resources[access.resource].1, ResourceScope::Transient)
+                {
+                    return Err(reject(if transient_colour {
+                        "a draw with a transient colour attachment cannot write retained storage"
+                    } else {
+                        "a draw with a persistent colour attachment cannot write transient storage"
+                    }));
+                }
             }
             let has_other_writer = self
                 .declarations()

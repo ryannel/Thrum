@@ -384,21 +384,23 @@ fn layered_draw_graph() -> EffectGraph {
 }
 
 #[test]
-fn simulate_draw_rules_refuse_retained_storage_writes_from_transient_draws() {
+fn simulate_draw_rules_require_colour_and_storage_writes_to_agree_on_lifetime() {
     let mut graph = layered_draw_graph();
     graph.passes.truncate(1);
     graph.opaque_reads.clear();
+    let retained_colour = graph.resources[0].1;
+    let retained_storage = ResourceScope::Persistent {
+        owner: 1,
+        epoch: 0,
+        initialized: true,
+    };
     graph.resources[0].1 = ResourceScope::Transient;
     graph.resources.push((
         ResourceDescriptor::Buffer {
             bytes: 4,
             usage: wgpu::BufferUsages::STORAGE,
         },
-        ResourceScope::Persistent {
-            owner: 1,
-            epoch: 0,
-            initialized: true,
-        },
+        retained_storage,
     ));
     graph.passes[0].accesses.push(EffectAccess {
         resource: 1,
@@ -409,6 +411,8 @@ fn simulate_draw_rules_refuse_retained_storage_writes_from_transient_draws() {
     });
     graph.validate().expect("capture may read retained state");
     for kind in [AccessKind::StorageWrite, AccessKind::StorageReadWrite] {
+        graph.resources[0].1 = ResourceScope::Transient;
+        graph.resources[1].1 = retained_storage;
         graph.passes[0].accesses[1].kind = kind;
         assert_eq!(
             graph.validate(),
@@ -418,7 +422,21 @@ fn simulate_draw_rules_refuse_retained_storage_writes_from_transient_draws() {
             )),
             "{kind:?}"
         );
+        graph.resources[0].1 = retained_colour;
+        graph
+            .validate()
+            .expect("a retained draw may write retained storage");
+        graph.resources[1].1 = ResourceScope::Transient;
+        assert_eq!(
+            graph.validate(),
+            Err(draw_error(
+                "left",
+                "a draw with a persistent colour attachment cannot write transient storage"
+            )),
+            "{kind:?}"
+        );
     }
+    graph.resources[0].1 = ResourceScope::Transient;
     graph.resources[1].1 = ResourceScope::Transient;
     graph.passes[0].accesses[1].kind = AccessKind::StorageWrite;
     graph
