@@ -2049,7 +2049,7 @@
         {
           "verdict": "fail",
           "commit": "16c05d77e7806b0872952a702a3fca217dc421fe",
-          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review-4.md",
           "items": {
             "WP15.1": "fail",
             "WP15.4": "pass",
@@ -2095,6 +2095,51 @@
             "turns": 1
           },
           "at": "2026-11-27T02:03:59Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "40a92b358bea9f9e23152e7adc7bde3b07b5d5ee",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md",
+          "items": {
+            "WP15.1": "pass",
+            "WP15.14": "pass",
+            "WP15.15": "pass",
+            "WP15.16": "fail",
+            "WP15.17": "pass",
+            "WP15.4": "pass",
+            "WP15.13": "pass",
+            "WP15.5": "pass",
+            "WP15.6": "pass",
+            "WP15.7": "pass",
+            "WP15.18": "pass",
+            "WP15.8": "pass",
+            "WP15.9": "pass",
+            "WP15.10": "pass",
+            "WP15.11": "pass"
+          },
+          "findings": [
+            {
+              "name": "Zero-fog Ground washes out the sunlit relief of fair clouds",
+              "item": "WP15.16",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 285685,
+            "cached": 10784128,
+            "output": 31505,
+            "turns": 1
+          },
+          "at": "2026-11-27T04:18:50Z"
         }
       ],
       "authorised": {
