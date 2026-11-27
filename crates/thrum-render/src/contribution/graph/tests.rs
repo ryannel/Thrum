@@ -331,6 +331,8 @@ fn simulate_draw_rules_validate_attachment_ranges_and_ownership() {
     use EffectCadence as C;
     use wgpu::{TextureFormat as F, TextureUsages as U};
 
+    type Edit = fn(&mut EffectGraph);
+
     let access = |kind, range| EffectAccess {
         resource: 0,
         range,
@@ -413,34 +415,33 @@ fn simulate_draw_rules_validate_attachment_ranges_and_ownership() {
         ))
     );
 
-    type Edit = fn(&mut EffectGraph);
     let cases: &[(&str, &str, Edit)] = &[
         ("load", "left", |g| {
-            g.passes[0].accesses[0].kind = A::AttachmentLoad
+            g.passes[0].accesses[0].kind = A::AttachmentLoad;
         }),
         ("two attachments", "left", |g| {
             let other = g.passes[1].accesses[0].clone();
             g.passes[0].accesses.push(other);
         }),
         ("two layers", "left", |g| {
-            g.passes[0].accesses[0].range = 0..2
+            g.passes[0].accesses[0].range = 0..2;
         }),
         ("two mips", "left", |g| g.passes[0].accesses[0].range = 0..4),
         ("draw overlap", "left", |g| {
-            g.passes[1].accesses[0].range = 0..1
+            g.passes[1].accesses[0].range = 0..1;
         }),
         ("storage overlap", "left", |g| {
-            g.passes[3].accesses[0].range = 0..1
+            g.passes[3].accesses[0].range = 0..1;
         }),
         ("copy overlap", "left", |g| {
             g.passes[3].accesses[0].range = 0..1;
             g.passes[3].accesses[0].kind = A::CopyWrite;
         }),
         ("time slice", "left", |g| {
-            g.passes[0].cadence = C::TimeSliced
+            g.passes[0].cadence = C::TimeSliced;
         }),
         ("skipped transient", "right", |g| {
-            g.resources[0].1 = ResourceScope::Transient
+            g.resources[0].1 = ResourceScope::Transient;
         }),
         ("async draw", "left", |g| g.passes[0].async_eligible = true),
         ("history", "left", |g| {

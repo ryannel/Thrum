@@ -93,16 +93,16 @@ impl SceneContribution for DrawnField {
                     vertex: wgpu::VertexState {
                         module: &module,
                         entry_point: Some("triangle"),
-                        compilation_options: Default::default(),
+                        compilation_options: wgpu::PipelineCompilationOptions::default(),
                         buffers: &[],
                     },
-                    primitive: Default::default(),
+                    primitive: wgpu::PrimitiveState::default(),
                     depth_stencil,
-                    multisample: Default::default(),
+                    multisample: wgpu::MultisampleState::default(),
                     fragment: Some(wgpu::FragmentState {
                         module: &module,
                         entry_point: Some(entry_point),
-                        compilation_options: Default::default(),
+                        compilation_options: wgpu::PipelineCompilationOptions::default(),
                         targets,
                     }),
                     multiview_mask: None,
@@ -139,8 +139,8 @@ impl SceneContribution for DrawnField {
                 format: surface.depth_format,
                 depth_write_enabled: Some(false),
                 depth_compare: Some(wgpu::CompareFunction::Always),
-                stencil: Default::default(),
-                bias: Default::default(),
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState::default(),
             }),
         );
         let field = surface
@@ -151,7 +151,7 @@ impl SceneContribution for DrawnField {
                 entries: &[wgpu::BindGroupEntry {
                     binding: 0,
                     resource: wgpu::BindingResource::TextureView(
-                        &texture.create_view(&Default::default()),
+                        &texture.create_view(&wgpu::TextureViewDescriptor::default()),
                     ),
                 }],
             });
@@ -218,7 +218,7 @@ impl SceneContribution for DrawnField {
         frame: &ContributionFrame,
     ) {
         let gpu = self.gpu.as_ref().expect("prepared drawn field");
-        let layer = index as u32;
+        let layer = u32::try_from(index).expect("two drawn-field layers");
         let x = ((frame.time.tick + u64::from(layer * 2)) % 5) as u32;
         let y = 1 + layer * 3;
         pass.set_pipeline(&gpu.additive);
@@ -298,7 +298,7 @@ async fn two_frames(
             return Err("drawn field or submitted colour dimensions differ".into());
         }
         for (layer, (left, top)) in lefts.into_iter().zip([1, 4]).enumerate() {
-            let layer = layer as u32;
+            let layer = u32::try_from(layer).expect("two drawn-field layers");
             for y in 0..SIZE {
                 for x in 0..SIZE {
                     let expected = if (top..top + 2).contains(&y) {

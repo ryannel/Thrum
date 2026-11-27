@@ -94,16 +94,16 @@ fn pipeline(
             module: shader,
             entry_point: Some("vertex"),
             buffers: &[],
-            compilation_options: Default::default(),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
         },
-        primitive: Default::default(),
+        primitive: wgpu::PrimitiveState::default(),
         depth_stencil,
-        multisample: Default::default(),
+        multisample: wgpu::MultisampleState::default(),
         fragment: Some(wgpu::FragmentState {
             module: shader,
             entry_point: Some(entry),
             targets,
-            compilation_options: Default::default(),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
         }),
         multiview_mask: None,
         cache: None,
@@ -129,7 +129,7 @@ impl SceneContribution for Field {
             size: wgpu::Extent3d {
                 width: SIZE,
                 height: SIZE,
-                depth_or_array_layers: self.layers as u32,
+                depth_or_array_layers: u32::try_from(self.layers).unwrap(),
             },
             mip_level_count: 1,
             sample_count: 1,
@@ -146,7 +146,7 @@ impl SceneContribution for Field {
                     PASS_NAMES[self.first + index],
                     &texture,
                     0,
-                    index as u32,
+                    u32::try_from(index).unwrap(),
                     wgpu::Color::TRANSPARENT,
                     true,
                     surface,
@@ -194,8 +194,8 @@ impl SceneContribution for Field {
                 format: surface.depth_format,
                 depth_write_enabled: Some(false),
                 depth_compare: Some(wgpu::CompareFunction::Always),
-                stencil: Default::default(),
-                bias: Default::default(),
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState::default(),
             }),
         );
         let view = texture.create_view(&wgpu::TextureViewDescriptor {
@@ -285,7 +285,7 @@ impl SceneContribution for Field {
     ) {
         let gpu = self.gpu.as_ref().unwrap();
         self.state.begin(frame.time, 1, [0; 2]);
-        let part = (self.first + index) as u32;
+        let part = u32::try_from(self.first + index).unwrap();
         let x = ((frame.time.tick + u64::from(2 * part)) % 5) as u32;
         let (rectangles, height) = if part == 0 {
             ([(x, 1), (x + 1, 1)], 2)
@@ -303,7 +303,12 @@ impl SceneContribution for Field {
         let gpu = self.gpu.as_ref().unwrap();
         pass.set_pipeline(&gpu.forward);
         pass.set_bind_group(0, &gpu.input, &[]);
-        pass.set_scissor_rect(self.first as u32 * SIZE, 0, self.layers as u32 * SIZE, SIZE);
+        pass.set_scissor_rect(
+            u32::try_from(self.first).unwrap() * SIZE,
+            0,
+            u32::try_from(self.layers).unwrap() * SIZE,
+            SIZE,
+        );
         pass.draw(0..3, 0..1);
         pass.set_scissor_rect(0, 0, EXTENT[0], EXTENT[1]);
     }
@@ -459,7 +464,8 @@ fn expected(origin: u32, part: u32) -> [u16; (SIZE * SIZE) as usize] {
     const ONE: u16 = 0x3c00;
     const TWO: u16 = 0x4000;
     std::array::from_fn(|index| {
-        let (x, y) = (index as u32 % SIZE, index as u32 / SIZE);
+        let index = u32::try_from(index).unwrap();
+        let (x, y) = (index % SIZE, index / SIZE);
         if part == 0 && (1..3).contains(&y) {
             match x.checked_sub(origin) {
                 Some(0 | 2) => ONE,
@@ -508,7 +514,7 @@ fn assert_frame(
     origins: [u32; 2],
 ) {
     for (part, ((witness, layer), origin)) in textures.into_iter().zip(origins).enumerate() {
-        let part = part as u32;
+        let part = u32::try_from(part).unwrap();
         let texture = witness.lock().unwrap().clone().unwrap();
         let bytes = readback::texture(device, queue, &texture, readback::Mip::layer(0, layer), ..);
         let expected = expected(origin, part);
