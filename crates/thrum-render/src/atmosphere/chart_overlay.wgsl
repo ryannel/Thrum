@@ -10,7 +10,7 @@ fn classify_overlay(index: u32) -> bool {
         active_overlay = 0u;
         for (var i = 0u; i < 64u; i++) { active_overlay |= cloud_flags[i]; }
         overlay_chart.cloudy = active_overlay;
-
+        overlay_chart.classifications += 1u;
     }
     return workgroupUniformLoad(&active_overlay) != 0u;
 }

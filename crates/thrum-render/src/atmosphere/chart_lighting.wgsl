@@ -4,7 +4,7 @@ struct ChartLighting {
     mode: u32,
     cloudy: u32,
     haze: f32,
-    padding: u32,
+    classifications: u32,
 }
 
 struct ReflectionTags {

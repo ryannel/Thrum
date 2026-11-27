@@ -4,8 +4,19 @@
 var<workgroup> horizontal_lux: array<vec4<f32>, 64>;
 
 @compute @workgroup_size(64)
+fn changed_haze_main(@builtin(local_invocation_index) index: u32) {
+    let cloudy = classify_overlay(index);
+    reduce_haze(index, cloudy);
+}
+
+@compute @workgroup_size(64)
 fn haze_main(@builtin(local_invocation_index) index: u32) {
-    if !classify_overlay(index) {
+    if index == 0u { active_overlay = overlay_chart.cloudy; }
+    reduce_haze(index, workgroupUniformLoad(&active_overlay) != 0u);
+}
+
+fn reduce_haze(index: u32, cloudy: bool) {
+    if !cloudy {
         if index == 0u { overlay_chart.haze = 1.0; }
         return;
     }

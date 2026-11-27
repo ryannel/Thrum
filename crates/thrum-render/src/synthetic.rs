@@ -1159,6 +1159,14 @@ impl PreparedSynthetic {
             .expect("fixture sky overlay")
     }
 
+    #[cfg(all(test, feature = "creation-counters"))]
+    pub(crate) fn overlay_classification_witness(&self) -> &wgpu::Buffer {
+        self.atmosphere
+            .as_ref()
+            .and_then(AtmospherePrepared::overlay_classification_witness)
+            .expect("fixture sky overlay classification")
+    }
+
     /// Inspect the two cumulative view-volume textures and the submitted history phase.
     /// The scatter texture's last layer carries the terminal pair for sky rays.
     #[cfg(feature = "creation-counters")]

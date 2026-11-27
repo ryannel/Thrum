@@ -690,11 +690,14 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         self.host.world_mut()
     }
 
-    /// The scene source, for CPU edits such as camera or solar time. Allowed while the device
-    /// is lost. Like [`FrameHost::source_mut`], it resets presentation history, so compare
-    /// through [`Self::host`] first and call it only for a change.
+    /// Edit the scene source across a camera cut. Allowed while the device is lost.
     pub fn source_mut(&mut self) -> &mut V {
         self.host.source_mut()
+    }
+
+    /// Edit a presentation phase such as solar time and reset its temporal history.
+    pub fn phase_source_mut(&mut self) -> &mut V {
+        self.host.phase_source_mut()
     }
 
     /// Edit a continuous presentation parameter while retaining correspondence.
@@ -705,7 +708,6 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
 
     /// Edit the scene source at an explicit camera cut.
     pub fn camera_source_mut(&mut self) -> &mut V {
-        self.host.invalidate_history();
         self.host.source_mut()
     }
 

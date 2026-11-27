@@ -990,7 +990,7 @@ impl BrowserGame {
         if self.content != crate::GameContent::Exit || first >= last || last > 1800 {
             return Err(js_error("invalid exit scene solar sweep"));
         }
-        self.page.shell.source_mut().solar_sweep =
+        self.page.shell.phase_source_mut().solar_sweep =
             Some(([u64::from(first), u64::from(last)], [0.0, 24.0]));
         Ok(())
     }

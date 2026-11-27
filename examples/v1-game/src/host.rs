@@ -1219,7 +1219,7 @@ impl GameWorld {
 /// Change the game-authored day phase and reset presentation history.
 pub(crate) fn set_time_of_day(runtime: &mut Runtime, fraction: f32) -> Result<(), String> {
     if let Some(offset) = day_phase_edit(runtime.world().tick(), runtime.source(), fraction)? {
-        runtime.source_mut().day_phase_offset = offset;
+        runtime.phase_source_mut().day_phase_offset = offset;
     }
     queue_ground_solar(runtime.source(), fraction);
     Ok(())
@@ -1314,7 +1314,7 @@ pub(crate) fn set_haze_eye(runtime: &mut Runtime, eye: [f32; 3], cut: bool) -> R
 /// Select the display diagnostic. It replaces only the display encode, so history stays valid.
 #[cfg(any(feature = "proving", target_os = "macos", target_arch = "wasm32", test))]
 pub(crate) fn set_display_overlay(runtime: &mut Runtime, overlay: DisplayOverlay) {
-    runtime.source_mut().display_overlay = overlay;
+    runtime.phase_source_mut().display_overlay = overlay;
 }
 
 /// The day phase offset that shows `fraction` at `tick`, or `None` when it is already shown.

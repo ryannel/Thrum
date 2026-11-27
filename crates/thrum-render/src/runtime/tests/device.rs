@@ -17,6 +17,7 @@ struct Policy {
     empty: bool,
     last_override: Cell<bool>,
     camera_cut_tick: Option<u64>,
+    chart_sun_step: Option<u16>,
 }
 
 impl SceneSource<SourceTick> for Policy {
@@ -63,8 +64,12 @@ impl SceneSource<SourceTick> for Policy {
         )?;
         let lighting = lighting.unwrap_or_else(|| {
             if self.atmosphere {
+                let toward_sun = self.chart_sun_step.map_or([0.0, 1.0, 0.0], |step| {
+                    let (y, x) = (30.0 + f32::from(step) * 0.02).to_radians().sin_cos();
+                    [x, y, 0.0]
+                });
                 FrameLighting::Atmosphere(
-                    AtmosphereFrame::new([0.0, 1.0, 0.0], 127_000.0, [1.0; 3], 2.0, 1)
+                    AtmosphereFrame::new(toward_sun, 127_000.0, [1.0; 3], 2.0, 1)
                         .expect("atmosphere"),
                 )
             } else {

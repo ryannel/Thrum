@@ -84,6 +84,7 @@ impl Target {
             size: CHART_LIGHTING_BYTES,
             usage: wgpu::BufferUsages::UNIFORM
                 | wgpu::BufferUsages::STORAGE
+                | wgpu::BufferUsages::COPY_SRC
                 | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
@@ -137,6 +138,7 @@ pub(super) fn prepare_diffuse(
         ..Default::default()
     });
     entries.push(view(7, &faces));
+    entries.push(buffer(8, &target.chart_lighting));
     if haze && let Some(cloud) = cloud {
         entries.extend([view(13, &cloud.view), buffer(14, &cloud.uniform)]);
         if let Some(band) = &cloud.band {
@@ -151,6 +153,26 @@ pub(super) fn prepare_diffuse(
     (diffuse, group)
 }
 
+#[derive(Clone)]
+pub(super) struct ChartLightingPass {
+    changed: (wgpu::ComputePipeline, wgpu::BindGroup),
+    cached_haze: Option<(wgpu::ComputePipeline, wgpu::BindGroup)>,
+}
+
+impl ChartLightingPass {
+    pub(super) fn select(
+        &self,
+        classify: bool,
+    ) -> Option<(&wgpu::ComputePipeline, &wgpu::BindGroup)> {
+        let pair = if classify {
+            Some(&self.changed)
+        } else {
+            self.cached_haze.as_ref()
+        };
+        pair.map(|(pipeline, group)| (pipeline, group))
+    }
+}
+
 pub(super) fn prepare_chart_lighting(
     device: &crate::runtime::DeviceSite,
     [snapshot, live]: [&wgpu::Buffer; 2],
@@ -158,20 +180,14 @@ pub(super) fn prepare_chart_lighting(
     sampler: &wgpu::Sampler,
     target: &Target,
     (directional, cloud): (&wgpu::Buffer, Option<&super::CloudPrepared>),
-) -> (wgpu::ComputePipeline, wgpu::BindGroup) {
+) -> ChartLightingPass {
     let haze = target.lighting == Lighting::OverlayAndHaze;
     let variant = cloud.map_or(CloudVariant::Absent, super::CloudPrepared::variant);
-    let pipeline = pipeline(
-        device,
-        "atmosphere chart overlay",
-        if haze { "haze_main" } else { "classify_main" },
-        Shader::AtmosphereChartOverlay(haze, variant),
-    );
     let faces = target.texture.create_view(&wgpu::TextureViewDescriptor {
         dimension: Some(wgpu::TextureViewDimension::D2Array),
         ..Default::default()
     });
-    let mut entries = vec![view(7, &faces), buffer(8, &target.chart_lighting)];
+    let mut entries = vec![buffer(8, &target.chart_lighting)];
     if haze {
         entries.extend([
             buffer(0, snapshot),
@@ -188,12 +204,34 @@ pub(super) fn prepare_chart_lighting(
             }
         }
     }
-    let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: Some("atmosphere chart overlay inputs"),
-        layout: &pipeline.get_bind_group_layout(0),
-        entries: &entries,
-    });
-    (pipeline, group)
+    let prepare = |entry, entries: &[wgpu::BindGroupEntry<'_>]| {
+        let pipeline = pipeline(
+            device,
+            "atmosphere chart overlay",
+            entry,
+            Shader::AtmosphereChartOverlay(haze, variant),
+        );
+        let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("atmosphere chart overlay inputs"),
+            layout: &pipeline.get_bind_group_layout(0),
+            entries,
+        });
+        (pipeline, group)
+    };
+    let cached_haze = haze.then(|| prepare("haze_main", &entries));
+    entries.push(view(7, &faces));
+    let changed = prepare(
+        if haze {
+            "changed_haze_main"
+        } else {
+            "classify_main"
+        },
+        &entries,
+    );
+    ChartLightingPass {
+        changed,
+        cached_haze,
+    }
 }
 
 pub(crate) fn chart_overlay_source(haze: bool, cloud: CloudVariant) -> String {
@@ -282,6 +320,7 @@ pub(crate) fn diffuse_source(haze: bool, cloud: CloudVariant) -> String {
         include_str!("overlay.wgsl"),
         include_str!("chart_overlay_classify.wgsl"),
         include_str!("chart_overlay_meter.wgsl"),
+        wgsl!("atmosphere/chart_lighting.wgsl"),
     ));
     if !haze {
         return format!(

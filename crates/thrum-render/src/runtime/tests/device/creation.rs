@@ -821,3 +821,80 @@ fn chart_cadence_gpu_host_tiers_reuse_the_atmosphere_resources() {
         }
     });
 }
+
+#[test]
+fn chart_cadence_gpu_public_source_cut_refreshes_charts_and_phase_edit_does_not() {
+    use crate::governor::{DisplayRecord, ThermalState};
+    use crate::pass_key::AtmosphereStage;
+    use crate::synthetic::RenderScale;
+
+    let Some(test_gpu) = thrum_test_support::gpu("chart source cut", Some(wgpu::Backend::Metal))
+    else {
+        return;
+    };
+    pollster::block_on(async {
+        let (caps, queue) = gpu(&test_gpu, 7).await;
+        let mut host = host(
+            &caps,
+            &queue,
+            Policy {
+                atmosphere: true,
+                reconstruction: true,
+                chart_sun_step: Some(0),
+                ..Policy::default()
+            },
+        )
+        .await;
+        host.set_render_scale(RenderScale::Half).unwrap();
+        assert!(host.enable_governor(DisplayRecord {
+            interval: Duration::from_secs(1),
+            thermal: ThermalState::Nominal,
+        }));
+        let texture = drawable(&host, [64, 64]);
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let output = crate::runtime::SurfaceOutput {
+            view: &view,
+            extent: [64, 64],
+        };
+        let mut tick = 0;
+        let mut submit = |host: &mut Host| {
+            tick += 1;
+            let now = Duration::from_millis(tick * 8);
+            host.governor_display_tick(now, tick);
+            assert!(host.drive(now, Some(&output)).unwrap().submitted);
+            host.device
+                .poll(wgpu::PollType::Wait {
+                    submission_index: None,
+                    timeout: Some(Duration::from_secs(5)),
+                })
+                .unwrap();
+            let sample = host
+                .poll_completed()
+                .unwrap()
+                .expect("completed chart frame");
+            host.governor_present_called();
+            let quality = sample.governor.expect("governed chart record");
+            let timings = sample.gpu_pass_ns.expect("Metal chart timings");
+            let stages = timings
+                .passes()
+                .iter()
+                .filter(|pass| {
+                    pass.name.as_ref() == AtmosphereStage::SkyView.name()
+                        || pass.name.as_ref() == AtmosphereStage::Diffuse.name()
+                        || pass.name.starts_with("atmosphere reflection mip ")
+                })
+                .count();
+            (quality.chart_update, quality.chart_position, stages)
+        };
+        submit(&mut host);
+        host.set_quality_knob("atmosphere.chart cadence", 8)
+            .unwrap();
+        assert_eq!(submit(&mut host), (None, None, 0));
+        host.source_mut().camera = 200.0;
+        assert_eq!(submit(&mut host), (Some("camera cut"), None, 9));
+        host.continuous_source_mut().chart_sun_step = Some(1);
+        assert_eq!(submit(&mut host), (None, Some((8, 0)), 2));
+        host.phase_source_mut().chart_sun_step = Some(2);
+        assert_eq!(submit(&mut host), (None, Some((8, 1)), 1));
+    });
+}

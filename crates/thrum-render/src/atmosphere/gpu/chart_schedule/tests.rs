@@ -32,29 +32,28 @@ fn submit(
 #[test]
 fn cadence_one_uses_chart_keys_and_actual_overlay_writes() {
     let mut schedule = ChartSchedule::default();
-    let submit = |schedule: &mut ChartSchedule, input, cut, overlay| {
-        submit(schedule, input, 1, cut, overlay).writes
+    let submit = |schedule: &mut ChartSchedule, input, cut, present, written| {
+        let frame = schedule.plan(input, 1, cut, present, written);
+        schedule.submitted(&frame);
+        frame.writes
     };
-    let mut light = sun(5.0);
-    assert_eq!(submit(&mut schedule, light, false, false), ALL);
-    light = sun(5.5);
-    assert_eq!(submit(&mut schedule, light, false, false), ALL);
+    let mut light = sun(30.0);
+    assert_eq!(submit(&mut schedule, light, false, false, false), ALL);
+    light = sun(30.5);
+    assert_eq!(submit(&mut schedule, light, false, false, false), ALL);
     light.altitude = 51.0;
-    assert_eq!(submit(&mut schedule, light, false, false), ALL);
-    light.illuminance *= 0.5;
-    assert_eq!(submit(&mut schedule, light, false, false), 2);
-    light.colour[1] *= 0.5;
-    assert_eq!(submit(&mut schedule, light, false, false), 2);
-    assert_eq!(submit(&mut schedule, light, false, false), 0);
-    assert_eq!(submit(&mut schedule, light, true, false), 0);
-
-    assert_eq!(submit(&mut schedule, light, false, true), ALL ^ 1);
-    light.illuminance *= 0.5;
-    assert_eq!(submit(&mut schedule, light, false, false), 2);
-    light.colour[2] *= 0.5;
-    assert_eq!(submit(&mut schedule, light, false, false), 2);
-    assert_eq!(submit(&mut schedule, light, false, false), 0);
-    assert_eq!(submit(&mut schedule, light, true, false), 0);
+    assert_eq!(submit(&mut schedule, light, false, false, false), ALL);
+    for present in [false, true] {
+        if present {
+            assert_eq!(submit(&mut schedule, light, false, true, true), ALL ^ 1);
+        }
+        light.illuminance *= 0.5;
+        assert_eq!(submit(&mut schedule, light, false, present, false), 2);
+        light.colour[1] *= 0.5;
+        assert_eq!(submit(&mut schedule, light, false, present, false), 2);
+        assert_eq!(submit(&mut schedule, light, false, present, false), 0);
+        assert_eq!(submit(&mut schedule, light, true, present, false), 0);
+    }
 
     // A directly uploaded overlay has no graph notification. Every frame is
     // treated as a possible write by the caller, even after uploads stop.
@@ -62,7 +61,7 @@ fn cadence_one_uses_chart_keys_and_actual_overlay_writes() {
         if dim {
             light.illuminance *= 0.5;
         }
-        assert_eq!(submit(&mut schedule, light, false, true), ALL ^ 1);
+        assert_eq!(submit(&mut schedule, light, false, true, true), ALL ^ 1);
     }
 }
 
@@ -279,15 +278,18 @@ fn governed_light_edits_dirty_the_cloudy_levels_without_an_overlay_write() {
         assert_eq!(step(light).writes, 0);
         light.illuminance = initial.illuminance;
         assert_eq!(step(light).writes, due);
-        light.illuminance *= 1.001;
-        let mut writes = 0;
-        for position in 0..8 {
-            let frame = step(light);
-            assert_eq!(frame.position, Some((8, position)));
-            assert_eq!(writes & frame.writes, 0);
-            writes |= frame.writes;
+        for _ in 0..3 {
+            let mut writes = 0;
+            for position in 0..8 {
+                light.illuminance /= 1.0 - 0.1 * Tuning::default().light;
+                let frame = step(light);
+                assert_eq!(frame.position, Some((8, position)));
+                assert_eq!(frame.whole_update, None);
+                assert_eq!(writes & frame.writes, 0);
+                writes |= frame.writes;
+            }
+            assert_eq!(writes, due);
         }
-        assert_eq!(writes, due);
     }
 }
 
@@ -297,27 +299,43 @@ fn chooses_spread_from_each_input_measure() {
     let tuning = Tuning::default();
     for (change, spread) in [(0.3, 3), (0.19, 5), (0.6, 1)] {
         let relative = 1.0 - tuning.light * change;
-        for second in [
-            sun(30.0 + tuning.sun.to_degrees() * change),
-            Inputs {
-                altitude: first.altitude + tuning.altitude * change,
+        let inputs: [fn(Inputs, Tuning, f32, f32, i32) -> Inputs; 4] = [
+            |_, tune, change, _, step| sun(30.0 + tune.sun.to_degrees() * change * step as f32),
+            |first, tune, change, _, step| Inputs {
+                altitude: first.altitude + tune.altitude * change * step as f32,
                 ..first
             },
-            Inputs {
-                illuminance: first.illuminance / relative,
+            |first, _, _, relative, step| Inputs {
+                illuminance: first.illuminance / relative.powi(step),
                 ..first
             },
-            Inputs {
-                colour: [1.0 / relative, 1.0, 1.0],
+            |first, _, _, relative, step| Inputs {
+                colour: [1.0 / relative.powi(step), 1.0, 1.0],
                 ..first
             },
-        ] {
+        ];
+        for (axis, input_at) in inputs.into_iter().enumerate() {
             let mut schedule = ChartSchedule::default();
             submit(&mut schedule, first, 8, false, false);
-            let frame = submit(&mut schedule, second, 8, false, false);
-            assert_eq!(frame.position, Some((spread, 0)));
-            assert!((frame.change.unwrap() - change).abs() < 0.001);
-            assert_eq!(frame.whole_update, None);
+            let due = if axis < 2 { ALL } else { 2 };
+            let mut step = 0;
+            for _ in 0..3 {
+                let mut visited = 0;
+                for position in 0..spread {
+                    step += 1;
+                    let current = input_at(first, tuning, change, relative, step);
+                    let frame = submit(&mut schedule, current, 8, false, false);
+                    assert_eq!(frame.position, Some((spread, position)));
+                    assert!((frame.change.unwrap() - change).abs() < 0.001);
+                    assert_eq!(frame.whole_update, None);
+                    let first_stage = (position * 9).div_ceil(spread);
+                    let end_stage = ((position + 1) * 9).div_ceil(spread);
+                    let mask = ((1 << end_stage) - 1) ^ ((1 << first_stage) - 1);
+                    assert_eq!(frame.writes, due & mask);
+                    visited |= frame.writes;
+                }
+                assert_eq!(visited, due);
+            }
         }
     }
 }

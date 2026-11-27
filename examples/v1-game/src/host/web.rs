@@ -213,7 +213,7 @@ pub(crate) fn scrub_haze_sun(shell: &mut Shell, fraction: f32) -> Result<(), Str
 pub(crate) fn set_time_of_day(shell: &mut Shell, fraction: f32) -> Result<(), String> {
     let host = shell.host();
     if let Some(offset) = day_phase_edit(host.world().tick(), host.source(), fraction)? {
-        shell.source_mut().day_phase_offset = offset;
+        shell.phase_source_mut().day_phase_offset = offset;
     }
     super::queue_ground_solar(shell.host().source(), fraction);
     Ok(())

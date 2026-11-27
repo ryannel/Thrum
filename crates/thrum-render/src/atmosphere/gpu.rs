@@ -103,7 +103,7 @@ pub(crate) struct AtmospherePrepared {
     sky_pipeline: wgpu::RenderPipeline,
     sky_groups: [wgpu::BindGroup; 2],
     pub(super) overlay: Option<super::overlay::Target>,
-    chart_lighting: Option<(wgpu::ComputePipeline, wgpu::BindGroup)>,
+    chart_lighting: Option<super::overlay::ChartLightingPass>,
     diffuse_pipeline: wgpu::ComputePipeline,
     diffuse_group: wgpu::BindGroup,
     aerial_pipeline: wgpu::ComputePipeline,
@@ -495,6 +495,11 @@ impl AtmospherePrepared {
         self.overlay.as_ref().map(|overlay| overlay.texture.clone())
     }
 
+    #[cfg(all(test, feature = "creation-counters"))]
+    pub(crate) fn overlay_classification_witness(&self) -> Option<&wgpu::Buffer> {
+        self.overlay.as_ref().map(|overlay| &overlay.chart_lighting)
+    }
+
     pub(crate) fn prepare_view_volume(
         &mut self,
         device: &crate::runtime::DeviceSite,
@@ -787,6 +792,7 @@ impl AtmospherePrepared {
                 let (pipeline, group) = self
                     .chart_lighting
                     .as_ref()
+                    .and_then(|pass| pass.select(overlay_written || !self.schedule.was_governed()))
                     .ok_or(RenderError::GraphPassMismatch)?;
                 (pipeline, group, [1, 1, 1])
             }

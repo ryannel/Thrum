@@ -207,7 +207,15 @@ fn cadence_one_updates_diffuse_on_light_edits() {
         let initial = moving(0.0);
         let mut probe = Probe::new(&caps, &queue, initial, false).await;
         probe.draw(initial);
-        let mut previous = probe.products().remove(1);
+        let products = probe.prepared.environment_products_witness(&queue).unwrap();
+        let surface = crate::atmosphere::products::tests::observer::Probe::new(
+            &device,
+            &products,
+            "",
+            ["vec4(environment_diffuse(vec3(0.0, 1.0, 0.0)), 0.0)"],
+        );
+        let sample = || surface.sample(&device, &queue, &products, &[[0.0; 4]], 0)[0][0];
+        let mut previous = sample();
         for frame in [
             sun(30.0, 45_000.0, [1.0, 0.92, 0.83]),
             sun(30.0, 45_000.0, [1.0, 0.45, 0.83]),
@@ -217,8 +225,13 @@ fn cadence_one_updates_diffuse_on_light_edits() {
                 chart_names(&names).collect::<Vec<_>>(),
                 [AtmosphereStage::Diffuse.name()]
             );
-            let diffuse = probe.products().remove(1);
-            assert_ne!(diffuse, previous);
+            let diffuse = sample();
+            for band in 0..3 {
+                let previous = previous[band];
+                let current = diffuse[band];
+                assert!(current.is_finite() && current > 0.0);
+                assert!((current - previous).abs() > previous * 0.01);
+            }
             previous = diffuse;
         }
     });

@@ -243,4 +243,4 @@ fn cloud_and_clear_reflection_levels_decode_before_blending() {
     });
 }
 
-mod light_edit;
+pub(super) mod light_edit;

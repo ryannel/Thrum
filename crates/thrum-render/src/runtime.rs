@@ -1076,9 +1076,16 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             Reconstruction::Off | Reconstruction::Reference => None,
         }
     }
-    /// Change presentation policy between frames. Invalidate retained extraction
-    /// and GPU correspondence because the mapping itself may have changed.
+    /// Edit the source across a camera cut or a change to entity mapping.
     pub fn source_mut(&mut self) -> &mut V {
+        self.invalidate_history();
+        self.phase_source_mut()
+    }
+
+    /// Edit a presentation phase, such as solar time, that resets history
+    /// without cutting the camera. The chart scheduler still evaluates the
+    /// size of the change from the submitted inputs.
+    pub fn phase_source_mut(&mut self) -> &mut V {
         if let PreparedRenderer::TwoD(scene) = &mut self.prepared {
             scene.clear_world_history();
         }

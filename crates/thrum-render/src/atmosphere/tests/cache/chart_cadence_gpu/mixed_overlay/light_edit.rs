@@ -9,15 +9,15 @@ use crate::{
 
 const OVERLAY_PASS: &str = "publish stationary cloud overlay";
 
-struct OneOverlay {
+pub(in super::super) struct OneOverlay {
     pipeline: wgpu::ComputePipeline,
     group: wgpu::BindGroup,
-    runs: bool,
-    executions: u32,
+    pub(in super::super) runs: bool,
+    pub(in super::super) executions: u32,
 }
 
 impl OneOverlay {
-    fn register(probe: &mut Probe<'_>) -> Self {
+    pub(in super::super) fn register(probe: &mut Probe<'_>, cloudy: bool) -> Self {
         let device = probe.caps.device();
         let cube = probe.prepared.overlay_witness();
         let view = cube.create_view(&wgpu::TextureViewDescriptor {
@@ -50,14 +50,19 @@ impl OneOverlay {
         };
         probe.prepared.set_effect_graph(graph);
         probe.target = OffscreenTarget::new(device, &probe.prepared, 16, 16).unwrap();
+        let texel = if cloudy {
+            "64.0, 48.0, 32.0, 0.5"
+        } else {
+            "0.0, 0.0, 0.0, 1.0"
+        };
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(OVERLAY_PASS),
             source: wgpu::ShaderSource::Wgsl(
-                "@group(0) @binding(0) var overlay_image: texture_storage_2d_array<rgba16float, write>;
+                format!("@group(0) @binding(0) var overlay_image: texture_storage_2d_array<rgba16float, write>;
                  @compute @workgroup_size(8, 8)
-                 fn main(@builtin(global_invocation_id) p: vec3<u32>) {
-                     textureStore(overlay_image, vec2<i32>(p.xy), i32(p.z), vec4(64.0, 48.0, 32.0, 0.5));
-                 }"
+                 fn main(@builtin(global_invocation_id) p: vec3<u32>) {{
+                     textureStore(overlay_image, vec2<i32>(p.xy), i32(p.z), vec4({texel}));
+                 }}")
                 .into(),
             ),
         });
@@ -85,7 +90,7 @@ impl OneOverlay {
         }
     }
 
-    fn submit_frame(&mut self, probe: &mut Probe<'_>, frame: AtmosphereFrame) {
+    pub(in super::super) fn submit_frame(&mut self, probe: &mut Probe<'_>, frame: AtmosphereFrame) {
         probe.update(frame);
         let device = probe.caps.device();
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
@@ -175,7 +180,7 @@ fn light_edit_refreshes_all_levels_after_the_registered_overlay_stops_writing() 
         let mut spread = Probe::new(&caps, &queue, old, true).await;
         let mut prior = Probe::new(&caps, &queue, old, true).await;
         let mut expected = Probe::new(&caps, &queue, dim, true).await;
-        let mut overlay = OneOverlay::register(&mut spread);
+        let mut overlay = OneOverlay::register(&mut spread, true);
         overlay.submit_frame(&mut spread, old);
         assert_eq!(overlay.executions, 1);
         overlay.runs = false;

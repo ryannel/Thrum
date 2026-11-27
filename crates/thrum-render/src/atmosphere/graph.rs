@@ -267,7 +267,11 @@ impl AtmospherePrepared {
         let reflection_tags = state_buffer(graph, REFLECTION_TAGS_BYTES)?;
         let mut accesses = vec![
             read.clone(),
-            Access::new(chart_lighting.clone(), 4..12, AccessKind::StorageWrite),
+            Access::new(
+                chart_lighting.clone(),
+                4..CHART_LIGHTING_BYTES,
+                AccessKind::StorageReadWrite,
+            ),
         ];
         if self.uses_haze_scale() {
             accesses.extend([
@@ -278,6 +282,12 @@ impl AtmospherePrepared {
             accesses.extend(sun_reads.iter().cloned());
         }
         self.declare_stage(graph, keys, AtmosphereStage::OverlayLighting, accesses);
+        let mut diffuse_reads = sun_reads;
+        diffuse_reads.push(Access::new(
+            chart_lighting.clone(),
+            0..CHART_LIGHTING_BYTES,
+            AccessKind::UniformRead,
+        ));
         self.append_diffuse(
             graph,
             keys,
@@ -285,7 +295,7 @@ impl AtmospherePrepared {
             &charts,
             environment_light.clone(),
             Some(read.clone()),
-            sun_reads,
+            diffuse_reads,
         );
         self.append_reflection(
             graph,

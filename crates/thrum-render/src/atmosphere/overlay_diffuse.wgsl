@@ -8,6 +8,7 @@ fn overlay_open_sun() -> f32 {
 @group(0) @binding(2) var aerial_sampler: sampler;
 @group(0) @binding(3) var<storage,read_write> environment_light: EnvironmentLight;
 @group(0) @binding(7) var overlay_faces: texture_2d_array<f32>;
+@group(0) @binding(8) var<uniform> overlay_chart: ChartLighting;
 var<workgroup> clear_meter: array<f32,64>;
 var<workgroup> has_cloud: u32;
 var<workgroup> irradiance: array<vec4<f32>,64>;
@@ -17,15 +18,18 @@ var<workgroup> moments: array<array<vec4<f32>,9>,64>;
 fn diffuse_main(@builtin(local_invocation_index) index: u32) {
     // Preserve the existing horizontal incident meter, including sample order
     // and reduction. It is not reconstructed from the truncated SH expansion.
-    clear_meter[index] = f32(overlay_face_has_cloud(index));
-    workgroupBarrier();
-    if index == 0u {
-        has_cloud = 0u;
-        for (var i = 0u; i < 64u; i++) {
-            has_cloud |= u32(clear_meter[i]);
+    var active_overlay = overlay_chart.cloudy != 0u;
+    if overlay_chart.mode == 0u {
+        clear_meter[index] = f32(overlay_face_has_cloud(index));
+        workgroupBarrier();
+        if index == 0u {
+            has_cloud = 0u;
+            for (var i = 0u; i < 64u; i++) {
+                has_cloud |= u32(clear_meter[i]);
+            }
         }
+        active_overlay = workgroupUniformLoad(&has_cloud) != 0u;
     }
-    let active_overlay = workgroupUniformLoad(&has_cloud) != 0u;
     let solar=atmosphere.sun_lux.w*atmosphere.colour_pre_exposure.rgb;
     var sum=vec4(0.0);
     var clear_lux = 0.0;

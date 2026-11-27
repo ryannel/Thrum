@@ -1,5 +1,6 @@
 use super::*;
 use crate::atmosphere::{SunOpticalDepth, products::tests::observer};
+use mixed_overlay::light_edit::OneOverlay;
 
 fn cloud_field(depth: f32) -> SunOpticalDepth {
     SunOpticalDepth::new(
@@ -11,6 +12,79 @@ fn cloud_field(depth: f32) -> SunOpticalDepth {
         1,
     )
     .unwrap()
+}
+
+fn classifications(probe: &Probe<'_>) -> [u32; 2] {
+    let device = probe.caps.device();
+    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    let copy = Readback::buffer(
+        device,
+        &mut encoder,
+        probe.prepared.overlay_classification_witness(),
+        ..,
+    );
+    let bytes = copy.wait(device, probe.queue.submit([encoder.finish()]));
+    [4, 12].map(|offset| u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap()))
+}
+
+#[test]
+fn governed_haze_and_diffuse_share_one_classification_for_a_registered_write() {
+    let Some(crate::test_device::Opened {
+        gpu, device, queue, ..
+    }) = crate::test_device::open(
+        "Metal governed overlay classification",
+        Some(wgpu::Backend::Metal),
+        crate::capabilities::DeviceProfile::Portable,
+        &crate::capabilities::DeviceRestriction::default(),
+    )
+    else {
+        return;
+    };
+    let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
+    pollster::block_on(async {
+        let air = sun(30.0, 90_000.0, [1.0; 3]);
+        let dim = sun(30.0, 45_000.0, [1.0; 3]);
+        for cloudy in [false, true] {
+            let mut scene = SyntheticScene::grid(1).unwrap();
+            scene.sky_overlay = true;
+            scene.sun_shadows = false;
+            scene.sun_optical_depth = Some(cloud_field(0.0));
+            let mut spread = Probe::prepare(&caps, &queue, air, scene).await;
+            let mut overlay = OneOverlay::register(&mut spread, cloudy);
+            spread.cadence(8);
+            overlay.submit_frame(&mut spread, air);
+            assert_eq!(classifications(&spread), [u32::from(cloudy), 1]);
+            let products = spread
+                .prepared
+                .environment_products_witness(&queue)
+                .unwrap();
+            let probe = observer::Probe::new(
+                &device,
+                &products,
+                "let a = aerial_sample(750.0, q.xy);",
+                ["vec4(aerial_radiance(a.scatter.rgb), a.night)"],
+            );
+            let read =
+                || probe.sample(&device, &queue, &products, &[[0.5, 0.5, 0.0, 0.0]], 0)[0][0];
+            let before = read();
+            overlay.runs = false;
+            for submission in 0..8 {
+                if submission == 0 {
+                    spread.scene.sun_optical_depth = Some(cloud_field(2.0));
+                }
+                // The first edit changes only the live haze. The light edit
+                // on the last submission makes diffuse due at fixed overlay.
+                overlay.submit_frame(&mut spread, if submission < 7 { air } else { dim });
+                assert_eq!(classifications(&spread), [u32::from(cloudy), 1]);
+                if submission == 0 && cloudy {
+                    let after = read();
+                    assert!(after[..3].iter().zip(before).all(|(&new, old)| new < old));
+                    assert_eq!(after[3].to_bits(), before[3].to_bits());
+                }
+            }
+            assert_eq!(overlay.executions, 1);
+        }
+    });
 }
 
 #[test]
