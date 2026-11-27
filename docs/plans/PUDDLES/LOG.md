@@ -367,3 +367,9 @@
   The unchanged cross-target script type-checks the workspace for x86_64 Linux and Windows.
   Both still-water lens controls pass on Metal.
   [Type-check and Metal proofs](../../../.orchestrate/evidence/PUDDLES/WP6/review-2/validated/README.md#wp66-linux-and-windows-type-check)
+
+- 2026-11-27 WP6.2 review repair. The prepared sparse canopy carries the valley's material exposure
+  half-width into both the public wetness query and the forward shader. Rainfall and catchments use
+  the original layer boundaries. The public query and Metal both report full pores on the soaked
+  face 37 of boulder row 3801. The dry, soaked and receding comparisons pass for cooked terrain,
+  entity rows and the hollows map. [Metal and CPU evidence](../../../.orchestrate/evidence/PUDDLES/WP6/material-query/README.md)

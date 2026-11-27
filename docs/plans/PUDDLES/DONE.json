@@ -747,8 +747,8 @@
           "check": "cargo test --locked --offline -p v1-game --test rain_valley_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP6/material-query/README.md#wp62-metal-model-agreement",
           "verdict": "fail",
           "review": ".orchestrate/evidence/PUDDLES/WP6-review.md"
         },
