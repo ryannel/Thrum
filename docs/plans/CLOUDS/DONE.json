@@ -1572,7 +1572,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP15/diagnosis-repair/PROOF.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP15/relief/PROOF.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
@@ -1581,8 +1581,8 @@
           "statement": "Declaring Ground leaves the look of the clouds overhead as it is without it. Over the valley under the fair preset with every fog amount at zero, a cloud's edge against the sky is as smooth as in the same view without Ground, its sunlit lobes and shaded base keep their relief, and no bright or dark fringe follows a ridge that stands against cloud. In a pan the clouds' edges crawl and flicker no more than they do without Ground. Switching far mist on leaves upper cloud as it was with the mist off, also where that cloud is nearer the camera than the end of the handover: from inside an overcast layer, looking up, no opening appears in the cloud and its brightness does not change.",
           "inspect": "Capture with T2 engine capture. From 40 m above the V1 valley under the fair preset: `fixed` stills of one view with the Ground selection at zero fog amounts and with the Sky selection, each on the portable recipe with reconstruction off and on the Apple recipe with TAAU; and a `realtime` 10-second pan across the cloud on the Apple recipe with TAAU, once under each selection. From inside the upper cloud under the overcast preset, on a sightline that meets cloud nearer than 500 m, the end of the handover, and passes through no far mist: a `fixed` pair under the Ground selection with far mist off and on and nothing else changed. The retained pairs' pose is one such view: 1,850 m up, pitched up 25\u00b0, with the Sun at 35\u00b0. Judge native-size crops of a cloud's edge against sky and of a ridge against cloud, the whole cloud in each still, the pans at 1x, and the pair side by side: 1. in each recipe the Ground still's cloud edges are as smooth as the Sky still's, with no steps two pixels wide; 2. in each recipe the Ground still's cloud shows its sunlit lobes and shaded base with no less relief than the Sky still's; 3. no bright or dark fringe follows the ridge line in the Ground stills; 4. in the pan the Ground take's cloud edges crawl and flicker no more than the Sky take's; 5. in the pair the mist-on frame shows the same cloud around the camera as the mist-off frame, with no opening to blue sky or to the Sun's disc and no change of brightness.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP15/relief/PROOF.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
@@ -1699,7 +1699,7 @@
           "ask": "Does the row claim only what this work package proved, on the targets it ran on, with visuals apart from correctness?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP15/diagnosis-repair/PROOF.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP15/relief/PROOF.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         }

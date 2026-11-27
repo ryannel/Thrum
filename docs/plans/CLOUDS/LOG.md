@@ -1250,3 +1250,12 @@ keeps legacy secondary-only resize admission and combines secondary preparation 
 Metal verified the 15-item package's depth, reactive coverage, one-stop Sky byte comparison and resize cases.
 T2 captures on Metal and Chrome support the mist and deck inspections. The 1440p Metal cost record was taken
 under shared load. [Builder proof](../../../.orchestrate/evidence/CLOUDS/WP15/diagnosis-repair/PROOF.md)
+
+## WP15 Fair cloud relief
+
+Scenes with a sky overlay now use the existing display adaptation when the view volume is present.
+The local incident reading still includes cloud shade. On Metal the 35° Ground view retains
+the sunlit lobe's gradient on portable and Apple Tile, and both also pass at 30°. The Apple TAAU
+pan retains the cloud edge, the in-cloud mist toggle matches within one display code per channel,
+and the fixed portable Sky sample matches all starting RGBA bytes.
+[Metal inspection and byte comparison](../../../.orchestrate/evidence/CLOUDS/WP15/relief/PROOF.md)
