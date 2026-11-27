@@ -374,3 +374,10 @@
   pool and fading into the shallows. Hardware Chrome also reads the sheet's submitted motion and
   pool foam. Wet 1440p completion brackets ranged from about 300 to 390 ms under shared load.
   [Target evidence](../../../.orchestrate/evidence/RIVERS/WP6/README.md)
+- 2026-11-27 WP6. The sheet samples the receiving pool's interaction height and foam stocks.
+  At the bank it follows the prepared path down the rock and keeps the splash at the pool level.
+  The authored mid-gauge paths first encounter water on the chart's upstream grid row at
+  z = −25 m, where the map moves from dry to 1.6–2.1 m deep. Extending the lake receiver up to
+  the cliff solved all three wet gauges, but the map refused the basin meeting the chart away
+  from a joined end. The two visual checks remain open.
+  [Target evidence](../../../.orchestrate/evidence/RIVERS/WP6/README.md)
