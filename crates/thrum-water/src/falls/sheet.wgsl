@@ -102,7 +102,8 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let spread = mix(0.63 * coarse + 0.37 * grouped, 0.5, smoothstep(0.9, 3.0, pixel));
     let contact = 0.56 + 0.24 * spread;
     let foot = 1.0 - smoothstep(contact, 0.91 + 0.09 * spread, input.across_fraction.w);
-    if (presence > 0.5 && foot > 0.35) != solid || presence * foot < 0.015 {
+    let contact_cover = mix(0.47 * (1.0 - thinness), 1.0, foot);
+    if (presence > 0.5 && foot > 0.35) != solid || presence * contact_cover < 0.015 {
         discard;
     }
     let seam = smoothstep(0.0, 0.05, input.world_time.w);
@@ -128,10 +129,10 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let mixing = smoothstep(0.63, 1.0, input.across_fraction.w);
     let aerated = diffuse * vec3(0.17, 0.47, 0.48) + direct * vec3(0.14, 0.32, 0.33);
     let sheet_colour = mix(glass, churn, white);
-    let spray_light = mix(sheet_colour, aerated, mixing * white * (0.27 + 0.34 * fine));
+    let spray_light = mix(sheet_colour, aerated, mixing * white * (0.55 + 0.38 * fine));
     let colour = (spray_light * aerial.transmission + aerial.scatter) * environment_storage_scale();
     let opacity = (clear * min(0.88, fresnel + 0.07 + 1.7 * input.discharge.w + 0.35 * breakout) + white * (0.90 + 0.18 * grain))
-        * presence * mix(0.62, 1.0, seam) * foot;
+        * presence * mix(0.62, 1.0, seam) * contact_cover;
     let last_fraction = input.across_fraction.w - length(input.velocity_along.xyz) * sheet_clock.y
         / max(0.001, input.across_fraction.y);
     let fold_delta = fold_weight(input.across_fraction.w) - fold_weight(last_fraction);
@@ -140,7 +141,7 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let current = view.unjittered_view_proj * vec4(point, 1.0);
     let motion = (previous.xy / previous.w - current.xy / current.w)
         * vec2(0.5, -0.5) * view_aux.viewport_inv_viewport.xy;
-    return FallOutput(vec4(colour, opacity), select(motion, vec2(65504.0), sheet_clock.z > 0.5), white * presence * foot);
+    return FallOutput(vec4(colour, opacity), select(motion, vec2(65504.0), sheet_clock.z > 0.5), white * presence * contact_cover);
 }
 
 @fragment fn sheet_thin(input: SheetVertex) -> FallOutput { return sheet_shade(input, false); }
