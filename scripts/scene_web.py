@@ -35,7 +35,11 @@ def main(folder):
             text=True,
         ).splitlines()
         stream, outlet = (str(rivers / (key + '.river')) for key in keys)
-        wasm_env.update(THRUM_WATER_STREAM_FILE=stream, THRUM_WATER_OUTLET_FILE=outlet)
+        fall_key = subprocess.check_output(
+            [str(target / 'release' / binary), '--prepare-fall-river', str(rivers)], text=True,
+        ).strip()
+        wasm_env.update(THRUM_WATER_STREAM_FILE=stream, THRUM_WATER_OUTLET_FILE=outlet,
+                        THRUM_WATER_FALL_FILE=str(rivers / (fall_key + '.river')))
     subprocess.run(cargo + ['build', '--locked', '--offline', '--release', '-p', package,
                            '--bin', binary, '--target', 'wasm32-unknown-unknown',
                            '--target-dir', str(wasm_target), *features], env=wasm_env, check=True)

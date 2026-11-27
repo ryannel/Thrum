@@ -1,7 +1,7 @@
 pub(crate) mod hollow_tiles;
 
 use super::{
-    Profile, SURFACE_PASS,
+    Profile, SURFACE_PASS, falls,
     foam::{self, Foam},
     interaction::{self, Interaction},
     map_gpu::{self, MapGpu},
@@ -42,6 +42,8 @@ pub(super) struct Prepared {
     pub(super) query: Option<Readback>,
     pub(super) interaction: Option<Interaction>,
     pub(super) foam: Option<Foam>,
+    pub(super) sheet: Option<falls::Sheet>,
+    pub(super) plunges: Option<falls::Plunges>,
     pub(super) environment: EnvironmentProducts,
     pub(super) gather: Option<Gather>,
     pub(super) pipeline: wgpu::RenderPipeline,
@@ -216,7 +218,12 @@ impl Prepared {
         if self.query.is_some() {
             Readback::declare(&self.ambient, &mut graph, wake.clone());
         }
-        let mut surface = declaration(self.gather.as_ref().is_some_and(|gather| gather.surface));
+        let surface_gather = self.gather.as_ref().is_some_and(|gather| gather.surface);
+        let mut surface = declaration(surface_gather);
+        let sheet = usize::from(self.sheet.is_some());
+        if surface_gather {
+            surface.images = optics::sampled(sheet);
+        }
         surface.accesses = self.ambient.filtered_accesses();
         surface.accesses.extend(wake);
         let surf_cache = self
@@ -231,11 +238,17 @@ impl Prepared {
             surface.accesses.extend(rain.bands.declare(&mut graph));
         }
         graph.opaque_reads.clear();
+        if self.sheet.is_some() {
+            graph.after_opaque.push(falls::declaration());
+        }
         if self.gather.is_some() {
             graph.after_opaque.push(optics::declaration());
         }
         if self.film.is_some() {
             let mut film = film_declaration(self.standing_film);
+            if self.standing_film {
+                film.images = optics::sampled(sheet);
+            }
             film.accesses.clone_from(&surface.accesses);
             graph.after_opaque.push(film);
         }
@@ -274,7 +287,7 @@ impl Prepared {
             // Its roster index follows the gather, before either water draw.
             graph
                 .after_opaque
-                .insert(usize::from(self.gather.is_some()), pass);
+                .insert(sheet + usize::from(self.gather.is_some()), pass);
             surface.accesses.push(read);
         }
         graph.after_opaque.push(surface);
@@ -296,6 +309,7 @@ pub(super) fn new(
     previous_interaction: Option<interaction::Report>,
     whitewater: Option<(foam::Whitewater, foam::Report)>,
     measure_surf_work: bool,
+    falls: Option<&falls::Falls>,
 ) -> Result<Prepared, String> {
     let device = surface.device;
     let map_gpu = mapped
@@ -360,8 +374,14 @@ pub(super) fn new(
             )
         })
         .transpose()?;
-    let interaction = interaction
-        .map(|mailbox| Interaction::new(device, mailbox, previous_interaction.unwrap_or_default()));
+    let interaction = interaction.map(|mailbox| {
+        Interaction::new(
+            device,
+            mailbox,
+            previous_interaction.unwrap_or_default(),
+            map_gpu.as_ref().is_some_and(MapGpu::has_rivers),
+        )
+    });
     let query = if let Some(mailbox) = mailbox {
         mailbox.set_rain_tracks(map_gpu.as_ref());
         let rivers = map_gpu.as_ref().is_some_and(MapGpu::has_rivers);
@@ -396,6 +416,16 @@ pub(super) fn new(
         .environment_products_with_cloud()
         .ok_or("water needs the scene's physical environment")?;
     let library = environment.shader_source.replace("@group(0)", "@group(2)");
+    let sheet = falls
+        .map(|config| falls::Sheet::new(surface, &environment, &library, config))
+        .transpose()?;
+    let plunge_capacity = falls.map(|config| {
+        config
+            .records
+            .iter()
+            .map(|(_, record)| record.segment_capacity())
+            .sum::<usize>()
+    });
     let projection = surface
         .wetness
         .filter(|wet| wet.uses(super::wet_ground::SOURCE));
@@ -475,6 +505,7 @@ pub(super) fn new(
             surf.as_ref(),
             map_gpu.as_ref(),
             flow,
+            plunge_capacity,
         )
     });
     let shared_samplers = rain
@@ -562,6 +593,9 @@ pub(super) fn new(
         ambient_passes,
         rain,
         query,
+        plunges: (falls.is_some() && (foam.is_some() || interaction.is_some()))
+            .then(Default::default),
+        sheet,
         interaction,
         foam,
         environment,
@@ -1062,7 +1096,7 @@ fn shader_source(
             },
         ),
         if let Some(foam) = foam {
-            foam.sample_source() + include_str!("foam/appearance.wgsl")
+            foam.sample_source() + concat!(include_str!("foam/appearance_bindings.wgsl"), include_str!("foam/noise.wgsl"), include_str!("foam/appearance.wgsl"))
                 + if flow { include_str!("foam/river_lace.wgsl") } else { include_str!("foam/lace.wgsl") }
                 + include_str!("foam/film.wgsl")
                 + if flow { include_str!("foam/river_appearance.wgsl") } else { "" }

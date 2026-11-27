@@ -359,3 +359,13 @@
   minute-old lee keeps its lace while separate pieces thin at different times. The
   early pool shows foam entering from the upstream side. Same-age Metal checks keep
   local births at zero in the pool and glide. [Target evidence](../../../.orchestrate/evidence/RIVERS/WP5/renewal/README.md)
+
+- 2026-11-27 WP6. The waterfall selection uses its own keyed spring samples, from a closed spring
+  through a trickle and two running levels. The late sheet supplies the same depth and colour read by
+  the pool's gather. The sheet's runtime spacing is listed as `river.fall_path_spacing` in
+  millimetres with no history invalidation. Plunge power feeds the shared foam stocks and its
+  departure-time pattern drives interaction impulses. The scene uses a wave share of 0.28.
+- 2026-11-27 WP6. Metal carriage trials put each of the two ring sets within 0.33 m after five
+  seconds. Fivefold riffle forcing moved the pool centre by at most 0.024 m. The blend retained
+  98.5% of the still-water ring energy on the straight and 77.6% on the bend. Those five-second
+  trials run in the main tier. The smaller budget and uniform-current comparisons run at merge.

@@ -11,6 +11,7 @@ pub(crate) fn install_river_floats(
     water: &Water,
     fallback: thrum_water_model::Field,
     wind: glam::DVec2,
+    plunge: Option<([f64; 2], thrum_water::interaction::Mailbox)>,
 ) -> (SkyGame, Box<dyn Fn() -> [Body; 2]>) {
     let initial = [
         (0, [180.0, -92.5], -std::f64::consts::FRAC_PI_2),
@@ -47,6 +48,20 @@ pub(crate) fn install_river_floats(
     #[cfg(target_arch = "wasm32")]
     let status_map = Arc::clone(&map);
     let game = game.with_fixed_update_endpoint(move |endpoint, step| {
+        if let Some((place, mailbox)) = &plunge {
+            const POOL: u32 = 2;
+            mailbox.post_bodies(
+                endpoint.tick,
+                Some(POOL),
+                vec![thrum_water::interaction::BodyPressure {
+                    id: POOL,
+                    place: *place,
+                    heading: 0.0,
+                    footprint: [0.25; 2],
+                    force: 0.0,
+                }],
+            );
+        }
         let mut fleet = world.lock().expect("river floats");
         let fleet = &mut *fleet;
         fleet.tick = endpoint.tick;

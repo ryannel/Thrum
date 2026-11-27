@@ -32,7 +32,8 @@ pub use rain::{
     RingClass, RingTable, Support,
 };
 pub use river::{
-    EndKind, RIVER_FORMAT, RIVER_MAGIC, ReachSample, RiverEnd, RiverFile, RiverReach, UpperSample,
+    EndKind, FallSamples, RIVER_FORMAT, RIVER_MAGIC, ReachSample, RiverEnd, RiverFile, RiverReach,
+    UpperSample,
 };
 pub use samples::{ChartSamples, FlowSample, Gauge, River, mix_fall};
 pub use section::{BreakerSection, SectionPoint};

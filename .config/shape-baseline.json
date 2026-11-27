@@ -90,14 +90,15 @@
       }
     },
     "main-tier": {
-      "version": 6,
+      "version": 7,
       "files": {
-        ".config/long-tests.txt": 15,
+        ".config/long-tests.txt": 16,
         "crates/thrum-sea/tests/forward_cache_gpu.rs": 2,
         "crates/thrum-water-model/tests/shore_blend.rs": 1,
         "examples/v1-game/tests/exit_scene.rs": 1,
         "examples/v1-game/tests/simulation.rs": 1,
         "examples/v1-game/tests/support/field_occlusion_gpu.rs": 2,
+        "examples/water/tests/current_ladder_gpu.rs": 2,
         "examples/water/tests/floating_gpu.rs": 1,
         "examples/water/tests/foam_scene_gpu.rs": 1,
         "examples/water/tests/river_gpu.rs": 2,

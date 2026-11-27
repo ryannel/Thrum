@@ -75,6 +75,7 @@ impl SyntheticTargetInputs {
         let mut first = None;
         let mut last = forward;
         let mut previous_render = forward;
+        let mut previous_depth = forward;
         let copy = if refracts {
             let id = graph.resource(
                 ResourceDescriptor::Texture {
@@ -165,15 +166,24 @@ impl SyntheticTargetInputs {
                 },
             );
             graph.dependency(last, pass)?;
-            if declaration.kind == crate::contribution::AfterOpaqueKind::Render
-                && last != previous_render
-            {
-                graph.dependency(previous_render, pass)?;
+            let renders = declaration.kind == crate::contribution::AfterOpaqueKind::Render;
+            if renders || matches!(declaration.images, AfterOpaqueImages::Capture(_)) {
+                graph.select_producer(previous_render, pass, scene)?;
+            }
+            if renders {
+                graph.select_producer(previous_render, pass, motion)?;
+                graph.select_producer(previous_render, pass, reactive)?;
+            }
+            if declaration.depth || declaration.write_depth {
+                graph.select_producer(previous_depth, pass, depth)?;
             }
             first.get_or_insert(pass);
             last = pass;
-            if declaration.kind == crate::contribution::AfterOpaqueKind::Render {
+            if renders {
                 previous_render = pass;
+            }
+            if declaration.write_depth {
+                previous_depth = pass;
             }
         }
         Ok(LateGraph {

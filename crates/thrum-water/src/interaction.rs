@@ -31,7 +31,7 @@ pub struct Limits {
     pub bodies: u32,
     /// Number of impulses admitted per tick.
     pub impulses: u32,
-    /// Number of region and depth pairs solved by each level.
+    /// Number of region, depth and carriage current combinations solved by each level.
     pub solves: u32,
 }
 
@@ -187,12 +187,23 @@ pub struct Report {
     pub refused_regions: [u64; 2],
     /// Number of wet regions in each window at the latest step.
     pub regions: [u32; 2],
-    /// Number of active depth solves in each window at the latest step.
+    /// Number of active depth and carriage solves in each window at the latest step.
     pub solves: [u32; 2],
+    /// Latest carriage ladder work in the near and far windows.
+    pub carriage: [CarriageReport; 2],
     /// Latest CPU time spent sampling and labelling the windows, milliseconds.
     pub labelling_ms: f64,
     /// Latest fine-level work and cumulative omissions, when the profile enables it.
     pub fine: Option<FineReport>,
+}
+
+/// Carriage reductions and the largest residual current error at a window level.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct CarriageReport {
+    /// Carriage currents omitted in regions that otherwise fit the solve budget.
+    pub dropped: u32,
+    /// Largest distance, in m/s, from a wet cell's current to its admitted span.
+    pub maximum_error: f64,
 }
 
 /// Fine interaction work and capacity counters.
@@ -200,8 +211,10 @@ pub struct Report {
 pub struct FineReport {
     /// Wet regions in the fine window.
     pub regions: u32,
-    /// Region and depth solves across both substeps of the latest advanced frame.
+    /// Region, depth and carriage solves across both substeps of the latest advanced frame.
     pub solves: u32,
+    /// Carriage reductions across both substeps.
+    pub carriage: CarriageReport,
     /// Number of ticks advanced on the latest submitted tick frame.
     pub steps: u32,
     /// Cumulative ticks omitted by the fine level's two-step bound.

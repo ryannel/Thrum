@@ -50,6 +50,8 @@ pub enum Settings {
     Channel(Wind),
     /// The island with its solved spring stream and lake outlet.
     River(Wind),
+    /// The falls and plunge pool of the solved spring stream.
+    Fall(Wind),
     /// The craft and buoys, with or without the wake route.
     Floating(Floating),
 }
@@ -152,6 +154,12 @@ impl Settings {
         }
         if let Some(wind) = get(RAIN).as_deref().and_then(Wind::named) {
             return Self::RainYard(wind);
+        }
+        if let Some(wind) = get(("fall", "THRUM_WATER_FALL"))
+            .as_deref()
+            .and_then(Wind::named)
+        {
+            return Self::Fall(wind);
         }
         if let Some(wind) = get(("river", "THRUM_WATER_RIVER"))
             .as_deref()
