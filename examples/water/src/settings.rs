@@ -52,6 +52,8 @@ pub enum Settings {
     WetShore(Wind),
     /// A waterline inspection with wind, location and continuous camera depth control.
     Dive(Wind, DiveSite),
+    /// The same dive under the authored cloud transmittance witness.
+    DiveShade(Wind, DiveSite),
     /// Island beach with refraction of the long waves and the breaker section.
     Surf(Wind),
     /// Hand-authored outlet from the island's lake.
@@ -114,7 +116,7 @@ impl Settings {
     #[must_use]
     pub fn dive(self) -> Option<(Wind, DiveSite)> {
         match self {
-            Self::Dive(wind, site) => Some((wind, site)),
+            Self::Dive(wind, site) | Self::DiveShade(wind, site) => Some((wind, site)),
             _ => None,
         }
     }
@@ -146,7 +148,11 @@ impl Settings {
                 Some("lake-high-stage") => DiveSite::HighLake,
                 _ => DiveSite::Lake,
             };
-            return Self::Dive(wind, site);
+            return if get(("dive-shade", "THRUM_WATER_DIVE_SHADE")).as_deref() == Some("1") {
+                Self::DiveShade(wind, site)
+            } else {
+                Self::Dive(wind, site)
+            };
         }
         if let Some(wind) = get(("wet-shore", "THRUM_WATER_WET_SHORE"))
             .as_deref()

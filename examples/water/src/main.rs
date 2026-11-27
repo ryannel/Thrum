@@ -61,6 +61,9 @@ fn main() {
                 Settings::Dive(wind, site) => {
                     water_scene::island::build_dive(wind, site, true).map(|(game, _)| game)
                 }
+                Settings::DiveShade(wind, site) => {
+                    water_scene::island::build_dive_shade(wind, site).map(|(game, _)| game)
+                }
                 Settings::RainYard(wind) => {
                     water_scene::island::build_rain_ground(wind, true, true)
                         .map(|(game, _, _, _)| game)
