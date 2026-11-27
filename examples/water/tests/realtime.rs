@@ -192,7 +192,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         let extent = if walking { [960, 540] } else { [1280, 720] };
         (extent, if walking { 5.5 } else { 5.0 }, 120.0, 750)
     } else if wet_yard && route == "wet-dry" {
-        ([1280, 720], 12.0, 16.0, 200)
+        ([1280, 720], 23.0, 16.0, 380)
     } else if wet_yard || shore_ebb {
         ([1280, 720], 9.0, 16.0, CHANNEL_SUBMISSIONS)
     } else if yard {
@@ -418,13 +418,24 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
                 footfall_edit_time = Some(elapsed);
                 deadline = interval + elapsed;
             }
-        } else if wet_yard && route == "wet-dry" && elapsed >= 3.25 && applied != "final dry" {
-            let change = r#"{"rain.rate":0,"rain.drying":100,"rain.time_scale":600}"#;
+        } else if wet_yard && route == "wet-dry" && elapsed >= 13.0 && applied != "finish dry" {
+            let change = r#"{"rain.rate":0,"rain.drying":100,"rain.time_scale":240}"#;
             runtime
                 .parameters(change)
-                .expect("finish draining the puddles");
+                .expect("finish draining the pothole");
             weather_edits.push(json!({"elapsed":elapsed, "parameters":serde_json::from_str::<Value>(change).expect("weather")}));
-            applied = "final dry";
+            applied = "finish dry";
+        } else if wet_yard
+            && route == "wet-dry"
+            && (7.0..13.0).contains(&elapsed)
+            && applied != "margin"
+        {
+            let change = r#"{"rain.rate":0,"rain.drying":100,"rain.time_scale":45}"#;
+            runtime
+                .parameters(change)
+                .expect("watch the shallow margin recede");
+            weather_edits.push(json!({"elapsed":elapsed, "parameters":serde_json::from_str::<Value>(change).expect("weather")}));
+            applied = "margin";
         } else if wet_yard && elapsed >= 0.8 && applied.is_empty() {
             let change = if route == "wet-dry" {
                 r#"{"rain.rate":0,"rain.drying":100,"rain.time_scale":90}"#
