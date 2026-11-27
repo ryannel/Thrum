@@ -48,8 +48,11 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let broken = smoothstep(rank - 0.24 - width, rank + 0.09 + width, breakout);
     let white = mix(pow(breakout, 1.18), broken, 0.74);
     let clear = 1.0 - white;
-    let tear = 0.68 * coarse + 0.32 * fine;
-    let threshold = mix(tear, 0.5, smoothstep(1.0, 3.0, pixel));
+    // Preserve the long strands of a small discharge when the trail widens
+    // in time. The lower-frequency mask follows each parcel from the lip.
+    let rivulet = sheet_noise(vec2(lip, birth), FALL_LOOP, vec2(3.2, 0.28), vec2(18.0, 0.0));
+    let tear = pow(0.84 * rivulet + 0.16 * coarse, 3.2);
+    let threshold = mix(tear, 0.32, smoothstep(1.5, 4.0, pixel));
     let presence = smoothstep(threshold - width, threshold + width, input.discharge.z);
     let spread = mix(0.63 * coarse + 0.37 * grouped, 0.5, smoothstep(0.9, 3.0, pixel));
     let contact = 0.65 + 0.22 * spread;
@@ -77,7 +80,11 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let glass = mirror * (0.18 + 0.82 * fresnel) + glint;
     let uv = input.clip.xy * view_aux.viewport_inv_viewport.zw;
     let aerial = environment_aerial(point, uv);
-    let colour = (mix(glass, churn, white) * aerial.transmission + aerial.scatter) * environment_storage_scale();
+    let mixing = smoothstep(0.63, 1.0, input.across_fraction.w);
+    let aerated = diffuse * vec3(0.17, 0.47, 0.48) + direct * vec3(0.14, 0.32, 0.33);
+    let sheet_colour = mix(glass, churn, white);
+    let spray_light = mix(sheet_colour, aerated, mixing * white * (0.27 + 0.34 * fine));
+    let colour = (spray_light * aerial.transmission + aerial.scatter) * environment_storage_scale();
     let opacity = (clear * min(0.88, fresnel + 0.07 + 1.7 * input.discharge.w + 0.35 * breakout) + white * (0.90 + 0.18 * grain))
         * presence * mix(0.62, 1.0, seam) * foot;
     let displacement = input.velocity_along.xyz * sheet_clock.y;
