@@ -434,3 +434,14 @@
   again, in one take and a still, and WP11.2's point 5 holds it on whatever replaces the sheet.
 - 2026-11-27 Planner, design review 15, suggestion taken. WP11.1's record sets apart, for each game, what was
   seen, what identifies its technique and what the builder inferred, and says which the selection rests on.
+- 2026-11-27 Planner, design review 16, Must Fix 1. WP11.4 could pass the right outline at the wrong depth:
+  a strand drawn 4.75 m off could write the path's 5 m, both inside a declared 0.30 m, and pass in front of a
+  ledge at 4.9 m with its depth behind it. WP11.4 is written again. At each covered place, on each recipe, an
+  opaque test surface stood 0.05 m nearer the camera than the depth read must show in the frame drawn, with
+  its own depth written. [The design](DESIGN.md#the-heavy-fall-at-the-highest-gauge) says the declared distance
+  bounds where water is drawn and is no allowance on the depth. The opening and pool proofs are unchanged.
+- 2026-11-27 Planner, design review 16, Must Fix 2. WP11.8's first inspection point capped the shaded fall's
+  brightness at the shaded foam's, which fails a glassy tongue that rightly mirrors bright sky. Its inspection
+  is written again: the direct Sun's look ends at the shadow's edge, and what is left is the sky's light, with
+  no order of brightness between fall and foam. The design's *Light* line says ruling 7 takes only the direct
+  Sun and the environment's reflection stays. The check and the views are unchanged.

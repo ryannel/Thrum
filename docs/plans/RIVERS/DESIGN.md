@@ -572,10 +572,16 @@ meet its bar. The selection and its reasons go in the log, with the research rec
   holds on a pause and shows a capture's time ([ruling 7](../ARCHITECTURE.md#seam-rulings-for-rivers)). Depth
   follows what is drawn and not [the sheet](#the-falls-sheet)'s path: it is written where the drawn water hides
   the scene, and an opening in the fall keeps the scene's depth. What is drawn stays within a distance of the
-  fall record's paths that its recipe declares.
+  fall record's paths that its recipe declares. That distance bounds where water may be drawn and is no
+  allowance on the depth: the depth written at a place is that of the water drawn there, so the scene orders
+  against the fall as it is seen. A ledge nearer than the written depth shows in front of the water, and water
+  seen in front of a ledge has written a depth in front of it, because
+  [the water's gather](../WATERS/DESIGN.md#optics) and the reconstructor read that depth.
 - *Light.* Whatever is drawn is lit by the water's own functions and has no light of its own: the direct Sun
   on it takes the scene's Sun visibility ([ruling 7](../ARCHITECTURE.md#seam-rulings-for-rivers)), as WP7 builds
-  it for the sheet, and its white follows the sky to dusk and night.
+  it for the sheet, and its white follows the sky to dusk and night. Ruling 7 takes only the direct Sun. In
+  shade the fall keeps the environment's reflection and foam's diffuse light from the sky, so a glassy tongue
+  that mirrors bright sky can be brighter than the shaded foam beside it and is right.
 - *The lip.* At the highest gauge the lip is still a smooth tongue that shows the rock behind it, as WP6.4
   passes it on the sheet.
 - *The lower gauges.* The lowest and middle gauges keep the look WP6 passed, and the fall thickens from the
@@ -951,14 +957,23 @@ dependencies. In addition:
     the sheet's outline and not the contract: a true opening at one of them fails it. The heavy fall's case
     runs on each recipe that draws the highest gauge, takes its places from that recipe's own coverage in the
     frame, and holds depth where the water hides the scene and the scene's depth at an opening. The sheet's
-    case stays for where the sheet still draws.
+    case stays for where the sheet still draws. Depth within the recipe's declared distance of the path is
+    not enough at a covered place: a strand drawn 4.75 m from the camera could write the path's 5 m, pass
+    in front of a ledge at 4.9 m and leave a depth behind it. So the case also stands an opaque test surface
+    0.05 m nearer the camera than the depth it read at each covered place, and the frame drawn must show the
+    surface there. Water drawn nearer than the depth it wrote covers the surface and fails. The 0.05 m is a
+    stand-off for the test, small beside the distance a recipe declares and far above the depth's precision
+    at these cameras. The surface stands in front and not behind, so a recipe that thins its water against
+    the scene behind it passes.
   - *The pool (WP11.4).* One camera and least amounts of foam and rings cannot tell the fall record's sources
     from sources that follow the camera. The sources the engine submits are compared to the bit across two
     cameras that both hold the foot in view and one turned away, across the recipes, and with those recorded
     before the drawing changed.
   - *Light (WP11.8).* WP7 proves ruling 7 on the sheet at the middle gauge. A recipe of its own could pass at
     noon and glow in the gorge, so WP7.3's measure and WP7.4's and WP7.6's views are taken again at the highest
-    gauge on each recipe that draws it.
+    gauge on each recipe that draws it. The views judge that the direct Sun's look ends at the shadow's edge
+    and that what is left is the sky's light. They set no order of brightness between the shaded fall and the
+    shaded foam, because a tongue that mirrors bright sky is rightly the brighter of the two.
 - **Maturity.** A ledger row for `E1.rivers` is added in WP4 and kept current.
 
 ## Open questions
