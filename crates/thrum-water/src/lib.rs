@@ -749,6 +749,13 @@ impl SceneContribution for Water {
             }
             None => &map,
         };
+        if let Some(caustics) = &p.caustics {
+            let column = [f64::from(frame.camera[0]), f64::from(frame.camera[2])];
+            let level = displayed_map
+                .sample(column)
+                .map_or(row.level, |sample| sample.row.level);
+            caustics.record(&p.queue, frame, level, self.spectrum.tail_slope_variance);
+        }
         if let Some(rain) = &mut p.rain {
             let cadence = self
                 .rain_quality
@@ -883,9 +890,6 @@ impl SceneContribution for Water {
         }
         p.queue
             .write_buffer(&p.parameters, 0, bytemuck::bytes_of(&parameters));
-        if let Some(caustics) = &p.caustics {
-            caustics.record(&p.queue, frame, self.spectrum.tail_slope_variance);
-        }
     }
     fn effect_draw_target(
         &self,

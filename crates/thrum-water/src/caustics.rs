@@ -3,6 +3,7 @@
 mod filter;
 
 use bytemuck::{Pod, Zeroable};
+use glam::{Mat4, Vec3, Vec4};
 use std::sync::{Arc, Mutex};
 use thrum_render::{
     binding,
@@ -18,6 +19,7 @@ const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R16Float;
 const SIDE: u32 = 512;
 const WINDOW: f32 = 18.0;
 const RUNGS: u32 = 13;
+const BORDER_CELLS: u32 = 16;
 
 /// Diagnostic access to the caustic field after an ordinary submitted frame.
 #[derive(Clone, Default)]
@@ -190,7 +192,7 @@ impl Caustics {
             multiview_mask: None,
             cache: None,
         });
-        let grids = [512, 256, 128].map(|side| grid(device, side));
+        let grids = [512, 256, 128].map(|side| grid(device, side + 2 * BORDER_CELLS));
         let filter = filter::Filter::new(device, &texture, &layout);
         Ok(Self {
             first,
@@ -237,12 +239,13 @@ impl Caustics {
 
     #[expect(
         clippy::cast_possible_truncation,
-        reason = "the GPU reads f32 wave slopes"
+        reason = "the GPU reads f32 world levels and wave slopes"
     )]
     pub(super) fn record(
         &self,
         queue: &wgpu::Queue,
         frame: &ContributionFrame,
+        level: f64,
         tail_variance: f64,
     ) {
         if frame.time.capture {
@@ -251,10 +254,7 @@ impl Caustics {
         let sun = frame
             .environment
             .map_or([0.0, 1.0, 0.0], |light| light.true_sun.toward_sun);
-        let cell = WINDOW / 512.0;
-        // The sample grid lives in world space. A sub-cell eye move leaves it fixed.
-        let origin = [frame.camera[0], frame.camera[2]]
-            .map(|axis| ((axis - WINDOW * 0.5) / cell).floor() * cell);
+        let origin = window_origin(frame, level as f32);
         let mapping = DrawFrame {
             window: [
                 origin[0],
@@ -311,6 +311,23 @@ impl Caustics {
     pub(super) fn texture(&self) -> &wgpu::Texture {
         &self.filter.texture
     }
+}
+
+fn window_origin(frame: &ContributionFrame, level: f32) -> [f32; 2] {
+    let eye = Vec3::from_array(frame.camera);
+    let inverse = Mat4::from_cols_array_2d(&frame.view_proj).inverse();
+    let clip = inverse * Vec4::new(0.0, 0.0, 1.0, 1.0);
+    let ray = (clip.truncate() / clip.w - eye).normalize_or_zero();
+    let rise = level - eye.y;
+    let ahead = if ray.y.abs() > 0.05 && rise * ray.y > 0.0 {
+        (rise / ray.y).min(WINDOW * 0.5)
+    } else {
+        0.0
+    };
+    let focus = eye + ray * ahead;
+    // An integral step of the coarsest grid preserves the nodes of all rungs.
+    let step = 4.0 * WINDOW / 512.0;
+    [focus.x, focus.z].map(|axis| ((axis - WINDOW * 0.5) / step).floor() * step)
 }
 
 fn grid(device: &thrum_render::runtime::DeviceSite, side: u32) -> wgpu::Buffer {

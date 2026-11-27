@@ -8,12 +8,12 @@ struct CausticVertex {
     @builtin(instance_index) rung: u32,
 ) -> CausticVertex {
     let side = select(select(128u, 256u, rung < 8u), 512u, rung < 4u);
-    let node = vec2(vertex % (side + 1u), vertex / (side + 1u));
+    let draw_side = side + 32u;
+    let node = vec2(vertex % (draw_side + 1u), vertex / (draw_side + 1u));
     let extent = caustic_draw.window.z;
     let depth = caustic_rung_depth(rung);
-    let guard = min(depth * 0.2, 2.0);
-    let spacing = (extent + 2.0 * guard) / f32(side);
-    let rest = vec2<f32>(node) * spacing - guard;
+    let spacing = extent / f32(side);
+    let rest = (vec2<f32>(node) - 16.0) * spacing;
     let point = caustic_draw.window.xy + rest;
     let row = surface_pixel(point, caustic_slot(point));
     let field = field_at(point, spacing, row);
