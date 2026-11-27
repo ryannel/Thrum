@@ -733,65 +733,68 @@ fn surface_pipelines(
 
     let under = gather.is_some_and(|gather| gather.underwater);
     let surface_gather = gather.filter(|gather| gather.surface);
-    let mut source = shader_source(
-        surface,
-        library,
-        map,
-        interaction.is_some(),
-        foam,
-        surface_gather,
-        rain,
-        flow.is_some(),
-    ) + &Cache::source(cache, tidal_grid);
+    let assemble = |gather| {
+        shader_source(
+            surface,
+            library,
+            map,
+            interaction.is_some(),
+            foam,
+            gather,
+            rain,
+            flow.is_some(),
+        )
+    };
+    let mut suffix = Cache::source(cache, tidal_grid);
     let wind_base_mip = if rain {
         thrum_sea::rain::WIND_BASE_MIP
     } else {
         0
     };
-    writeln!(&mut source, "\nconst WIND_BASE_MIP = {wind_base_mip};").expect("write shader source");
+    writeln!(&mut suffix, "\nconst WIND_BASE_MIP = {wind_base_mip};").expect("write shader source");
     if rain {
         writeln!(
-            &mut source,
+            &mut suffix,
             "\nconst RAIN_FIRST_LAYER = {}u;\nconst RAIN_SHARED_LAYERS = {}u;",
             thrum_sea::rain::FIRST_LAYER,
             thrum_sea::rain::SHARED_LAYERS + if flow.is_some() { 10 } else { 0 }
         )
         .expect("write shader source");
-        source.push_str(super::RAIN_GAIN_WGSL);
-        source.push_str(include_str!("rain.wgsl"));
+        suffix.push_str(super::RAIN_GAIN_WGSL);
+        suffix.push_str(include_str!("rain.wgsl"));
     }
     let has_rivers = map.is_some_and(MapGpu::has_rivers);
     if has_rivers {
         let sea_receives_river = map.is_some_and(MapGpu::sea_receives_river);
         writeln!(
-            &mut source,
+            &mut suffix,
             "\nconst SEA_RECEIVES_RIVER: bool = {sea_receives_river};"
         )
         .expect("write shader source");
-        source.push_str(concat!(
+        suffix.push_str(concat!(
             include_str!("map_gpu/river_carriage.wgsl"),
             include_str!("map_gpu/river_surface_waves.wgsl"),
             include_str!("map_gpu/river_surface_depth.wgsl"),
         ));
-        source.push_str(if flow.is_some() {
+        suffix.push_str(if flow.is_some() {
             include_str!("flow/river_column.wgsl")
         } else {
             include_str!("map_gpu/river_column.wgsl")
         });
-        source.push_str(include_str!("map_gpu/river_depth_refine.wgsl"));
-        source.push_str(if flow.is_some() {
+        suffix.push_str(include_str!("map_gpu/river_depth_refine.wgsl"));
+        suffix.push_str(if flow.is_some() {
             include_str!("map_gpu/flow_depth_steps.wgsl")
         } else {
             include_str!("map_gpu/river_depth_steps.wgsl")
         });
-        source.push_str(include_str!("map_gpu/river_depth_iteration.wgsl"));
-        source.push_str(if flow.is_some() {
+        suffix.push_str(include_str!("map_gpu/river_depth_iteration.wgsl"));
+        suffix.push_str(if flow.is_some() {
             include_str!("map_gpu/flow_depth_exit.wgsl")
         } else {
             include_str!("map_gpu/river_depth_exit.wgsl")
         });
-        source.push_str(include_str!("map_gpu/river_depth_bracket.wgsl"));
-        source.push_str(if rain {
+        suffix.push_str(include_str!("map_gpu/river_depth_bracket.wgsl"));
+        suffix.push_str(if rain {
             "\nfn river_rain_height(point: vec2<f32>, spacing: f32, row: SurfaceRow, motion: CascadeMotion) -> f32 {
                 return rain_geometry(point, spacing, row, motion).x;
             }"
@@ -802,9 +805,10 @@ fn surface_pipelines(
         });
     }
     if let Some((profile, first)) = flow {
-        source.push_str(&crate::flow::constants(profile, first));
-        source.push_str(include_str!("flow/surface.wgsl"));
+        suffix.push_str(&crate::flow::constants(profile, first));
+        suffix.push_str(include_str!("flow/surface.wgsl"));
     }
+    let source = assemble(surface_gather.is_some()) + &suffix;
     let module = |source: String| {
         surface
             .device
@@ -831,11 +835,11 @@ fn surface_pipelines(
         has_rivers.then(|| create_pipeline(surface, layout, environment, &ordinary, river));
     let film = if let Some(wet) = wet_ground.filter(|_| standing_film || foam.is_some() && shore) {
         let shader = if standing_film {
-            let mut film_source = source.clone();
-            if surface_gather.is_none() {
-                film_source =
-                    film_source.replace(include_str!("optics/disabled.wgsl"), OPTICAL_PATHS);
-            }
+            let film_source = if surface_gather.is_some() {
+                source.clone()
+            } else {
+                assemble(true) + &suffix
+            };
             compose_rain_film(film_source, wet, foam.is_some(), rain)
         } else {
             compose_shore_support(&source, wet)
@@ -899,11 +903,10 @@ fn shader_source(
     map: Option<&MapGpu>,
     wake: bool,
     foam: Option<&Foam>,
-    gather: Option<&Gather>,
+    gather: bool,
     rain: bool,
     flow: bool,
 ) -> String {
-    let gather = gather.is_some();
     let sun = if surface.sun_optical_depth {
         "fn water_sun(point: vec3<f32>) -> vec3<f32> { return sun_irradiance(point) * cloud_factor(point); }"
     } else {
