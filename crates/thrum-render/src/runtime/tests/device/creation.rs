@@ -780,9 +780,16 @@ fn chart_cadence_gpu_host_tiers_reuse_the_atmosphere_resources() {
             thermal: ThermalState::Nominal,
         };
         assert!(host.enable_governor(display));
-        let output = drawable(&host, [64, 64]);
+        let texture = drawable(&host, [64, 64]);
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let output = crate::runtime::SurfaceOutput {
+            view: &view,
+            extent: [64, 64],
+        };
         host.governor_display_tick(Duration::ZERO, 1);
-        play(&mut host, &output, 1);
+        assert!(host.drive(Duration::ZERO, Some(&output)).unwrap().submitted);
+        retire(&mut host);
+        flush(&host);
         host.governor_present_called();
         let report = host.creation_report();
         let baseline = report.phase(CreationPhase::Play);
@@ -794,11 +801,6 @@ fn chart_cadence_gpu_host_tiers_reuse_the_atmosphere_resources() {
             for tick in start..start + 4 {
                 host.governor_display_tick(Duration::from_millis(tick * 5), tick);
             }
-            let drawable = output.create_view(&wgpu::TextureViewDescriptor::default());
-            let output = crate::runtime::SurfaceOutput {
-                view: &drawable,
-                extent: [64, 64],
-            };
             assert!(
                 host.drive(Duration::from_millis((start + 3) * 5), Some(&output))
                     .unwrap()

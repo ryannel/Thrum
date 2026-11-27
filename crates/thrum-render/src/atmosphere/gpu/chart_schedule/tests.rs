@@ -64,6 +64,13 @@ fn cadence_one_uses_chart_keys_and_actual_overlay_writes() {
 
 #[test]
 fn spread_submissions_latch_inputs_retry_and_drain() {
+    let phase_edit = crate::synthetic::SyntheticView::default().with_phase_history_reset();
+    assert!(phase_edit.history_reset());
+    assert!(!phase_edit.camera_cut());
+    let cut_with_edit = phase_edit
+        .with_history_reset(true)
+        .with_phase_history_reset();
+    assert!(cut_with_edit.camera_cut());
     for cadence in [4, 6, 8] {
         let mut schedule = ChartSchedule::default();
         submit(&mut schedule, sun(0.0), cadence, false, false);
@@ -72,7 +79,13 @@ fn spread_submissions_latch_inputs_retry_and_drain() {
         for step in 1..=cadence {
             light = sun(step as f32 * 0.5);
             let abandoned = schedule.plan(light, cadence, false, false);
-            let submitted = submit(&mut schedule, light, cadence, false, false);
+            let submitted = submit(
+                &mut schedule,
+                light,
+                cadence,
+                phase_edit.camera_cut(),
+                false,
+            );
             assert_eq!(abandoned.writes, submitted.writes);
             assert_eq!(submitted.whole_update, None);
             assert_eq!(submitted.written.submission, 1);
