@@ -13,7 +13,8 @@ use thrum_water_model::{Map, PathPoint};
 
 pub(in crate::falls) const ROWS: usize = 32;
 pub(crate) const PASS: &str = "waterfall sheet";
-const VERTICES_PER_SEGMENT: usize = 24 * (ROWS + 3) + 36;
+const SPLASHES_PER_SEGMENT: usize = 12;
+const VERTICES_PER_SEGMENT: usize = 24 * (ROWS + 3) + 6 * SPLASHES_PER_SEGMENT;
 const ATTRIBUTES: [wgpu::VertexAttribute; 4] =
     wgpu::vertex_attr_array![0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4];
 
@@ -476,7 +477,7 @@ fn filament(
             -normal
         };
         let tip = 1.0 - fraction.clamp(0.0, 1.0) as f32;
-        let radius = (0.65 * vertex.discharge[3].sqrt()).clamp(0.015, 0.073) * tip.sqrt();
+        let radius = (1.15 * vertex.discharge[3].sqrt()).clamp(0.037, 0.098) * tip.sqrt();
         let world = Vec3::from_slice(&vertex.world_time);
         let before = Vec3::from_slice(&sample((fraction - 0.09).max(0.0)).world_time);
         let after = Vec3::from_slice(&sample((fraction + 0.09).clamp(0.0, 1.0)).world_time);
@@ -521,38 +522,25 @@ fn stitch(vertices: &mut Vec<Vertex>, top: [Vertex; 3], bottom: [Vertex; 3]) {
     }
 }
 
-// The thin crown above the pool belongs to the visible fall. The foam and
-// wave fields still receive the original impact at the receiving level.
+// Render the liquid thrown back out of the impact as separate drops. The
+// plunge's impulse and foam birth still use the original receiving level.
+#[expect(clippy::cast_precision_loss, reason = "only twelve drops per impact")]
 fn splash(vertices: &mut Vec<Vertex>, foot: [Vertex; 3]) {
-    use glam::{Vec2, Vec3};
+    use glam::Vec4;
 
-    let crown = |distance: f32, height: f32| {
-        foot.map(|mut vertex| {
-            let [x, y, z, age] = vertex.world_time;
-            let [vx, _, vz, lip] = vertex.velocity_along;
-            let direction = Vec2::new(vx, vz).normalize_or_zero();
-            let thickness = vertex.discharge[3];
-            let reach = (6.0 * thickness.sqrt()).clamp(0.12, 1.2);
-            let bubble_height = (1.8 * thickness).clamp(0.025, 0.16);
-            let drift = direction * (distance * reach - 0.08);
-            vertex.world_time = [
-                x + drift.x,
-                height.mul_add(bubble_height, y),
-                z + drift.y,
-                age,
-            ];
-            vertex.velocity_along = Vec3::new(direction.x, 0.025, direction.y)
-                .extend(lip)
-                .to_array();
-            vertex.across_fraction[1] = -1.0;
-            vertex.across_fraction[3] = distance;
+    for drop in 0..SPLASHES_PER_SEGMENT {
+        let fraction = (drop as f32 + 0.5) / SPLASHES_PER_SEGMENT as f32;
+        let mut vertex = foot[1];
+        vertex.world_time = Vec4::from_array(foot[0].world_time)
+            .lerp(Vec4::from_array(foot[2].world_time), fraction)
+            .to_array();
+        vertex.velocity_along[3] = (foot[2].velocity_along[3] - foot[0].velocity_along[3])
+            .mul_add(fraction, foot[0].velocity_along[3]);
+        vertex.discharge[2] = drop as f32;
+        vertex.across_fraction[1] = -1.0;
+        vertices.extend([0.0, 1.0, 2.0, 2.0, 1.0, 3.0].map(|corner| {
+            vertex.across_fraction[3] = corner;
             vertex
-        })
-    };
-    let mut top = crown(0.0, 0.8);
-    for (distance, height) in [(0.22, 1.0), (0.55, 0.58), (1.0, 0.0)] {
-        let row = crown(distance, height);
-        stitch(vertices, top, row);
-        top = row;
+        }));
     }
 }
