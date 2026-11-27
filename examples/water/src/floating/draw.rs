@@ -435,12 +435,12 @@ fn craft(vertices: &mut Vec<Vertex>) {
         [1.72, -0.74],
     ];
     let ring = |y, scale: f32| outline.map(|[x, z]| vec3(x, y + 0.06 * x.max(0.0), z * scale));
-    strip(
-        vertices,
-        ring(-0.46, 0.54),
-        ring(0.42, 0.90),
-        [0.25, 0.18, 0.114],
-    );
+    let keel = ring(-0.46, 0.54);
+    let planking = [0.25, 0.18, 0.114];
+    strip(vertices, keel, ring(0.42, 0.90), planking);
+    let mut underside = keel;
+    underside.reverse();
+    cap(vertices, underside, planking);
     strip(
         vertices,
         ring(0.42, 0.90),

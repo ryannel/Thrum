@@ -438,7 +438,10 @@ fn follow_surface(
     field: &Field,
     time: f64,
 ) -> Camera {
-    let [x, _, z] = pose.position.map(f64::from);
+    let eye = glam::Vec3::from_array(pose.position);
+    let forward = (glam::Vec3::from_array(pose.target) - eye).normalize();
+    // The centre of the lens cut is on the sky camera's 10 cm near plane.
+    let [x, _, z] = (eye + forward * 0.1).to_array().map(f64::from);
     let height = map.lock().ok().and_then(|map| {
         let level = map.sample([x, z])?.row.level;
         let surface = map.surface(field, [x, z], time).ok()?;
@@ -468,8 +471,8 @@ fn dive_meshes(
     if !matches!(site, DiveSite::Swash | DiveSite::Pond) {
         meshes.push(
             MeshPlacement::new("meshes/float", "textures/white")
-                .at([x + 2.5, level - 1.8, z])
-                .scale(0.58),
+                .at([x + 2.5, level - 1.8, z + 0.90])
+                .scale(0.92),
         );
     }
     if site == DiveSite::DeepSea {

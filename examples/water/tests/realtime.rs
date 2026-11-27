@@ -11,7 +11,7 @@ use thrum_app::{
     },
     sky::SkyGame,
 };
-use thrum_render::runtime::{CaptureLimits, FrameSample};
+use thrum_render::runtime::{CaptureLimits, FrameSample, FrameWorld, SceneSource};
 
 // Even a stalled writer can retain this complete interval in its finite queue.
 // Keep ordinary elapsed-time stepping and pan speed; bound the observer, not time.
@@ -448,6 +448,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let mut frames = Vec::new();
     let mut completed = BTreeMap::new();
     let mut poses = Vec::new();
+    let mut dive_positions = BTreeMap::new();
     let mut applied = "";
     let mut cut = None;
     let mut weather_edits = Vec::new();
@@ -690,6 +691,18 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             runtime.step()
         };
         if submitted_frame.expect("ordinary submit").submitted {
+            if dive {
+                let host = runtime.host();
+                let source = host.world().source();
+                let clock = host.last_submitted_clock().expect("submitted dive clock");
+                let camera = host
+                    .source()
+                    .frame(source, clock.presentation_alpha, extent, None)
+                    .expect("submitted dive view")
+                    .view
+                    .camera_position();
+                dive_positions.insert(clock.submission_order, camera);
+            }
             if footfall {
                 let interaction = report
                     .lock()
@@ -751,6 +764,9 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         let serial = frame["sample"]["submission"].as_u64().expect("serial");
         frame["sample"] =
             super::sample_json(completed.get(&serial).expect("matched GPU completion"));
+        if let Some(camera) = dive_positions.remove(&serial) {
+            frame["camera"] = json!(camera);
+        }
     }
     let written = writer
         .finish(Duration::from_secs(60))
