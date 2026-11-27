@@ -1251,7 +1251,9 @@
           "check": "cargo nextest run --locked --offline -p thrum-app -E 'test(/output_scale/)' --no-tests=fail",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "D18.2",
@@ -1272,7 +1274,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "D18.4",
@@ -1291,7 +1295,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "failed_reviews": 0,
@@ -1313,7 +1319,9 @@
           "check": "cargo nextest run --locked --offline -p thrum-app -E 'test(/full_refresh/)' --no-tests=fail",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "D17.2",
@@ -1351,7 +1359,9 @@
           "check": "python3 scripts/apple_presentation.py full-refresh-cost --target mac-metal",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "failed_reviews": 0,

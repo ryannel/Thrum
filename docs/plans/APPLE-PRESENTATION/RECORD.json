@@ -2114,21 +2114,21 @@
       "ends_stretch": true
     },
     "WP18": {
-      "definitions": "6daea2c8c3640c7d44f6124660b346b6ab7b128106900bedd92d43e262353de5",
+      "definitions": "54e2bf9be4824a9d9a0944b9a71ecfcc7c3d7bfb27a4bea204a8b10cf46d2112",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner answered the APPLE-PRESENTATION WP17 planner's question (full screen on the built-in display for V1). The owne",
-        "at": "2026-11-27T03:41:07Z"
+        "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, ",
+        "at": "2026-11-27T03:59:50Z"
       }
     },
     "WP17": {
-      "definitions": "bff85046361275a563914591fe2c9015149c9454c9301065d64590d165640323",
+      "definitions": "e2b1d9e2989c33f522cfb5c10a753e0cf98434ec68abe3ebce07cbf025965518",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner answered the APPLE-PRESENTATION WP17 planner's question (full screen on the built-in display for V1). The owne",
-        "at": "2026-11-27T03:41:07Z"
+        "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, ",
+        "at": "2026-11-27T03:59:50Z"
       }
     }
   },
@@ -2228,11 +2228,15 @@
     {
       "task": "The owner answered the APPLE-PRESENTATION WP17 planner's question (full screen on the built-in display for V1). The owner's words: \"So the 120 upscale for full screen.\" That is option 1: 120 Hz with the picture reconstructed below the panel's pixel size and scaled up by the display. Record the answer in APPLE-PRESENTATION's log in the owner's words, then plan APPLE-PRESENTATION's next work packages up to WP17 against it, add the ATMOSPHERE work package that lets it rebuild its charts on a governor cadence, and reword SHOWCASE WP8.6 to match. The earlier planner's measurements, the three options and a draft of WP17 for option 1 are in .orchestrate/evidence/APPLE-PRESENTATION/WP17-plan/README.md.",
       "at": "2026-11-27T03:41:07Z"
+    },
+    {
+      "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, with its 5 Must Fix findings.",
+      "at": "2026-11-27T03:59:50Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T03:41:07Z"
+    "at": "2026-11-27T03:59:50Z"
   },
   "design_history": [
     {
