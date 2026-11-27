@@ -38,10 +38,12 @@
 | 34 | GATE-TIME | A merge's check takes about five minutes where it took fifty: it runs only the fast tests its change can reach, side by side and each once, and the long tests and the whole workspace run on main after the merge | Nothing to start; TEST-SUPPORT WP2 for the runs that happen twice; TEST-SUPPORT WP6 for the guard rules; WATERS WP7 for the water scene's slow tests; REVIEW-RENDER WP2 for the reference tests; DEAD-TOOLS WP2 for the contributor guide |
 | 35 | DEAD-TOOLS | Scripts, benches and records that nothing runs or reads are gone and the check refuses new ones, no tool writes into `docs/evidence`, and each module's record of what it copied is tracked in Git | Nothing to start; TEST-SUPPORT WP2 for its last work package |
 | 36 | DEAD-CODE | Engine code that nothing calls is gone, and a scene contribution no longer writes empty methods | GATE-TIME WP1 to start; GATE-TIME WP6 for the contribution's defaults; WATERS WP7 for the water scene's settings; HOST WP3 for the game's projection; REVIEW-RENDER WP3 and GATE-TIME WP6 for the two helpers |
-| 37 | GAME-SDK | A developer or an agent builds a 2D, a 3D or an online game in plain Rust against one documented crate, and the showcase and the swarm game are written on it | The owner's approval of its design to start; SESSION WP7 for a game played online; GAME-UI WP4 for menus and status displays and GAME-UI WP6 for the iPhone simulator; APPLE-PRESENTATION WP8 to WP12, RAY-TRACING WP6 and MESH-SHADING WP3 for 3D models that turn between ticks; GAME-SPLIT WP4 for the showcase on the SDK |
+| 37 | GAME-SDK | A developer or an agent builds a 2D, a 3D or an online game in plain Rust against one documented crate, and the showcase and the swarm game are written on it | Nothing to start: the owner approved its design on 27 November 2026. SESSION WP7 for a game played online; GAME-UI WP4 for menus and status displays and GAME-UI WP6 for the iPhone simulator; APPLE-PRESENTATION WP8 to WP12, RAY-TRACING WP6 and MESH-SHADING WP3 for 3D models that turn between ticks; SIM-3D for a 3D character that walks on the ground and is stopped by walls; AUDIO for sound; GAME-SPLIT WP4 for the showcase on the SDK |
+| 38 | SIM-3D | A 3D game's characters and shots find what is near them, what a ray meets and where they are stopped, the same on every device, and a character walks over hills, steps and solid models | SIM-2D WP3 |
+| 39 | AUDIO | A game's sounds and music are heard on the Mac, in Chrome and on the iPhone simulator, mixed in one place and never stalling a frame | |
 
 Modules are in build order. Rows 1 to 13 are the road to the V1 exit, 14 to 19 are water and clouds, 20 to 24
-are the 2D and online engine work, which is built beside V1, `TRANSPORT` last and only when a builder slot is free, and 25 is the swarm game, which starts after V1. Rows 26 to 31 are [track 4](#track-4-the-code-review-and-the-games-separation), the code review's fixes and the game's separation, built beside the rest. Rows 32 and 33 are [track 5](#track-5-ray-tracing-and-mesh-shaders-on-the-mac), ray tracing and mesh shaders on the Mac, built beside the rest and never ahead of a V1 work package. Rows 34 to 36 are [track 6](#track-6-the-cleanup-of-20-november), the cleanup of 20 November, built beside the rest by Claude builders. Row 37 is [track 7](#track-7-the-game-sdk), the game SDK, which no builder starts before the owner approves its design and which is built beside the rest and never ahead of a V1 work package. `Needs` names the work packages a module waits on in other modules; each work package's `depends_on` in
+are the 2D and online engine work, which is built beside V1, `TRANSPORT` last and only when a builder slot is free, and 25 is the swarm game, which starts after V1. Rows 26 to 31 are [track 4](#track-4-the-code-review-and-the-games-separation), the code review's fixes and the game's separation, built beside the rest. Rows 32 and 33 are [track 5](#track-5-ray-tracing-and-mesh-shaders-on-the-mac), ray tracing and mesh shaders on the Mac, built beside the rest and never ahead of a V1 work package. Rows 34 to 36 are [track 6](#track-6-the-cleanup-of-20-november), the cleanup of 20 November, built beside the rest by Claude builders. Row 37 is [track 7](#track-7-the-game-sdk), the game SDK, whose design the owner approved on 27 November 2026 and which is built beside the rest and never ahead of a V1 work package. Rows 38 and 39 are the two engine modules its first release asks for, 3D collision queries and sound, which are named in track 7 and not yet planned. `Needs` names the work packages a module waits on in other modules; each work package's `depends_on` in
 its done-when file is the authority. Where each module stands is on [the status page](STATUS.md), which the
 script writes.
 
@@ -2803,6 +2805,9 @@ uses ideally and what we will use to build the swarm game. It's VITAL that we ge
 interface that developers and coding agents will use to build a variety of games. It's the front of the product
 we're building. So it needs to be as intuitive, well documented and easy to use as possible." And the owner's
 decisions: "V1 first, Rust only, I'll approve the design." One module, row 37. It is no part of the V1 exit.
+On 27 November 2026 the owner approved its design ("I approve the sdk plan") with the planner's
+recommendation on each scope question, which puts 3D collision queries, gamepads and audio in the first
+release. Two of those need an engine module of their own: `SIM-3D`, row 38, and `AUDIO`, row 39.
 
 ### Why a new module
 
@@ -2818,6 +2823,8 @@ the owner approves it by reading game code. So it is one module, with [a design]
 | Module | Owns (state and code) | Expected code home |
 |---|---|---|
 | `GAME-SDK` | The crate a game depends on, `thrum`: the game structure (game, scene, entity, component, resource, rule, frame function), actions, commands and players, the look components and their extraction, the maths a game writes in, settings, the interface description, the multiplayer opt-in, the test harness and the errors a game maker sees. The game commands (`cargo play`, `./dev new`), the templates, the kit games (Rockfall, the crowd on the SDK, the starter), the SDK guides and the one-file reference. It holds no world state, no device and no clock: each stays with [its owner](GAME-SDK/DESIGN.md#state-and-owners) | A new crate `crates/thrum`, with a derive crate beside it; `examples/crowd-sdk`, `examples/rockfall` and the rewritten starter; `templates/`; `docs/sdk/` |
+| `SIM-3D` | 3D collision queries, as `SIM-2D` owns the 2D ones: a deterministic index of spheres, capsules and cuboids on layers; fixed collision built from triangle meshes, a heightfield and boxes; exact overlap, ray and swept-shape tests against both; and a kinematic move that slides, climbs a step, holds to a slope and reports its contacts. All in the rules profile's numbers, with conformance vectors on the three targets. No rigid bodies, and no world state: positions stay `thrum-core`'s | A new crate beside `thrum-sim2d`, registered when its first work package lands |
+| `AUDIO` | Sound output: the mix and its voices, each target's device output (the Mac, Chrome, the iPhone simulator), decoding, the cooked form of a sound and of streamed music, and the mix rendered to a buffer with no device for a test. It holds no world state and runs off the frame and off the tick | A new crate, registered when its first work package lands; the cooker's sound products |
 
 **Reconciled with the modules it overlaps.**
 
@@ -2842,6 +2849,12 @@ the owner approves it by reading game code. So it is one module, with [a design]
   maker's way in to each, and their guides ([the session guide](../SESSION.md),
   [sprite scenes](../SPRITE-SCENES.md), [portable rules](../SIM2D-RULES.md)) stay as the reference for what
   is under it.
+- **`SIM-3D` and `AUDIO`** are new, and each is planned by a planner of its own from
+  [its planning input](#module-planning-input-track-7). The SDK is their first consumer. `SIM-3D` uses the
+  rules profile as `SIM-2D` left it and changes nothing of `thrum-sim2d`. `GAME-UI`'s plan still says "no
+  gamepad" and `SWARM`'s "no sound or music, no gamepad": neither module is changed by the owner's answers,
+  because a pad reaches `GAME-UI` through the bindings it has, and `SWARM` is re-planned onto the SDK, where
+  its planner asks the owner whether the swarm game takes them.
 
 ### Off the V1 path (track 7)
 
@@ -2850,7 +2863,7 @@ No work package on the road to the exit waits on this module: none of `APPLE-PRE
 
 | `GAME-SDK` work package | Waits for | Because |
 |---|---|---|
-| WP1, WP11, WP2, WP12 | The owner's approval of the design; `SIM-2D:WP3`, Done | New crates, with additions in `thrum-core`, `thrum-sim2d` and the rules profile. No V1 builder works there |
+| WP1, WP11, WP2, WP12 | `SIM-2D:WP3`, Done. The owner approved the design on 27 November 2026 | New crates, with additions in `thrum-core`, `thrum-sim2d` and the rules profile. No V1 builder works there |
 | WP3 | Nothing still open | It uses `RENDER-2D`, `CONTENT-LOOP`, `CREATOR` and `HOST` as built |
 | WP4 | For its change to the 3D scene's instance passes (ruling 8), the V1 work packages that hold those passes, their motion vectors or their compiled shaders: today `APPLE-PRESENTATION` WP8 to WP12, `RAY-TRACING` WP6 and `MESH-SHADING` WP3 | It uses `CONTENT-LOOP`, `ATMOSPHERE`, `CREATOR` and `HOST` as built, and a model that turns between ticks needs the passes changed |
 | WP5 | `SESSION:WP7` | A game in a match is stepped by a driven world |
@@ -2858,7 +2871,12 @@ No work package on the road to the exit waits on this module: none of `APPLE-PRE
 | WP6 | `GAME-UI:WP4` | Menus and a modal choice |
 | WP13 | Its own WP6 | A save is resumed from a title screen |
 | WP7 | `GAME-UI:WP6` | The one iPhone shell for every game |
-| WP8 | Its own WP1 to WP7 | The guides teach only what is built |
+| WP15 | Its own WP6 | A pad works a modal. Pad input in the shells is its own to build, under ruling 3 |
+| WP16 | `SIM-3D`, once planned: the work package that delivers the move | 3D space is `SIM-3D`'s index, fixed collision and move |
+| WP17 | Its own WP4 and WP16 | 3D space on screen needs the 3D scene and the space |
+| WP18 | `AUDIO`, once planned: the work package that delivers the mix on the three targets | Sound is `AUDIO`'s to play |
+| WP8 | Its own WP1 to WP7 and WP15 to WP18 | The guides teach only what is built |
+| WP19 | Its own WP15, WP17 and WP18 | The owner plays with a pad in hand and the sound on, once |
 | WP9 | `GAME-SPLIT:WP4`, which waits for `SHOWCASE:WP8` | V1 lands on today's API, and the game moves before it is rewritten |
 
 | `SWARM` work package | Now also waits for |
@@ -2868,8 +2886,11 @@ No work package on the road to the exit waits on this module: none of `APPLE-PRE
 | WP5, a rehearsed match | `GAME-SDK:WP5` |
 | WP6, the iPhone simulator | `GAME-SDK:WP7` |
 
-**Priority.** A `GAME-SDK` work package takes a builder only when no V1 work package is waiting for one, as
-track 5's do. **Shared files.** No `GAME-SDK` work package edits `thrum-render`'s frame runtime, the 3D scene's
+`SWARM` waits on none of WP15 to WP19: they come after WP7 in the module's order, so a module not yet planned
+holds back nothing the swarm game needs.
+
+**Priority.** A `GAME-SDK`, `SIM-3D` or `AUDIO` work package takes a builder only when no V1 work package is
+waiting for one, as track 5's do. **Shared files.** No `GAME-SDK` work package edits `thrum-render`'s frame runtime, the 3D scene's
 instance passes, `thrum-asset-gpu` or `examples/v1-game` while a work package named above is open; where one
 would have to, it waits for that work package. `GAME-SDK`'s planner writes WP4's `depends_on` from this rule when it gives WP4
 its items. Elsewhere its builder integrates on what has landed and keeps the other's tests passing.
@@ -2911,10 +2932,17 @@ baseline stays exact. Once built, each belongs to its owner.
    SDK what a frame function reads of this machine alone (local actions, the pointer and its capture), give
    it storage for saves on each target, and can stop stepping ticks while a game is paused. The game commands
    are added to `./dev`. The sky kit, `./dev starter` and `./dev scene` keep working until WP10.
+   Built in WP15, as additions: the Mac's and the browser's shells hand the SDK a connected pad's sticks,
+   buttons and triggers with the other local input, and take a rumble pulse back. A dependency or a system
+   framework the Mac's shell needs for that is registered in `.config/architecture.toml` in that landing,
+   and no game without the SDK's default features links it. The phone's shell is not changed for a pad.
+   Built in WP5: a game hosted with no window, through `SESSION`'s headless host as built.
    This replaces `SWARM`'s rulings 1 and 2: the swarm game changes no engine file.
 4. **The interface and the match** (`GAME-UI`'s `thrum-ui`, `SESSION`'s `thrum-network`). The SDK uses their
    public interfaces as built, in WP5 and WP6. Where one falls short, the builder writes a proposal in that
-   module's log and a planner settles it here.
+   module's log and a planner settles it here. A pad works a modal in WP15 through the same interface: the
+   interface tree's bindings are a table from the game's own key type to an intent, so the SDK names a pad's
+   buttons and directions in its key type and binds them, and `thrum-ui` is not changed.
 5. **The guard** (`scripts/repo_check.py`, `.config/architecture.toml`, `REPO-RULES`' shape rules,
    `GAME-SPLIT`'s `boundary`). WP1 registers `thrum`. WP2 lets `boundary` admit a path between two packages of
    one game, so a game may keep its rules in a package of its own; a path that leaves the game still has to
@@ -2968,6 +2996,12 @@ baseline stays exact. Once built, each belongs to its owner.
    the same model and material whether it is placed or moves, so an entity row's material takes a texture, as
    a cooked placement's does. A row with no texture is shaded exactly as today. Under the shared-files rule above, this lands when no V1 work package that holds those
    passes is open.
+9. **3D space and sound** (`SIM-3D`, `AUDIO`). The SDK uses their public interfaces as built, in WP16 to
+   WP18, as it uses `SIM-2D`'s. Where one falls short, the builder writes a proposal in that module's log
+   and a planner settles it here. A terrain's mesh and its collision heights are cooked from one height
+   image: the heights are `SIM-3D`'s cooked form and the mesh is `CONTENT-LOOP`'s cooked mesh as built, both
+   written by the SDK's cooking step in WP16 and WP17. A sound's cooked form is `AUDIO`'s, and the asset
+   catalog's entry for it is the SDK's.
 
 ### Interfaces (track 7)
 
@@ -2977,12 +3011,14 @@ baseline stays exact. Once built, each belongs to its owner.
 | **The game commands**: `cargo play` for the Mac, Chrome and the iPhone simulator, a picture with no screen, a recorded run, the rules check; `./dev new` | `GAME-SDK` → every game | [GAME-SDK](GAME-SDK/DESIGN.md#14-running-a-game-documentation-and-templates) |
 | **The SDK guides and the one-file reference** | `GAME-SDK` → game makers and their agents | [GAME-SDK](GAME-SDK/DESIGN.md#14-running-a-game-documentation-and-templates) |
 | The game contract, the typed controls, the interface tree, the session, sprite rows, cooked rows, the rules profile | Their owners → `GAME-SDK`, which is now the consumer a game was | Unchanged, as their rows above define them |
+| **3D collision queries**: an index of spheres, capsules and cuboids on layers that answers overlaps, rays and swept shapes, nearest first or earliest contact first; fixed collision built from triangle meshes, a heightfield and boxes, which answers the same and the height of the ground; and a kinematic move against both that slides, climbs a step, holds to a slope and reports each contact with its normal, where the mover stood and the motion it had left. In the rules profile's numbers, equal on the Mac, in Chrome and on the iPhone simulator. No rigid bodies | `SIM-3D` → `GAME-SDK` | [What the SDK asks](GAME-SDK/DESIGN.md#interfaces), until `SIM-3D`'s design defines it |
+| **Sound output**: sounds and music cooked from `.wav` and `.ogg` sources; a mix on each target that plays a sound as a voice with a volume, a pitch and a place, loops one, streams music and cross-fades it, and bounds the voices of one sound; three volumes; and the mix rendered to a buffer with no device | `AUDIO` → `GAME-SDK` | [What the SDK asks](GAME-SDK/DESIGN.md#interfaces), until `AUDIO`'s design defines it |
 
 ### Module planning input (track 7)
 
 Planned on 25 November 2026, rewritten on 26 November 2026 and revised on 27 November 2026 so its core shape
-can be locked: [design](GAME-SDK/DESIGN.md), [plan](GAME-SDK/PLAN.md). Fourteen work packages, the first three
-with items. The owner agreed on 26 November
+can be locked: [design](GAME-SDK/DESIGN.md), [plan](GAME-SDK/PLAN.md). The owner approved it on 27 November
+2026. Nineteen work packages, the first three with items. The owner agreed on 26 November
 to an industry review's ten recommendations and four decisions, three agents then wrote whole games against the
 amended design, and the owner asked for "the best possible design" with no weight on rework. The design's
 decisions D1 to D4 and R1 to R10 are the owner's. Its planner settled the rest: plain-data components and rule
@@ -2992,11 +3028,31 @@ module is checked. The owner's first-release scope of 25 November stands ("Plann
 change: on 27 November the owner asked to "bring multiplayer back into scope" and to "lock in the shape of the
 SDK, not design every feature", so multiplayer is in the first release for 3D games as well as 2D, proved
 with no window in WP5 and on screen in the new WP14, and the design states its core once and gives every
-feature it does not build an entry in [an extension map](GAME-SDK/DESIGN.md#the-extension-map). The design
-puts ten open scope questions to the owner without deciding them. Three findings bind later planners: what a rule
+feature it does not build an entry in [an extension map](GAME-SDK/DESIGN.md#the-extension-map). The owner
+answered its scope questions on 27 November 2026 with the planner's recommendation on each
+([decision 44](#owner-decisions)), and a fourth round of games added to the core without reshaping it
+([what round 4 found](GAME-SDK/DESIGN.md#what-round-4-found)). Three findings bind later planners: what a rule
 did is what the next rule sees, which rests on ruling 2's barrier; a game's rules live in its `rules` module,
 which is built on its own to be checked; and a work package's surface arrives with its reference
 documentation, because WP1's guard holds every later one to an example on each public item.
+
+**`SIM-3D`**, to be planned. The owner's answer: 3D collision queries and a kinematic character move, with no
+rigid bodies. Its consumer's needs are [the SDK's 3D space](GAME-SDK/DESIGN.md#3d-space-and-a-kinematic-character)
+and [the interface it asks for](GAME-SDK/DESIGN.md#interfaces). It follows `SIM-2D`'s shape: the rules
+profile's numbers, one result on the three targets proved by conformance vectors and a digest, CPU tests on
+small worlds, and the cost of a query and a move recorded beside `SIM-2D`'s as a tripwire. Its planner
+chooses the index and the tests from the field's current practice. `GAME-SDK`'s planner names the work
+package that delivers the move in WP16's `depends_on` when it gives WP16 its items.
+
+**`AUDIO`**, to be planned. The owner's answer: audio in its small form. Its consumer's needs are
+[the SDK's audio](GAME-SDK/DESIGN.md#audio) and [the interface it asks for](GAME-SDK/DESIGN.md#interfaces):
+one-shot sounds with a voice limit, looped sounds with a place, streamed music with a cross-fade and three
+volumes, with no effects and no mixing graph. Its planner chooses how each target's device is reached and
+which crates decode and play, and registers them. No agent can hear, so its items are proved on the mix
+rendered to a buffer, and how it sounds is judged by the owner in `GAME-SDK` WP19.
+
+**Skeletal animation** stays out of the first release by the owner's answer, and is the first engine module
+planned after it. It has no row yet.
 
 ## Owner decisions
 
@@ -3100,13 +3156,16 @@ For [track 5](#track-5-ray-tracing-and-mesh-shaders-on-the-mac), each recorded a
 For [track 7](#track-7-the-game-sdk), each recorded as an assumption in
 [GAME-SDK's plan](GAME-SDK/PLAN.md#open-for-the-user):
 
-37. **The SDK's design.** The owner approves [it](GAME-SDK/DESIGN.md) before any builder starts, by reading
-    [its worked examples](GAME-SDK/DESIGN.md#worked-examples). The owner, 25 November 2026: "V1 first, Rust
-    only, I'll approve the design."
-38. **Physics, animation and audio: decided, and no longer open.** The owner, 25 November 2026, asked whether
-    the first release should keep the planner's default or add physics and audio: "Planner's default". 2D
-    queries and sprite animation are in; rigid bodies, skeletal animation and audio are out, each waiting for
-    an engine module of its own ([the table](GAME-SDK/DESIGN.md#physics-animation-and-audio)).
+37. **The SDK's design: approved.** The owner, 25 November 2026: "V1 first, Rust only, I'll approve the
+    design." On 27 November 2026, asked "Approve the core and take the recommended scope answers?" after a
+    fourth round of games in which all four authors would lock the core in, the owner said: "I approve the
+    sdk plan." Builders start with [GAME-SDK](GAME-SDK/DESIGN.md#decisions) WP1.
+38. **Physics, animation and audio: decided.** The owner, 25 November 2026, asked whether the first release
+    should keep the planner's default or add physics and audio: "Planner's default". On 27 November 2026 the
+    owner took the planner's recommendations (decision 44), which change that default in two places: audio
+    is in, in its small form, behind `AUDIO`, and 3D collision queries with a kinematic move are in, behind
+    `SIM-3D`. Rigid bodies and skeletal animation stay out
+    ([the table](GAME-SDK/DESIGN.md#physics-animation-and-audio)).
 39. **When SDK builders start.** The plan reads "V1 first" as: beside the road to V1, behind every V1
     work package for a builder. The owner can hold them until the exit closes.
 40. **Numbers that agree on every device, in every game: decided.** The owner, 26 November 2026, agreed that
@@ -3118,12 +3177,14 @@ For [track 7](#track-7-the-game-sdk), each recorded as an assumption in
     WP10, and `SWARM` is re-planned onto the SDK.
 43. **The vision and scope document** says game makers come "later" and does not carry the SDK request.
     Adding it is the owner's page.
-44. **The SDK's first-release scope.** [Eleven questions](GAME-SDK/DESIGN.md#scope-questions-for-the-owner), each
-    with the planner's recommendation. One is answered: on 27 November 2026 the owner put multiplayer back in
-    scope, so 3D games are played online in the first release (question 6). Ten are open: 3D collision queries
-    with a character move, gamepads, audio, predicted projectiles and contact, hits judged as the shooter saw
-    them, a host with no window, skeletal animation, text fields, levels from an editor's file, and saved
-    progress for every player. Decision 38's scope stands for each until the owner answers.
+44. **The SDK's first-release scope: answered.** [Eleven questions](GAME-SDK/DESIGN.md#scope-questions-for-the-owner),
+    each with the planner's recommendation, which the owner took on 27 November 2026 with the approval in
+    decision 37. In the first release: 3D collision queries with a kinematic character move and no rigid
+    bodies, gamepads, audio in its small form, multiplayer for 3D games, a host with no window, and a profile
+    for every player. Not in it: predicted projectiles and contact, which come first in the release after;
+    hits judged as the shooter saw them, after those; skeletal animation, which is the first engine module
+    planned after the release; a text field and scrolling lists; and levels from an editor's file, which
+    come after the first release.
 
 For [track 3](#track-3-the-swarm-survival-game-after-v1):
 
@@ -3166,6 +3227,13 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   [RENDER-2D](RENDER-2D/PLAN.md), [SIM-2D](SIM-2D/PLAN.md) and [GAME-UI](GAME-UI/PLAN.md), "no gamepad" to
   GAME-UI's and [SWARM](SWARM/PLAN.md)'s, and "no sound" and "the simulator proves function, never speed" to
   SWARM's.
+- `SIM-3D`: its shapes are spheres, capsules and cuboids, and its fixed collision is triangle meshes, a
+  heightfield and boxes, which is what [the SDK's 3D space](GAME-SDK/DESIGN.md#3d-space-and-a-kinematic-character)
+  names. It is a crate of its own beside `thrum-sim2d`, and the simulator proves function, never speed.
+- `AUDIO`: "the small form" is one-shot sounds with a voice limit, looped sounds heard from a place, streamed
+  music with a cross-fade, and three volumes. It plays on the Mac and in Chrome, and the simulator proves
+  function. The owner judges how it sounds once, in `GAME-SDK` WP19, and not in each of `AUDIO`'s work
+  packages.
 
 ## Log
 
@@ -3731,3 +3799,11 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   its effect's own textures, under [a seam ruling](#seam-ruling-for-effect-graph-wp7), and `WATERS` WP16 now
   waits for it. The effect-passes interface row and the module table's row 15 follow. `WATERS`' design and
   items, every contract's words, every Done item and every exact baseline stand.
+- 2026-11-27 Track 7 changed for the owner's approval of `GAME-SDK`'s design: "I approve the sdk plan", in
+  answer to "Approve the core and take the recommended scope answers?". In track 7's section, its owner
+  decisions and the module table only. Decisions 37, 38 and 44 record the approval and the eleven answers.
+  The yeses add `GAME-SDK` WP15 to WP19 and two engine modules to be planned, `SIM-3D` (row 38, 3D collision
+  queries and a kinematic move) and `AUDIO` (row 39, sound), each with what it owns, the interface the SDK
+  asks of it and its planning input. Ruling 3 gains pad input in the shells and a host with no window, ruling
+  4 says a pad works a modal through `GAME-UI`'s bindings as built, and ruling 9 is new. No other module's
+  section, item, dependency or interface row changed, and nothing `SWARM` waits on moved.

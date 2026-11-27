@@ -168,6 +168,21 @@
           "evidence": "",
           "verdict": "",
           "review": ""
+        },
+        {
+          "id": "WP11.5",
+          "statement": "Owning and finding, in a game with no window started with `test()` and stepped. (1) A spawn brings children chosen where it is made. A prefab whose definition has one child, spawned with `.child(..)` said twice, lands with three children: the definition's first and then the two the spawn gave, in that order among `children`, each at its local place and with the component its own spawn gave it, and each despawned with the entity. The handle `spawn` returned is their parent's. (2) A spawn that says `.disabled()` lands disabled, with its children: no query without a filter for it visits it in any later rule, a query with the `Disabled` filter does, and `enable` returns true for it. (3) `Query::under(parent)` visits the children of `parent` that the query matches, in the order they were attached, and reads and writes them as the query does. It visits no grandchild, no child of another parent and no entity with no parent, and nothing for a parent with no children or one that is gone. A named part is visited as any child is. A child a rule attached or spawned under the parent is visited from the next rule on. (4) A query with the `WithDisabled` filter visits the entities it matches whether they are disabled or not, each once, in the order they were spawned. A tuple of filters selects what every one of them selects: `(With<A>, Disabled)` visits the disabled entities that have `A` and no others. (5) `Option<&T>` in a query's item is `Some` for an entity that has `T` and `None` for one that has not, and the query visits both. `Option<&mut T>` writes where it is `Some`, and is a write of `T` to the access check: a rule that takes such a query beside a `Query<&T>` that reaches the same entity is refused as any two conflicting parameters are. (6) All of it gives the same world after a rewind to a tick inside the run and a replay. Guard: CPU tests on small worlds, in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum --test it ownership::",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "failed_reviews": 0,
@@ -338,6 +353,36 @@
             "crates/",
             "scripts/",
             ".config/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP2.11",
+          "statement": "A character arrives whole and a leaver's last values are read, in a game started with `test()` and stepped. (1) A spawn function given to `players().spawn(..)` returns a prefab at a place with a `.child(..)` chosen from `Joined` and from a resource. Each player's character appears with that child under it, in the landing that makes the character and with no other rule: for each of two players here when the scene is entered, and for a third who joins later. (2) `CharacterSpawned { player, character }` is read once for each character the scene's spawn makes, naming that player and that entity. For each player here as a scene is entered, every rule of that scene's first tick reads it, the first rule included. For a player who joins later it is read in the tick their character appears, and for `PlayersMut::respawn` by the rules after the one that called it, to the end of that tick. No rule of a later tick reads it. One is sent for a bot's character as for a person's, a second scene with a players' line sends one for each player again, and `PlayersMut::possess` sends none. (3) `PerPlayer::departed(p)`. In the tick a player leaves, every rule, one that reads `PlayerLeft` included, reads through `departed(p)` the value that player's seat held when they left, while `get(p)` reads `None`. Where a person takes a bot's seat in one tick, `departed(bot)` reads the bot's value, the person's own value reads the default, and a rule that then adds to the person's value leaves `departed(bot)` as it was. In the next tick `departed(p)` reads `None`. For a player who is here, and for one who left in an earlier tick, it reads `None`. (4) All of it gives the same world after a rewind to a tick inside the run and a replay. Guard: CPU tests on small worlds, in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum --test it arrivals::",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP2.12",
+          "statement": "A hit says where the mover stood at first contact and what motion it had left. (1) `motion_of(entity).sweep()`, for a circle that moved through a still circle between two ticks: the first hit's `mover_position` is the mover's own position where the two first touch, on the straight path it took this tick at the hit's `fraction` of it; a circle of the mover's radius set there touches the struck one and does not overlap it; and `mover_position` plus `remaining_motion` is where the mover ended the tick. (2) The same against a body that also moved this tick, where the contact is found along both paths and `mover_position` is on the mover's own. (3) `sweep_circle(from, to, radius)`: `mover_position` is the swept circle's centre at first contact, which stands the radius away from the `point` touched, and `mover_position` plus `remaining_motion` is `to`. (4) A rule that sets a hero at the `mover_position` of its stomp and moves it on by the length of `remaining_motion`, upward, leaves it clear of what it struck in that same tick, with no second query. (5) Each gives the same values after a rewind and a replay. Guard: CPU tests on worlds of a few bodies, in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum --test it sweeps::",
+          "reads": [
+            "crates/",
             "Cargo.toml",
             "Cargo.lock"
           ],

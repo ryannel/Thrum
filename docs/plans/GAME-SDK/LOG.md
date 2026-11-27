@@ -479,3 +479,41 @@
   choices in this revision, each for the owner to overturn: no `#[cfg]` in a `rules` module, `#[cfg(test)]`
   included; a press names the craft it was made with, and the game says whether a craft since lost still
   fires; and a launched thing whose player has gone flies under idle input.
+- 2026-11-27 Owner, asked "Approve the core and take the recommended scope answers?" after dogfood round 4,
+  in which all four games' authors would lock the core in (confidence 7, 7, 8 and 8 out of 10): "I approve
+  the sdk plan." Recorded as O7. O3 is met, and builders start with WP1.
+- 2026-11-27 The scope questions are answered with the planner's recommendation on each, as approved (O8):
+  1 yes, 3D collision queries and a kinematic move, no rigid bodies; 2 yes, gamepads; 3 yes, audio in its
+  small form; 4 no, first in the release after; 5 no, after 4; 6 already yes; 7 yes, a host with no window;
+  8 skeletal animation stays out and is the first engine module after; 9 no; 10 after the first release;
+  11 yes, a profile for every player.
+- 2026-11-27 The plan's assumptions as they stood were part of what the owner approved. Each stands as the
+  design states it, so its line is deleted from the plan. One is kept, because it is about builders and not
+  the design: SDK work packages never take a builder V1 is waiting for.
+- 2026-11-27 What the yeses add: WP15 (gamepads), WP16 and WP17 (3D space, with no window and on screen, with
+  camera pitch), WP18 (audio) and WP19 (the owner's one sitting with a pad and the sound on); WP13 gains a
+  profile for a game played alone, and WP5 a guest's profile and a host with no window. They come after WP7,
+  so nothing `SWARM` waits on waits for a module not yet planned. Two engine modules are named in the module
+  list, `SIM-3D` (row 38) and `AUDIO` (row 39), with what each owns and what the SDK asks of it. They are not
+  planned here: a planner limited to this module may not write another module's folder.
+- 2026-11-27 Round 4's four frictions are in the core as additions, with no name or invariant changed
+  ([the table](DESIGN.md#what-round-4-found)): a save keeps entities, `Kept<N>`, filled by `Keep` and brought
+  back by `entities.respawn(save)`; a spawn's own `.child(..)`, `CharacterSpawned` and `query.under(parent)`;
+  `PerPlayer::departed(player)`; and `mover_position` and `remaining_motion` on a `Hit`.
+- 2026-11-27 Smaller additions of the same kind taken from round 4's other notes: `LevelPiece` and `remove`;
+  `.choices_with(f)` on an offer; `WithDisabled`, tuples of filters, `Option<&T>` and `.disabled()`;
+  `.during(phases)` on a rule; a validator that reads other content; a `List` in a scene's fields; what keys a
+  `Random` draw; a `teleport` starting a new path; the lobby's `continues`; and harness and reference lines.
+  Not taken, as changes of shape: a `List` in a component, a second way into a phase, and a test's scene
+  registered from test code. Three went to the map: a character's children run ahead, events from
+  `par_each`, and a lobby with the game's own rules.
+- 2026-11-27 Entries of the map sharpened from round 4: 3D space (one terrain drawn and stood on, `place`,
+  what a contact's surface is, `ground_height`, marks), gamepads (a trigger, `invert_y`), audio (asset
+  kinds, volume and pitch, the listener, a pause), navigation, predicted projectiles (`end_at`) and the
+  player panel's signature. Example G keeps its relics and wardens with `Kept`.
+- 2026-11-27 Items added: WP11.5, WP2.11 and WP2.12. No existing item's statement or check changed, and WP1
+  is as it was. Planner's choices in this change, each for the owner to overturn: camera pitch comes with
+  3D space; a pad is the Mac's and Chrome's, not the phone's; the owner judges pad and sound once, in WP19;
+  kept entities come back under kept parents; and one terrain is drawn and stood on from one source.
+- 2026-11-27 Left as they are, because they are other modules' files: `GAME-UI`'s plan still assumes no
+  gamepad and `SWARM`'s no sound and no gamepad. The vision and scope document does not carry the approval.

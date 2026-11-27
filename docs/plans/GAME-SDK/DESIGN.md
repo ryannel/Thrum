@@ -3,17 +3,20 @@
 27 November 2026. Revised that day so its core shape can be locked: the core is stated once, with its
 invariants, [the reference](#the-reference) gives every public type its methods in one place, and
 [an extension map](#the-extension-map) says how each feature it does not build would be added. It replaces the
-design of 26 November, and was revised again that day from [a third round of games](#what-round-3-found). [Plan](PLAN.md) · [done-when file](DONE.json) ·
+design of 26 November, and was revised again that day from [a third round of games](#what-round-3-found).
+**The owner approved it that day** ([O7](#decisions)) and answered
+[the scope questions](#scope-questions-for-the-owner) (O8), and [a fourth round of games](#what-round-4-found)
+added to the core without reshaping it. [Plan](PLAN.md) · [done-when file](DONE.json) ·
 [log](LOG.md) · [module list](../ARCHITECTURE.md#track-7-the-game-sdk) · [glossary](../GLOSSARY.md) ·
 [the creator guide](../../design/ENGINE-EXPERIENCE.md), whose ambition this module builds ·
 [the performance policy](../../design/AI-PERFORMANCE.md#performance-investment-from-the-first-design) ·
 [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md)
 
-**The owner approves this design before any builder starts.** A design review that returns Design Approved is
-not that approval. To approve the shape, read [the game at a glance](#the-game-at-a-glance) (one page),
-[the core](#the-core) and [the extension map](#the-extension-map). [The worked examples](#worked-examples) are
-the evidence that the core reads as a game, and [the scope questions](#scope-questions-for-the-owner) are the
-owner's to answer.
+**The owner approved this design on 27 November 2026** (O7), so builders start, with WP1. The shape that is
+locked is [the game at a glance](#the-game-at-a-glance) (one page), [the core](#the-core) and
+[the extension map](#the-extension-map). [The worked examples](#worked-examples) are the evidence that the
+core reads as a game, and [the scope answers](#scope-questions-for-the-owner) say what the first release
+builds.
 
 ## The request
 
@@ -49,10 +52,11 @@ Each is the owner's. A builder builds what it says and nothing it rules out.
   the showcase onto the SDK, and [the swarm game](../../design/NEXT-GOAL-SWARM-GAME.md) is built on it from its
   first line. No work package on the road to the exit waits on this module.
 - **O2 Rust only.** Games are written in Rust. There is no scripting layer.
-- **O3 The owner approves the design** before any build.
+- **O3 The owner approves the design** before any build. Met on 27 November 2026 (O7).
 - **O4 First-release scope** ("Planner's default"): 2D queries and sprite animation are in; rigid bodies,
-  skeletal animation and audio are out. It stands unless the owner changes it
-  ([scope questions](#scope-questions-for-the-owner)).
+  skeletal animation and audio are out. The owner changed it on 27 November 2026 (O8): audio is in, in its
+  small form, and so are 3D collision queries with a kinematic move. Rigid bodies and skeletal animation stay
+  out.
 
 **26 November 2026.** The owner answered "Yes I agree" to all four decisions and all ten recommendations of
 [the review](../../../.orchestrate/evidence/GAME-SDK/owner-review-2026-11-26.md).
@@ -83,8 +87,24 @@ Each is the owner's. A builder builds what it says and nothing it rules out.
   game missed, or the first release leaves out, has an entry in [the extension map](#the-extension-map) that
   adds names and changes none.
 - **O6 Multiplayer is in the first release for 3D games as well as 2D.** Scope question 6 is answered yes.
-  Whether predicted projectiles and contact, and hits judged as the shooter saw them, are built in the first
-  release stay [questions 4 and 5](#scope-questions-for-the-owner).
+  Predicted projectiles and contact, and hits judged as the shooter saw them, are answered in O8.
+- **O7 The design is approved.** After [round 4](#what-round-4-found), in which the authors of all four games
+  would lock the core in (confidence 7, 7, 8 and 8 out of 10), the lead asked: "Approve the core and take the
+  recommended scope answers?" The owner, 27 November 2026: "I approve the sdk plan." So the core is locked,
+  O3 is met, and builders start with WP1.
+- **O8 What the first release builds**, which is the planner's recommendation on each of
+  [the scope questions](#scope-questions-for-the-owner), as the owner approved them in O7:
+  1. 3D collision queries and a kinematic character move are in, with no rigid bodies.
+  2. Gamepads are in.
+  3. Audio is in, in its small form.
+  4. Predicted projectiles and predicted contact are not. They come first in the release after.
+  5. Hits judged as the shooter saw them are not. They follow 4.
+  6. Multiplayer for 3D games is in (O6).
+  7. A host with no window is in.
+  8. Skeletal animation stays out, and is the first engine module planned after the release.
+  9. A text field and scrolling lists are not.
+  10. Levels from an editor's file come after the first release.
+  11. A profile for every player, kept on each player's own machine, is in.
 
 **What seven games found.** On 26 November three agents each wrote a whole game against the design as the
 review amended it, and the design was rewritten from their reports. On 27 November four more wrote a 2D
@@ -142,6 +162,61 @@ section they did not look in, so [the reference](#the-reference) now holds every
 | An earned level-up ended with its phase | An offer with no expiry stays open until it is answered | [6](#6-commands-offers-and-requests) |
 | The camera had no answer for a player with no character | A following rig holds its view, and what a frame function adds plays on top of it | [9](#9-frame-functions-looks-and-the-interface) |
 
+### What round 4 found
+
+On 27 November four more agents each wrote a whole game against this design and judged the core and the
+extension map apart: a 3D exploration game, an online 2D swarm survivor, an online 3D arena game and a 2D
+platformer, with scope questions 1 to 3 taken as yes (reports and source in the main checkout under
+`tmp/sdk-dogfood-4/`). **All four would lock the core in**, with confidence 7, 7, 8 and 8 out of 10, and
+they guessed 6 to 35 names each, where round 3's authors guessed 10 to 55. Each named the one change that
+would raise its confidence most. **Each is an addition: it adds names, and changes no name and no invariant
+of the core** (O5).
+
+| What fought the game | The core now says | Where |
+|---|---|---|
+| A save was a hand-written mirror of the world: each kept thing was written as its component, again as a field of the save and again as the lines that respawn it, and a capture that left out the disabled wardens compiled and lost them (the exploration game) | A save keeps entities for the game. A field of the save, `Kept<N>`, holds the entities of the prefabs the capture names, each by its prefab's stable name with the components listed, and one call respawns them. The save is still the game's own versioned type | [10](#10-content-assets-saves-and-settings) |
+| What a character owns was a hand-written walk of the tree in four places, and a keeper needed a flag and a second rule to be given its first weapon (the swarm survivor) | Ownership reads both ways. A spawn brings children chosen where it is made, so a spawn function returns a character whole; `CharacterSpawned` is the moment a character appears; and `query.under(parent)` reads a parent's children | [2](#2-the-world-entities-components-resources-and-prefabs), [5](#5-players-actions-and-control) |
+| A rule that read `PlayerLeft` could no longer read the leaver's score, so each game kept its own table beside `PerPlayer` (the arena game, the swarm survivor) | `PerPlayer::departed(player)`: for the rest of the tick a player leaves in, what their seat held as they left | [5](#5-players-actions-and-control) |
+| A stomp was easy to detect and hard to resolve: a sweep gave the point touched and a fraction, so the hero's place was worked out by hand and the rebound began a tick late (the platformer). A bolt's centre at a pier was worked out the same way (the arena game) | A hit says where the mover itself stood at first contact, and what motion it had left | [7](#7-space-and-the-level) |
+
+**Smaller additions of the same kind**, each from a report's ranked friction or its list of guesses:
+
+| What fought the game | The core now says | Where |
+|---|---|---|
+| A portcullis dropped and could never rise, because a level's recipe only grew (exploration) | What a rule adds to the level it can take away: an addition returns a `LevelPiece`, and `remove(piece)` takes it out | [7](#7-space-and-the-level) |
+| Three hands of cards were drawn against one build, because an offer's choices were fixed when it was opened (swarm) | `.choices_with(f)`: a read-only function asked when the offer reaches the front of its player's queue | [6](#6-commands-offers-and-requests) |
+| A rule could not reach disabled and enabled things together, a query had no optional part, and a sleeper took a second function to put to sleep (swarm, exploration) | The `WithDisabled` filter, a tuple of filters, `Option<&T>` in a query, and `.disabled()` on a spawn | [2](#2-the-world-entities-components-resources-and-prefabs), [R3](#r3-what-a-rule-may-take) |
+| Rules two phases share sat under a condition written by hand (swarm, exploration) | `.during(phases)` on a rule or a group, with one phase or several | [3](#3-rules-and-the-tick) |
+| A validator could not check a level against the enemies it names (swarm, exploration) | A validator may take `Content<U>` after its record | [10](#10-content-assets-saves-and-settings) |
+| A scoreboard handed to the next scene was flattened to an array, and a wall's side was kept as a number (swarm, platformer) | A scene's fields hold a `List`, and a `Side` is world state as any name is | [2](#2-the-world-entities-components-resources-and-prefabs) |
+| Whether two hands dealt in two paused ticks are the same hand was not said, and a game that forgot `.even_when_paused()` hung on its first level-up with no message (swarm) | What keys a draw is stated, and a waiting answer under a modal's pause is reported once | [3](#3-rules-and-the-tick), [12](#12-mistakes-that-explain-themselves) |
+| What a sweep sees across a respawn was not said (platformer) | A `teleport` starts a new path | [7](#7-space-and-the-level) |
+| A host could not continue a saved journey with a friend through the standard lobby (exploration) | `Lobby::standard().continues::<T>(slot)` | [11](#11-multiplayer-an-opt-in-over-input-only-networking) |
+| A match in a test took no fixtures, a peer could name its craft and not its pilot, a test could not read content or name a fixture's ID, and a picture could not be let run (all four) | `start_match()`, `my_player()`, `content`, `test_id`, edits a whole table takes, and `advance` | [R6](#r6-tests-and-errors) |
+| Names guessed that the reference should have given (all four) | A phase is `Data`; the data derives give `Clone`, `PartialEq` and `Debug`; `insert` replaces; a struct of frame parameters is a frame parameter; a lookup may be asked inside `par_each`; a part given `()` is a socket; `turn_toward`; how a test sets a `Heading` | [R1](#r1-describing-a-game) to [R6](#r6-tests-and-errors) |
+
+**Asked for and not taken into the core**, because each would change its shape or its cost, with where it
+went instead:
+
+- **A `List` in a component** (swarm). A component stays `Copy` plain data of a fixed small size. What a
+  character owns is its children, read with `under`.
+- **A character's own children read by its control function and still run ahead** (exploration). It widens
+  what a match runs ahead, so it is [an entry of the map](#smaller-entries), beside depth 2.
+- **An event sent from inside `par_each`** (swarm), and **a lobby that takes the game's own rules and frame
+  functions** (swarm). Each is [an entry of the map](#smaller-entries).
+- **A second way into a phase that is entered again** (arena). Its author would keep the lifecycle as it is.
+- **A scene added to the game from a test's own code** (swarm). A game with a `rules` module keeps every
+  function that changes the world there, so a practice scene is part of the game, and a test that wants
+  rules of its own builds a sketch.
+
+The entries of the map that round 4 found thin are sharpened where they stand:
+[3D space](#3d-space-and-a-kinematic-character) (one terrain that is drawn and stood on, what is placed and
+not solid, what a contact's surface is), [gamepads](#gamepads) (a trigger, and which axis is inverted),
+[audio](#audio) (its asset kinds, volume and pitch, the listener), [navigation](#navigation-and-path-queries)
+(where a path's ends are put, and a path's length),
+[predicted projectiles](#predicted-projectiles-and-contact) (a flight ended at a contact) and
+[lobby choices for every player](#smaller-entries) (the panel's signature).
+
 ## Purpose and scope
 
 Thrum's engine modules are built and proved, and each has its own public API: a frame host, a world lane, a
@@ -159,29 +234,33 @@ from a command are part of the product.
 
 1. The game structure: game, scenes with typed arguments, phases, entities, components, resources, prefabs,
    rules and frame functions.
-2. Players, typed action maps with input contexts, a controlled character, bots, commands, offers and the
-   standard lobby.
+2. Players, typed action maps with input contexts, bound to keys, the pointer, touch and gamepads (O8), a
+   controlled character, bots, commands, offers and the standard lobby.
 3. 2D space: colliders, queries on the world as it stands, a level's fixed collision loaded from content, tile
    maps, and a character move that reports its contacts.
-4. 2D and 3D looks under one vocabulary: sprites and clips cooked from source images, shapes and tile layers;
+4. 3D space (O8): the same colliders, queries, fixed collision and character move with a 3 on them, over a
+   terrain and solid models, with a camera that pitches and a boom that avoids the level. No rigid bodies.
+5. 2D and 3D looks under one vocabulary: sprites and clips cooked from source images, shapes and tile layers;
    cooked models with materials and textures whether placed or moving, sky, Sun, ground and lights.
-5. Typed content with stable IDs, a typed asset catalog, and saves into and out of a running game.
-6. Settings on the tuning panel; the profiler; the interface.
-7. Multiplayer as an opt-in that changes no rule, for 2D and 3D games (O6).
-8. Tests with no window, recorded runs, pictures from a command, and errors with stable codes.
-9. Reference documentation with an example on every public item, guides, templates and a new-game command.
-10. The showcase moved onto the SDK, after the V1 exit.
+6. Typed content with stable IDs, a typed asset catalog, saves into and out of a running game, and a profile
+   for every player (O8).
+7. Audio in its small form (O8): a sound that happens, a sound a thing makes, and music.
+8. Settings on the tuning panel; the profiler; the interface.
+9. Multiplayer as an opt-in that changes no rule, for 2D and 3D games (O6), with a host that needs no window
+   (O8).
+10. Tests with no window, recorded runs, pictures from a command, and errors with stable codes.
+11. Reference documentation with an example on every public item, guides, templates and a new-game command.
+12. The showcase moved onto the SDK, after the V1 exit.
 
-**Not in the first release**, by the owner's scope (O4) and the engine as built. Each has an entry in
-[the extension map](#the-extension-map), and the ones marked there are
-[questions for the owner](#scope-questions-for-the-owner).
+**Not in the first release**, by the owner's scope (O4, O8) and the engine as built. Each has an entry in
+[the extension map](#the-extension-map).
 
-- Rigid-body physics, skeletal animation and audio (O4).
-- 3D collision queries and a 3D character move; navigation; camera pitch; 3D level building.
-- Gamepads; text fields, scrolling lists and sliders, which `GAME-UI` does not build.
-- Predicted projectiles and contact, hits judged as the shooter saw them, a player's profile (question 11),
-  host migration and a host with no window.
-- A visual editor (D2), levels from an editor's file, a tile with a collision shape smaller than its cell,
+- Rigid-body physics and skeletal animation (O4, O8).
+- Navigation, and a 3D ground's dressing and scatter.
+- Text fields, scrolling lists and sliders (O8), which `GAME-UI` does not build.
+- Predicted projectiles and contact, and hits judged as the shooter saw them, which come in the release after
+  (O8); host migration.
+- A visual editor (D2), levels from an editor's file (O8), a tile with a collision shape smaller than its cell,
   and hot reload of code. A changed rule rebuilds and restarts.
 - Water, clouds and weather. `WATERS` and `CLOUDS` are still building.
 - A crates.io release. A game reaches `thrum` by a path to an engine checkout, as
@@ -189,53 +268,57 @@ from a command are part of the product.
 
 ### Scope questions for the owner
 
-**Not decided here.** The owner's first-release scope (O4, O6) stands until the owner changes it. Each line is
-one question, with the planner's recommendation. The design works either way: a "yes" adds work packages, and
-for most an engine module, and changes no shape, which is what its entry in the extension map shows.
+**All answered.** The owner took the planner's recommendation on each, on 27 November 2026 (O7, O8). A "yes"
+added work packages, and for two of them an engine module, and changed no shape, which is what each entry of
+the extension map shows. [The work packages](#the-work-packages) say where each is built.
 
 1. **3D collision queries and the 3D character move in the first release?** Without them the 3D SDK serves
-   showcases and not games, and a 3D match has nothing to run into. **Recommended: yes, as queries and a
+   showcases and not games, and a 3D match has nothing to run into. **Answered: yes, as queries and a
    kinematic move only, with no rigid bodies** ([entry](#3d-space-and-a-kinematic-character)). It needs a
-   deterministic 3D index and fixed collision from meshes and a heightfield, as an engine module of its own.
-2. **Gamepads in the first release?** A platformer and a third-person game are played on one. **Recommended:
-   yes** ([entry](#gamepads)). It needs pad input in the shells and focus by pad in `GAME-UI`.
+   deterministic 3D index and fixed collision from meshes and a heightfield, as an engine module of its own:
+   `SIM-3D`. Built in WP16 and WP17, with [camera pitch](#camera-pitch-and-rigs), which its entry gives to
+   this question.
+2. **Gamepads in the first release?** A platformer and a third-person game are played on one. **Answered:
+   yes** ([entry](#gamepads)). It needs pad input in the shells, and focus by pad through `GAME-UI`'s
+   bindings as built. Built in WP15.
 3. **Audio in the first release?** Every dogfood game named it as the gap between a prototype and a game.
-   **Recommended: yes, the small form** ([entry](#audio)), behind an engine module. No agent can hear it, so
-   its items wait for the owner's ear.
+   **Answered: yes, the small form** ([entry](#audio)), behind an engine module: `AUDIO`. No agent can hear
+   it, so how it sounds waits for the owner's ear, in WP19. Built in WP18.
 4. **Predicted projectiles and predicted contact between players in the first release?** A fast
    player-against-player game feels a round trip late without them. The swarm game, a co-op crowd, needs
-   neither. **Recommended: no, first in the release after** ([entry](#predicted-projectiles-and-contact)):
+   neither. **Answered: no, first in the release after** ([entry](#predicted-projectiles-and-contact)):
    it is a declaration on a control line that changes no rule, and only a person playing such a game can
    judge it.
 5. **Hits judged as the shooter saw them in the first release?** Only a competitive shooter needs it.
-   **Recommended: no, after question 4** ([entry](#hits-judged-as-the-shooter-saw-them)). Until then the
+   **Answered: no, after question 4** ([entry](#hits-judged-as-the-shooter-saw-them)). Until then the
    design says plainly that a hit is decided at the shared tick.
-6. **Multiplayer for 3D games in the first release? Decided: yes** (the owner, 27 November 2026, O6).
-7. **A host with no window?** `SESSION` already hosts headless. **Recommended: yes**, as one command in the
-   online work package ([entry](#smaller-entries)).
+6. **Multiplayer for 3D games in the first release? Answered: yes** (the owner, 27 November 2026, O6).
+7. **A host with no window?** `SESSION` already hosts headless. **Answered: yes**, as one command in the
+   online work package, WP5 ([entry](#smaller-entries)).
 8. **Skeletal animation** stays out (O4). Both third-person games read as prototypes without it.
-   **Recommended: keep it out of the first release**, and plan it first among the engine modules that follow
-   ([entry](#skeletal-animation)).
+   **Answered: it stays out of the first release**, and is planned first among the engine modules that
+   follow ([entry](#skeletal-animation)).
 9. **A text field and scrolling lists?** A player's name comes from the system account until there is a field.
-   **Recommended: no for the first release** ([entry](#text-fields-lists-and-more-controls)).
+   **Answered: no for the first release** ([entry](#text-fields-lists-and-more-controls)).
 10. **Levels from an editor's file (LDtk, Tiled, glTF placements)?** Hand-typed tile rows and placement tables
     do not scale past a demo, and D2 rules out an editor of Thrum's own, not reading someone else's.
-    **Recommended: after the first release, with data packs** ([entry](#levels-from-an-editors-file)).
+    **Answered: after the first release, with data packs** ([entry](#levels-from-an-editors-file)).
 11. **A profile for every player, kept on each player's own machine?**
     [The core](#10-content-assets-saves-and-settings) gives every save an owner, and a profile is the
     player's. Without it a match's saves are the host's and a guest keeps nothing. The swarm game's long game
-    depends on it. **Recommended: yes**, in the saves and online work packages, with
+    depends on it. **Answered: yes**, in WP13 for a game played alone and in WP5 for a guest, with
     [the entry](#saved-progress-for-every-player) that carries a guest's into a match.
 
 ### Physics, animation and audio
 
-Decided by the owner on 25 November 2026 ("Planner's default"), and unchanged here.
+Decided by the owner on 25 November 2026 ("Planner's default"), and changed by the owner on 27 November 2026
+(O8).
 
 | | The first release |
 |---|---|
-| **Physics** | **2D queries in, rigid bodies out.** Within 2D queries: rectangles and capsules beside the engine's circles, a level's fixed collision and a character move that slides and reports its contacts. Nothing pushes anything. 3D is question 1 |
-| **Animation** | **Sprite animation in**: a clip a screen plays (`Shown<Sprite>`) and a clip that loops in step for everyone (`Sprite::looping`). **Skeletal animation out** |
-| **Audio** | **Out.** It is question 3 |
+| **Physics** | **2D and 3D queries in, rigid bodies out.** Within queries: rectangles and capsules beside the engine's circles, and in 3D spheres, capsules and cuboids; a level's fixed collision; and a character move that slides and reports its contacts. Nothing pushes anything |
+| **Animation** | **Sprite animation in**: a clip a screen plays (`Shown<Sprite>`) and a clip that loops in step for everyone (`Sprite::looping`). **Skeletal animation out**, and first among the engine modules planned after the release |
+| **Audio** | **In, in its small form** ([entry](#audio)): a sound that happens, a sound a thing makes, music and three volumes. No effects, no mixing graph |
 
 ## What a game maker must see
 
@@ -268,7 +351,7 @@ Fifteen words carry the whole SDK. Each means the same thing in a 2D game, a 3D 
 | **Prefab** | A named, reusable thing to spawn, with its defaults, its variants and its children | `prefabs! { pub const BAT: Prefab = "bat"; }` |
 | **Rule** | A function that moves the world on by one tick. Rules are the only code that changes the world | `fn fall(mut rocks: Query<(&Rock, &mut Transform2d)>, tick: Tick)` |
 | **Frame function** | A function that runs once for each picture: it reads the world as shown and sets what only this screen shows | `fn status(mut ui: Ui, run: Res<Run>)` |
-| **Action** | A named thing a player can do, a field of an action map, bound to keys, pointer and touch | `#[bind(Key::Space)] jump: Button` |
+| **Action** | A named thing a player can do, a field of an action map, bound to keys, pointer, touch and a gamepad | `#[bind(Key::Space)] jump: Button` |
 | **Command** | A message a player sends once, such as a menu choice | `outbox.send(PickArena(arena))` |
 | **Player** | Who an input came from: a person at a device, or a bot. A game played alone has one | `inputs.of(player).jump.pressed` |
 | **Look** | A component the engine draws: `Sprite`, `Shape2d`, `Model`, `Light` | `Sprite::new(art::BAT)` |
@@ -329,8 +412,8 @@ Each invariant here is a mechanism a builder builds as written
   others: a rule in `scene.rules` or a phase's `rules`; a control function; a spawn function given to
   `scene.players().spawn(..)` or to a tileset's `.spawns(..)`; an enter or exit function of a scene or a
   phase; a condition in `.when(..)`; the function a phase's `.lasts(..)` is given and the rule its
-  `.then_run(..)` is given; a save's capture, its condition and its `validate`; and the function a lobby is
-  given in `.starts_with(..)`. A registration a
+  `.then_run(..)` is given; a save's capture, its condition and its `validate`; the function an offer's `.choices_with(..)` is given;
+  and the function a lobby is given in `.starts_with(..)`. A registration a
   later feature adds joins this list when it is added
   ([extension point 5](#the-extension-map)).
 - **A `Save` type is defined there too, with the older types of its chain.** Every machine carries an old
@@ -399,10 +482,10 @@ Each invariant here is a mechanism a builder builds as written
   |---|---|
   | Numbers | `bool`, the fixed-width integers, `Num`, `Vec2`, `Vec3`, `Angle`, `Rot3`, `Seconds` |
   | Time | `TickNumber`, `Timer`, `Cooldown`, `PhaseClock` |
-  | Names | `Entity`, `Player`, `Id<T>`, `Prefab<N>`, `Layer`, `Mark`, `Part`, `OfferId` |
+  | Names | `Entity`, `Player`, `Id<T>`, `Prefab<N>`, `Layer`, `Mark`, `Part`, `OfferId`, `LevelPiece`, `Side` |
   | Text | `Text<N>`: up to `N` bytes of UTF-8, such as a player's name |
   | Shapes | `Option<T>`, a fixed array `[T; N]` and a tuple of these; a struct or an enum that derives `Data` |
-  | In a resource only | `List<T, N>`, a list of at most `N`; `PerPlayer<T>`, one `T` for each seat |
+  | In a resource only | `List<T, N>`, a list of at most `N`, which a scene's fields may hold too; `PerPlayer<T>`, one `T` for each seat |
 
   A `Vec`, a `String`, a reference, a raw float and `usize` are each a compile error that names what to use. A
   `List` is an ordinary value besides, so a rule may keep one as a local between two passes. Long text and
@@ -427,6 +510,10 @@ Each invariant here is a mechanism a builder builds as written
   a compile error, so no prefab holds a made-up owner or a zero that means "not set". `.with(c)` means one
   thing everywhere: this spawn, or this variant, has `c`. It brings what the prefab needs, replaces a
   default, or adds.
+- **The world remembers which prefab an entity was spawned from**, by the prefab's stable name, and whether a
+  definition made it as a child or a part. That is the SDK's own component, so it is digested and rewound
+  with the rest. `entities.part` reads it, and [a save keeps entities by it](#10-content-assets-saves-and-settings).
+  An entity spawned from a bare tuple has none.
 - **No name an author wrote waits for its use to be checked.** Every `prefabs!` block the game's code refers
   to registers itself with the built program at link time (the technique of Rust's `inventory` crate), so the
   SDK knows every declared name before play on every target, with no line of the game listing the blocks. At
@@ -440,6 +527,14 @@ Each invariant here is a mechanism a builder builds as written
   is despawned with its parent. A **part** is a child with a name, declared in the prefab: a warden's eye, a
   place on a back. A part with no look is a socket. Entities with no parent pay for no hierarchy. A cycle is
   refused. A reference that is not ownership, such as a target, stays an ordinary `Entity` field.
+- **Ownership is written in one line and read in one line.** A definition's children are the same for every
+  spawn. A spawn adds its own with `.child(spawn)`, chosen where the spawn is made, from content or from who
+  it is for: `calling.prefab.with(hero).at_point(p).child(wand.prefab.with(Weapon::new(id)))`. They land with
+  the entity, under it, after the definition's own. So a spawn function returns a character whole, and no flag
+  and no second rule arms it. **`query.under(parent)` reads a parent's children**: those the query matches,
+  in the order attached, read and written as the query reads and writes, so "this keeper's weapons" is
+  `for mut weapon in weapons.under(hero)`. It reads the children the tree holds for that parent, and
+  searches nothing else. A part is a child, so `under` finds it.
 - **Attaching says where the child ends up.** `keep_local(pose)` cannot fail. `keep_world()` stores the local
   transform that recomposes nearest to where the child stood and **promises a bound, not exactness**
   ([C01](../../design/CONTRACTS.md)): one part in 2^17, exact only where every number on the way composes
@@ -450,10 +545,13 @@ Each invariant here is a mechanism a builder builds as written
   drawing, with its children, until it is enabled. The rule that brings it back finds it with the `Disabled`
   filter, which gives the disabled entities and no others, so a pick-up's restock `Timer` lives on the
   pick-up. `disable` and `enable` return whether this call made the change, as `despawn` does, so two heroes
-  on one pick-up take it once.
+  on one pick-up take it once. A spawn may say `.disabled()`, so a sleeper is made asleep. The `WithDisabled`
+  filter gives the entities a query matches whether they are disabled or not, for the rule that must reach
+  both, such as a card answered while its keeper is down.
 
 **Names:** the derives, `prefabs!` and the typed constants in [R1](#r1-describing-a-game); `Prefab`, `PrefabDef`, the transforms, `List`
-and `PerPlayer` in [R2](#r2-what-world-state-holds); `Entities` and `Family` in [R3](#r3-what-a-rule-may-take).
+and `PerPlayer` in [R2](#r2-what-world-state-holds); `Query` with `under` and its filters, `Entities` and `Family` in
+[R3](#r3-what-a-rule-may-take).
 
 ### 3. Rules, and the tick
 
@@ -511,15 +609,22 @@ and `PerPlayer` in [R2](#r2-what-world-state-holds); `Entities` and `Family` in 
   access check and the read-only bound see through it to its fields.
 - **A read-only parameter** cannot change the world: a `Query` or a `Single` with no `&mut`, `Res<T>`,
   `Family`, `Inputs<A>`, `Players`, `Events<T>`, `Tick`, `Random`, `Space2d`, `Level2d`, `Phase<P>`,
-  `Content<T>` and `Restored<T>`. A spawn function, a condition and a capture take read-only parameters and
+  `Content<T>`, `Restored<T>` and `Keep`. A spawn function, a condition and a capture take read-only parameters and
   nothing else, by a bound on the type: what a function may do is fixed by the type it asks for and never by
   how it binds the value.
 - **Parallel work is inside a rule.** `query.par_each(..)` runs the closure over the engine's chunks. It
-  writes only the entity it is given, and the result is the serial loop's by construction.
+  writes only the entity it is given, and the result is the serial loop's by construction. What a rule looks
+  things up through, such as `Space2d` and `Level2d`, may be asked inside it.
 - **Cadence and conditions.** `rule.every(seconds(1))` runs a rule once each interval, counted from when its
   phase or scene was entered, first at the end of the first interval. `rules.when(condition)` runs a rule or a
-  group only in ticks where a read-only function returns true. A cadence that belongs to one thing is a
-  `Cooldown` on that thing.
+  group only in ticks where a read-only function returns true. `rules.during(phase)`, with one phase or a
+  tuple of them, runs a rule or a group only while the scene is in one of those phases, where it is written:
+  it is for rules that two phases share. A phase block is still where a phase's enter and exit functions and
+  its length are said. A cadence that belongs to one thing is a `Cooldown` on that thing.
+- **A draw from `Random` is keyed by the game's seed, the game's tick, the rule that asks and how many times
+  that rule has run at that game's tick**, which is more than once only for
+  [a rule that runs through a pause](#4-scenes-phases-time-and-pause). So two hands dealt in two paused ticks
+  are two hands, and no draw depends on how many empty paused ticks a driver committed.
 - **The tick** is 60 Hz unless `Game::tick_rate` says otherwise. Speeds are written per second and multiplied
   by `tick.dt()`.
 
@@ -715,8 +820,20 @@ in [R3](#r3-what-a-rule-may-take); `Pause` and `Request` in [R4](#r4-what-a-fram
 - `PlayerJoined` is sent once for a player, at the tick they enter the game, to whichever scene is running. A
   later scene finds who is here with `Players`. `PlayerLeft` carries the player and their name, so a rule can
   keep what should outlive them. `PlayerAway` and `PlayerBack` come at the tick of each.
+- **`CharacterSpawned { player, character }` is the moment a character appears.** It is sent each time a
+  scene's spawn makes a character: for every player here as the scene is entered, for a player who arrives
+  later, and for a `respawn`, a bot's as a person's. So what happens once for each character that appears,
+  such as opening its line on a scoreboard or granting the levels a late joiner missed, hangs on one event in
+  whichever scene the character appears, where `PlayerJoined` comes once for a player. It is read from when
+  the character lands to the end of that tick, and one sent as a scene is entered is read through that
+  scene's first tick. `possess` sends none: it makes no character.
 - `PerPlayer<T>` keeps one value for each seat, such as a score that outlives a character. It returns to its
   default when the seat's player leaves.
+- **A rule that reads `PlayerLeft` still finds what the leaver had.** `PerPlayer::departed(player)` gives, for
+  the rest of the tick a player leaves in, the value their seat held as they left, read-only. `get(player)` is
+  `None` from the moment they go and the seat is at its default for whoever sits there next, so the two never
+  mix: a bot's score is filed in the very tick a person takes its seat. From the next tick `departed` gives
+  `None`. The world holds the value for that one tick, so every machine and a replay read the same.
 - **Seats.** A world has four seats, `SESSION`'s four slots, and `Multiplayer::players` says how many a match
   uses. Which are taken, by a person or a bot, is world state, and `SESSION`'s slot numbers never reach a
   game. A person takes the lowest free seat and a bot the highest. **A person is never turned away for a
@@ -766,10 +883,10 @@ in [R3](#r3-what-a-rule-may-take); `Pause` and `Request` in [R4](#r4-what-a-fram
   | Parameter | In a match, for the local player's character |
   |---|---|
   | Its own components, `&A`, `Tick`, `Entity`, `Random`, `Content<T>` | Run ahead exactly. Content and the seed never change, and everything `Tick` gives counts from entries the step's state carries |
-  | `Res<T>`, `Phase<P>`, `Level2d` | Run ahead with the value at the last confirmed tick. A change arrives a moment later, as a correction. Free for settings, the phase, the level and anything that changes rarely |
+  | `Res<T>`, `Phase<P>`, `Level2d`, `Level3d` | Run ahead with the value at the last confirmed tick. A change arrives a moment later, as a correction. Free for settings, the phase, the level and anything that changes rarely |
   | `Emit<E>` | The event reaches this screen's frame functions when it is predicted, once, so a jump's dust is not late. Rules read it at the confirmed tick |
-  | `Query`, `Single`, `Space2d`, `Inputs`, `Players`, `Family`, `Events<E>`, `Commands<T>`, `Restored<T>` | **Not run ahead.** They read what other machines move or send |
-  | `ResMut`, `Entities`, `PhaseMut`, `Scenes`, `Offers`, `LevelMut2d`, `PlayersMut`, `BotInputs`, `Saving` | **Not run ahead.** They change more than the character |
+  | `Query`, `Single`, `Space2d`, `Space3d`, `Inputs`, `Players`, `Family`, `Events<E>`, `Commands<T>`, `Restored<T>`, `Keep` | **Not run ahead.** They read what other machines move or send |
+  | `ResMut`, `Entities`, `PhaseMut`, `Scenes`, `Offers`, `LevelMut2d`, `LevelMut3d`, `PlayersMut`, `BotInputs`, `Saving` | **Not run ahead.** They change more than the character |
 
   A function that takes anything from the last two rows still works everywhere, with its character shown as
   the host confirms it, a round trip late. So that nobody pays that by accident, a game with multiplayer on
@@ -808,6 +925,13 @@ and `Me` in [R4](#r4-what-a-frame-function-may-take).
   there in the next, and an answer in flight across a change of phase lands.
 - **A player's open offers of one type queue.** Their screen is shown the oldest, and the next when its
   answer has landed, so three level-ups in a second are three questions in turn with nothing to keep by hand.
+- **An offer's choices may be drawn when it is shown.** `.choices(..)` fixes them when the offer is opened.
+  `.choices_with(f)` takes a read-only function that is asked once, in the tick the offer becomes its
+  player's oldest open one, and what it returns is the offer's choices from then, as world state. So each of
+  three hands is dealt against the build the last answer left: a weapon at its top level is not offered
+  again. The function is given `Asked`, which says for whom and for which offer, and it makes world state,
+  so it is one of [the checked routes](#1-a-game-one-crate-one-package-one-value). It is for an offer put to
+  a player or to each player. A vote's choices are the same for everyone and are given when it opens.
 - A player who joins while `to_each_player` or `to_all` is open is asked. A player's part in an offer ends
   when they leave. A person answers from their screen and a bot through a rule, both are taken by `accept` in
   seat order, and nothing downstream can tell them apart. An `OfferId` holds the scene's entry and a count,
@@ -831,7 +955,9 @@ and `Me` in [R4](#r4-what-a-frame-function-may-take).
   earlier spawned.
 - **`motion_of(entity).sweep()`** sweeps the entity's own collider along the path it took this tick, from
   where it stood at the tick's start or was spawned, against the paths the others took. It is how a fast shot
-  hits and how a stomp knows it came from above.
+  hits and how a stomp knows it came from above. **A `teleport` starts a new path**: an entity teleported
+  this tick is swept from where the teleport put it, so a respawn across a patrol touches nothing between
+  the two places.
 - **The level is a scene's fixed collision** (R7). It does not move, so it is not made of entities. What the
   world holds is **the level's recipe**: each tile map loaded, by that map's identity in the game's content,
   its origin and the tile sheet it is drawn with where its load named one, and each fixed shape a rule has
@@ -842,6 +968,13 @@ and `Me` in [R4](#r4-what-a-frame-function-may-take).
   own tick.
 - **A change to the level is a rule's act.** It lands when the rule finishes and is undone with a refused
   tick. The recipe holds a fixed number of added maps and shapes, 256 unless `scene.level_shapes(n)` says otherwise.
+- **What a rule adds, it can take away.** `add_rect`, `add_segment` and `add_tiles` each return a
+  `LevelPiece`: a name for that piece of the recipe, plain data a resource or a component keeps.
+  `remove(piece)` takes the piece out and returns whether this call did, as `despawn` does. The recipe is the
+  pieces that stand, in the order they were added, and the number it holds is of those. Everything built from
+  the recipe follows, after a rewind and for a late joiner too: the collision, the tile layer, and paths
+  where [navigation](#navigation-and-path-queries) is built. So a gate that drops and rises is one piece
+  added and removed, and nothing is cleared and built again.
 - **A `Tilemap` is content**: rows of glyphs in a record's file. Each has an identity of its own, its record
   and the path of fields to it, so a record may hold several. A tile is one unit square unless
   `Tileset::tile_size` says otherwise, and a glyph's spawn and its mark stand at the centre of its cell. The
@@ -870,6 +1003,13 @@ and `Me` in [R4](#r4-what-a-frame-function-may-take).
   find entities. **`Level2d` asks the fixed collision alone, and that is the part a match can run ahead.**
 - **A hit's normal points out of what was struck, toward the mover.** A sweep that starts in contact reports
   that contact at fraction zero, with the normal of the shallowest way out, never a zero one.
+- **A hit says where the mover was, and what motion it had left.** `mover_position` is where the moving shape
+  itself stood at first contact: its own position, and not the point touched, so a shape set there touches
+  what it struck and does not overlap it. `remaining_motion` is the part of its path it had not travelled.
+  For `motion_of(entity).sweep()` both lie on the path the entity took this tick, so the two together end
+  where the entity ended. A stomp sets the hero at the contact and spends the rest of the tick going up, and
+  a bolt stops with its centre clear of the pier, each with no second query. For a ray the mover is the
+  ray's own point.
 - **Moving a character is one call that slides along what it meets and reports it**: both axes in one step,
   so no game moves an axis at a time or compares positions to learn what happened. It is given the
   character's own collider, which a control function takes as a component, so a shape is written once.
@@ -886,7 +1026,8 @@ and `Me` in [R4](#r4-what-a-frame-function-may-take).
 **Names:** `Tileset` in [R1](#r1-describing-a-game); `Collider2d` and `Layers` in [R2](#r2-what-world-state-holds); `Space2d`, `Level2d`, `LevelMut2d`, `Tilemap`, a `Hit`
 and a move in [R3](#r3-what-a-rule-may-take).
 
-In 3D the same names carry a 3: [the entry](#3d-space-and-a-kinematic-character) is owner question 1.
+In 3D the same names carry a 3, and the first release builds them (O8):
+[the entry](#3d-space-and-a-kinematic-character) says what differs.
 
 ### 8. Numbers
 
@@ -957,6 +1098,8 @@ and what gets past is caught, where it shows, by the digests a match compares.
   ticks; everything else is as of the newer tick; and in a match the local player's own character is at its
   predicted pose, in a query and in the draw alike.
 - **A frame function writes only what belongs to this screen**, and reaches the world only by sending input.
+  A struct of frame parameters is a frame parameter, by the derive that makes
+  [a struct of rule parameters](#3-rules-and-the-tick) one.
 - **A frame function reads the tick's clock, two ways, and never needs it copied.** `Tick` is the newer
   tick of the pair, exactly as a rule read it, and every component is read as of that tick. So
   `boost.ready(tick)`, `shield.left(tick)`, `tick.in_scene()` and `phase.time()` say on a status display what
@@ -1075,9 +1218,11 @@ Three kinds of data, each with a stable identity (D4, R10), and the tuning panel
   another struct or enum that derives `Content`. **A record holds no raw float**, whoever reads it.
 - **Everything is checked before play**, in `test()`, `run()` and `cargo play --check`, in this order: each
   file against its type; each `Id` and `Prefab` it names, and each `Id` an `ids!` block declares; each
-  asset's kind; then the game's own validator, the function `#[content(validate = ..)]` names and nothing
-  else. A mistake names the file, the field and the
-  nearest name that exists.
+  asset's kind; then the game's own validators, the function each `#[content(validate = ..)]` names and
+  nothing else. A validator is given its record, and any `Content<U>` it asks for after it, so a level's
+  file is checked against the enemies it names and a broken level is found at startup and not by a test.
+  Every file has passed its type and its names before any validator runs. A mistake names the file, the
+  field and the nearest name that exists.
 - The game's content, with its prefabs, is part of the rule-set identity, so a match agrees on it before it
   starts. A test reads the game's real content, and `with_content(name, value)` adds a record with no file.
 - **Data packs** are the year-one commitment (D4), and [an entry of the map](#smaller-entries). The IDs, the
@@ -1110,8 +1255,32 @@ outlive the build that wrote it.
   fails its check, is of a newer version, or an enter function that takes it returns an error, the world is
   left as it was and the tick is stepped again without the restore, inside the one world step the driver
   asked for. A match is not ended by a save that will not load.
+- **A save keeps entities for the game, so it is not a second copy of the world.** A field of type
+  `Kept<N>` holds entities: for each, the stable name of the prefab it was spawned from, whether it is
+  disabled, and the components `N` lists. The capture fills it with `Keep`, a read-only parameter:
+  `keep.all(WARDEN)`, or `keep.all((BAT, ELITE_BAT))`, takes every entity a rule or a spawn function spawned
+  from those names, the disabled ones too, in the order they were spawned. One call brings a save's kept
+  entities back, `entities.respawn(save)`: each is spawned from its prefab, with the kept components in
+  place of the prefab's defaults, disabled where it was disabled, in the order kept, field after field. So
+  no component is written again as a field of the save and again as the lines that respawn
+  it, and a capture cannot quietly leave out what a query skips.
+  - **The tree comes back with them.** A kept entity that hung under another entity the same save keeps
+    comes back under it, at its local place, whichever field each is in: a parent is spawned before what
+    hangs under it. One whose parent the save does not
+    keep, such as a relic on the back of a player's character, comes back with no parent, where it stood in
+    the world, and hanging it again is the game's line. What a definition made as a child or a part comes
+    back with its parent's prefab and is not kept twice.
+  - **A player's character is the scene's to spawn**, by its players' line, and never a save's: what a save
+    keeps of it is the game's own fields.
+  - **A mistake is found at the capture or at the load, never as a thing missing later.** An entity of a
+    named prefab that lacks a listed component fails the capture, with the prefab, the entity and the
+    component, and nothing is written. A kept name the game no longer declares makes the file
+    `Loaded::Failed`, with the field and the name, unless the save's chain carries it forward: a conversion
+    renames a prefab with `kept.renamed("husk", HUSK)` and changes what is kept with `kept.map(..)`.
+  - A `Kept` is in a save and nowhere else. It is not world state, so the save's size limit is its only
+    bound.
 - **What a save may hold** is what a resource may hold, except `Entity` and `Player`, which name nothing in
-  another run. A `Timer` and a `Cooldown` are written as the whole wait and the time left, and a phase's
+  another run, and beside that a `Kept<N>`. A `Timer` and a `Cooldown` are written as the whole wait and the time left, and a phase's
   clock is kept as a `PhaseClock`, so [each comes back as it stood](#4-scenes-phases-time-and-pause). An
   `Id` whose record a later build removed makes the file `Loaded::Failed`, with the field named.
 - Storage is each target's own: a folder on the Mac, the browser's storage in Chrome, the app's folder on the
@@ -1147,7 +1316,7 @@ outlive the build that wrote it.
 - **A profile is its player's word.** `#[save(validate = f)]` runs on every machine as the value lands, and
   one that fails it, or its check, lands as the default and the player joins. A write that fails leaves the
   slot behind the world, so the next comparison writes it again, and it shows in `saves.status(slot)` on
-  that machine. Whether the first release builds a profile is question 11.
+  that machine. The first release builds it (O8).
 - **Versions.** A save's version and its chain of older types are declared from the first release, in
   [the `rules` module](#1-a-game-one-crate-one-package-one-value) because every machine runs the conversion,
   and a test restores an old file. The promise that a released save loads in a later build is year one's (D4).
@@ -1162,10 +1331,12 @@ panel, the Chrome page and parameter files work as they do today, and the profil
 | Read by | Rules, control functions and frame functions, as `Res<T>` | Frame functions, as `Screen<T>`. A rule cannot take it |
 | Fields | What a resource may hold. A raw float is a compile error | Those, and `f32` |
 | A panel edit | Enters as a command and changes the world at a tick. A replay holds it | Changes this screen at once |
+| A frame function's edit | None: it sends a command, and a rule writes the setting | Through `Screen<T>`: it changes this screen at once and is kept on this machine, as a panel edit is. So an options menu is a frame function |
 | In a match | The host's edits are the ones admitted | Each player has their own |
 
-**Names:** the `Content`, `Save` and `Settings` derives, `ids!` and `Slot` in [R1](#r1-describing-a-game); `Content`, `Saving` and
-`Restored` in [R3](#r3-what-a-rule-may-take); `Saves` in [R4](#r4-what-a-frame-function-may-take); the catalog in [R5](#r5-looks-cameras-the-interface-and-assets).
+**Names:** the `Content`, `Save` and `Settings` derives, `ids!` and `Slot` in [R1](#r1-describing-a-game); `Kept` in
+[R2](#r2-what-world-state-holds); `Content`, `Saving`, `Keep` and `Restored` in [R3](#r3-what-a-rule-may-take); `Saves` in
+[R4](#r4-what-a-frame-function-may-take); the catalog in [R5](#r5-looks-cameras-the-interface-and-assets).
 
 ### 11. Multiplayer, an opt-in over input-only networking
 
@@ -1187,8 +1358,8 @@ panel, the Chrome page and parameter files work as they do today, and the profil
   the profile's numbers, with conformance vectors on the three targets, so a 3D world digests, rewinds and
   joins as a 2D one does. A 3D control function runs ahead on the same rows of
   [the table](#5-players-actions-and-control): its components, its action map with its `Heading`, the tick,
-  and the level's fixed collision, which is `Level2d` on the ground plane in the first release and `Level3d`
-  with question 1. The local player's character is shown at its predicted `Pose3d`, and a camera rig that
+  and the level's fixed collision, which is `Level3d` where the scene has 3D space and `Level2d` on the
+  ground plane where it has not. The local player's character is shown at its predicted `Pose3d`, and a camera rig that
   follows it or reads its `Heading` has no delay. The first release proves it twice: a rehearsed 3D match
   with no window in WP5, and the 3D starter hosted on the Mac and joined from Chrome in WP14.
 - **What a player's own machine runs ahead has three depths.** Each is a declaration, and the first release
@@ -1200,8 +1371,8 @@ panel, the Chrome page and parameter files work as they do today, and the profil
   | Depth | What answers at once | How a game says it | First release |
   |---|---|---|---|
   | 1 | The player's own character, against fixed collision | A control function that reads only what can be run ahead | Yes |
-  | 2 | What that character launches, and the other players it runs into | `.predicts(..)` and `.against(..)` on the control line, with the launch made by the control function ([entry](#predicted-projectiles-and-contact)) | Question 4 |
-  | 3 | A hit judged against what the shooter's screen showed | `space.as_seen_by(player)` in the rule that judges it, and `#[seen]` on a button whose press decides a shot ([entry](#hits-judged-as-the-shooter-saw-them)) | Question 5 |
+  | 2 | What that character launches, and the other players it runs into | `.predicts(..)` and `.against(..)` on the control line, with the launch made by the control function ([entry](#predicted-projectiles-and-contact)) | No: first in the release after (O8) |
+  | 3 | A hit judged against what the shooter's screen showed | `space.as_seen_by(player)` in the rule that judges it, and `#[seen]` on a button whose press decides a shot ([entry](#hits-judged-as-the-shooter-saw-them)) | No: after depth 2 (O8) |
 
   Until depth 2 is built a player's shots and the players they touch are shown at the confirmed tick, and
   until depth 3 a hit is decided at the shared tick. The guides say both plainly.
@@ -1227,6 +1398,12 @@ panel, the Chrome page and parameter files work as they do today, and the profil
   `scenes.go_to(Lobby)` returns everyone to it. The host's panel is a frame function of the lobby, so it
   reads content to list what there is to pick. What the host chose stays a game resource, so every later
   round and a rematch read the same plan with nothing copied from scene to scene.
+- **The standard lobby continues a saved run.** `Lobby::standard().continues::<T>(slot)` shows the host
+  *Continue* where that slot holds a save of the match's, and it then enters the scene `starts` names with
+  [the save restored](#10-content-assets-saves-and-settings), as `request.scene(..).restoring` does. So a
+  host and a friend take up a journey through the standard lobby.
+- **A host needs no window** (O8). `cargo play --host` runs the game with `thrum`'s default features off and
+  prints the ticket to join by ([entry](#smaller-entries)). No line of the game changes.
 - **`Session`**, in a frame function, is for a game with its own screens, and for a screen that asks whether
   it is alone.
 - **Not offered in the first release**: depths 2 and 3 above, and
@@ -1273,6 +1450,8 @@ panel, the Chrome page and parameter files work as they do today, and the profil
 | Running | `Single` finds none or two; `entities.part` on a prefab with no such part; `level.mark` finds none or two | The rule and what was found |
 | Running | An entity, or a player's character, comes to be reached by two parameters of one function over a component one of them writes | The rule, the parameters, the component and the entity, and for a character its player |
 | Running | `keep_world` where it is refused | The child, the parent and the cause, with the residual and the bound; the child is where it was |
+| At a capture | An entity of a prefab `keep.all` names lacks a component the `Kept` lists | The prefab, the entity and the component, and to list what every such entity has. No file is written, and `saves.status(slot)` says so |
+| Running, on screen | An answer or a command is admitted while a modal holds the pause, and no rule marked `.even_when_paused()` takes it | Once: its type, that it waits for the pause to end, and to mark the rule that takes it |
 | Running | `go_to` a scene the game was not given; a `request.scene` the running scene does not accept; `possess` of an entity that lacks a component the control function takes | The scene, or the entity and the component, and what to add |
 | Running | A rule returns an error, or panics | The rule, the tick and the error, [as each target allows](#3-rules-and-the-tick) |
 | Running, on screen | An entity with a look in a scene with no camera, or a 3D look under a 2D camera; a named asset that matches nothing | Once: the scene and the look, or the name and the nearest names |
@@ -1285,7 +1464,8 @@ panel, the Chrome page and parameter files work as they do today, and the profil
 - **Starting is fallible, and fixtures go in before it.** `test()` is `test_setup().start()`, which in order
   installs the fixtures; checks the content; runs every startup check; gives each saved resource its fixture
   or its `Default`, since a test reads and writes no real storage; and enters the first scene. The first
-  failure is the error it returns. No tick has been stepped when it returns.
+  failure is the error it returns. No tick has been stepped when it returns. A match takes the same
+  fixtures: `test_setup()` ends in `start()` or in `start_match()`.
 - **A test can tell "not there" from "not yet".** Lookups return a `thrum::Result` whose error says which: a
   join still waiting for its tick, a player with no character, an entity that is gone.
 - **What a test changes, it changes between ticks**, and it has landed when the call returns. `game.run(rule)`
@@ -1329,6 +1509,7 @@ Cargo aliases onto the engine's tool. The game's `main` is the same file on ever
 | `cargo play --record <file>`, `--replay <file>` | Records a run while a person plays, and shows one. The one-file starter records as it stands |
 | `cargo play --shot <file>` | Writes a picture |
 | `cargo play --scene <name>` | Starts in another scene, with its default value, or with the value given in RON where it has none: `--scene 'Level(def: "cellar")'` |
+| `cargo play --host [--port <n>]` | Hosts a match with no window and prints the ticket to join by (O8) |
 
 Every one of these refuses a game with no `rules` module, with the functions to move and the step to take
 ([section 1](#1-a-game-one-crate-one-package-one-value)). A game started any other way, such as `cargo run`
@@ -1353,18 +1534,21 @@ they were built.
 ## The reference
 
 Every name a game touches in the first release, once, with its methods, so that a reader finds a name and
-does not guess one (K10). [The core](#the-core) says what each means and what always holds. A name marked
-with a question is built with that answer, and an entry of [the extension map](#the-extension-map) lists its
-own names. A spelling here is [a builder's to change](#what-a-builder-may-change), in a line of the log.
+does not guess one (K10). [The core](#the-core) says what each means and what always holds. An entry of
+[the extension map](#the-extension-map) lists its own names, and the entries the first release builds
+([3D space](#3d-space-and-a-kinematic-character), [camera pitch](#camera-pitch-and-rigs),
+[gamepads](#gamepads) and [audio](#audio)) are part of this reference. A spelling here is
+[a builder's to change](#what-a-builder-may-change), in a line of the log.
 
 **Index.** The group that holds each type:
 
-`Actions` R1 · `Angle` R2 · `Answer` R3 · `Away` R1 · `Axis` R2 · `Backdrop` R5 · `Bindings` R4 ·
+`Actions` R1 · `Angle` R2 · `Answer` R3 · `Asked` R3 · `Away` R1 · `Axis` R2 · `Backdrop` R5 · `Bindings` R4 ·
 `BotInputs` R3 · `Bundle` R3 · `Button` R2 · `Camera2d` R5 · `Camera3d` R5 · `Collider2d` R2 · `Color` R5 · `Commands` R3 ·
 `Content` R3 · `Cooldown` R2 · `Delivery` R4 · `Disabled` R3 · `Draw2d` R4 · `Draw3d` R4 · `Emit` R3 ·
 `Entities` R3 · `Entity` R2 · `Error` R6 · `Events` R3 · `Family` R3 · `Found` R3 · `FoundTiles` R3 ·
 `Frame` R4 · `Game` R1 · `Ground` R5 · `Heading` R2 · `Hit` R3 · `Id` R2 · `InputContext` R1 · `Inputs` R3 ·
-`Joined` R3 · `Key` R1 · `Keys` R1 · `Layer` R2 · `Layers` R2 · `Level2d` R3 · `LevelMut2d` R3 · `Light` R5 · `Link` R6 · `List` R2 ·
+`Joined` R3 · `Keep` R3 · `Kept` R2 · `Key` R1 · `Keys` R1 · `Layer` R2 · `Layers` R2 · `Level2d` R3 · `LevelMut2d` R3 ·
+`LevelPiece` R2 · `Light` R5 · `Link` R6 · `List` R2 ·
 `Loaded` R4 · `Lobby` R1 · `LocalActions` R1 · `Mark` R1 · `Material` R5 · `Me` R4 · `Model` R5 · `Mouse` R1 · `Move2d` R3 ·
 `Moved2d` R3 · `Multiplayer` R1 · `MyInput` R4 · `MyOffer` R4 · `Near` R3 · `Num` R2 · `Offer` R3 ·
 `OfferId` R2 · `Offers` R3 · `Outbox` R4 · `Params` R1 · `Part` R1 · `Pause` R4 · `Pausing` R1 · `Peer` R6 ·
@@ -1376,7 +1560,7 @@ own names. A spelling here is [a builder's to change](#what-a-builder-may-change
 `Slot` R1 · `Space2d` R3 · `Spawn` R3 · `Sprite` R5 · `Stick` R2 · `SunAngle` R5 · `Swept` R3 · `Tally` R3 · `TestGame` R6 · `TestMatch` R6 ·
 `TestScreen` R6 · `TestSetup` R6 · `Text` R2 · `Tick` R3 · `TickNumber` R2 · `Tile` R3 · `Tilemap` R3 ·
 `Tileset` R1 · `Timer` R2 · `Touch` R1 · `Transform2d` R2 · `Transform3d` R2 · `Ui` R5 · `Vec2` R2 · `Vec3` R2 · `With` R3 ·
-`Without` R3
+`WithDisabled` R3 · `Without` R3
 
 ### R1. Describing a game
 
@@ -1387,7 +1571,7 @@ Game::new("Skylark")
     .resource(value)  .component::<T>()  .prefab(NAME, definition)
     .settings::<T>()  .local_settings::<T>()  .content::<T>("folder")
     .saved::<T>(slot)  .save::<T>(capture)  .save_if::<T>(capture, condition)    // the match's saves
-    .profile::<T>(slot)                         // each player's own, on their own machine (question 11)
+    .profile::<T>(slot)                         // each player's own, on their own machine
     .multiplayer(Multiplayer::players(1..=4))  .lobby(Lobby::standard().starts(Arena))
     .max_entities(n)  .tick_rate(hz)
     .run() -> thrum::Result
@@ -1421,6 +1605,7 @@ scene.each_frame((animate_hero, status, pause_menu))  .on_show(f)  .screen(value
 
 // On a rule or a group, where a scene lists it:
 scene.rules((steer, fire.every(seconds(0.4)), (hit, die).when(wave_is_on), end_talk.even_when_paused()));
+scene.rules((foes_think, foes_move).during((Stage::Dark, Stage::Reckoning)));   // one phase, or a tuple of them
 
 fn hero_at_start(joined: Joined, tiles: Level2d) -> impl Spawn      // joined.player; any read-only parameter
 fn moth_at(placed: Placed) -> impl Spawn                            // placed.at .cell .glyph; any read-only parameter
@@ -1433,6 +1618,7 @@ Lobby:        Lobby::standard()      // alone, host or join by a link, a paste o
               .ready_up()            // a ready mark each player sets for themselves
               .host_panel(pick_arena)                       // each change is sent as the host's command
               .starts(Arena) | .starts_with(arena_from)     // asked at the tick *Start* is admitted
+              .continues::<Journey>(Slot::AUTO)             // *Continue* for the host, where the slot holds a save
 // fn pick_arena(ui: &mut Ui, setup: &mut Setup, arenas: Content<ArenaDef>): any read-only frame parameter after the two
 // fn arena_from(setup: &Setup, arenas: Content<ArenaDef>) -> Arena: any read-only parameter after the first
 // `Setup` is the game's own `Data` type. An `Id` has no default, so the game writes one that names a declared record:
@@ -1451,13 +1637,13 @@ Slot::new("records")   Slot::AUTO                       // InputContext::PLAY is
 
 | Derive | Its attributes | What it gives |
 |---|---|---|
-| `Component`, `Resource`, `Event`, `Command`, `Data` | — | Plain data of [the kinds world state holds](#2-the-world-entities-components-resources-and-prefabs). Each is `Data` too, so one derive lets a type nest in another and in a save |
-| `Scene`, `Phase` | — | `SceneType` on a struct whose fields the scene is entered with; `PhaseType` on an enum. Bounds are written on those traits, and a game writes the derive and never the trait |
+| `Component`, `Resource`, `Event`, `Command`, `Data` | — | Plain data of [the kinds world state holds](#2-the-world-entities-components-resources-and-prefabs). Each is `Data` too, so one derive lets a type nest in another and in a save. Each also gives `Clone`, `PartialEq` and `Debug`, as `Save` does, so a test compares two values |
+| `Scene`, `Phase` | — | `SceneType` on a struct whose fields the scene is entered with; `PhaseType` on an enum, which is `Data` too, so a save keeps a phase. Bounds are written on those traits, and a game writes the derive and never the trait |
 | `Actions`, `LocalActions` | `#[bind(..)]` or `#[sent]` on each field, `#[context(NAME)]` on the struct | A map of `Button`, `Axis`, `Stick` and `Heading` fields; a name for each field, `Controls::JUMP`; and `Controls::idle()`, nothing held and every value at zero |
-| `Content` | `#[content(validate = f)]`, with `fn(&T) -> thrum::Result` | `ContentType`. A record may also hold `String`, `Vec<T>`, a `Tilemap`, a typed asset name and a `Prefab<N>` |
-| `Save` | `#[save(version = 2, from = RecordsV1)]`, `max_kib = n`, `validate = f` | A versioned save. `impl From<RecordsV1> for Records` carries an old file forward |
+| `Content` | `#[content(validate = f)]`, with `fn(&T) -> thrum::Result`, which may take `Content<U>` parameters after the record | `ContentType`. A record may also hold `String`, `Vec<T>`, a `Tilemap`, a typed asset name and a `Prefab<N>` |
+| `Save` | `#[save(version = 2, from = RecordsV1)]`, `max_kib = n`, `validate = f` | A versioned save, which may hold `Kept<N>` fields. `impl From<RecordsV1> for Records` carries an old file forward |
 | `Settings` | `#[slider(4.0..=14.0, default = 9.0, label = "Run speed")]`, which also takes `step = 0.5` and `unit = "°"`; `#[toggle]`; `#[readout]` | A control on the panel for each field |
-| `Params` | — | A struct of rule parameters that is itself a parameter, with methods of the game's own |
+| `Params` | — | A struct of rule parameters, or of frame parameters, that is itself a parameter, with methods of the game's own |
 
 ```rust
 #[derive(Actions)]
@@ -1476,6 +1662,7 @@ pub struct Controls {
 //             axis of the drawn stick;  Touch::drag_x(), a finger dragged left and right anywhere on the screen
 //   Stick:    Keys::WASD, Keys::ARROWS;  Touch::stick(), a stick drawn on a touch screen
 //   Heading:  Mouse::look_x();  Touch::look_x(), a drag on the half of the screen with no stick
+//   A pad:    for each kind, the names the entry "Gamepads" lists: Pad::SOUTH, Pad::LEFT_STICK_X, Pad::LEFT_STICK
 
 #[derive(Content)] #[content(validate = WaveDef::validate)]            // thrum::Error::invalid(field, why)
 pub struct WaveDef { pub enemy: Prefab, pub count: u32, pub speed: Num, pub next: Option<Id<WaveDef>>, pub taunts: Vec<String> }
@@ -1526,29 +1713,39 @@ Id<T>:        a content record's stable name, declared in `ids!` or found with `
 Prefab<N>:    a spawn is a prefab at a place, with this spawn's own differences:
               BAT.at(3.0, 0.0)  .at(x, y, z)  .at_point(p)  .at_local(x, y)  .turned(angle)  .scaled(s)
               .with(component)  .tweak(|c: &mut C| ..)  .under(parent);   BAT.variant() -> PrefabDef
+              .child(spawn): a child of this spawn's own, beside the definition's;  .disabled(): it lands disabled
 PrefabDef:    PrefabDef::new(bundle), or BAT.variant(), a definition that starts as another prefab's;
               .with(Health(8))  .tweak(|sprite: &mut Sprite| ..)  .child(AURA.at_local(0.0, 0.2))  .part(EYE, spawn)
+              .part(BACK, ()): a part with nothing on it, a socket
 Layer, Layers:  `.on(..)` takes a Layer, a tuple of them, or a Layers, a set chosen first:
               Layers::of((TERRAIN, LEDGES)),  .with(LAYER),  .without(LEDGES)
 Mark, Part, Slot, InputContext:  typed constants (R1)
 OfferId:      one open offer, to keep in a resource
+LevelPiece:   one thing a rule added to the level: what `add_rect`, `add_segment` and `add_tiles` return and
+              `remove` takes
 
 // Text and containers.
 Text<N>:      up to N bytes of UTF-8, such as a player's name.  Text::from(".."), cut at N;  as_str()  len()  is_empty()
-List<T, N>:   at most N values, in order.  In a resource, a save or a `Data` struct kept in one, and as a rule's local.
+List<T, N>:   at most N values, in order.  In a resource, a scene's fields, a save or a `Data` struct kept in one,
+              and as a rule's local.
               List::new(), List::from(array);  push(v) -> bool (false when full),  pop(),  insert(i, v) -> bool,
               remove(i) -> T,  clear(),  retain(|v| ..);  len()  is_empty()  is_full()  get(i) -> Option<&T>  list[i]
               first()  last()  contains(&v)  iter()  iter_mut()
 PerPlayer<T>: one T for each seat, the default again when the seat's player leaves.  In a resource or a save.
               per[player], which refuses the tick for a player who has gone;  get(player) -> Option<&T>,
-              get_mut(player);  iter() -> (Player, &T) and iter_mut(), for the players here, in seat order
+              get_mut(player);  iter() -> (Player, &T) and iter_mut(), for the players here, in seat order;
+              departed(player) -> Option<&T>: what a leaver's seat held, for the rest of the tick they leave in
+Kept<N>:      entities a save keeps (section 10).  In a save only.  What `keep.all(..)` returns and
+              `entities.respawn(save)` brings back.  len()  is_empty()  iter() -> (&str, &N), each entity's prefab
+              name and what was kept of it;  in a save's conversion, renamed(old_name, PREFAB) and map(|old| new)
 
 // Places.
 Transform2d:  Transform2d::at(x, y) .turned(angle) .scaled(s);  fields position, turn, scale;  teleport(point)
 Transform3d:  Transform3d::at(x, y, z) .turned_y(angle) .facing(direction) .scaled(s);  fields position, rotation,
               scale;  teleport(point)  face(direction)  turn_y(angle)  forward() -> Vec3  heading() -> Angle
+              turn_toward(direction, at_most): a turn about y toward that way, limited to a rate
 Collider2d:   Collider2d::circle(r), ::rect(w, h), ::capsule(r, length)   .offset(x, y)  .on(LAYER)
-Side:         Left | Right
+Side:         Left | Right.  Kept in a component as any name is
 
 // Action kinds: the fields of an action map (section 5).
 Button:       .held .pressed .released: bool;  .presses: how many since the last tick;  Button::held(bool), for a bot
@@ -1565,9 +1762,13 @@ A control function, a spawn function, a condition and a capture take the read-on
 match runs ahead.
 
 ```rust
-Query<D, F>:  the entities that have D, in the order they were spawned.  In D, &T reads, &mut T writes and Entity names.
-              F filters: With<T>, Without<T>, and Disabled, which gives the disabled entities and no others.
+Query<D, F>:  the entities that have D, in the order they were spawned.  In D, &T reads, &mut T writes and Entity names;
+              Option<&T> and Option<&mut T> are Some where the entity has T, and the query visits it either way.
+              F filters: With<T>, Without<T>;  Disabled, which gives the disabled entities and no others;
+              WithDisabled, which gives the disabled with the rest;  and a tuple of filters, which gives what
+              every one of them gives.
               iter(), or `for item in &query`;  get(e),  get_mut(e): each takes an Entity or an Option<Entity>;
+              under(parent): the children of `parent` that the query matches, in the order attached;
               pair_mut(a, b) -> Option<(item, item)>: two different entities at once, None when one is missing;
               of_player(p): that player's character, where the query matches it;  count() -> u32,  is_empty(),
               par_each(|item| ..)
@@ -1575,7 +1776,8 @@ Single<D, F>: the one entity that matches, used as its item;  into_inner() to ta
               refuses the tick and says which.  Option<Single<..>> is none or one
 Res<T>, ResMut<T>:  a resource, used as its value.  `Res<Level>` of the running scene's type is the scene's value
 Entities:     spawn(spawn_or_tuple) -> Entity;  despawn(e) -> bool, true for the call that despawns it;
-              insert(e, component),  remove::<C>(e);
+              insert(e, component), which replaces one of that type already there,  remove::<C>(e);
+              respawn(save): every entity the save's `Kept` fields hold, each from its prefab (section 10);
               attach(child).to(parent).keep_world() | .keep_local(pose);
               detach(child).keep_world() | .keep_local() | .at(pose);
               disable(e) -> bool,  enable(e) -> bool, each true for the call that changes it;
@@ -1585,12 +1787,14 @@ Family:       the tree, read as the rule found it, for a function that changes n
               part(parent, PART) -> Entity, which refuses the tick if its prefab has no such part,
               world2d(e) -> Transform2d,  world3d(e) -> Transform3d: its place in the world, through its parents
 Events<T>:    read(): this tick's events, in the order sent.  The game's own, and PlayerJoined { player },
-              PlayerLeft { player, name },  PlayerAway { player },  PlayerBack { player }
+              PlayerLeft { player, name },  PlayerAway { player },  PlayerBack { player },
+              CharacterSpawned { player, character }
 Emit<T>:      send(event)
 Tick:         number() -> TickNumber;  dt() -> Num, a tick's length in seconds, to multiply a speed by;
               seconds(),  in_scene(),  in_phase() -> Seconds;  every(d) -> bool,  after(d) -> TickNumber,
               reached(t) -> bool;  Tick::test(number), for a unit test of a pure function
-Random:       draws keyed by the game's seed, the tick and the rule that asks.  between(a, b),  below(n),  chance(p),
+Random:       draws keyed by the game's seed, the game's tick, the rule that asks and how many times it has run
+              at that tick (section 3).  between(a, b),  below(n),  chance(p),
               angle(),  direction(),  pick(items) -> Option<&T>,  and for_entity(e) inside par_each
 Scenes:       go_to(scene) -> bool,  restart() -> bool: false when the tick's one transition is taken.
               `go_to` of the running scene's type leaves it and enters it with the new value
@@ -1618,8 +1822,11 @@ Offers<T>:    open(offer) -> OfferId;  accept() -> each Answer { player, choice,
               tally(offer) -> Tally<T>;  close(offer);  pending(player) -> Option<Pending<T>>, their oldest unanswered;
               answer_for(bot, offer, choice) -> bool, through the same check as a person's
 Offer<T>:     Offer::to(player), ::to_each_player() (each for themselves), ::to_all() (a vote);
-              .choices(array_or_iterator);  then nothing, which leaves it open until it is answered,
-              or .expires(tick.after(seconds(15))), or .until_phase_ends()
+              .choices(array_or_iterator), or for a player's own offer .choices_with(hand_for), asked when the
+              offer reaches the front of that player's queue;  then nothing, which leaves it open until it is
+              answered, or .expires(tick.after(seconds(15))), or .until_phase_ends()
+Asked:        what a `choices_with` function is given: asked.player, asked.offer.  It returns the choices, and
+              takes any read-only parameter:  fn hand_for(asked: Asked, heroes: Query<&Hero>, random: Random) -> List<Card, 3>
 Pending<T>:   an owned copy of an open offer: .offer: OfferId,  .choices() -> &[T]
 Tally<T>:     count(choice) -> u32;  leading() -> Option<T>, the choice opened first on a tie;  answered() -> u32;
               waiting(): each Player still to answer;  everyone_answered() -> bool
@@ -1631,7 +1838,8 @@ Found:        .on(layers) .except(entity) .within(r), then first(), any(), count
 Near:         entity,  position,  distance
 Swept:        .on(layers) .except(entity), then first_hit() -> Option<Hit>, or hits() in order, for a shot that pierces
 Hit:          entity: Option<Entity>, None for the level;  layer;  point;  normal: out of what was struck, toward
-              the mover;  fraction: Num, how far along the path
+              the mover;  fraction: Num, how far along the path;  mover_position: where the mover itself stood
+              at first contact;  remaining_motion: the part of its path it had not travelled
 Move2d:       [.up(direction)] [.except(entity)] .on(layers) -> Moved2d
 Moved2d:      position: Vec2;  on_floor(),  on_ceiling(),  wall() -> Option<Side>,  blocked(): what the shape rests
               against when the move ends, moved into or not;  contacts() -> &[Hit], everything it met, in order;
@@ -1643,13 +1851,17 @@ FoundTiles:   .on(layers), then any(), or each Tile { cell, layer }
 LevelMut2d:   load(&tilemap): replaces the level, with its solids, spawns, marks and tiles;
               add_tiles(&tilemap, origin): one more map beside what is loaded, such as the next screen;
               either takes .drawn_with(sheet), for a record that names its own tile sheet;
-              add_rect(rect, LAYER),  add_segment(from, to, LAYER),  clear().  In an enter function, or any rule
+              add_rect(rect, LAYER),  add_segment(from, to, LAYER);  each add returns a LevelPiece;
+              remove(piece) -> bool, true for the call that takes it out;  clear().  In an enter function, or any rule
 Tilemap:      content, read by a validator and a test too.  Tilemap::from_rows(["# #", "###"]);  size(),  rows(),
               glyph_at(cell) -> char,  cells() -> (cell, glyph),  cells_with(glyph): the centre of each such cell
 
 Content<T>:   get(id) -> &T;  find(name) -> Option<Id<T>>;  iter() -> (Id<T>, &T), in name order
 Saving:       request::<T>(slot): "save now", such as at a shrine
-Restored<T>:  get() -> Option<&T>: the save a scene was entered with, in its enter functions
+Keep:         in a capture.  all(PREFAB) or all((BAT, ELITE_BAT)) -> Kept<N>: every entity a rule or a spawn
+              function spawned from those names, disabled or not, with the components N lists
+Restored<T>:  get() -> Option<&T>: the save a scene was entered with.  Some in the functions run as the scene is
+              entered from that save, its enter functions and the spawn functions run then, and None from then on
 ```
 
 ### R4. What a frame function may take
@@ -1743,7 +1955,10 @@ pub mod meshes  { pub const ROCK: MeshAsset = MeshAsset::new("meshes/rock"); }
 ```rust
 game().test() | .test_in(scene) -> thrum::Result<TestGame>          .test_match() -> thrum::Result<TestMatch>
 game().test_setup() .in_scene(s) .with_content(name, record) .with_saved(value) .with_save(slot, save)
-      .with_profile(value) .seed(n) .start()          // with_profile: question 11
+      .with_profile(value) .seed(n) .start() | .start_match()     // a match takes the same fixtures
+test_id::<T>("yard"):  the Id of a record a test adds with `with_content`, for a test and nowhere else;
+      starting fails where no fixture and no file has that name.  `with_save` and `with_profile` take any
+      type of the save's chain, so a test restores an old version
 thrum::Result<T>, thrum::Error:  one error enum, each variant with a stable code;  Error::invalid(field, why)
 ```
 
@@ -1751,12 +1966,12 @@ thrum::Result<T>, thrum::Error:  one error enum, each variant with a stable code
 |---|---|
 | Time | `step()`, `step_ticks(n)`, `step_for(seconds)`, `step_until(limit, \|game\| ..)`, which fails with the last tick it reached and never waits on a clock; `rewind(ticks)`; `digest()`; `pause()` and `unpause()` |
 | Players | `join()`, `leave(p)`, `away(p)`, `back(p)`, `add_bot()`; every input call is for the first player unless `.player(p)` says otherwise |
-| Input | `hold(Controls::JUMP)`, `release(..)`, `press(..)` (down for one tick), `steer(Controls::RUN, 1.0)`, `send(command)`, `choose(value)` for an open offer; `stall_input(ticks)`, which loses the player's frames as a bad link does |
+| Input | `hold(Controls::JUMP)`, `release(..)`, `press(..)` (down for one tick), `steer(Controls::RUN, 1.0)`, which takes a number for an `Axis`, a vector for a `Stick` and an angle for a `Heading`, `send(command)`, `choose(value)` for an open offer; `stall_input(ticks)`, which loses the player's frames as a bad link does |
 | Finding | `character(player)`, `single::<F>()`, `find::<F>()`, `nearest::<F>(point)`, `children(e)`, `part(e, name)`; the `Disabled` filter finds the disabled |
-| Reading | `get::<T>(e)`, `resource::<T>()`, `phase::<P>()`, `scene::<S>()`, `in_scene::<S>()`, `count::<F>()`, `alive(e)`, `disabled(e)`, `world2d(e)`, `world3d(e)`, `level2d()`, `events::<E>()` since the last call, `offer::<T>(player)`, `missing_assets()` |
-| Changing | `spawn(..)`, `despawn(e)`, `set(e, component)`, `set_resource(value)`, `go_to(scene)`, `go_to_phase(p)`, `run(rule)` |
-| Saves | `save::<T>()`, which runs the capture and returns the save; `restore(scene, save)`; `saved::<T>()`; `slot::<T>(slot)`, what a slot holds; `profile::<T>(player)`, with question 11 |
-| The screen | `screen()`, or `screen_of(player)`: a `TestScreen`. Each call on it runs the scene's frame functions once, as one picture, and then acts or answers: `click("Resume")`, which fails on a control that is disabled or not there; `choose(key)`; `press(Menu::PAUSE)`; `move_pointer(dx, dy)`; `has_text(..)`; `find(key)`; `camera2d()`; `camera3d()`; `bursts()` |
+| Reading | `get::<T>(e)`, `resource::<T>()`, `phase::<P>()`, `scene::<S>()`, `in_scene::<S>()`, `count::<F>()`, `alive(e)`, `disabled(e)`, `world2d(e)`, `world3d(e)`, `level2d()`, `content::<T>(id)`, the record a rule would read, `events::<E>()` since the last call, `offer::<T>(player)`, `missing_assets()` |
+| Changing | `spawn(..)`, `despawn(e)`, `set(e, component)`, `set_resource(value)`, `go_to(scene)`, `go_to_phase(p)`, `run(rule)`, which takes a rule function or a closure with a rule's parameters, so a test hands it a value, and returns what it returns |
+| Saves | `save::<T>()`, which runs the capture and returns the save; `restore(scene, save)`; `saved::<T>()`; `slot::<T>(slot)`, what a slot holds; `profile::<T>(player)` |
+| The screen | `screen()`, or `screen_of(player)`: a `TestScreen`. Each call on it runs the scene's frame functions once, as one picture, and then acts or answers: `click("Resume")`, which fails on a control that is disabled or not there; `choose(key)`; `press(Menu::PAUSE)`; `move_pointer(dx, dy)`; `has_text(..)`; `find(key)`; `camera2d()`; `camera3d()`; `bursts()`. `advance(seconds)` runs pictures for that long on the screen's own clock, with no tick stepped, so an eased camera arrives |
 | Recordings | `play_recording(file)`, which leaves the game where the run ended |
 
 | Call | Returns | Notes |
@@ -1771,18 +1986,23 @@ thrum::Result<T>, thrum::Error:  one error enum, each variant with a stable code
 | `step()` and the other time calls | `thrum::Result<()>` | The error of a refused tick, after which the game can be stepped again. A step while paused is a paused tick |
 | `TestMatch::join(link)` | `thrum::Result<Peer>` | The error is that the match is full. A link the host lets through returns its peer, seated or not |
 | `peer(p).my_character()` | `thrum::Result<Entity>` | `character`'s errors and two more: the peer is still loading the world; the peer was given no seat and has left |
+| `peer(p).my_player()` | `thrum::Result<Player>` | Who that machine's screen is, with or without a character. The same two errors |
 
 `TestMatch` has `host()` and `peer(p)`, each with a `TestGame`'s calls and `shown::<Pose2d>(e)` or
 `shown::<Pose3d>(e)`, the pose that machine's screen shows; `join(Link::delayed(millis(120)))`,
 `disconnect(p)`, `reconnect(p)`, `step_for(..)`, `digests_agree()`; and for the lobby `host().set_setup(value)`,
 which sends the host's panel choice as its command, and `host().start()`, which presses *Start*, so the scene
-entered is the one `starts` names or `starts_with` returns.
+entered is the one `starts` names or `starts_with` returns. `set_resource`, `spawn`, `set` and `run` called on
+the table itself make the same change on every machine between ticks, where the same call on `host()` or a
+peer changes that one world. `Link::delayed(millis(120)).with_profile(value)` gives the machine that joins
+by that link a profile to bring.
 
 ## The extension map
 
-What the first release does not build, and how each would be added (O5). **Nothing here is built, and no guide
-teaches it, until the owner says so**, except the one entry marked for the first release. Each entry says when
-it comes, where it plugs in, the names it adds, what must hold, and a few lines of the game code it allows.
+What the core does not hold, and how each is added (O5). **The owner has said which entries the first release
+builds** (O8), and each of those says so under its heading, with the work package that builds it. Nothing
+else here is built, and no guide teaches it, until the owner says so. Each entry says when it comes, where it
+plugs in, the names it adds, what must hold, and a few lines of the game code it allows.
 
 **Eight extension points.** Every entry adds names at one or more of these, and changes no name or invariant
 of [the core](#the-core). A game that does not use an entry compiles and pays nothing for it.
@@ -1800,25 +2020,52 @@ of [the core](#the-core). A game that does not use an entry compiles and pays no
 
 ### 3D space and a kinematic character
 
-*Owner question 1, recommended yes. Extension points 1 and 5. Needs an engine module: a deterministic 3D
-index and fixed collision from meshes and a heightfield.*
+***In the first release** (O8, question 1), as queries and a kinematic move with no rigid bodies. Built in
+WP16 with no window and in WP17 on screen. Extension points 1 and 5. Needs the engine module
+[`SIM-3D`](../ARCHITECTURE.md#track-7-the-game-sdk): a deterministic 3D index, fixed collision from meshes and
+a heightfield, and the move.*
 
 Everything [section 7](#7-space-and-the-level) says holds with a 3 on it: colliders detect and never push, a
-space meets the level, one `move_shape` takes the character's own collider, and a hit's normal points out of
-what was struck. A 3D level is the same recipe: which terrain and which solid models are loaded, by their
-identity in content, and the shapes a rule added. Its collision is cooked beside the mesh, from its triangles,
-and from the heightfield. It is content, so it is in the rule-set identity and a test builds it with no
-renderer. `Level3d` joins the control table's second row, so a 3D character runs ahead against the ground it
-stands on. What `LevelMut3d::add` puts in the level is drawn as a placement and is solid on its layer, so a
-wall is said once, and an enter function builds a level chosen at run time from the scene's value and its
-content, as [a 2D one does](#7-space-and-the-level).
+space meets the level, one `move_shape` takes the character's own collider, a hit's normal points out of
+what was struck, a hit says where the mover stood, and what a rule adds to the level it can take away. **Every
+name of R3's space and level groups exists with a 3 for its 2**, with `Vec3` for `Vec2` and the same
+methods: `Collider3d`, `Space3d`, `Level3d`, `LevelMut3d`, `Move3d`, `Moved3d`. What differs is said here.
+
+- **A 3D level is the same recipe**: which terrain is loaded, by its identity in content, and the pieces a
+  rule added, in order. Its collision is cooked beside each mesh, from its triangles, and from the terrain's
+  heights. It is content, so it is in the rule-set identity and a test builds it with no renderer. `Level3d`
+  is on the control table's second row, so a 3D character runs ahead against the ground it stands on.
+- **One terrain is one thing, drawn and stood on.** A `Terrain` is content: a field of a record, cooked from
+  a height image and a small file beside it that gives its size and its material, as a sheet is cooked.
+  `LevelMut3d::load(&terrain)` makes it the level's ground: its collision, and the ground this scene draws,
+  from the one source, as a 2D load draws the tiles it makes solid. So a region chosen at run time cannot
+  stand on one terrain and show another. A test makes one with `Terrain::from_heights(rows, cell)`.
+- **What a level adds is said once.** `add(model, pose, LAYER)` is drawn as a placement and is solid on its
+  layer, from the model's own triangles, and `add_box` is solid and not drawn. `place(model, pose)` is drawn
+  and not solid, as a tile map's `.draws` glyph is, for the bushes a region's file lists: it is in the
+  recipe, so every screen and a late joiner show it, and it costs no collision. Each returns a `LevelPiece`.
+  An enter function builds a level chosen at run time from the scene's value and its content, as
+  [a 2D one does](#7-space-and-the-level).
+- **A contact is a floor, a wall or a ceiling**, by its normal against the move's `max_slope`, and
+  `hit.surface` says which. `Moved3d` has `on_floor()`, `on_ceiling()` and `floor()` as in 2D, and `wall()`
+  gives the wall's `Hit` where 2D gives a `Side`. `snap_down` holds a walking shape to a slope it walks down,
+  and never pulls down one that is moving up, so a jump is the same chain.
+- **`ground_height(x, z)`** is the top of the fixed collision under that point on the layers asked: the
+  terrain, or a solid model that stands on it. `None` where there is none.
+- **Marks are set by a rule**, from content: `level.set_mark(SHRINE, point)`, and `Level3d::mark` and `marks`
+  read them as in 2D.
 
 ```rust
 Collider3d::sphere(r) | ::capsule(r, height) | ::cuboid(x, y, z)      .offset(x, y, z)  .on(LAYER)
 // Space3d:    touching, within, nearest, motion_of, at_tick_start, ray, sweep_sphere, move_shape
-// Level3d:    move_shape, ray, sweep_sphere, touching, ground_height(x, z), mark, bounds
-// LevelMut3d: load(&Terrain), add(model, pose, LAYER), add_box(center, size, LAYER), clear()
-// Move3d:     .max_slope(angle) .step_up(height) .snap_down(height) .on(layers) -> Moved3d; a hit has .surface
+// Level3d:    move_shape, ray, sweep_sphere, touching, solid_at, ground_height(x, z), mark, marks, bounds
+// LevelMut3d: load(&terrain), add(model, pose, LAYER), add_box(center, size, LAYER), place(model, pose),
+//             set_mark(MARK, point), remove(piece), clear()
+// Move3d:     [.up(direction)] [.except(entity)] .max_slope(angle) .step_up(height) .snap_down(height)
+//             .on(layers) -> Moved3d
+// Moved3d:    position, on_floor(), on_ceiling(), wall() -> Option<Hit>, blocked(), contacts(), floor(), slide(v)
+// A Hit in 3D has what a 2D one has, in Vec3, and surface: Floor | Wall | Ceiling
+// In a test:  game.level3d(), and Terrain::from_heights(rows, cell)
 
 fn walk(at: &mut Transform3d, body: &mut Body, shape: &Collider3d, ground: Level3d, tick: Tick) {
     let moved = ground.move_shape(at.position, shape, body.velocity * tick.dt())
@@ -1831,11 +2078,17 @@ let in_sight = space.ray(eye, chest).on(SOLID).first_hit().is_none();   // a hil
 
 ### Gamepads
 
-*Owner question 2, recommended yes. Extension points 4 and 2. Needs pad input in the shells and focus by pad
-in `GAME-UI`.*
+***In the first release** (O8, question 2). Built in WP15. Extension points 4 and 2. Pad input and rumble come
+from the Mac's and the browser's shells ([ruling 3](../ARCHITECTURE.md#seam-rulings-for-game-sdk)), and
+focus by pad goes through `GAME-UI`'s bindings as built.*
 
 A pad fills the same `Axis`, `Stick` and `Button` a key does, so no rule changes. In a modal the pad moves
-focus. `ui.prompt` shows the glyph of the device the player last used.
+focus: the D-pad and the left stick are directions, south activates and east cancels, through the binding
+table `GAME-UI` already takes. `ui.prompt` shows the glyph of the device the player last used. A trigger
+fills a `Button` once it is past half its travel, and an `Axis` by its travel. Each player's machine reads
+its own first pad. A pad is one more thing `Bindings::rebind` takes, and `Rumble` is a frame parameter: a
+pulse is felt on this screen's pad and is nothing where there is none. The phone's shell is touch alone in
+the first release.
 
 ```rust
 // Pad::LEFT_STICK RIGHT_STICK (and _X _Y of each) DPAD DPAD_X DPAD_Y SOUTH EAST WEST NORTH
@@ -1847,13 +2100,17 @@ fn feel_the_landing(landed: Events<Landed>, mut rumble: Rumble) {
     for hit in landed.read() { rumble.pulse(hit.speed.f32() / 20.0, 0.15); }
 }
 if let Some(input) = bindings.listen() { bindings.rebind(Controls::JUMP, input); }   // a remap screen
-bindings.sensitivity(Walk::LOOK, 1.4);   bindings.invert(Walk::LOOK, true);   my_input.device()   // Keys, Pad, Touch
+bindings.sensitivity(Walk::LOOK, 1.4);   bindings.invert_x(Walk::LOOK, true);   bindings.invert_y(Walk::LOOK, true);
+my_input.device()   // Keys, Pad or Touch: what this player last used
+// In a test: `game.hold(..)`, `press(..)` and `steer(..)` set the action whatever fills it, and a TestScreen's
+// `pad(Pad::SOUTH)` and `pad_stick(Pad::LEFT_STICK, x, y)` work a modal by pad.
 ```
 
 ### Audio
 
-*Owner question 3, recommended yes in this small form. Extension points 2, 3 and 7. Needs an engine module,
-and the owner's ear for its items.*
+***In the first release, in this small form** (O8, question 3). Built in WP18. Extension points 2, 3 and 7.
+Needs the engine module [`AUDIO`](../ARCHITECTURE.md#track-7-the-game-sdk). No agent can hear it, so an agent
+proves what was played and that it reaches the mix, and how it sounds is the owner's to judge, in WP19.*
 
 Sound is presentation. A rule cannot take `Audio`, and nothing heard changes the world. There are three forms,
 and each has an owner, so nothing leaks:
@@ -1865,12 +2122,25 @@ and each has an owner, so nothing leaks:
   speed and a scrape plays only while its hero slides.
 - **Music is this screen's state**, `Screen<Music>`: a frame function says what should be playing, a change
   cross-fades, and saying the same track again does nothing. `scene.music(track)` sets it on entry. Volumes
-  are a local setting, `Mix`, with `master`, `music` and `effects`.
+  are a local setting, `Mix`, with `master`, `music` and `effects`, which the SDK registers for every game
+  with sound: it is on the panel, and an options menu sets it through `Screen<Mix>`.
+- **Sounds are assets.** A `.wav` or an `.ogg` under `assets/` is cooked into the catalog as a `SoundAsset`,
+  `assets/sounds/kick.wav` as `art::sounds::KICK`. One whose small file beside it says `Music(..)`, with
+  where it loops from, is a `MusicAsset`, which is streamed. A missing or misnamed one fails
+  `cargo play --check`, as any asset does.
+- **Where a sound is heard from** is this screen's camera: a sound played `.at(place)` and a thing's `Sound`
+  fall off with distance from it, and pan by where they are in its view. A sound with no place is heard as
+  it is.
+- **A pause holds what the world makes and leaves what the screen makes.** A thing's `Sound` waits with the
+  world. A menu's click and the music play on.
+- **A test asks what was played**, with no device: `screen.sounds()` gives each sound a `TestScreen`'s
+  pictures started, with its place and volume, as `bursts()` does for effects, and `screen.music()` the track.
 
 ```rust
 .prefab(WARDEN, (Warden, model, Sound::looping(art::sounds::HUM).radius(14.0)))   // heard while it exists
 
 fn sounds(hits: Events<Struck>, mut audio: Audio) {
+    // Also .volume(x) and .pitch(x). Each call starts one voice, and `limit` drops what is past it.
     for hit in hits.read() { audio.play(art::sounds::HIT).at(hit.at).pitch_between(0.9, 1.1).limit(4); }
 }
 fn score(mut music: Screen<Music>, hunt: Res<Hunt>) {
@@ -1880,7 +2150,8 @@ fn score(mut music: Screen<Music>, hunt: Res<Hunt>) {
 
 ### Predicted projectiles and contact
 
-*Owner question 4, recommended first in the release after. Extension points 5 and 1. Uses `SESSION` as built.*
+*Not in the first release (O8, question 4): first in the release after. Extension points 5 and 1. Uses
+`SESSION` as built.*
 
 This is depth 2 of [what a machine runs ahead](#11-multiplayer-an-opt-in-over-input-only-networking). Depth 1
 predicts one entity, the character. Depth 2 lets a control line declare more:
@@ -1901,7 +2172,10 @@ predicts one entity, the character. Depth 2 lets a control line declare more:
   that function finishes, as any spawn does. A launched thing ends in one of two ways. Its own function
   ends it, with `Launched::end()`, for a fuse that ran out or a wall of the level: that is predicted. Or a
   rule despawns it at the confirmed tick, for what it did to the world, and the predicted one goes when
-  that tick confirms.
+  that tick confirms. **A flight ended at a contact is judged to the end.** `Launched::end_at(hit)` sets the
+  thing at the hit's `mover_position` and ends it when the tick does, so its last path stays for the rules
+  written after the control line, and a hull it grazed before the pier in that step is still found by
+  `motion_of(bolt).sweep()`.
 - **Where it runs: in its seat's turn on the control line, whether or not its launcher is steered.** Each
   seat has a turn on the line, in seat order: the control function for that seat's character, where the
   player has one, and then `f` once for each thing launched from that seat that is still in flight, in the
@@ -1975,7 +2249,8 @@ fn fly_bolt(at: &mut Transform3d, bolt: &Bolt, mut me: Launched, level: Level3d,
 
 ### Hits judged as the shooter saw them
 
-*Owner question 5, recommended after question 4. Extension points 6, 5, 4 and 1. Uses `SESSION` as built.*
+*Not in the first release (O8, question 5): after predicted projectiles and contact. Extension points 6, 5,
+4 and 1. Uses `SESSION` as built.*
 
 This is depth 3. Other players are shown at the confirmed tick, a moment behind, so a shooter who aims at what
 they see misses what the world holds. The fix is the field's lag compensation, as input-only networking allows
@@ -2088,7 +2363,8 @@ fn rails_hit(crafts: Query<(Entity, &Player), With<Craft>>, space: Space3d, mut 
 
 ### Skeletal animation
 
-*Owner question 8, recommended first among the engine modules after the release. Extension points 3 and 7.*
+*Out of the first release (O4, O8, question 8), and the first engine module planned after it. Extension
+points 3 and 7.*
 
 A pose is presentation. `Model` gains a rig, and `Shown<Model>` plays clips as `Shown<Sprite>` does. No rule
 reads a bone: a rule that depends on a moment of an animation owns that moment as a `Timer`, as today. A part
@@ -2109,7 +2385,7 @@ fn animate(pilgrims: Query<(Entity, &Body), With<Pilgrim>>, mut shown: Shown<Mod
 
 ### Text fields, lists and more controls
 
-*Owner question 9, recommended after the first release. Extension point 2. Needs `GAME-UI`.*
+*Not in the first release (O8, question 9). Extension point 2. Needs `GAME-UI`.*
 
 Each is a word of `Ui`. What is being typed is this screen's state, and it reaches the world as a command.
 
@@ -2127,7 +2403,7 @@ fn name_entry(mut ui: Ui, mut draft: Screen<Draft>, mut outbox: Outbox) {
 
 ### Levels from an editor's file
 
-*Owner question 10, recommended after the first release, with data packs. Extension point 7.*
+*After the first release (O8, question 10), with data packs. Extension point 7.*
 
 A `Tilemap`, and in 3D a list of placements, is cooked from an editor's file where a record names one. The
 scene maps the editor's names to layers, prefabs and marks as it maps glyphs today. An object's fields
@@ -2144,7 +2420,8 @@ level.load(&vale.placements);     // Placements, with .named("lamp", LAMP) and .
 
 ### Saved progress for every player
 
-*Owner question 11, recommended yes, in the saves and online work packages. Extension points 5 and 6.*
+***In the first release** (O8, question 11). Built in WP13 for a game played alone and in WP5 for a guest.
+Extension points 5 and 6.*
 
 [A profile](#10-content-assets-saves-and-settings) is each player's own, and the core says whose it is, when
 it is written and what a replay does with it. Alone it is read before the first tick. This entry is how a
@@ -2189,7 +2466,8 @@ fn bank_light(mut progress: ResMut<PerPlayer<Progress>>, tally: Res<Tally>, play
 A sheet is an image and a file beside it that names its frames, its clips and its tiles. `cargo play` cooks it
 and writes a constant for each name into the catalog. A misspelled frame fails `cargo play --check` with the
 file and the nearest name, and a saved sheet is redrawn in the running game. No run-time name changes.
-`unit` is how many pixels make one world unit, and `origin` is where on a frame the entity's position falls.
+`unit` is how many pixels make one world unit, and `origin` is where on a frame the entity's position falls:
+`Center`, the default, `BottomCenter` or `TopLeft`.
 A sheet says how a tile is drawn and never what is solid: a tile with a collision shape smaller than its
 cell, such as a spike, is [a smaller entry](#smaller-entries) on the scene's `Tileset` line.
 
@@ -2210,12 +2488,14 @@ Tileset::new(art::ROOFS)
 
 ### Camera pitch and rigs
 
-*With question 1: a third-person game needs both. Extension points 4 and 2.*
+***In the first release, with 3D space** (O8, question 1): a third-person game needs both. Built in WP17.
+Extension points 4 and 2.*
 
 `Aim` is an action kind beside `Heading`: a yaw and a pitch the player's own machine keeps, with limits on the
 pitch, travelling as a `Heading` does. A rig takes it.
 [A rig's numbers](#9-frame-functions-looks-and-the-interface) are already a frame function's to change, and
-with question 1 a boom avoids the level.
+a boom avoids the level's fixed collision on the layers it is given. A test sets one with
+`game.steer(Walk::LOOK, (yaw, pitch))`, and a bot with `Aim::of(yaw, pitch)`.
 
 ```rust
 #[bind(Mouse::look(), Pad::RIGHT_STICK)]
@@ -2231,11 +2511,14 @@ fn sprint_pulls_back(mut camera: Screen<Camera3d>, me: Me, gaits: Query<&Gait>) 
 
 ### Navigation and path queries
 
-*After the first release, first among what follows question 1. Extension points 5 and 1.*
+*After the first release, first among what follows 3D space. Extension points 5 and 1.*
 
 A scene says who must find a way, and the SDK bakes the answer from the level's recipe and keeps it by the
 recipe's identity, as it keeps built collision. So it is the same on every machine, follows a gate a rule
-closed, and is asked through the level, read-only, by a rule, a condition and a test.
+closed or [took away](#7-space-and-the-level), and is asked through the level, read-only, by a rule, a
+condition and a test. Each end of a path is put on the nearest ground an agent can stand on, within the
+agent's own height, so a hovering craft and a hero in mid-jump ask from where they are. `path_length(a, b)`
+gives a rule how far the way is, and a scene may name more than one agent.
 
 ```rust
 scene.navigation(Nav::agent(0.5, 1.8).max_slope(Angle::degrees(30.0)).on((TERRAIN, SOLID)));
@@ -2251,13 +2534,15 @@ assert!(game.level3d().path(trailhead, summit).is_some());     // a test: the su
 
 ### 3D level building and texturing
 
-*After the first release, with question 1 for what is solid. Extension points 5 and 7.*
+*After the first release. Extension points 5 and 7. What is solid, and a terrain drawn from the source it is
+stood on, are in the first release with [3D space](#3d-space-and-a-kinematic-character); this entry is the
+dressing.*
 
 More words on the lines a 3D scene already has. What is solid is in the level's recipe and belongs to the
 rules. How the ground is dressed belongs to the screen, and scatter has no collision and no identity.
 
 ```rust
-scene.ground(Ground::heights(art::terrain::VALE)
+scene.ground(Ground::dressing()                       // over whatever terrain the level loaded
     .layer(art::materials::GRASS)
     .layer(art::materials::SCREE).steeper_than(Angle::degrees(35.0))
     .scatter(art::meshes::TUFT, 0.4));
@@ -2271,12 +2556,15 @@ Each plugs in at the extension point named, with the code it allows and what mus
 
 | Entry | When | Point | The game code it allows | What must hold |
 |---|---|---|---|---|
-| **A host with no window** | Owner question 7, recommended yes, in the online work package | 8 | `cargo play --host --port 7777`, which prints the ticket to join by | No line of the game changes. It is `thrum` with its default features off. What a host's screen may do (a scene request, a shared setting, *Start*) falls to the lowest seat |
+| **A host with no window** | **In the first release** (O8, question 7), built in WP5 | 8 | `cargo play --host --port 7777`, which prints the ticket to join by | No line of the game changes. It is `thrum` with its default features off. What a host's screen may do (a scene request, a shared setting, *Start*) falls to the lowest seat |
 | **Text in the world** | After the first release | 2 | `draw.text(hit.at, hit.damage).color(Color::GOLD).rising(1.5).lasting(seconds(0.6))` | Drawn as sprites in one batch, so sixty damage numbers are not sixty interface nodes. Played out by the SDK, as a burst is |
 | **Two views of one component in one rule** | After the first release | 1 | `fn revive(mut wardens: Views<(Query<&Vitals>, Query<&mut Vitals>)>)`, then `wardens.first()` and `wardens.second()` | It lends one at a time, so the access check has nothing to refuse. `Query::pair_mut` gives two entities of one query already. Until then anything more is two passes over one query with a local `List` between them |
 | **A tile with a shape smaller than its cell** | After the first release | 5 | `Tileset::new(art::TILES).solid('^', SPIKES).shaped(TileShape::rect(1.0, 0.4).at_bottom()).solid('/', TERRAIN).shaped(TileShape::slope(Side::Right))` | The shape is said on the glyph's own line of the scene's `Tileset`, after `.solid` or `.one_way`, beside its layer: it is what the glyph means, so it is part of the rule-set identity and never the sheet's, and `.drawn_with` changes no collision. It is built into the level's fixed collision from the recipe with every other tile. So `Level2d::move_shape`, `ray`, `touching` and `solid_at`, and a space's rays, sweeps and moves, meet the shape with no new call, and a match runs it ahead. A glyph with no `.shaped` fills its cell, as today |
 | **A mode beside a scene's phase** | In the core already, with no new name | — | `scene.rules(get_up.when(fallen))`, with the mode an enum in a resource, or in a component where each character has its own, beside its `Timer` | A scene keeps one phase machine ([section 4](#4-scenes-phases-time-and-pause)), so the tick's one transition and `Tick::in_phase()` keep one meaning. A second machine in a scene is not offered: it would need a rule for which request stands that the core does not have |
-| **Lobby choices for every player** | After the first release | 5 | `Lobby::standard().player_panel(pick_calling).starts_with(night_from)`, with `fn night_from(&Setup, &PerPlayer<Calling>) -> Night` | A player's choice is world state, changed by their own command, and stays a game resource as the host's setup does |
+| **Lobby choices for every player** | After the first release | 5 | `Lobby::standard().player_panel(pick_calling).starts_with(night_from)`, with `fn pick_calling(ui: &mut Ui, mine: &mut Calling, ..)`, taking any read-only frame parameter after the two as the host's panel does, and `fn night_from(&Setup, &PerPlayer<Calling>) -> Night` | A player's choice is world state, changed by their own command, and stays a game resource, `PerPlayer<Calling>`, as the host's setup does, so a later scene and a late joiner's spawn function read it. A test sets one with `peer(p).set_choice(value)` |
+| **A lobby with the game's own rules and frame functions** | After the first release | 5 | `Game::scene(camp)`, with `fn camp(scene: &mut Scene<Lobby>)`, which adds `scene.rules(buy_boon)` and `scene.each_frame(shop)` | The lobby is an ordinary scene, so a function may describe it further. Its rules run after the lobby's own, in the order written. The standard screen keeps the centre, and the game's frame functions take the other places. Until then a game that wants a shop in its lobby builds its own with `Session` |
+| **A character's own children in its control function** | After the first release, with depth 2 | 5, 1 | `scene.players().spawn(hero).control(roam).predicts_children()`, and in `roam` a `Query` asked `under(me)` | The character's children and parts join the set its player's machine runs ahead, bounded and compared whole as [depth 2](#predicted-projectiles-and-contact)'s is, and a query `under` the character moves up to the table's first row. Until then a control function that must know what its character carries reads a component a rule keeps on the character |
+| **Events from inside `par_each`** | After the first release | 1 | `foes.par_each_emit(&mut tells, \|(foe, at), out\| if foe.winds_up() { out.send(WoundUp { at: at.position }) })` | Each worker keeps its own events and they are joined in the query's order, so the result is the serial loop's. Until then the loop writes a component and a later rule sends the event |
 | **A timeline inside a phase** | After the first release | 5 | `scene.phase(Stage::Night).at(seconds(90), ring_of_shades).at(seconds(300), call_the_bell)` | Each runs once, in the block's place in the written order, and a phase resumed past one does not run it again. A timeline from a content file stays a rule with a cursor |
 | **Space queries from a frame function** | After the first release | 2 | `fn prompt(me: Me, space: Space3d, mut ui: Ui)` | It answers from the newer published tick and costs each screen an index. Until then a rule writes what a screen needs, such as a `Focus` component |
 | **Rigid bodies** | Out by the owner's scope (O4). Needs a deterministic solver | 1 | `scene.rules((apply_thrust, physics::step, crates_break))`, `Body2d::dynamic().mass(4.0)` and `Events<Contact2d>` | The step is a rule the game places in its written order. Colliders stay detect-only on an entity with no body. In a match bodies are confirmed state, as a crowd is |
@@ -2288,8 +2576,8 @@ Each plugs in at the extension point named, with the code it allows and what mus
 
 These are real games against the proposed API, and the evidence that [the core](#the-core) reads as a game.
 [What a builder may change](#what-a-builder-may-change) says how far a builder may depart from them. Every call
-they make has its name in [the reference](#the-reference). Example G alone is written against entries of
-[the extension map](#the-extension-map) that the first release does not build, and says where.
+they make has its name in [the reference](#the-reference). Example G uses two entries of
+[the extension map](#the-extension-map) that the first release builds, 3D space and gamepads, and says where.
 
 ### A. A first 2D game
 
@@ -2537,9 +2825,9 @@ fn turn(mut things: Query<(&Turns, &mut Transform3d)>, tick: Tick) {
 The sky, the Sun's light and shadows, exposure, tone mapping, reconstruction and the governor are the engine's
 defaults. The two sliders appear in the Mac panel and on the Chrome page, a parameter file sets them, and the
 profiler is a toggle beside them. Either way the rock turns smoothly between ticks and its shadow turns with
-it. The ball is moved by a control function that writes its place and nothing else: the first release has no
-3D collision, so it rolls through the rock, and the guide says so
-([scope question 1](#scope-questions-for-the-owner)). `art` is
+it. The ball is moved by a control function that writes its place and nothing else, so on the guide's first
+page it rolls through the rock, and the guide says so. The next page gives the scene
+[3D space](#3d-space-and-a-kinematic-character), and the rock stops the ball (WP17). `art` is
 [the typed asset catalog](#10-content-assets-saves-and-settings), which `cargo play` writes from `assets/`.
 
 The starter's rules are in its `rules` block from the first line, as the `3d` template's are in
@@ -3373,10 +3661,9 @@ fn a_late_joiner_gets_a_hero_that_answers_at_once() -> thrum::Result {
 ### G. A third-person 3D slice, on the extension map
 
 Hollow Vale: walk a valley, carry a relic on your back, stay out of a warden's sight, alone or with a friend.
-**This example is written against entries of [the extension map](#the-extension-map)**: `Space3d`, `Level3d`
-and `move_shape` in 3D wait on [scope question 1](#scope-questions-for-the-owner), and the gamepad bindings on
-question 2. Everything else in it is first-release API. It is here so the owner can judge the 3D game the
-design leads to.
+**This example uses entries of [the extension map](#the-extension-map) that the first release builds** (O8):
+`Space3d`, `Level3d` and `move_shape` in [3D](#3d-space-and-a-kinematic-character), and
+[the gamepad bindings](#gamepads). It is the 3D game the design leads to.
 
 ```rust
 #[derive(Actions)]
@@ -3468,7 +3755,7 @@ fn wardens_look(
 
 pub fn vale_screen(scene: &mut Scene<Vale>) {
     scene.sky(Sky::clear());
-    scene.ground(Ground::heights(art::terrain::VALE)); // how the ground the rules stand on is drawn
+    // The ground is the terrain `load_the_valley` loaded: drawn from the source the rules stand on.
     scene.camera(
         Camera3d::orbiting_my_character()
             .yaw(Walk::LOOK)
@@ -3491,13 +3778,19 @@ pub struct ValeSave {
     pub hour: Num,
     pub chapter: Chapter,
     pub chapter_clock: PhaseClock, // how long the chapter has run and how long it has left: `chapter.clock()`
-    pub placed: List<Id<RelicDef>, 32>, // a save holds what a resource may: a bounded list
-    pub carrying: Option<Id<RelicDef>>,
+    pub relics: Kept<(Relic, Transform3d)>, // each relic, by its prefab's stable name, where it lies
+    pub wardens: Kept<(Warden, Mind, Transform3d)>, // each warden with its mind and its timers, asleep or awake
 }
 
 /// Reads the world at a committed tick and returns what to keep. It runs when a save is asked for.
-pub fn capture(day: Res<Day>, chapter: Phase<Chapter>, relics: Query<(&Relic, &Placed)>, family: Family) -> ValeSave {
-    /* .. */
+pub fn capture(day: Res<Day>, chapter: Phase<Chapter>, keep: Keep) -> ValeSave {
+    ValeSave {
+        hour: day.hour,
+        chapter: chapter.get(),
+        chapter_clock: chapter.clock(),
+        relics: keep.all(RELIC), // a relic on a pilgrim's back is kept where it stood in the world
+        wardens: keep.all((WARDEN, NIGHT_WARDEN)),
+    }
 }
 
 /// A save chosen on the title screen arrives here, as input to this tick.
@@ -3512,9 +3805,11 @@ fn begin_or_resume(
             // The chapter carries on with the clock it had. No chapter is entered, so its sting does not play
             // again, and its length is not asked for again, so it ends when it would have.
             chapter.resume(save.chapter, save.chapter_clock);
-            restore(save, &mut entities, &mut day) // an error here refuses the tick: never half-restored
+            day.hour = save.hour;
+            entities.respawn(save); // every kept relic and warden, each from its prefab with what was kept
+            Ok(())
         }
-        None => new_journey(&mut entities, &mut day),
+        None => new_journey(&mut entities, &mut day), // an error here refuses the tick: never half-entered
     }
 }
 
@@ -3571,6 +3866,8 @@ that give the core its shape, and what would change each:
 |---|---|---|
 | Entities, components, resources, the tick, rewind, publication | `thrum-core` (G1, G2S) | Registers what the game's description names; adapts rule functions to registered systems; asks for the barrier after each |
 | The rules profile, the digest, the 2D index, fixed collision and the character move | `SIM-2D` | `Num` and friends are its numbers; `Space2d` is its index, one for each layer; `Level2d` is its fixed collision |
+| The 3D index, fixed collision from meshes and a heightfield, and the 3D character move | `SIM-3D`, a new module (O8) | `Space3d` is its index, one for each layer; `Level3d` is its fixed collision, built from the level's recipe |
+| The mix, its voices and each target's sound output | `AUDIO`, a new module (O8) | `Audio`, the `Sound` look and `Screen<Music>` say what should be heard. Nothing heard is world state |
 | The frame, the recipe, reconstruction, EDR, the governor | `APPLE-TILE`, `APPLE-PRESENTATION` | None. A game gets them by default |
 | Sprite rows, sheets, the 2D scene | `RENDER-2D` | Maps `Sprite`, `Shape2d`, the tile layer and `Transform2d` to rows |
 | Sky, Sun, air | `ATMOSPHERE` | `Sky` sets its inputs |
@@ -3580,8 +3877,8 @@ that give the core its shape, and what would change each:
 | The interface tree, events, fonts | `GAME-UI` | `Ui` keeps the tree |
 | The device, recovery, the game contract | `HOST` | Implements the game contract once, for every game |
 | The match, the roster, prediction | `SESSION`, over `TRANSPORT` | Implements the session's world once, and gives a control function to the predicted controller as its step |
-| Which scene and phase run, the tick each was entered at and the transition asked for; the seats, with who is a bot, each button's last count and any slot given no seat; whether the game is paused, by whom, and the game's tick; open offers, and commands and answers waiting for a pause to end; the turn kept for each player's heading; the level's recipe, with each tile map's identity, origin and the sheet its load named; each phase's clock; the lobby's setup; each player's profile; the pieces of a save being brought in | The world, as resources the SDK registers | Keeps them as world state, so they are digested, rewound and sent to a late joiner |
-| Events for the frame, effects under way, `Screen<T>` with the input context, `Shown<L>`, bindings, the built collision of each recent level recipe | The SDK, as this screen's or this machine's state. It is not world state and is in no digest | The ring of recent ticks' events, each cursor, the count of this player's predicted emissions shown for each recent tick, the bursts still playing; on each machine, whether its screen shows the pause, which decides what its sampler counts, which `Player` the machine is and what its profile's slot last held |
+| Which scene and phase run, the tick each was entered at and the transition asked for; the seats, with who is a bot, each button's last count and any slot given no seat; whether the game is paused, by whom, and the game's tick; open offers, and commands and answers waiting for a pause to end; the turn kept for each player's heading; the level's recipe, with each tile map's identity, origin and the sheet its load named, and the pieces that stand; each phase's clock; the lobby's setup; each player's profile; the pieces of a save being brought in; which prefab each entity was spawned from; what a leaver's seat held, until the tick they left in ends; an offer's choices once they are drawn; how many times a rule has run at the game's tick | The world, as resources and components the SDK registers | Keeps them as world state, so they are digested, rewound and sent to a late joiner |
+| Events for the frame, effects under way, `Screen<T>` with the input context, `Shown<L>`, bindings with a pad's, the music and the sounds under way, the built collision of each recent level recipe | The SDK, as this screen's or this machine's state. It is not world state and is in no digest | The ring of recent ticks' events, each cursor, the count of this player's predicted emissions shown for each recent tick, the bursts still playing; on each machine, whether its screen shows the pause, which decides what its sampler counts, which `Player` the machine is and what its profile's slot last held |
 | Saves and recordings | The SDK, in each target's storage | Runs the capture on the world as last committed, writes away from the tick, brings a save in as input, and keeps a profile's slot equal to what the world confirms for its own player, after a tick and after a baseline. It records each pass of the rules check against the rule sources' digest, in the game's build folder |
 | The game's scenes, rules, looks and content | The game | — |
 
@@ -3614,7 +3911,8 @@ order and C13's authority are what the core stands on.
 3. **The shells and the tool** (`CREATOR`, `HOST`, `GAME-UI`): what the window, the page and the phone shell
    still assume of the V1 game or the sky kit; local actions, the pointer and its capture handed to the SDK;
    storage for saves on each target; a driver that need not step a paused tick that admits nothing; the game
-   commands in `./dev`.
+   commands in `./dev`; and, for O8, a pad's sticks, buttons and triggers and its rumble on the Mac and in
+   the browser, and a game hosted with no window.
 4. **The interface and the match** (`GAME-UI`, `SESSION`): used as built. A press count and a sampled bit on
    the input frame's axes; the predicted controller's whole state carrying what the step reads, compared as
    `SESSION` compares it; seats, with bots, that the SDK keeps in world state over `SESSION`'s slots; a lobby
@@ -3630,6 +3928,18 @@ order and C13's authority are what the core stands on.
 6. **The 3D scene's entity rows** (`thrum-render`, and `CONTENT-LOOP`'s cooked mesh rows): the turn and the
    scale at both ticks, interpolated by every pass that places an entity row; a row's mesh chosen by name
    when its entity is spawned; and a row's material taking a texture.
+7. **3D space** (`SIM-3D`, a new module the owner's answer to question 1 asks for). Used through its public
+   interface, as `SIM-2D`'s is: an index of spheres, capsules and cuboids on layers that answers overlaps,
+   rays and swept shapes; fixed collision built from triangle meshes, a heightfield and boxes, which answers
+   the same and the height of the ground; and a kinematic move against both that slides, climbs a step,
+   holds to a slope, and reports its contacts with each one's normal, where the mover stood and the motion
+   it had left. All of it is in the rules profile's numbers and equal on the three targets, with no rigid
+   body. [The module list](../ARCHITECTURE.md#track-7-the-game-sdk) holds the interface.
+8. **Sound** (`AUDIO`, a new module the owner's answer to question 3 asks for). Used through its public
+   interface: sounds and music cooked from `.wav` and `.ogg` sources; a mix on the Mac, in Chrome and on the
+   iPhone simulator that plays a sound as a voice with a volume, a pitch and a place, loops one, streams
+   music and cross-fades it, and bounds the voices of one sound; three volumes; and the mix rendered to a
+   buffer with no device, so a test reads what would be heard. It runs off the frame and off the tick.
 
 ## Cost
 
@@ -3643,12 +3953,16 @@ of entities beyond what the engine does.
 | A query | A walk over the engine's columns. `par_each` uses the engine's chunks |
 | A space query | One index for each layer, with its storage kept. A layer is rebuilt at most once after each rule that changed it, and not at all in a tick that did not: a crowd that moves once a tick is indexed once a tick, as the reference crowd is |
 | The level | Built once for what is solid in each recipe, when a rule that changed it finishes, and kept by that identity while a rewind or a step run ahead may ask for it. A character move tests the tiles its box sweeps |
+| A parent's children | `under(parent)` walks that parent's own children and searches nothing else. An entity with no parent and no child pays nothing for the tree |
+| Where an entity came from | One small value on each entity spawned from a prefab, which a spawn from a bare tuple does not carry |
 | A control function | One call for each player's character |
 | The access check | Against signatures and prefabs at startup, when an entity with a new set of components first appears, and when a player is given another character |
 | Extraction | Changed rows only, mapped by code written once in the SDK. A tile layer is extracted when it is loaded |
 | A frame function | Runs once a frame, over what it names |
 | The interface | A description of tens to a few hundred nodes compared with the last one. An unchanged interface draws once |
 | A save | The capture, once, on the world as last committed, with no tick stepped for it; the file is written off the tick. A restore is gathered a frame's room of pieces a tick, about 850 bytes in a match, and decoded once |
+| A save's kept entities | Read once at the capture, over the entities of the prefabs it names, and spawned once at the restore |
+| Sound | Mixed by `AUDIO`, off the frame and off the tick. A frame function's call queues a voice and returns |
 | A pause | A paused tick that admits input runs the rules marked for it. One that admits nothing moves the committed tick and nothing else, so alone it is not stepped, and a recording keeps the count |
 | A capability left out | Nothing: a 2D game compiles no 3D pass, a game with no interface has no stage, a game without the `multiplayer` feature links no network crate |
 
@@ -3663,10 +3977,13 @@ measurement or a collapse:
 
 ## The work packages
 
-Fourteen, in the order they are built. [The plan](PLAN.md) names each and [the done-when file](DONE.json) holds
+Nineteen, in the order they are built. [The plan](PLAN.md) names each and [the done-when file](DONE.json) holds
 the items of the first three. Numbers are names, not the order: WP3, WP5, WP6 and WP7 keep the numbers other
-modules already wait on. No work package builds an entry of [the extension map](#the-extension-map) but the
-one WP3 is given: a "yes" to a scope question adds work packages, which a planner then plans.
+modules already wait on. The owner's yeses (O8) added WP15 to WP19, widened WP13 and WP5, and ask for two
+engine modules, `SIM-3D` and `AUDIO`, which [the module list](../ARCHITECTURE.md#track-7-the-game-sdk) names
+and whose own planners plan them. A work package builds an entry of
+[the extension map](#the-extension-map) only where this table gives it one. The work packages that wait for
+a module not yet built come after WP7, so nothing `SWARM` waits on waits for them.
 
 | Work package | Builds | Waits for |
 |---|---|---|
@@ -3677,11 +3994,16 @@ one WP3 is given: a "yes" to a scope question adds work packages, which a planne
 | WP3 | 2D on screen: section 9 in 2D, section 14's commands and the asset catalog for the Mac and Chrome, with [sheets cooked from source images](#sprites-clips-and-tiles-from-source-images), the first `run()`, which plays only rules the check has passed as built, cameras and rigs, `Shown`, local actions, input contexts, the pointer, the pause alone and `--shot`. Rockfall and Skylark without their interface | Nothing still open |
 | WP4 | 3D on screen: section 9 in 3D, with entities' models drawn as entity rows that turn, scale and take a texture, placements, and the rest of settings: local settings and the panel, and a shared setting's panel edit admitted at a tick. The starter, stones and the lighthouse are written on the SDK as new kit games | For its change to the instance passes, the V1 work packages that hold them |
 | WP6 | Section 6 and the interface: modals, commands, offers that queue with a bot's answer, requests, what a menu does under its own pause, and `TestScreen`. The interface of Rockfall (its score and result page) and of Skylark (its pause menu) | `GAME-UI:WP4` |
-| WP13 | Saves and recordings: a saved resource, a run saved and resumed alone into its phase, `--record`, `--replay` and `play_recording`, with each input held at its committed tick | Its own WP6 |
-| WP5 | Section 11: the crowd hosted and joined, a control function run ahead with what it reads, the standard lobby on the match's clock, seats and bots in a match, a pause in a match, a save restored in a match, `TestMatch`, and a 3D match rehearsed with no window | `SESSION:WP7` |
+| WP13 | Saves and recordings: a saved resource, a run saved and resumed alone into its phase, the entities a save keeps, [a profile](#saved-progress-for-every-player) for a game played alone, `--record`, `--replay` and `play_recording`, with each input held at its committed tick | Its own WP6 |
+| WP5 | Section 11: the crowd hosted and joined, a control function run ahead with what it reads, the standard lobby on the match's clock with `continues`, seats and bots in a match, a pause in a match, a save restored in a match, a guest's profile brought in and kept, [a host with no window](#smaller-entries), `TestMatch`, and a 3D match rehearsed with no window | `SESSION:WP7` |
 | WP14 | A 3D match on screen (O6): the 3D starter hosted on the Mac and joined from Chrome and a second Mac process through the standard lobby, each player's ball answering at once on their own screen | Its own WP4 and WP5 |
 | WP7 | The iPhone simulator | `GAME-UI:WP6` |
-| WP8 | The guides, the reference file and the templates of section 14, [the guard](#1-a-game-one-crate-one-package-one-value), and three fresh agents | Its own WP1 to WP7 |
+| WP15 | [Gamepads](#gamepads): a pad as a binding for every action kind, a trigger, a modal worked by pad, the prompt's glyph for the device last used, remapping, sensitivity and inversion, and rumble, on the Mac and in Chrome | Its own WP6. Pad input in the shells is its own to build, under ruling 3 |
+| WP16 | [3D space](#3d-space-and-a-kinematic-character) with no window: `Collider3d`, `Space3d`, `Level3d` and `LevelMut3d` over `SIM-3D`, a terrain as content, the character move, and a 3D character run ahead against the level in a rehearsed match | `SIM-3D`, once it is planned: the work package that delivers the move |
+| WP17 | 3D space on screen: a terrain drawn from the source that is stood on, what a level adds and places drawn, [`Aim` and a rig that pitches](#camera-pitch-and-rigs) with a boom that avoids the level, and the 3D starter given ground and a rock that stops the ball, on the Mac and in Chrome | Its own WP4 and WP16 |
+| WP18 | [Audio](#audio): sounds and music cooked into the catalog, `Audio`, the `Sound` look with `Shown<Sound>`, `Screen<Music>` and `Mix`, on the Mac and in Chrome, with function on the simulator | `AUDIO`, once it is planned: the work package that delivers the mix on the three targets |
+| WP8 | The guides, the reference file and the templates of section 14, [the guard](#1-a-game-one-crate-one-package-one-value), and three fresh agents | Its own WP1 to WP7 and WP15 to WP18 |
+| WP19 | The owner's sitting: the owner plays a 2D game and a 3D game with a pad in hand and the sound on, and says what is wrong | Its own WP15, WP17 and WP18 |
 | WP9 | The showcase on the SDK, in the games repository | `GAME-SPLIT:WP4`, which follows the V1 exit |
 | WP10 | The old creator route removed | Its own WP9 |
 
@@ -3711,9 +4033,19 @@ first work package that has everything it uses, so no item waits on a later one.
   after a rewind and a replay; one content record that holds two tile maps with a wall in different places,
   and a list of them, where loading each gives its own wall before and after a rewind to a tick at which the
   other was loaded; a validator that counts a map's cells of one glyph; a content record refused before play
-  by its type and by the game's validator; an `Id` declared in an `ids!` block and used only in a branch of
+  by its type and by the game's validator; a validator that takes a second content type and refuses a level
+  that names an enemy with no record; an `Id` declared in an `ids!` block and used only in a branch of
   a rule, refused at startup when no file has its name, with the nearest name; rules that read a shared setting registered with its defaults and
-  set by the test; and example D's two coyote tests.
+  set by the test; a rectangle a rule added and kept as a `LevelPiece` in a resource, removed by a later
+  rule with `remove` returning true once and false after, where a move that stopped at it passes, the
+  recipe's count goes down by one, and a rewind to a tick before the removal stops the move again; a hit
+  against the level and a hit from a sweep that starts in contact, each with a `mover_position` at which the
+  shape touches and does not overlap and a `remaining_motion` that with it ends where the path ended; an
+  entity teleported in a tick whose `motion_of(..).sweep()` meets nothing that stands between the two
+  places; a group of rules `.during` two of a scene's three phases, which runs in those two and not in the
+  third; a `List` in a scene's fields, read in the scene entered with it; a `Side` kept in a component; a
+  test that names a fixture's record with `test_id`, reads it back with `content`, and hands a value to
+  `game.run` in a closure; and example D's two coyote tests.
 - **WP3:** a picture the engine encodes and drops, with an event delivered to its run and a `burst` started
   in it shown in the next; a `teleport` with no picture between the two places; a pause, toggled by a local
   action, in which the game's tick stands and no timer moves, and which the same key ends; a rule marked
@@ -3742,7 +4074,10 @@ first work package that has everything it uses, so no item waits on a later one.
   new check when Cargo alone builds it with a feature of its own package turned on, a feature its `game()`
   reads to choose a resource's starting value; and which, with a file
   read then put inside its `rules` module and built by Cargo alone again, is refused by `run()` before the
-  first tick with a message that names the check, while `cargo play` refuses it in the check with the line.
+  first tick with a message that names the check, while `cargo play` refuses it in the check with the line;
+  and a rule marked `.even_when_paused()` that draws from `Random` in two paused ticks at one game's tick,
+  whose two draws differ and are the same two in a replay and in a run that committed ten empty paused ticks
+  between them.
 - **WP4:** example B's cooked, textured rock turned by the example's rule `turn`, with `turn_rock` left out
   and the tick rate low enough to see, so its `Transform3d` holds two different turns at two adjacent ticks:
   pictures captured between those ticks show the rock at turns between the two, its lit faces and its cast
@@ -3764,7 +4099,13 @@ first work package that has everything it uses, so no item waits on a later one.
   after it; a `request.scene` sent from a pause menu, which lands and ends the pause; a card outside a modal
   pressed by a local action while the stick that walks the hero goes on walking it; an offer with no expiry
   opened in one phase and answered in the next; a card chosen inside the loop that walks an open offer's
-  choices.
+  choices; three offers opened to one player in one tick with `.choices_with`, whose function leaves out
+  what the hero already holds, where the second hand is drawn only when the first answer has landed and
+  leaves out what it gave, the function is asked once for each, a player who reconnects is shown the hand
+  already drawn, and one defined outside the `rules` module is refused at startup; an answer admitted while
+  a modal holds the pause and no marked rule takes it, reported once with its type; a struct of frame
+  parameters taken by two frame functions; and `advance`, after which an eased camera has arrived with no
+  tick stepped.
 - **WP13:** example A as it stands, one file with its `rules` block, recorded by `cargo play --record` on
   the Mac and replayed by `--replay` in Chrome and by `play_recording` in its own test, each to the run's
   digest; a game with no `rules` module refused by `play_recording` with the step to take; two recordings of
@@ -3790,7 +4131,20 @@ first work package that has everything it uses, so no item waits on a later one.
   restore; a restore whose enter function fails, a save over its limit and a damaged one, each leaving the
   world as it was and the scene not entered, with the step that tried it returning no error and the next step
   running; a recording that holds a restored save and a saved resource's starting value, replayed with
-  another value in the slot to the same digest.
+  another value in the slot to the same digest. **Kept entities:** a save with two `Kept` fields, one of two
+  prefabs and a variant, captured with one entity disabled and one hanging under an entity of the other
+  field by a spawn's `.child`, and restored into a fresh scene: each comes back from the prefab it was
+  spawned from with its kept components, a `Timer` among them with its time left, the disabled one disabled,
+  the child under its parent at its local place, a definition's own child once and not twice, and a player's
+  character not at all; two captures with no tick between them equal; an entity of a named prefab that
+  lacks a listed component, which fails the capture with the three names and writes nothing; a file whose
+  kept name the game no longer declares, which is `Loaded::Failed` with the field and the name, and the
+  same file loaded through a conversion that renames it; and the size of a save that keeps a thousand
+  entities, recorded beside its limit. **A profile alone:** registered with `Game::profile`, read before
+  the first tick from a fixture, written to the slot when a tick commits a change to the player's value and
+  not by a step a test rewinds, restored from an older version through its chain, landing as the default
+  where its `validate` fails, and held in a recording, which replays to the same digest with another value
+  in the slot.
 - **WP5:** a control function that reads a shared setting, the phase, the level and `tick.in_scene()`, run
   ahead for a player who joined at a tick other than zero, in a scene entered at a tick other than zero:
   every step it runs ahead with the frame the host then admits for that tick, while nothing it reads has
@@ -3831,12 +4185,66 @@ first work package that has everything it uses, so no item waits on a later one.
   tilts in less than one trip to the host; a correction made while it is in the air, after which its height
   and its turn are eased to the host's, the turn the shorter way; a peer who joins while another's character
   is in the air and is shown it at the host's height and tilt; and every world's digest equal afterwards,
-  with each character's `Transform3d` read back equal, height and rotation included.
+  with each character's `Transform3d` read back equal, height and rotation included. **A guest's profile:**
+  a peer that joins with a profile of 12 KiB, whose `PlayerJoined` is read only once the value has landed
+  and whose rules then read it; the same join with the guest's frames lost for a second in the middle,
+  which finishes; a guest whose link drops while a rule raises their best, and who returns within the grace
+  to find it in their slot though they stepped no tick that changed it; a guest who returns after the grace
+  and joins as a new stay with what their slot held; a value that fails `validate`, landing as the default
+  on every machine; no slot written for another seat's player or for a bot; and the digests equal
+  throughout. **`continues`:** a host's lobby given a save by `test_setup()..start_match()`, where *Start*
+  after *Continue* enters the scene with the save restored on the host and on a guest who joined the lobby.
+  **A host with no window:** `cargo play --host` on the Mac, joined from Chrome and a second Mac process,
+  with no renderer, window or GPU crate in the host's program, the lowest seat's player pressing *Start*,
+  and the digests equal. **In the harness:** `peer(p).my_player()` for a peer between a wreck and a
+  relaunch, and `set_resource` on the table changing every machine alike.
 - **WP14:** example B's game with its hop, `.multiplayer(..)` and the standard lobby, hosted on the Mac and
   joined from Chrome and a second Mac process: a late joiner's ball on the host's screen, the joiner's own
   ball rolling and leaving the ground on their screen before the host confirms it, another player's hop seen
   at its height on each screen, and the three digests equal; captured in motion on the Mac and in Chrome.
-- **WP8:** the guard's refusals; an unfamiliar change made from the guides alone.
+- **WP15:** an action map whose `Stick`, `Axis` and `Button` are each bound to keys and to a pad, driven by
+  scripted pad state through the shell's own route on the Mac and in Chrome, with the rules reading the same
+  values as from keys; a trigger that presses its `Button` past half its travel and fills an `Axis` by its
+  travel; a pause menu opened, walked with the D-pad and the stick, activated with south and closed with
+  east, while the stick that walks the hero is not read by the game under the modal; `ui.prompt` showing the
+  key after a key press and the pad's glyph after a pad press, captured on both targets; a remap screen
+  that listens and rebinds a pad button, kept across a restart; `invert_y` and `sensitivity` on a `Heading`;
+  a `Rumble` pulse that reaches the shell's pad route and is nothing with no pad; and no pad crate in the
+  closure of a game built with `thrum`'s default features off. A pad in a person's hand is WP19's.
+- **WP16:** each proof of WP2.2, WP2.12 and WP12 for a space and a level, with a 3 on it, over `SIM-3D`: an
+  overlap, a ray and a swept sphere against colliders and the level on two layers, with no entity for the
+  level; a capsule moved by `Level3d::move_shape` over a terrain made with `Terrain::from_heights`, which
+  walks up a slope under `max_slope` and is stopped by a steeper one, climbs a step under `step_up` and is
+  stopped by a taller one, holds to a slope it walks down with `snap_down`, and is not pulled down while it
+  rises; `ground_height` on the terrain and on a box that stands on it; `hit.surface` for a floor, a wall
+  and a ceiling; a model added with `add`, solid from its own triangles, and one given to `place`, which
+  stops nothing; a piece removed, with a rewind; a mark set and read; a terrain and a level built from a
+  content record in an enter function, the same after a rewind and a replay and for a peer who joined
+  after; the same digests for a scripted walk on the Mac, in Chrome and on the simulator; and in a rehearsed
+  match, example G's `walk` run ahead against the terrain for a late joiner, corrected when the host
+  removes a piece under them.
+- **WP17:** example G on the Mac and in Chrome through T2 capture: the terrain drawn where the pilgrim's
+  feet meet it across a walk over a ridge; an added model and a placed one drawn, the first stopping the
+  pilgrim; a rig that takes an `Aim` and pitches within its limits, whose boom shortens against a hillside
+  and a wall and lengthens again; `game.steer` of an `Aim` in a test; and the 3D starter's second page, on
+  which the rock stops the ball, alone and in WP14's match.
+- **WP18:** a `.wav` and an `.ogg` cooked into the catalog, a `Music(..)` file making a `MusicAsset`, and a
+  misnamed sound refused by the check; with `AUDIO`'s mix rendered to a buffer and no device: a sound played
+  on an event present in the buffer once, a sound sent by a predicted event not played again at its
+  confirmation, forty plays in a second under `.limit(4)` making four voices, a sound `.at` a place louder
+  near the camera than far and on the side it stands, a thing's `Sound` starting and stopping with its
+  entity and with `disable` and `enable`, `Shown<Sound>` turning one down for one screen, music that
+  cross-fades on a change and does not restart when the same track is said again, a pause that holds a
+  thing's `Sound` and leaves the music, and `Mix` set through `Screen<Mix>` kept across a restart; the same
+  through the device on the Mac and in Chrome, with function on the simulator; no audio crate in the closure
+  of a game with `thrum`'s default features off; and no stall of a frame or a tick while a sound loads,
+  recorded as a tripwire. How it sounds is WP19's.
+- **WP8:** the guard's refusals; an unfamiliar change made from the guides alone; the guides' pages for a
+  pad, for sound and for 3D space.
+- **WP19:** one sitting, with `needs` of `human_feedback` and `hardware`: the owner plays the 2D template's
+  game and example G's with a pad in hand and the sound on, on the Mac, and says of each what is wrong with
+  how the pad feels, how the camera follows and how the game sounds. What they ask for is planned from
+  their words.
 
 ### What WP1 compiles
 
@@ -3909,6 +4317,19 @@ in place of each prefab and a plain position in place of `Transform2d`.
     have. Early sign: WP3's item for a game built by Cargo alone. If it needs a line of the game's code, a
     second source file in the one-file starter, or a way to start a game that `cargo run` does not reach,
     the builder ends `BLOCKED`, because each is a change of shape.
+14. **`SIM-3D` and `AUDIO` are not planned yet.** WP16 and WP18 wait for them, and WP17, WP8 and WP19 behind
+    those. Early sign: the status page shows either with no plan while WP7 is being built. Nothing before
+    WP16 waits: the 2D SDK, multiplayer, saves, the simulator and gamepads are built without them.
+15. **No agent can hear a game or hold a pad.** An agent proves what was asked for and that it arrived: the
+    samples in the mix, the action a pad state fills. Whether a pad feels right and a game sounds right is
+    the owner's, in WP19, and a "no" there reopens WP15 or WP18. Early sign: the first capture of a mixed
+    buffer, and the first scripted pad run on the Mac.
+16. **A terrain cannot be drawn from the source it is stood on.** The engine draws cooked meshes, so the
+    cooker must make a terrain's mesh and its collision heights from the one height image. Early sign:
+    WP17's first capture. The fallback keeps the shape: a terrain given as a cooked mesh, whose own
+    triangles are its collision, as a solid model's are.
+17. **A save that keeps entities outgrows its limit** in a game with thousands of them. Early sign: WP13's
+    record of a save of a thousand entities beside the 64 KiB default. `#[save(max_kib = n)]` raises it.
 
 ## Proof
 
@@ -3926,6 +4347,8 @@ in place of each prefab and a plain position in place of `Transform2d`.
 - **The shape**: a design reviewer checks each entry of the extension map against the core: it names its
   extension point, adds names and changes none.
 - **Looks**: the kit games drawn on the Mac and in Chrome, inspected in motion through T2 capture.
+- **Sound and pads**: in tests, by what was played and what reached the mix, and by the action a scripted
+  pad fills. How they sound and feel is judged by the owner, once, in WP19.
 - **The docs**: three fresh agents, commissioned by the lead as `CREATOR`'s was, one for each kind of game,
   each then asked for a change the guides did not show.
 - **Cost**: the tripwire records above.
@@ -3938,8 +4361,9 @@ Each is a line in the log. A builder may not change the **shape**: add a concept
 remove one of the fifteen words, change what a rule sees or when its edits land, change the written order,
 change what a control function may read or which of it a match runs ahead, change what happens in a pause,
 move a number between the portable kind and the float kind, move a line of plumbing into game code, make a
-game name an engine crate, build an entry of the extension map, or build something that closes one of the
-eight extension points. Where the shape cannot be built, the builder ends `BLOCKED` with the difference, and
+game name an engine crate, build an entry of the extension map that
+[the work packages](#the-work-packages) do not give its work package, or build something that closes one of
+the eight extension points. Where the shape cannot be built, the builder ends `BLOCKED` with the difference, and
 the planner brings it to the owner.
 
 When a work package is Done its examples in this design are replaced by the ones that compile, so the design
@@ -3955,6 +4379,9 @@ keeps reading as what is true.
   sees. WP5 derives the rule-set identity from the same digest, with the content and the build.
 - **Whether 64 KiB is the right default limit for a save.** At the host's frame budget it takes about a
   second and a third to bring in to a match. WP5 records the time it measures.
+- **How a terrain's height image is laid out, and how fine its cells are.** WP16's builder chooses, over what
+  `SIM-3D` gives, and the reference says it.
+- **Which sound formats a `MusicAsset` streams from.** `AUDIO`'s planner chooses, and WP18 follows.
 - **How an action set is packed into the input frame**: how many presses a button's count holds, above the
   three the design asks for, and how fine a stick is. WP2's builder chooses from what fits, and the reference
   says it.
