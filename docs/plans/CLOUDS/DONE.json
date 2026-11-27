@@ -1824,7 +1824,7 @@
     {
       "id": "WP11",
       "name": "Clouds drift over the open sea, shade it and show in its reflections, and a fog bank drifts ashore",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -1839,8 +1839,8 @@
           "check": "bash scripts/check_cross_target.sh",
           "ask": "On the Mac, does `cloud_cost --mist-day` with clouds off still install the solar sweep over the same ticks and hours as at `dd16512b7`? Is `scripts/check_cross_target.sh` unchanged?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP11/portability.md",
           "verdict": "",
           "review": ""
         },

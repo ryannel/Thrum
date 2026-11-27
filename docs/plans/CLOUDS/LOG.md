@@ -1320,3 +1320,9 @@ occurrence counts and unresolved causes. The WP15 reference stays beside them.
   Windows. New WP11.11 holds the fix and the type-check, first in WP11, the next work package. No design change.
   WP15 is Done, so its plan note left `PLAN.md`: the eighth risk's fixes for a handover showing in WP15.4 or
   WP15.13, and [the diagnosis](../../../.orchestrate/evidence/CLOUDS/WP15-diagnosis.md)'s three things to build.
+
+### WP11 portability checkpoint
+
+The workspace checks again for Linux and Windows. The clouds-off mist-day cost
+example on Mac recorded the same 71 sample ticks and solar hours as WP16.8.
+[WP11.11 target evidence](../../../.orchestrate/evidence/CLOUDS/WP11/portability.md)
