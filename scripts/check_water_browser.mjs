@@ -32,7 +32,7 @@ const cloudRoute = cloudSelection === 'matrix' ? cloudMatrix[0][1]
   : cloudReflection ? '?clouds=fair&cloud-height=40' : cloudSelection;
 const cloudMotion = mode === 'realtime' && Boolean(cloudRoute);
 const [width,height] = mode === 'under-light' ? [320,180] : mode === 'under' ? [48,27]
-  : cloudMotion || (mode === 'realtime' && diveRoute && process.env.THRUM_WATER_ROUTE!=='under-light'
+  : cloudMotion || (mode === 'realtime' && diveRoute && !['under-light','caustic-window'].includes(process.env.THRUM_WATER_ROUTE)
       && process.env.THRUM_WATER_DIVE_TRAVEL===undefined) ? [1280,720]
   : mode === 'clouds' && (!cloudRoute || cloudControls || cloudReflection) ? [640,360]
   : ['rain-rings','rain-footfall','rain-ground'].includes(mode) ? [960,540]
@@ -1796,12 +1796,13 @@ try {
     const diveDepth=['pond','swash'].includes(diveLocation)?0.35:0.6;
     const retreat=['lake','lake-high-stage'].includes(diveLocation)?-0.4:0.9;
     const diveHold=process.env.THRUM_WATER_DIVE_HOLD?.split(',').map(Number);
+    const causticWindow=dive&&process.env.THRUM_WATER_ROUTE==='caustic-window';
     const diveBearing=Number(process.env.THRUM_WATER_DIVE_BEARING??90);
     const diveSetback=Number(process.env.THRUM_WATER_DIVE_SETBACK??0);
     const diveSun=Number(process.env.THRUM_WATER_DIVE_SUN??60);
     const diveFov=Number(process.env.THRUM_WATER_DIVE_FOV??105);
     const diveTravel=Number(process.env.THRUM_WATER_DIVE_TRAVEL??diveDepth);
-    const diveView=dive?(diveHold??new Map([
+    const diveView=dive?(diveHold??(causticWindow?[1.8,-12]:undefined)??new Map([
       ['dive-up-1m',[1,89.99]],['dive-inclined-1m',[1,45]],
       ['dive-up-5m',[5,89.99]],['dive-inclined-5m',[5,45]],['dive-hold',[0,0]],
     ]).get(process.env.THRUM_WATER_ROUTE)):undefined;
@@ -1816,6 +1817,7 @@ try {
       const surfaceFollow=depthTour||(process.env.THRUM_WATER_ROUTE==='under-light'&&diveView?.[0]===0);
       result.dive_camera.surface_follow=surfaceFollow;
       result.dive_camera.setback=diveSetback;
+      if(causticWindow)result.dive_camera.maximum_setback=diveSetback+10;
       await evaluate(`game.edit_control('camera.surface_follow',${Number(surfaceFollow)});game.edit_control('camera.setback',${diveSetback+(surfaceFollow?1.7:0)});game.edit_control('camera.pitch',${pitch});game.edit_control('camera.depth',${depth});
         game.edit_control('camera.bearing',${diveBearing});game.edit_control('camera.fov',${diveFov});game.edit_control('sun.elevation',${diveSun})`);
       await until(async()=>{
@@ -1885,6 +1887,7 @@ try {
           }
           game.edit_control('camera.depth',depth);
         }
+        else if(${causticWindow})game.edit_control('camera.setback',${diveSetback}+5*(1-Math.cos(2*Math.PI*elapsed/${duration})));
         else if(!${dive}&&!${surfInspection}&&!${cloudMotion})game.edit_control('camera.bearing',90+elapsed*0.012);
         if(${handoffCut}&&elapsed>=5000&&__cameraCut===null){
           game.edit_control('camera.island',8);

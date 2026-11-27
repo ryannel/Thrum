@@ -20,6 +20,7 @@ const CHANNEL_SUBMISSIONS: usize = 180;
 const DIVE_SUBMISSIONS: usize = 190;
 const DIVE_CROSSING_SECONDS: f64 = 4.0;
 const DIVE_CROSSING_HZ: f64 = 17.0;
+const CAUSTIC_WINDOW_CAMERA_TRAVEL: f64 = 10.0;
 const RIVER_SUBMISSIONS: usize = 240;
 const RIVER_CAPTURE_LEASES: usize = 256;
 const WRITER_QUEUE: usize = 192;
@@ -140,13 +141,15 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         "yard-sill-dry" | "yard-joined" => r#"{"rain.stone_sill":1}"#,
         _ => r#"{"rain.stone_left":1}"#,
     };
+    let caustic_window = dive && route == "caustic-window";
     let held_dive = std::env::var("THRUM_WATER_DIVE_HOLD")
         .ok()
         .and_then(|text| {
             let (depth, pitch) = text.split_once(',')?;
             Some((depth.parse::<f64>().ok()?, pitch.parse::<f64>().ok()?))
         })
-        .or_else(|| dive_view(&route));
+        .or_else(|| dive_view(&route))
+        .or_else(|| caustic_window.then_some((1.8, -12.0)));
     let dive_travel = std::env::var("THRUM_WATER_DIVE_TRAVEL")
         .ok()
         .and_then(|travel| travel.parse::<f64>().ok());
@@ -236,7 +239,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         ([1280, 720], 20.0, 9.0, CHANNEL_SUBMISSIONS)
     } else if dive && dive_travel.is_some() {
         ([2560, 1440], 20.0, 4.0, DIVE_SUBMISSIONS)
-    } else if dive && route == "under-light" {
+    } else if dive && (route == "under-light" || caustic_window) {
         ([2560, 1440], 5.0, 16.0, MAX_SUBMISSIONS)
     } else if dive {
         ([1280, 720], 5.0, 20.0, MAX_SUBMISSIONS)
@@ -586,6 +589,13 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             }
             .expect("lower and raise the lens");
         }
+        if caustic_window {
+            let distance = 0.5 * (1.0 - (elapsed * std::f64::consts::TAU / interval).cos());
+            let setback = CAUSTIC_WINDOW_CAMERA_TRAVEL.mul_add(distance, dive_setback);
+            runtime
+                .parameters(&format!(r#"{{"camera.setback":{setback:.4}}}"#))
+                .expect("translate the caustic window");
+        }
         if !dive && !yard && !channel && !river && island.is_none() && floating.is_none() {
             runtime
                 .parameters(&format!(
@@ -855,6 +865,9 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         );
         record["bearing"] = json!(dive_bearing);
         record["setback"] = json!(dive_setback);
+        if caustic_window {
+            record["maximum_setback"] = json!(dive_setback + CAUSTIC_WINDOW_CAMERA_TRAVEL);
+        }
         if dive_travel.is_some() {
             record["crossing_opportunities_hz"] = json!(DIVE_CROSSING_HZ);
         }
