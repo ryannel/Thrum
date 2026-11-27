@@ -1761,7 +1761,9 @@ try {
     const offshore=surfInspection&&view===2;
     const routeParams=new URLSearchParams(route);
     const dive=routeParams.has('dive');
-    const diveDepth=routeParams.get('location')==='swash'?0.35:0.6;
+    const diveLocation=routeParams.get('location')??'lake';
+    const diveDepth=['pond','swash'].includes(diveLocation)?0.35:0.6;
+    const retreat=['lake','lake-high-stage'].includes(diveLocation)?-0.4:0.9;
     const diveHold=process.env.THRUM_WATER_DIVE_HOLD?.split(',').map(Number);
     const diveBearing=Number(process.env.THRUM_WATER_DIVE_BEARING??90);
     const diveSetback=Number(process.env.THRUM_WATER_DIVE_SETBACK??0);
@@ -1839,8 +1841,10 @@ try {
             ${-diveDepth}*Math.cos(2*Math.PI*elapsed/${duration});
           if(${depthTour}){
             const below=Math.max(0,depth-${diveDepth});
-            game.edit_control('camera.setback',${diveSetback}+1.7+0.9*below);
-            game.edit_control('camera.pitch',32*Math.min(1,below/4));
+            game.edit_control('camera.setback',${diveSetback}+1.7+${retreat}*below);
+            const hullPitch=32*Math.min(1,below/4);
+            const bed=Math.max(0,Math.min(1,(depth/${diveTravel}-0.8)/0.2));
+            game.edit_control('camera.pitch',hullPitch+(-35-hullPitch)*bed*bed*(3-2*bed));
             const release=Math.min(1,below/1.5);
             game.edit_control('camera.surface_follow',1-release*release*(3-2*release));
           }

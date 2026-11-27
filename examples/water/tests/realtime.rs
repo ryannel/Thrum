@@ -559,10 +559,18 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             } else {
                 -crossing * (elapsed * std::f64::consts::TAU / interval).cos()
             };
-            if dive_travel.is_some() {
-                let distance = dive_setback + 1.7 + 0.9 * (depth - crossing).max(0.0);
-                let pitch = 32.0 * ((depth - crossing) / 4.0).clamp(0.0, 1.0);
-                let release = ((depth - crossing) / 1.5).clamp(0.0, 1.0);
+            if let Some(maximum) = dive_travel {
+                let below = (depth - crossing).max(0.0);
+                let retreat = match site {
+                    water_scene::island::DiveSite::Lake | water_scene::island::DiveSite::HighLake => -0.4,
+                    _ => 0.9,
+                };
+                let distance = dive_setback + 1.7 + retreat * below;
+                let hull_pitch = 32.0 * (below / 4.0).clamp(0.0, 1.0);
+                let bed_view = ((depth / maximum - 0.8) / 0.2).clamp(0.0, 1.0);
+                let bed_view = bed_view * bed_view * (3.0 - 2.0 * bed_view);
+                let pitch = (-35.0 - hull_pitch).mul_add(bed_view, hull_pitch);
+                let release = (below / 1.5).clamp(0.0, 1.0);
                 let follow = 1.0 - release * release * (3.0 - 2.0 * release);
                 runtime.parameters(&format!(
                     r#"{{"camera.depth":{depth:.4},"camera.setback":{distance:.4},"camera.pitch":{pitch:.4},"camera.surface_follow":{follow:.4}}}"#,
