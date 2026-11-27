@@ -2970,13 +2970,22 @@ its frames show rays. If a review fails a station that stays on this cue, a plan
 
 **The study comes first (WP26.1).** Before anything is changed, the builder records:
 
-- *The cause in the frame.* Each station as shipped, and at the same camera and engine time in part S3's
-  water. Beams that separate in part S3's water and not in the example's make the example's water a
-  cause. Beams that separate in neither make the field or the march one.
+- *The cause in the frame.* Four pictures of each station in each wind, at one camera and engine time:
+  the frame as shipped; the frame in part S3's water; the water's scattered light alone as shipped,
+  shafts included, without the surface seen through it; and the caustic field over the station, at the
+  rung nearest the lens's depth. The first two settle one thing, whether part S3's water brings separate
+  beams back, and where it does the example's water is a cause. They cannot tell the other three causes
+  apart, because the frame adds the shafts' light to the light of the surface seen through the water, and
+  a bright surface hides beams the march resolved as surely as it shows none where the march resolved
+  none. The other two pictures do. Separate beams in the scattered light alone and not in the frame make
+  the composition a cause. Separate bright lines in the field and no separate beams in the scattered
+  light make the march one. No separate bright lines in the field make the field one. The record names a
+  cause only with the pictures that show it, and may name more than one.
 - *What shipped games show.* Frames from shallow water looking up toward the Sun in Subnautica and Sea of
   Thieves, the games WP16's bar names, and in at least two high-end 3D games released from 2022 on: whether
   separate beams stand, how far the water lets the eye see, and whether the beams move with the surface
-  above them. Four searches on 27 November found no published account of how a shipped game draws shafts
+  above them. A still shows whether beams separate. Whether they move is read from a clip or from frames
+  in time order, and where a source is one still the note says it does not show. Four searches on 27 November found no published account of how a shipped game draws shafts
   in shallow water, so the frames carry the study.
 - *Published techniques.* Accounts for engines and games from 2020 on. A technique is a candidate when a
   current engine or game uses it, and never because code for it is at hand, in Broadsides or anywhere else.
@@ -2985,12 +2994,15 @@ its frames show rays. If a review fails a station that stays on this cue, a plan
   and Ray Tracing Gems, chapter 14, on volumetric water caustics traced with DXR
   ([2019](https://rd.springer.com/content/pdf/10.1007/978-1-4842-4427-2_14.pdf)), which is not portable and
   shows the look.
-- *The remedy*, with the candidates not chosen and why.
+- *The remedy*, with the candidates not chosen and why, and whether it reaches the field the receivers
+  read or a body's water.
 
 **What a remedy may change.** The example's water, which is the example's own and tuned by eye. How the
 march reads the field: its phase function, the contrast and blur of what the shafts read, its steps and
 its resolution. How the composition sets the beams against the surface seen through the water. The field's
-grid. Under [the owner's bar](#proof-and-builder-handoff), plausible before accurate, a beam may stand out
+grid. The first and the last of these reach past the shafts: a body's water is its whole picture under
+water, and the field is the net on every receiver, so bound 6 has each judged again where it changed.
+Under [the owner's bar](#proof-and-builder-handoff), plausible before accurate, a beam may stand out
 more than the model's light gives it. The glow from 1 m under a high Sun is the cue there and stays.
 WP16's six looks changed the blur, the phase, the jitter and the aim, and are not repeated.
 
@@ -3003,22 +3015,43 @@ WP16's six looks changed the blur, the phase, the jitter and the aim, and are no
 2. *One Sun path.* Beams lean with the refracted Sun. The Sun's visibility is read at the point where the
    sample's refracted ray leaves the water, by the function the receivers use, and the marched part stays
    signed, so the water in a hull's shadow is darker than the water beside it.
-3. *The net on a receiver is not touched.* The Sun-path factor stays `1 + D(z) · (C − 1)` of the field
+3. *One field makes the net and the beams.* The Sun-path factor stays `1 + D(z) · (C − 1)` of the field
    that conserves light. A remedy that strengthens the beams shapes what the shafts read from that field,
-   and makes no second pattern: a beam still stands over the bright lines of the net.
-4. *A capability with named knobs.* A profile without shafts creates none of the remedy's resources and
-   draws WP15's frame. Each knob the remedy adds has a declared invalidation. A history the remedy keeps is
-   declared with its invalidation and honours the frame's reset flag.
+   and makes no second pattern: a beam still stands over the bright lines of the net. A remedy that
+   changes the field itself, its grid, window, rungs, blur or cadence, changes the net on every receiver,
+   and bound 6 has the net judged again.
+4. *Shafts stay a capability apart from caustics, with named knobs.* A profile with caustics and without
+   shafts still draws the net and no shaft, as WP16 has it, and not WP15's frame: under a rippled surface
+   in sunlight the bed keeps its net, the water between the bed and the lens carries no shaft and stores the light it
+   stores with caustics left out too, no shaft pass is declared, and none of the resources that only the
+   shafts use is created, the remedy's among them. Only a profile with neither draws WP15's frame. Each
+   knob the remedy adds has a declared invalidation. A history the remedy keeps is declared with its
+   invalidation and honours the frame's reset flag.
 5. *Both targets.* The remedy is the portable path's, and draws in Chrome what it draws on Metal.
-6. *What WP16 passed stays passed.* Its tests, WP16.7's list at its own views, and, for a body whose water
-   changed, the net of WP16.6 and the readable descent of WP16.8 to 20 m in the sea and to the lake's bed.
+6. *What WP16 passed stays passed.* Its tests, and WP16.7's list at its own views. Where the remedy
+   changed the field the receivers read, the net of WP16.6 on the bed, the hull and the sunk float, in the
+   sea and the lake, on Metal and at noon in Chrome. Where it changed a body's water, that body's net and
+   its readable descent of WP16.8, to 20 m in the sea and to the lake's bed, on both targets too. The eye
+   judges the net here, because the receivers' test counts brighter and darker pixels, and broad moving
+   patches pass it that are not the fine net of lines WP16.6 asks in the shallows. The work package's
+   diff from the revision it started at says which of the two the remedy changed.
 
 A remedy that cannot keep a bound, or a study that finds the named games draw no separate beams from such
 views, ends `BLOCKED` with the record, and a planner decides. After the study, three looks that fail the
 same cue end `BLOCKED` as [the handoff](#proof-and-builder-handoff) says.
 
 **Proof.** WP26.1 holds the study. WP26.2 judges the two stations on Metal, with a calm, a sequence under
-temporal sampling and WP16.7's list again. WP26.3 runs WP16's tests with the remedy in. WP26.4 judges
-Chrome, at both stations and at WP16.7's noon views: this is where the lake's separate beams at noon are
-judged in Chrome, which the design review of 27 November asked of WP16.11 and WP16 no longer holds. WP26.5
-takes the paired cost record again.
+temporal sampling and WP16.7's list again, and judges the receivers again wherever bound 6 says the
+remedy reached them. WP26.3 runs WP16's tests with the remedy in, and a rippled, sunlit profile with
+caustics and without shafts for bound 4. WP26.4 judges Chrome, at both stations and at WP16.7's noon
+views, and at the receivers' noon views where bound 6 applies: this is where the lake's separate beams at
+noon are judged in Chrome, which the design review of 27 November asked of WP16.11 and WP16 no longer
+holds.
+
+WP26.5 takes the paired cost record again, and its comparison is WP16 and not WP15. The scene's own
+check sets the light on beside the light off, and the arm with it off has no shaft pass, so a march that
+doubled would trip nothing there. This record holds each water pass's time from 3 m under the sea and
+the lake at the revision the work package started from, measured before anything is changed, and beside
+it the same pass with the remedy in. A pass, or the shafts' passes taken together, 25% or more over the
+figure at that revision trips a wire, whether or not the whole frame is inside the refresh. As
+[everywhere](#cost-account), the wire asks for an investigation and decides nothing.

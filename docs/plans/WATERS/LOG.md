@@ -1644,3 +1644,23 @@
   a review fails a kept station on this cue, the remedy is to move that station to WP26, not another look.
   [Figures](../../../.orchestrate/evidence/WATERS/design-proof/shaft-stations-by-water.txt).
 
+## WP26 design review
+
+- 2026-11-27 Planner, for the four Must Fix findings of the design review at `2f7280906364`. Only WP26
+  and [its section](DESIGN.md#beams-in-shallow-water-wp26) changed.
+  [The changes](../../../.orchestrate/evidence/WATERS/WP26-design-review-fixes.md).
+- 2026-11-27 Planner, Must Fix 1: bound 4 and WP26.3 have a profile with caustics and without shafts
+  keep the net on the bed, with no shaft, shaft pass or shaft-only resource; it no longer draws WP15's
+  frame.
+- 2026-11-27 Planner, Must Fix 2: bounds 3 and 6, WP26.2 and WP26.4 judge WP16.6's receivers again when
+  the remedy changed the caustic field, on Metal and at noon in Chrome, and a reviewer question settles
+  whether it did from the diff.
+- 2026-11-27 Planner, Must Fix 3: WP26.1's study adds the water's scattered light alone and the caustic
+  field for each view, and names a cause, of four, only with the pictures that show it.
+- 2026-11-27 Planner, Must Fix 4: WP26.5 has its own check, `--scene shallow-beams`, whose record holds
+  each pass's time at the starting revision and trips a wire 25% over it. Still a tripwire.
+- 2026-11-27 Planner, the review's suggestion taken: a note that a reference game's beams move rests on
+  a clip or frames in time order.
+- 2026-11-27 Planner, for WP26's builder. Take WP26.5's figures at the starting revision before any
+  change, under the load the later record will have. Bound 4's test wants a view of open water with no
+  receiver in it, since the net on a panel is the one thing caustics alone add to the frame.
