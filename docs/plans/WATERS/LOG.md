@@ -1942,3 +1942,26 @@
   limit. At 1440p both shaded bodies submit without validation faults.
   [Sea shade](../../../.orchestrate/evidence/WATERS/WP16/portable-shaded/sea.json)
   · [Lake shade](../../../.orchestrate/evidence/WATERS/WP16/portable-shaded/lake.json).
+
+- The contiguous filter removed the repeated clusters in the checked lake
+  and sea views. A deeper draft, closed underside and separate receiver
+  view expose the craft and float. Low-Sun sequences still show mostly
+  elongated light on the hull and only a few highlights on the float.
+  The receiver part of WP16.6 remains open.
+- Widening the normalized scattering phase made rays clearer in the
+  deeper sea and the low-Sun lake. The sea and lake at noon in a breeze
+  still show a changing glow at 1 m. The independent inspection could
+  see the rays moving in the deeper examples, but it could not verify
+  standing beams in the shallow noon views or a dark gap between shafts
+  around the keel. WP16.7 remains open.
+- The shelf and offshore stations show detail at their fixed depths and
+  the corrected lake tour stays above the bed. The dawn crossing keeps
+  its exposure scale constant, while a dark interval still separates
+  the visible hull in some split frames. A trial that let the moored
+  craft heave brought caustics onto exposed surfaces through the mean
+  level approximation. That trial was discarded. WP16.8 remains open.
+- The bed and shaft visibility now use the same filtered depth comparison.
+  Native Metal and hardware Chrome pass the shared shadow checks. The
+  portable shade route submits at 1440p without validation errors.
+  [Inspection records](../../../.orchestrate/evidence/WATERS/WP16/inspection-round-4/README.md)
+  · [Chrome shade](../../../.orchestrate/evidence/WATERS/WP16/shadow-comparison/lake-shade.json).
