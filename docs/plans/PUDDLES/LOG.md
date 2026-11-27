@@ -353,3 +353,12 @@
   skill's GPU tests now say how a helper only Metal tests call is gated, and when to run the type-check.
   WP3, WP4, WP8 and WP5 are Done, so their plan notes left `PLAN.md`; each one's review and the entries above
   hold what they said.
+
+- 2026-11-27 WP6 second review repair. The ordinary exit cook preserves the retained flythrough root
+  and submits all 1,351 routed frames on Metal. Rain selects a separate patch source in both launchers.
+  Metal and Chrome still draw both hollows with rain selected. The material filters the sparse canopy
+  vertically across the slope boulder's wet boundary. The valley patch receives the existing shadows,
+  blends its banks into the terrain normals and uses a rougher wet finish on the floor.
+  The capture-off Metal cost record reads both gather textures from the compiled graph and records
+  their nominal bytes and transient slots. Each missing texture is rejected by the checker.
+  [Repair evidence](../../../.orchestrate/evidence/PUDDLES/WP6/review-2/validated/README.md)
