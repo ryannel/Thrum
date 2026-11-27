@@ -807,3 +807,13 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
   in the whole binary with its assertions kept (design, WP19.1). No assumption was added and no other module's
   file changed.
   [The runs](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP19-plan/README.md)
+
+- 2026-11-27 WP18 review repair. Window input follows the last presented picture and current window bounds.
+  Resize capture follows the first submission from the accepted output generation. Game frame and display
+  records carry its resolved output policy. The Mac publishes a terminal request even when a full-screen
+  attempt expires at the original window size.
+- Verified on the M3 Max. Both release recipes passed the launch checks. At a window resize to 800×450
+  points, the first submitted capture measured 1200×675 at 75% and 1600×900 at 100%. The AppKit run took
+  one generation each way and preserved the presented policy while a newer request was pending. The Mac
+  CPU test verified that the cancelled change publishes once at the deadline.
+  [Repair evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP18/repair/proof-index.md)
