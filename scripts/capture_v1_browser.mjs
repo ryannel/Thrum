@@ -164,7 +164,11 @@ const manifest = { complete: false, target: 'chrome-webgpu', source: args.source
   route_file: args['route-file'] || null, route_sha256: sha(captureRoute ?? files.movingRoute),
   source_files: sourceHashes, artifacts: Object.fromEntries([...files].map(([name, value]) => [name, value.sha256])) };
 if (spriteField || args.scene === 'exit' || spoolRaw) {
-  manifest.record_limit = cloudMotion ? 4096 : spriteField || args.scene === 'exit' || args.clouds !== 'off' ? 1800 : governed || args.atmosphere !== 'off' || chartTake !== 'off' ? 1024 : 270;
+  manifest.record_limit = cloudMotion ? 4096
+    : spriteField || args.scene === 'exit' || args.clouds !== 'off' ? 1800
+    : chartTake === 'fast' ? 1440
+    : governed || args.atmosphere !== 'off' || chartTake !== 'off' ? 1024
+    : 270;
   // A suspended request still owns its image. Give the 720p motion take a
   // bounded backlog without increasing the larger or fixed capture profiles.
   manifest.export_slots = spriteField ? 32 : spoolRaw && frameBytes <= 1280 * 720 * 4
