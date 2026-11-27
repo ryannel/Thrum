@@ -137,13 +137,19 @@ The Internal field slider shows the name of each field at its selected stop.
 
 Use `--case clouds-inspect --cloud-take PATH --mode realtime --reconstruction taau`
 for a timed Mac inspection. A take is a JSON object with a `kind` of `pan`, `walk`,
-`lapse`, `preset`, `cut`, `profile` or `sweep`. A pan supplies `from` and `to` yaw in
+`lapse`, `preset`, `cut`, `profile`, `day` or `sweep`. A pan supplies `from` and `to` yaw in
 degrees. A sweep supplies a typed control `key` and `from` and `to` in its display
-units, applied over 20 seconds. Profile changes use the prepared layer's scale knob.
+units, applied over 20 seconds. Set `logarithmic: true` for multiplicative changes
+between positive endpoints. Profile changes use the prepared layer's scale knob.
 
 For Chrome, a cloud view can supply `preset`, `weather_rate` and `wind`, plus
 `duration_seconds` between 1 and 60 for an elapsed-time take. Its optional `motion`
-object accepts the same motion kinds as the Mac except `sweep`. Use `--cloud-store PATH`
+object accepts the same motion kinds as the Mac. For a `day` take, select `dawn-mist`, use 60×,
+and start held at late afternoon. The capture resumes the world without holding the Sun.
+For a fixed Ground parameter still, use 60× with `THRUM_CAPTURE_SETTLE_GROUND=1` on Mac
+or `settle_ground: true` in the Chrome view. These run 16 weather ticks before holding the shot.
+Use these same options at 1× to settle the initial controls of a Ground sweep for 72 ticks.
+Use `--cloud-store PATH`
 with a cooked cloud library to include placed clouds in a fixed cloud view.
 
 Select `THRUM_CLOUDS=world-light` for the sky overlay in reflections and diffuse light,

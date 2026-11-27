@@ -43,6 +43,7 @@ fn trace_overlay(@builtin(global_invocation_id) id: vec3<u32>) {
         let base_sun = sun_irradiance(vec3(camera.x, cloud.heights.x, camera.z));
         let top_sun = sun_irradiance(vec3(camera.x, cloud.heights.y, camera.z));
         let phases = cloud_phases(ray, atmosphere.sun_lux.xyz);
+        let ground_sky = ground_sky_limit(ray, atmosphere.sun_lux.xyz);
         let angles = cloud_light_angles(-ray);
         var distance = begin;
         for (var i = 0u; i < 192u && distance < end && transmission > 0.0001; i++) {
@@ -82,7 +83,7 @@ fn trace_overlay(@builtin(global_invocation_id) id: vec3<u32>) {
                 }
             }
             if in_fog {
-                let fog = ground_light(world, ray, atmosphere.sun_lux.xyz, at, transmission, at <= CLOUD_RAMP_END_M);
+                let fog = ground_light(world, ray, atmosphere.sun_lux.xyz, at, transmission, at <= CLOUD_RAMP_END_M, ground_sky);
                 if fog.extinction > 0.0 {
                     source = (sigma * source + fog.ambient
                         + sun_irradiance(world) * fog.surface_visibility * fog.solar_kernel) / (sigma + fog.extinction);

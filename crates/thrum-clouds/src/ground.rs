@@ -310,6 +310,77 @@ pub(crate) struct GroundGpu {
     pub(crate) field: GroundField,
     pub(crate) phases: lighting::LightTable,
     pub(crate) targets: GroundTargets,
+    pub(crate) band_cadence: Cadence<[i64; 2]>,
+    pub(crate) medium_cadence: Cadence<MediumView>,
+}
+
+/// Tracks the age of a whole ground product across submitted frames.
+pub(crate) struct Cadence<T> {
+    period: u32,
+    age: u32,
+    accepted: Option<T>,
+    recorded: Option<T>,
+}
+
+impl<T: Copy + PartialEq> Cadence<T> {
+    const fn new() -> Self {
+        Self {
+            period: 1,
+            age: 0,
+            accepted: None,
+            recorded: None,
+        }
+    }
+
+    pub(crate) fn set_period(&mut self, period: u32) {
+        if self.period != period {
+            self.period = period;
+            self.invalidate();
+        }
+    }
+
+    pub(crate) fn invalidate(&mut self) {
+        self.accepted = None;
+    }
+
+    pub(crate) fn plan(&mut self, view: T, reset: bool) -> bool {
+        self.recorded =
+            (reset || self.accepted != Some(view) || self.age + 1 >= self.period).then_some(view);
+        self.runs()
+    }
+
+    pub(crate) fn runs(&self) -> bool {
+        self.recorded.is_some()
+    }
+
+    pub(crate) fn submitted(&mut self) {
+        if let Some(view) = self.recorded.take() {
+            self.accepted = Some(view);
+            self.age = 0;
+        } else {
+            self.age += 1;
+        }
+    }
+}
+
+/// The frustum signature used to keep coefficients with their observer.
+#[derive(Clone, Copy, PartialEq)]
+pub(crate) struct MediumView {
+    camera: [u32; 3],
+    forward: [u32; 3],
+    extent: [u32; 2],
+}
+
+impl MediumView {
+    pub(crate) fn new(frame: &thrum_render::contribution::ContributionFrame) -> Self {
+        // The perspective matrix's homogeneous row gives the view's forward
+        // basis with no per-frame projection jitter.
+        Self {
+            camera: frame.camera.map(f32::to_bits),
+            forward: std::array::from_fn(|axis| frame.view_proj[axis][3].to_bits()),
+            extent: frame.render_extent,
+        }
+    }
 }
 
 pub(crate) struct GroundTargets {
@@ -369,6 +440,8 @@ impl GroundGpu {
             field,
             phases,
             targets,
+            band_cadence: Cadence::new(),
+            medium_cadence: Cadence::new(),
         })
     }
 }

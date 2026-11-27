@@ -19,10 +19,16 @@ pub enum FieldOverlay {
     SunPath,
     /// Visible-layer refresh age.
     LayerAge,
+    /// Column optical depth from the ground sources.
+    GroundSources,
+    /// Smoothed terrain datum used by pooled mist.
+    GroundDatum,
+    /// Sun-path optical depth at the bottom of the ground band.
+    GroundBand,
 }
 
 impl FieldOverlay {
-    const ALL: [Self; 8] = [
+    const ALL: [Self; 11] = [
         Self::Off,
         Self::Coverage,
         Self::Type,
@@ -31,6 +37,9 @@ impl FieldOverlay {
         Self::PlacedSlots,
         Self::SunPath,
         Self::LayerAge,
+        Self::GroundSources,
+        Self::GroundDatum,
+        Self::GroundBand,
     ];
 
     /// Display labels in the order of the integer control stops.
@@ -43,6 +52,9 @@ impl FieldOverlay {
         "Placed slots",
         "Sun-path optical depth",
         "Layer refresh age",
+        "Ground sources",
+        "Ground datum",
+        "Ground band",
     ];
 
     /// Select a discrete control stop. Invalid values select the ordinary sky.

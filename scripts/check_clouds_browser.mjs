@@ -2,12 +2,12 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-export const cloudCases = ['clouds-first-frame', 'clouds-state', 'clouds-placed', 'clouds-controls'];
+export const cloudCases = ['clouds-first-frame', 'clouds-state', 'clouds-placed', 'clouds-controls', 'clouds-ground-controls'];
 
 export function cloudObserver(mode) {
   const ground = mode === 'clouds-state';
   return `
-    globalThis.thrumCloudCheck = {enabled: ${!['clouds-placed', 'clouds-controls'].includes(mode)}, ground: ${ground}, frames: [], visibility: [], gpuErrors: []};
+    globalThis.thrumCloudCheck = {enabled: ${!['clouds-placed', 'clouds-controls', 'clouds-ground-controls'].includes(mode)}, ground: ${ground}, frames: [], visibility: [], gpuErrors: []};
     const requestDevice = GPUAdapter.prototype.requestDevice;
     GPUAdapter.prototype.requestDevice = async function(...args) {
       const device = await Reflect.apply(requestDevice, this, args);
@@ -37,6 +37,9 @@ export async function preparePlacedClouds(files, output, repo) {
 }
 
 export async function qualifyClouds({ cdp, sessionId, targetId, mode, poll, game, timeout, waitFor, destroy }) {
+  if (mode === 'clouds-ground-controls') {
+    return qualifyGroundControls({ game, poll, timeout, waitFor });
+  }
   if (mode === 'clouds-controls') {
     return qualifyControls({ game, poll, timeout, waitFor });
   }
@@ -207,4 +210,57 @@ async function qualifyControls({ game, poll, timeout, waitFor }) {
     return health.presented > start;
   }, timeout, 'submitted frame after preset edits');
   return { target: 'chrome-webgpu', schema, initialReport, presets };
+}
+
+async function qualifyGroundControls({ game, poll, timeout, waitFor }) {
+  const read = () => game.invoke(`return {
+    controls: JSON.parse(game.controls_json()).controls.filter(control => control.key.startsWith('clouds.')),
+    report: document.querySelector('#params-status').textContent,
+    presented: Number(game.presented()),
+    errors: thrumCloudCheck.gpuErrors,
+  };`);
+  const initial = await read();
+  if (!/^clouds-ground-study.params.json: \d+ changed, \d+ unchanged, 0 refused$/.test(initial.report)) {
+    throw new Error(`Ground parameter file refused: ${initial.report}`);
+  }
+  for (const [key, label, kind, min, max, unit] of [
+    ['mist_amount', 'Mist amount', 'slider', 0, 1, ''],
+    ['fog_amount', 'Fog bank amount', 'slider', 0, 1, ''],
+    ['moisture', 'Moisture', 'slider', 0, 1, ''],
+    ['visual_range', 'Clear-air visual range', 'slider', 3, 300, 'km'],
+    ['angstrom_exponent', 'Ångström exponent', 'slider', 0, 2, ''],
+    ['radiative_day', 'Radiative day', 'toggle'],
+    ['overlay', 'Internal field', 'slider', 0, 10, ''],
+  ]) {
+    const fullKey = 'clouds.' + key;
+    const spec = initial.controls.find(control => control.key === fullKey);
+    const shown = await game.invoke(`return !!document.querySelector('[data-control="${fullKey}"] input');`);
+    if (!shown || spec?.label !== label || spec.kind !== kind ||
+        (kind === 'slider' && (spec.min !== min || spec.max !== max || spec.display.unit !== unit))) {
+      throw new Error(`Wrong Ground control ${fullKey}: ${JSON.stringify(spec)}`);
+    }
+  }
+  const fields = ['mist_amount', 'fog_amount', 'moisture', 'visual_range', 'angstrom_exponent', 'radiative_day', 'overlay'];
+  const values = state => fields.map(key => state.controls.find(spec => spec.key === 'clouds.' + key).value);
+  const presets = [];
+  for (const [name, expected] of [
+    ['dawn-mist', [1, 0, 1, 60, 0, true, 0]],
+    ['sea-fog', [0, 0.75, 0.9, 35, 0, false, 0]],
+    ['reload-params', [0.6, 0.3, 0.8, 85, 1.3, false, 9]],
+  ]) {
+    const before = await read();
+    const selector = name === 'reload-params' ? '#reload-params' : `[data-ground-preset="${name}"]`;
+    await game.invoke(`const button = document.querySelector(${JSON.stringify(selector)});
+      if (!button || button.hidden) throw new Error('Ground preset button is unavailable');
+      button.click();`);
+    const state = await waitFor(async () => {
+      await poll();
+      const current = await read();
+      if (current.errors.length) throw new Error(current.errors.join('\n'));
+      return current.presented > before.presented && JSON.stringify(values(current)) === JSON.stringify(expected)
+        ? current : undefined;
+    }, timeout, `submitted Ground frame after ${name}`);
+    presets.push({ name, values: values(state), presented: state.presented });
+  }
+  return { target: 'chrome-webgpu', schema: initial.controls, initialReport: initial.report, presets };
 }

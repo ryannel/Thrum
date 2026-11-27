@@ -514,7 +514,7 @@ async function captureCloudView(view, extent) {
   game.set_cloud_capture_eye(...view.eye);
   const edits = JSON.parse(game.apply_parameters(JSON.stringify(view.params), 0));
   if (edits.problems.length || game.committed_tick() !== 0 || !game.paused()) fail(`invalid held cloud view: ${JSON.stringify(edits)}`);
-  game.hold_cloud_capture_sun();
+  if (view.motion?.kind !== "day") game.hold_cloud_capture_sun();
   if (query.has('cloud-store')) {
     await ready(() => {
       const placed = JSON.parse(game.placed_cloud_report() ?? 'null');
@@ -536,7 +536,23 @@ async function captureCloudView(view, extent) {
       game.set_paused(true, time);
     }
   }
-  const heldTick = mode === 'fixed' && query.has('cloud-store') ? 300 : 0;
+  if (view.settle_ground) {
+    const settleTicks = mode === 'fixed' && view.weather_rate === 60 ? 16
+      : view.motion?.kind === 'sweep' && view.weather_rate === 1 ? 72 : 0;
+    if (!settleTicks || query.has('cloud-store')) fail('invalid Ground control warmup');
+    game.set_paused(false, 0);
+    let time = 0;
+    await ready(() => {
+      if (game.committed_tick() >= settleTicks) return true;
+      if (game.route_slot_ready()) {
+        time = game.route_step_ms(0.5);
+        game.frame(time);
+      }
+      return false;
+    }, 'Ground controls did not settle before the still');
+    game.set_paused(true, time);
+  }
+  const heldTick = game.committed_tick();
   const heldTime = heldTick ? game.route_step_ms(0.5) : 0;
   if (view.overlay_before !== undefined) {
     if (mode !== 'fixed' || !Number.isInteger(view.overlay_before) ||
@@ -585,12 +601,12 @@ async function captureCloudView(view, extent) {
     if (!Number.isFinite(duration) || duration < 1 || duration > 60) fail('Cloud view duration must be 1 to 60 seconds');
     const start = performance.now();
     record.elapsed_origin_ms = start;
-    game.set_paused(false, 0);
+    game.set_paused(false, heldTime);
     let timestamp = 0;
     let ordinal = 0;
     let discreteEditDone = false;
     const motion = view.motion;
-    if (motion && !['pan', 'walk', 'lapse', 'preset', 'cut', 'profile'].includes(motion.kind)) {
+    if (motion && !['pan', 'walk', 'lapse', 'preset', 'cut', 'profile', 'day', 'sweep'].includes(motion.kind)) {
       fail('unknown cloud motion');
     }
     const phase = (seconds, start, span) => Math.min(1, Math.max(0, (seconds - start) / span));
@@ -610,6 +626,14 @@ async function captureCloudView(view, extent) {
         const eye = [originalEye[0] + 40 * phase(seconds, 1, 5), originalEye[1], originalEye[2]];
         game.move_cloud_capture_eye(...eye, false);
         cloudEdit = { eye };
+      } else if (motion?.kind === 'sweep') {
+        const progress = phase(seconds, 1, 20);
+        if (motion.logarithmic && !(motion.from > 0 && motion.to > 0)) fail('a logarithmic sweep needs positive endpoints');
+        const value = motion.logarithmic
+          ? Math.exp(Math.log(motion.from) + progress * (Math.log(motion.to) - Math.log(motion.from)))
+          : motion.from + progress * (motion.to - motion.from);
+        cloudEdit = { [motion.key]: Math.min(Math.max(motion.from, motion.to), Math.max(Math.min(motion.from, motion.to), value)) };
+        applyCaptureParameters(JSON.stringify(cloudEdit), heldTime + timestamp);
       } else if (motion && !discreteEditDone && seconds >= 2) {
         discreteEditDone = true;
         if (motion.kind === 'lapse') {
@@ -625,10 +649,10 @@ async function captureCloudView(view, extent) {
           game.cloud_capture_scale(75);
           cloudEdit = { layer_scale: 75 };
         }
-        if (['lapse', 'preset'].includes(motion.kind)) applyCaptureParameters(JSON.stringify(cloudEdit), timestamp);
+        if (['lapse', 'preset'].includes(motion.kind)) applyCaptureParameters(JSON.stringify(cloudEdit), heldTime + timestamp);
       }
       const before = game.presented();
-      game.frame(timestamp);
+      game.frame(heldTime + timestamp);
       const opportunity = { ordinal: ordinal++, requested_ms: requested, frame_ms: timestamp,
         returned_ms: performance.now(), tick: game.committed_tick(), raf_ms: rafMs };
       if (motion) {
@@ -636,6 +660,7 @@ async function captureCloudView(view, extent) {
         if (game.presented() !== before) {
           opportunity.submission_id = Number(game.presented());
           opportunity.cloud_history_valid = game.cloud_capture_history();
+          if (motion.kind === "day") opportunity.solar_hours = game.time_of_day() * 24;
         }
       }
       record.opportunities.push(opportunity);

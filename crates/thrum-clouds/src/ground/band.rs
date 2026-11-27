@@ -195,6 +195,14 @@ impl Band {
 
     #[expect(
         clippy::cast_possible_truncation,
+        reason = "the snap aligns a validated world coordinate"
+    )]
+    pub(crate) fn anchor(camera: [f64; 2], travel: [f64; 2]) -> [i64; 2] {
+        std::array::from_fn(|i| ((camera[i] - travel[i]) / f64::from(SPACING_M)).round() as i64)
+    }
+
+    #[expect(
+        clippy::cast_possible_truncation,
         reason = "compute display-relative mapping in f64 first"
     )]
     pub(crate) fn upload(&self, queue: &wgpu::Queue, camera: [f64; 2], travel: [f64; 2]) {

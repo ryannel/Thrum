@@ -1,0 +1,12 @@
+{
+  "clouds.coverage": 0,
+  "clouds.type": 1,
+  "clouds.wind_speed": 2,
+  "clouds.mist_amount": 0,
+  "clouds.fog_amount": 0.75,
+  "clouds.moisture": 0.9,
+  "clouds.visual_range": 35,
+  "clouds.angstrom_exponent": 0,
+  "clouds.radiative_day": false,
+  "clouds.overlay": 0
+}

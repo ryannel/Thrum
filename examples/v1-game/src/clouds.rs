@@ -1,6 +1,6 @@
 //! The V1 game's cloud look and weather defaults; the engine supplies mechanisms.
 pub(crate) mod ground;
-pub use ground::GroundWeather;
+pub use ground::{GroundTargets, GroundWeather};
 use thrum_cloud_model::{Parameters, Profile, State, Type};
 use thrum_clouds::{ShadeConfig, SunLevel, SunProfile, WeatherProfile};
 
@@ -160,7 +160,7 @@ pub enum CloudSelection {
 }
 
 impl CloudSelection {
-    pub(crate) const NAMES: &str = "off, shade, sky, world-light, ground-clear, ground-half, ground, ground-fog, ground-fog-edge, ground-fog-outside, ground-mist-bank, ground-mist-far, ground-low-deck or ground-bank-<metres>";
+    pub(crate) const NAMES: &str = "off, shade, sky, world-light, ground-clear, ground-half, ground, ground-fog, ground-fog-edge, ground-fog-outside, ground-mist-bank, ground-mist-far, dawn-mist, sea-fog, ground-low-deck or ground-bank-<metres>";
 
     pub(crate) fn named(name: &str) -> Option<Self> {
         Some(match name {
@@ -176,6 +176,8 @@ impl CloudSelection {
             "ground-fog-outside" => Self::Ground(GroundWeather::FogOutside),
             "ground-mist-bank" => Self::Ground(GroundWeather::MistAndBank),
             "ground-mist-far" => Self::Ground(GroundWeather::FarMist),
+            "dawn-mist" => Self::Ground(GroundWeather::DawnMist),
+            "sea-fog" => Self::Ground(GroundWeather::SeaFog),
             "ground-low-deck" => Self::Ground(GroundWeather::LowDeck),
             "ground-bank-200" => Self::Ground(GroundWeather::HandoverBank(200)),
             "ground-bank-350" => Self::Ground(GroundWeather::HandoverBank(350)),
@@ -202,6 +204,20 @@ impl CloudSelection {
             config.types.fill(deck);
         }
         config
+    }
+
+    pub(crate) fn default_weather(self) -> Parameters {
+        match self {
+            Self::Ground(GroundWeather::DawnMist) => Parameters {
+                wind: [0.0; 2],
+                ..WeatherPreset::Clear.parameters()
+            },
+            Self::Ground(GroundWeather::SeaFog) => Parameters {
+                wind: [2.0, 0.0],
+                ..WeatherPreset::Clear.parameters()
+            },
+            _ => WeatherPreset::Fair.parameters(),
+        }
     }
 
     pub(crate) fn weather(self, initial: Parameters) -> Parameters {

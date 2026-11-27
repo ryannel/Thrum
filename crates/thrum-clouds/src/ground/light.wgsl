@@ -21,8 +21,22 @@ fn ground_sun_depths(point: vec3<f32>, surface: f32) -> vec4<f32> {
     return mix(vec4(cloud, 1.0, 0.0), depths, share);
 }
 
+fn ground_sky_limit(ray: vec3<f32>, true_sun: vec3<f32>) -> vec4<f32> {
+    // Diffuse hemisphere averages include the glowing side of twilight.
+    // Above a dark horizon that average can light droplets more than the
+    // local sky. Limit their ambient source to the same azimuth at twilight.
+    let weight = 1.0 - smoothstep(-0.040, 0.016, true_sun.y);
+    if weight == 0.0 || ground_frame.has_active_rows == 0u { return vec4(0.0); }
+    let count = arrayLength(&cloud_ambient) - 2u;
+    let turn = fract(atan2(ray.z, ray.x) / 6.28318530718 + 1.0) * f32(count);
+    let lower = u32(turn) % count;
+    let upper = (lower + 1u) % count;
+    let sky = mix(cloud_ambient[lower + 2u].rgb, cloud_ambient[upper + 2u].rgb, fract(turn));
+    return vec4(0.85 * sky, weight);
+}
+
 fn ground_light(point: vec3<f32>, ray: vec3<f32>, true_sun: vec3<f32>,
-                distance: f32, transmission: f32, coarse: bool) -> GroundLight {
+                distance: f32, transmission: f32, coarse: bool, sky_limit: vec4<f32>) -> GroundLight {
     let surface = ground_surface(point.xz);
     var result = GroundLight(0.0, 0.0, vec3(0.0), 1.0);
     var depths = vec3(0.0);
@@ -46,6 +60,16 @@ fn ground_light(point: vec3<f32>, ray: vec3<f32>, true_sun: vec3<f32>,
         result.solar_kernel += local.x * kernel;
         result.ambient += local.x * (cloud_ambient[0].rgb / (1.0 + ambient_depth.x)
                                   + cloud_ambient[1].rgb / (1.0 + ambient_depth.y));
+    }
+    if sky_limit.w > 0.0 && result.extinction > 0.0 {
+        // At night the droplets receive diffuse light from the whole sky,
+        // and that incident source is dimmer than a direct view of the horizon.
+        let night = 1.0 - smoothstep(-0.27, -0.12, true_sun.y);
+        let horizon = sky_limit.rgb * result.extinction;
+        let ceiling = horizon * mix(1.0, 0.18, night);
+        let floor = horizon * (0.10 * night);
+        let twilight_ambient = clamp(result.ambient, floor, ceiling);
+        result.ambient = mix(result.ambient, twilight_ambient, sky_limit.w);
     }
     return result;
 }

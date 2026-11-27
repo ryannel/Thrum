@@ -300,6 +300,7 @@ impl Edits for ControlEdits {
             motion_view: newer.motion_view.or(self.motion_view),
             clouds: crate::controls::CloudEdits {
                 weather: newer.clouds.weather.or(self.clouds.weather),
+                ground: newer.clouds.ground.or(self.clouds.ground),
                 overlay: newer.clouds.overlay.or(self.clouds.overlay),
             },
             #[cfg(feature = "proving")]

@@ -691,14 +691,6 @@ impl GameSetup {
             setup.sun_proof_geometry.prepare(&mut scene);
         }
         let cloud_sky = cloud_sky_profile(setup.clouds, config.render_extent, capabilities);
-        let weather = clouded_weather(setup, shapes.as_ref())?;
-        let weather_edits = (cfg!(any(target_os = "macos", target_arch = "wasm32"))
-            && weather.is_some())
-        .then(WeatherEdits::default);
-        let world = GameWorld(WorldPort::Inline(Box::new(
-            WorldDriver::for_setup(&setup, weather, weather_edits.clone())
-                .map_err(FrameError::World)?,
-        )));
         let ground = if let crate::CloudSelection::Ground(preset) = setup.clouds {
             Some(
                 crate::clouds::ground::valley(preset)
@@ -707,6 +699,14 @@ impl GameSetup {
         } else {
             None
         };
+        let weather = clouded_weather(setup, shapes.as_ref(), ground.as_ref())?;
+        let weather_edits = (weather.is_some()
+            && (ground.is_some() || cfg!(any(target_os = "macos", target_arch = "wasm32"))))
+        .then(WeatherEdits::default);
+        let world = GameWorld(WorldPort::Inline(Box::new(
+            WorldDriver::for_setup(&setup, weather, weather_edits.clone())
+                .map_err(FrameError::World)?,
+        )));
         let shade = cloud_shade(setup.clouds, shapes.as_ref(), cloud_sky, ground.as_ref())?;
         if let Some(shade) = &shade {
             scene.sun_optical_depth = Some(shade.provider()?);
@@ -714,10 +714,7 @@ impl GameSetup {
         let cloud_input = shade.as_ref().map(thrum_clouds::Shade::input);
         let mut source = GameScene::new(setup);
         source.cloud_input = cloud_input;
-        #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
-        {
-            source.weather_edits = weather_edits;
-        }
+        source.weather_edits = weather_edits;
         source.cloud_sky = cloud_sky;
         source.cloud_ground = ground;
         source.cloud_shapes.clone_from(&shapes);
@@ -774,35 +771,55 @@ fn cloud_sky_profile(
 }
 
 #[derive(Clone, Default)]
-struct WeatherEdits(std::sync::Arc<std::sync::Mutex<Option<thrum_cloud_model::Parameters>>>);
+struct WeatherEdits(std::sync::Arc<std::sync::Mutex<WeatherTargets>>);
+
+#[derive(Clone, Copy, Default, PartialEq)]
+struct WeatherTargets {
+    sky: Option<thrum_cloud_model::Parameters>,
+    ground: Option<crate::clouds::GroundTargets>,
+    solar: Option<f32>,
+}
 
 impl WeatherEdits {
-    fn pending(&self) -> Option<thrum_cloud_model::Parameters> {
+    fn pending(&self) -> WeatherTargets {
         *self
             .0
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
-    fn committed(&self, target: thrum_cloud_model::Parameters) {
+    fn committed(&self, target: WeatherTargets) {
         let mut pending = self
             .0
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        if *pending == Some(target) {
-            *pending = None;
+        if pending.sky == target.sky {
+            pending.sky = None;
+        }
+        if pending.ground == target.ground {
+            pending.ground = None;
+        }
+        if pending.solar == target.solar {
+            pending.solar = None;
         }
     }
 }
 
 #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 impl GameSetup {
-    pub(crate) fn game_controls(
+    /// Declare controls for the selected scene capabilities.
+    /// # Errors
+    /// Refuses invalid initial control values.
+    pub fn game_controls(
         self,
     ) -> Result<crate::controls::GameControls, thrum_controls::ControlError> {
-        crate::controls::GameControls::with_clouds(
+        crate::controls::GameControls::with_cloud_ground(
             (self.clouds != crate::CloudSelection::Off).then_some(self.cloud_weather),
             self.clouds.sky_profile([1; 2]).is_some(),
+            match self.clouds {
+                crate::CloudSelection::Ground(preset) => Some(preset.targets()),
+                _ => None,
+            },
         )
     }
 }
@@ -813,11 +830,13 @@ pub(crate) fn apply_cloud_edits(
     edits: crate::controls::CloudEdits,
 ) -> Result<(), String> {
     let source = runtime.source();
-    if let (Some(inbox), Some(target)) = (&source.weather_edits, edits.weather) {
-        *inbox
+    if let Some(inbox) = &source.weather_edits {
+        let mut pending = inbox
             .0
             .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(target);
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        pending.sky = edits.weather.or(pending.sky);
+        pending.ground = edits.ground.or(pending.ground);
     }
     if let (Some(input), Some(overlay)) = (&source.cloud_input, edits.overlay) {
         input
@@ -840,12 +859,14 @@ pub(crate) fn edit_solar_time(runtime: &mut Runtime, fraction: f32) -> Result<()
     if let Some(offset) = day_phase_edit(tick, runtime.source(), fraction)? {
         runtime.continuous_source_mut().day_phase_offset = offset;
     }
+    queue_ground_solar(runtime.source(), fraction);
     Ok(())
 }
 
 fn clouded_weather(
     setup: GameSetup,
     shapes: Option<&crate::PlacedSky>,
+    ground: Option<&thrum_clouds::GroundConfig>,
 ) -> Result<Option<crate::simulation::Weather>, runtime::FrameError> {
     if setup.clouds == crate::CloudSelection::Off {
         return Ok(None);
@@ -870,14 +891,15 @@ fn clouded_weather(
     state
         .and_then(|mut state| {
             if let crate::CloudSelection::Ground(preset) = setup.clouds {
-                state.set_ground(thrum_cloud_model::GroundState::new(
-                    preset.amounts(),
-                    0.0,
-                    100_000.0,
-                )?);
+                state.set_ground(preset.targets().state()?);
             }
             let weather =
                 crate::simulation::Weather::new(state, shapes.and_then(crate::PlacedSky::demo));
+            let weather = if let Some(ground) = ground {
+                weather.with_ground(std::sync::Arc::clone(&ground.fog))
+            } else {
+                weather
+            };
             #[cfg(feature = "proving")]
             let weather = weather.with_sequence(setup.cloud_sequence, initial);
             Ok(Some(weather))
@@ -986,6 +1008,10 @@ pub trait GameHost {
     #[doc(hidden)]
     #[cfg(all(feature = "proving", target_os = "macos"))]
     fn edit_cloud_weather_for_test(&self, target: thrum_cloud_model::Parameters);
+    /// Apply a parsed cloud-control edit through the game inbox on Metal.
+    #[doc(hidden)]
+    #[cfg(all(feature = "proving", target_os = "macos"))]
+    fn edit_cloud_controls_for_test(&self, edits: crate::controls::CloudEdits);
     /// Current Weather and Shade product, for optional GPU inspection.
     #[cfg(feature = "proving")]
     fn cloud_ground_product(&self) -> Option<(wgpu::Texture, wgpu::Buffer)>;
@@ -1102,14 +1128,14 @@ impl GameHost for Runtime {
     }
     #[cfg(all(feature = "proving", target_os = "macos"))]
     fn edit_cloud_weather_for_test(&self, target: thrum_cloud_model::Parameters) {
-        apply_cloud_edits(
-            self,
-            crate::controls::CloudEdits {
-                weather: Some(target),
-                overlay: None,
-            },
-        )
-        .expect("weather edit inbox");
+        self.edit_cloud_controls_for_test(crate::controls::CloudEdits {
+            weather: Some(target),
+            ..Default::default()
+        });
+    }
+    #[cfg(all(feature = "proving", target_os = "macos"))]
+    fn edit_cloud_controls_for_test(&self, edits: crate::controls::CloudEdits) {
+        apply_cloud_edits(self, edits).expect("cloud edit inbox");
     }
     #[cfg(feature = "proving")]
     fn cloud_ground_product(&self) -> Option<(wgpu::Texture, wgpu::Buffer)> {
@@ -1188,7 +1214,20 @@ pub(crate) fn set_time_of_day(runtime: &mut Runtime, fraction: f32) -> Result<()
         runtime.source_mut().day_phase_offset = offset;
         runtime.invalidate_history();
     }
+    queue_ground_solar(runtime.source(), fraction);
     Ok(())
+}
+
+fn queue_ground_solar(source: &GameScene, fraction: f32) {
+    if matches!(source.cloud_selection, crate::CloudSelection::Ground(_))
+        && let Some(inbox) = &source.weather_edits
+    {
+        inbox
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .solar = Some(fraction);
+    }
 }
 
 #[cfg(all(target_os = "macos", feature = "proving"))]
@@ -1202,6 +1241,7 @@ pub(crate) fn scrub_haze_sun(runtime: &mut Runtime, fraction: f32) -> Result<(),
     if let Some(offset) = day_phase_edit(runtime.world().tick(), runtime.source(), fraction)? {
         runtime.continuous_source_mut().day_phase_offset = offset;
     }
+    queue_ground_solar(runtime.source(), fraction);
     Ok(())
 }
 
@@ -1209,14 +1249,18 @@ pub(crate) fn scrub_haze_sun(runtime: &mut Runtime, fraction: f32) -> Result<(),
 pub(crate) fn time_of_day(runtime: &Runtime) -> f32 {
     let source = runtime.source();
     let tick = source.held_solar_tick().unwrap_or(runtime.world().tick());
-    DayCycle::time_of_day(tick, source.day_phase_offset)
+    source
+        .ground_time_of_day(1.0)
+        .unwrap_or_else(|| DayCycle::time_of_day(tick, source.day_phase_offset))
 }
 
 fn rendered_time_of_day(source: &GameScene, tick: u64, alpha: f32) -> f32 {
     let (tick, alpha) = source
         .held_solar_tick()
         .map_or((tick, alpha), |held| (held, 1.0));
-    DayCycle::rendered_time_of_day(tick, alpha, source.day_phase_offset)
+    source
+        .ground_time_of_day(alpha)
+        .unwrap_or_else(|| DayCycle::rendered_time_of_day(tick, alpha, source.day_phase_offset))
 }
 
 /// Change the game camera elevation continuously.

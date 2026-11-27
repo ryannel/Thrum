@@ -99,7 +99,8 @@ impl Layer {
             || super::parameter_buffer(device),
             |(_, _, _, params)| params.clone(),
         );
-        let lighting = super::light::Lighting::new(surface, weather, &environment)?;
+        let lighting =
+            super::light::Lighting::new(surface, weather, &environment, ground.is_some())?;
         let ground_stops = ground.is_some();
         let render_capacity = surface.render_capacity.unwrap_or(profile.extent);
         let capacity = if ground_stops {
@@ -260,6 +261,7 @@ impl Layer {
             target.0,
             placed_map,
             environment.exposure_buffers(),
+            ground.map(|(field, _, band, _)| (field, band)),
         );
         let (compose, compose_group, compose_layout) = compose(
             surface,
@@ -269,7 +271,8 @@ impl Layer {
             |binding, storage| texture_entry(binding, storage, false),
             &input,
         );
-        let field_pipeline = field_pipeline(surface, &compose_layout, &field_layout);
+        let field_pipeline =
+            field_pipeline(surface, &compose_layout, &field_layout, ground.is_some());
         let temporal = super::temporal::Temporal::new(
             surface,
             &params,
@@ -449,6 +452,7 @@ fn field_bindings(
     sun: &wgpu::Texture,
     placed_map: Option<&wgpu::Texture>,
     exposure: &[wgpu::Buffer; 2],
+    ground: Option<(&GroundField, &Band)>,
 ) -> (PipelineInput<wgpu::BindGroupLayout>, [wgpu::BindGroup; 2]) {
     use wgpu::TextureViewDimension::{D2, D2Array};
     let fields = [
@@ -471,6 +475,22 @@ fn field_bindings(
         })
         .collect();
     entries.push(binding::uniform(4, wgpu::ShaderStages::FRAGMENT, 16));
+    if let Some((_, band)) = ground {
+        let fragment = wgpu::ShaderStages::FRAGMENT;
+        entries.extend(GroundField::layout(5).map(|mut entry| {
+            entry.visibility = fragment;
+            entry
+        }));
+        entries.extend([
+            binding::texture(
+                8,
+                fragment,
+                wgpu::TextureSampleType::Float { filterable: false },
+                wgpu::TextureViewDimension::D3,
+            ),
+            binding::uniform(9, fragment, band.mapping.size()),
+        ]);
+    }
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("cloud internal fields"),
         entries: &entries,
@@ -494,6 +514,19 @@ fn field_bindings(
             binding: 4,
             resource: exposure[side].as_entire_binding(),
         });
+        if let Some((field, band)) = ground {
+            entries.extend(field.entries(5));
+            entries.extend([
+                wgpu::BindGroupEntry {
+                    binding: 8,
+                    resource: wgpu::BindingResource::TextureView(&band.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 9,
+                    resource: band.mapping.as_entire_binding(),
+                },
+            ]);
+        }
         device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("cloud internal fields"),
             layout: &layout,
@@ -608,6 +641,7 @@ fn field_pipeline(
     surface: &SceneSurface<'_>,
     layer_layout: &wgpu::BindGroupLayout,
     field_layout: &wgpu::BindGroupLayout,
+    ground: bool,
 ) -> wgpu::RenderPipeline {
     let device = surface.device;
     let input = declaration(FIELD, AfterOpaqueKind::PreTone, Vec::new()).input_layout(device);
@@ -621,13 +655,18 @@ fn field_pipeline(
         ],
         immediate_size: 0,
     });
+    let ground_source = if ground {
+        GroundField::source(3, 5) + include_str!("field_ground.wgsl")
+    } else {
+        "fn ground_field_value(field:u32, uv:vec2<f32>)->f32 { return 0.0; }".into()
+    };
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some(FIELD),
         source: wgpu::ShaderSource::Wgsl(
-            concat!(
+            format!(
+                "{}\n{ground_source}\n{}",
                 include_str!("params.wgsl"),
-                "\n",
-                include_str!("field_overlay.wgsl")
+                include_str!("field_overlay.wgsl"),
             )
             .into(),
         ),
@@ -664,7 +703,7 @@ pub(crate) fn density_and_light_source(group: u32) -> String {
         "@group({group}) @binding(1) var columns: texture_2d_array<f32>;
          @group({group}) @binding(2) var optical: texture_2d_array<f32>;
          @group({group}) @binding(9) var<storage, read> cloud_phase: array<f32>;
-         @group({group}) @binding(10) var<storage, read> cloud_ambient: array<vec4<f32>, 2>;
+         @group({group}) @binding(10) var<storage, read> cloud_ambient: array<vec4<f32>>;
          {}\n{}",
         include_str!("column.wgsl"),
         include_str!("source_light.wgsl"),

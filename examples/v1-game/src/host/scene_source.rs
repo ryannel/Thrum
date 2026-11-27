@@ -25,10 +25,21 @@ use thrum_render::{
     },
 };
 
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "validated haze inputs fit the GPU representation"
+)]
+fn aerosol(range: f64, exponent: f64) -> thrum_render::atmosphere::Aerosol {
+    let extinction =
+        thrum_cloud_model::aerosol_extinction(range, 11.6e-6).expect("committed visual range");
+    thrum_render::atmosphere::Aerosol::new(extinction as f32, exponent as f32)
+        .expect("committed aerosol")
+}
+
 fn atmosphere_lighting(
     sun: crate::environment::SunSample,
     camera_altitude_m: f32,
-    #[cfg(feature = "proving")] haze: Option<thrum_render::atmosphere::Aerosol>,
+    haze: Option<thrum_render::atmosphere::Aerosol>,
     medium: Option<MediumSource>,
 ) -> FrameLighting {
     let frame = AtmosphereFrame::new(
@@ -42,7 +53,6 @@ fn atmosphere_lighting(
     .with_nightglow()
     .with_simulation_time(sun.simulation_time_seconds)
     .expect("the sampled game clock is finite");
-    #[cfg(feature = "proving")]
     let frame = haze.map_or(frame, |aerosol| {
         frame.with_aerosol(aerosol).with_view_volume()
     });
@@ -392,7 +402,6 @@ pub struct GameScene {
     #[cfg(feature = "proving")]
     pub(super) sheet_stats: Option<std::sync::Arc<std::sync::Mutex<thrum_asset_gpu::CookedStats>>>,
     pub(super) cloud_input: Option<thrum_clouds::WeatherInput>,
-    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     pub(super) weather_edits: Option<super::WeatherEdits>,
     pub(super) cloud_sky: Option<thrum_clouds::SkyProfile>,
     pub(super) cloud_selection: crate::CloudSelection,
@@ -408,6 +417,8 @@ pub struct GameScene {
     exit_entities: crate::ExitEntities,
     valley_stars: bool,
     pub(super) day_phase_offset: f32,
+    ground_solar: std::cell::Cell<Option<crate::simulation::SolarTime>>,
+    ground_aerosol: std::cell::Cell<Option<thrum_render::atmosphere::Aerosol>>,
     #[cfg(all(any(target_os = "macos", target_arch = "wasm32"), feature = "proving"))]
     pub(crate) solar_sweep: Option<SolarSweep>,
     #[cfg(feature = "proving")]
@@ -434,6 +445,21 @@ pub struct GameScene {
 pub(crate) type SolarSweep = ([u64; 2], [f32; 2]);
 
 impl GameScene {
+    pub(super) fn ground_time_of_day(&self, alpha: f32) -> Option<f32> {
+        if self.held_solar_tick().is_some() || self.route.is_some() {
+            return None;
+        }
+        let solar = self.ground_solar.get()?;
+        if let Some(time) = self
+            .weather_edits
+            .as_ref()
+            .and_then(|edits| edits.pending().solar)
+        {
+            return Some(time);
+        }
+        Some(solar.sample(alpha))
+    }
+
     fn sample_sun(&self, tick: u64, alpha: f32) -> crate::environment::SunSample {
         let offset = self.day_phase_offset;
         #[cfg(all(any(target_os = "macos", target_arch = "wasm32"), feature = "proving"))]
@@ -450,7 +476,10 @@ impl GameScene {
                 let solar = from + (to - from) * progress.clamp(0.0, 1.0);
                 DayCycle::offset_for_time(tick, solar / 24.0).unwrap_or(offset)
             });
-        DayCycle::sample(tick, alpha, offset)
+        self.ground_time_of_day(alpha).map_or_else(
+            || DayCycle::sample(tick, alpha, offset),
+            |time| crate::clouds::ground::sun(time, tick, alpha),
+        )
     }
 
     #[cfg(all(target_arch = "wasm32", feature = "proving"))]
@@ -661,7 +690,6 @@ impl GameScene {
             #[cfg(feature = "proving")]
             sheet_stats: None,
             cloud_input: None,
-            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
             weather_edits: None,
             cloud_sky: None,
             cloud_shapes: None,
@@ -685,6 +713,16 @@ impl GameScene {
             exit_entities: setup.exit_entities,
             valley_stars: !setup.content.is_field() && setup.valley_stars,
             day_phase_offset: 0.0,
+            ground_solar: std::cell::Cell::new(
+                matches!(setup.clouds, crate::CloudSelection::Ground(_)).then(Default::default),
+            ),
+            ground_aerosol: std::cell::Cell::new(match setup.clouds {
+                crate::CloudSelection::Ground(preset) => {
+                    let targets = preset.targets();
+                    Some(aerosol(targets.visual_range, targets.angstrom_exponent))
+                }
+                _ => None,
+            }),
             #[cfg(all(any(target_os = "macos", target_arch = "wasm32"), feature = "proving"))]
             solar_sweep: None,
             #[cfg(feature = "proving")]
@@ -951,9 +989,18 @@ impl SceneSource<PublishedPage> for GameScene {
     fn extract(&self, into: &mut RenderExtractor, page: &PublishedPage) -> ExtractReport {
         if let Some(input) = &self.cloud_input
             && let Some(state) = page.weather()
-            && let Err(error) = input.publish(state)
         {
-            debug_assert!(false, "cloud publication: {error}");
+            self.ground_solar.set(page.weather_solar());
+            if self.ground_solar.get().is_some() {
+                let ground = state.ground();
+                self.ground_aerosol.set(Some(aerosol(
+                    ground.visual_range(),
+                    ground.angstrom_exponent(),
+                )));
+            }
+            if let Err(error) = input.publish(state) {
+                debug_assert!(false, "cloud publication: {error}");
+            }
         }
         #[cfg(feature = "proving")]
         if self.content == GameContent::Exit && self.exit_entities == crate::ExitEntities::Omit {
@@ -1042,15 +1089,11 @@ impl SceneSource<PublishedPage> for GameScene {
         } else {
             sun
         };
-        let lighting = lighting.unwrap_or_else(|| {
-            atmosphere_lighting(
-                sun,
-                camera_altitude_m,
-                #[cfg(feature = "proving")]
-                self.haze,
-                self.medium,
-            )
-        });
+        let haze = self.ground_aerosol.get();
+        #[cfg(feature = "proving")]
+        let haze = self.haze.or(haze);
+        let lighting = lighting
+            .unwrap_or_else(|| atmosphere_lighting(sun, camera_altitude_m, haze, self.medium));
         let view = if self.valley_stars
             && self.camera.is_some()
             && matches!(lighting, FrameLighting::Atmosphere(_))
@@ -1336,7 +1379,6 @@ mod tests {
             #[cfg(feature = "proving")]
             sheet_stats: None,
             cloud_input: None,
-            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
             weather_edits: None,
             cloud_sky: None,
             cloud_shapes: None,
@@ -1349,6 +1391,8 @@ mod tests {
             exit_entities: crate::ExitEntities::Draw,
             valley_stars: true,
             day_phase_offset: 0.1,
+            ground_solar: std::cell::Cell::default(),
+            ground_aerosol: std::cell::Cell::default(),
             #[cfg(all(any(target_os = "macos", target_arch = "wasm32"), feature = "proving"))]
             solar_sweep: None,
             #[cfg(feature = "proving")]

@@ -3,6 +3,24 @@ use std::sync::Arc;
 use thrum_cloud_model::{Affinity, Error, Fog, Ground, GroundProfile, Surface, SurfacePoint};
 use thrum_clouds::GroundConfig;
 
+// One authored valley day at 1×. The cooling model receives solar seconds
+// within that day, while cloud advection still uses actual simulation seconds.
+pub(crate) const SOLAR_DAY_SECONDS: f64 = 300.0;
+
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "the game uses f64 seconds for its 60 Hz presentation clock"
+)]
+pub(crate) fn sun(time: f32, tick: u64, alpha: f32) -> crate::environment::SunSample {
+    let offset = (time - 0.5).rem_euclid(1.0);
+    let offset = if offset >= 1.0 { 0.0 } else { offset };
+    let mut sun = crate::environment::DayCycle::sample(0, 0.0, offset);
+    if tick != 0 {
+        sun.simulation_time_seconds = ((tick - 1) as f64 + f64::from(alpha.clamp(0.0, 1.0))) / 60.0;
+    }
+    sun
+}
+
 /// Authored control settings for the valley's mist and fog bank.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GroundWeather {
@@ -22,6 +40,10 @@ pub enum GroundWeather {
     MistAndBank,
     /// A valley-wide dawn mist with a separate bank at the far bend.
     FarMist,
+    /// Radiative mist driven by the game's solar day.
+    DawnMist,
+    /// An advected fog bank under moist air.
+    SeaFog,
     /// Cloud below the valley's summits, with dawn mist beneath it.
     LowDeck,
     /// A bank on the valley shelf at an authored distance from the inspection pose.
@@ -29,16 +51,80 @@ pub enum GroundWeather {
 }
 
 impl GroundWeather {
-    pub(crate) fn amounts(self) -> Vec<f64> {
+    fn amounts(self) -> [f64; 2] {
         match self {
-            Self::Clear => vec![0.0, 0.0],
-            Self::HalfMist => vec![0.5, 0.0],
-            Self::Mist => vec![1.0, 0.0],
-            Self::Fog | Self::FogEdge | Self::FogOutside | Self::HandoverBank(_) => vec![0.0, 1.0],
-            Self::MistAndBank => vec![1.0, 0.25],
-            Self::FarMist => vec![1.0, 0.35],
-            Self::LowDeck => vec![0.0, 0.35],
+            Self::Clear => [0.0, 0.0],
+            Self::HalfMist => [0.5, 0.0],
+            Self::Mist | Self::DawnMist => [1.0, 0.0],
+            Self::Fog | Self::FogEdge | Self::FogOutside | Self::HandoverBank(_) => [0.0, 1.0],
+            Self::MistAndBank => [1.0, 0.25],
+            Self::SeaFog => [0.0, 0.75],
+            Self::FarMist => [1.0, 0.35],
+            Self::LowDeck => [0.0, 0.35],
         }
+    }
+}
+
+/// Targets shared by the game controls and the weather tick, in engine units.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct GroundTargets {
+    /// Amounts of valley mist and the advected bank.
+    pub amounts: [f64; 2],
+    /// Moisture available to form radiative mist.
+    pub moisture: f64,
+    /// Clear-air visual range in metres.
+    pub visual_range: f64,
+    /// Spectral exponent of the clear-air aerosol.
+    pub angstrom_exponent: f64,
+    /// Enable the cooling and warming cycle for the mist row.
+    pub radiative_day: bool,
+}
+
+impl GroundWeather {
+    pub(crate) fn targets(self) -> GroundTargets {
+        let (moisture, visual_range, radiative_day) = match self {
+            Self::DawnMist => (1.0, 60_000.0, true),
+            Self::SeaFog => (0.9, 35_000.0, false),
+            _ => (0.0, 244_000.0, false),
+        };
+        GroundTargets {
+            amounts: self.amounts(),
+            moisture,
+            visual_range,
+            angstrom_exponent: 0.0,
+            radiative_day,
+        }
+    }
+}
+
+impl GroundTargets {
+    pub(crate) fn apply(self, state: &mut thrum_cloud_model::GroundState) -> Result<(), Error> {
+        if !self.valid() {
+            return Err(Error::Invalid);
+        }
+        state.set_targets(&self.amounts, self.moisture, self.visual_range)?;
+        state.set_angstrom_target(self.angstrom_exponent)?;
+        state.set_radiative_day(self.radiative_day);
+        Ok(())
+    }
+
+    pub(crate) fn valid(self) -> bool {
+        self.amounts
+            .into_iter()
+            .chain([self.moisture])
+            .all(|value| (0.0..=1.0).contains(&value))
+            && (3000.0..=300_000.0).contains(&self.visual_range)
+            && (0.0..=2.0).contains(&self.angstrom_exponent)
+    }
+
+    pub(crate) fn state(self) -> Result<thrum_cloud_model::GroundState, Error> {
+        let mut state = thrum_cloud_model::GroundState::new(
+            self.amounts.to_vec(),
+            self.moisture,
+            self.visual_range,
+        )?;
+        self.apply(&mut state)?;
+        Ok(state)
     }
 }
 
@@ -49,9 +135,10 @@ pub(crate) fn valley(preset: GroundWeather) -> Result<GroundConfig, Error> {
         _ => 0.0,
     };
     let (bank_centre, bank_radius, bank_depth, bank_softness, bank_noise) = match preset {
-        GroundWeather::FarMist | GroundWeather::LowDeck => {
-            ([120.0, -2350.0], [1050.0, 340.0], 88.0, 39.0, 0.15)
-        }
+        GroundWeather::FarMist
+        | GroundWeather::DawnMist
+        | GroundWeather::SeaFog
+        | GroundWeather::LowDeck => ([120.0, -2350.0], [1050.0, 340.0], 88.0, 39.0, 0.15),
         // The fixed eye is at z = 810. The near face starts one radius
         // north of the centre and the camera sees both a shoulder and its flank.
         GroundWeather::HandoverBank(distance) => (
@@ -76,13 +163,16 @@ pub(crate) fn valley(preset: GroundWeather) -> Result<GroundConfig, Error> {
         },
         vec![
             Fog {
-                liquid_water: if preset == GroundWeather::FarMist {
-                    0.000_012
-                } else {
-                    0.000_054
+                liquid_water: match preset {
+                    GroundWeather::DawnMist => 0.000_018,
+                    GroundWeather::FarMist | GroundWeather::SeaFog => 0.000_012,
+                    _ => 0.000_054,
                 },
                 droplet_radius: 10e-6,
-                depth: if preset == GroundWeather::FarMist {
+                depth: if matches!(
+                    preset,
+                    GroundWeather::FarMist | GroundWeather::DawnMist | GroundWeather::SeaFog
+                ) {
                     37.0
                 } else {
                     36.0
@@ -96,7 +186,7 @@ pub(crate) fn valley(preset: GroundWeather) -> Result<GroundConfig, Error> {
                 radius: [1.0; 2],
                 noise: 0.18,
                 noise_scale: 85.0,
-                radiative: false,
+                radiative: true,
             },
             Fog {
                 liquid_water: (3.912 / 50.0 - 3.912 / 100_000.0) * (2.0 * 1000.0 * 10e-6 / 3.0),

@@ -263,6 +263,8 @@ impl Staged {
                 gpu.sun.install_target(sun);
                 if let Some((accepted, prepared)) = gpu.ground.as_mut().zip(ground) {
                     accepted.targets = *prepared;
+                    accepted.band_cadence.invalidate();
+                    accepted.medium_cadence.invalidate();
                 }
 
                 if let Some((sky, old)) = sky.as_mut().zip(gpu.sky.as_mut()) {
@@ -305,6 +307,7 @@ impl Prepared {
                     ground,
                     targets,
                     self.sun.shape_noise.read(shape_noise),
+                    generation,
                 )
             });
         let overlay_index = graph.passes.len();

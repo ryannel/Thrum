@@ -69,7 +69,7 @@ pub(crate) fn placed_sky() -> Result<Option<crate::PlacedSky>, String> {
     }))
 }
 
-fn cloud_weather() -> Result<thrum_cloud_model::Parameters, String> {
+fn cloud_weather(clouds: crate::CloudSelection) -> Result<thrum_cloud_model::Parameters, String> {
     let number = |name: &str, fallback| match launch_value(name) {
         Ok(value) => value
             .parse::<f64>()
@@ -77,16 +77,18 @@ fn cloud_weather() -> Result<thrum_cloud_model::Parameters, String> {
         Err(std::env::VarError::NotPresent) => Ok(fallback),
         Err(error) => Err(error.to_string()),
     };
+    let defaults = clouds.default_weather();
     let preset = match launch_value("THRUM_CLOUD_PRESET") {
         Ok(value) => crate::clouds::WeatherPreset::named(&value)
-            .ok_or("THRUM_CLOUD_PRESET must be clear, fair, broken or overcast")?,
-        Err(std::env::VarError::NotPresent) => crate::clouds::WeatherPreset::Fair,
+            .ok_or("THRUM_CLOUD_PRESET must be clear, fair, broken or overcast")?
+            .parameters(),
+        Err(std::env::VarError::NotPresent) => defaults,
         Err(error) => return Err(error.to_string()),
     };
     let parameters = thrum_cloud_model::Parameters {
-        wind: [number("THRUM_CLOUD_WIND", 10.0)?, 0.0],
+        wind: [number("THRUM_CLOUD_WIND", preset.wind[0])?, 0.0],
         time_scale: number("THRUM_CLOUD_TIME_SCALE", 1.0)?,
-        ..preset.parameters()
+        ..preset
     };
     thrum_cloud_model::State::new(parameters, 5.0, 0).map_err(|e| e.to_string())?;
     Ok(parameters)
@@ -274,7 +276,7 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         cloud_weather: if clouds == crate::CloudSelection::Off {
             crate::clouds::initial_state().parameters()
         } else {
-            cloud_weather()?
+            cloud_weather(clouds)?
         },
         #[cfg(feature = "proving")]
         cloud_sequence,

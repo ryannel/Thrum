@@ -14,3 +14,7 @@ workspace = true
 [[test]]
 name = "it"
 path = "tests/it.rs"
+
+# CLOUDS WP16.11 names this point-query and spectral isolation proof.
+[[test]]
+name = "haze_kind"

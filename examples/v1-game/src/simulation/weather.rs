@@ -14,6 +14,7 @@ use thrum_core::{
 pub(crate) struct Weather {
     pub(super) state: Arc<thrum_cloud_model::State>,
     demo: Option<crate::clouds::PlacementDemo>,
+    ground: Option<GroundDay>,
     #[cfg(feature = "proving")]
     sequence: Option<(WeatherSequence, thrum_cloud_model::Parameters)>,
 }
@@ -26,9 +27,22 @@ impl Weather {
         Self {
             state: Arc::new(state),
             demo,
+            ground: None,
             #[cfg(feature = "proving")]
             sequence: None,
         }
+    }
+
+    pub(crate) fn with_ground(mut self, fog: Arc<thrum_cloud_model::Ground>) -> Self {
+        self.ground = Some(GroundDay {
+            fog,
+            solar: SolarTime::default(),
+        });
+        self
+    }
+
+    pub(crate) fn solar(&self) -> Option<SolarTime> {
+        self.ground.as_ref().map(|ground| ground.solar)
     }
 
     #[cfg(feature = "proving")]
@@ -41,6 +55,42 @@ impl Weather {
             self.sequence = Some((sequence, initial));
         }
         self
+    }
+}
+
+#[derive(Clone, PartialEq)]
+struct GroundDay {
+    fog: Arc<thrum_cloud_model::Ground>,
+    solar: SolarTime,
+}
+
+/// The endpoints of one committed solar tick, independent of advection.
+#[derive(Clone, Copy, PartialEq)]
+pub(crate) struct SolarTime {
+    previous: f64,
+    advance: f64,
+}
+
+impl Default for SolarTime {
+    fn default() -> Self {
+        Self {
+            previous: 0.5,
+            advance: 0.0,
+        }
+    }
+}
+
+impl SolarTime {
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "the normalized solar phase fits the Sun sampler"
+    )]
+    pub(crate) fn sample(self, alpha: f32) -> f32 {
+        self.at(f64::from(alpha)) as f32
+    }
+
+    fn at(self, alpha: f64) -> f64 {
+        self.advance.mul_add(alpha, self.previous).rem_euclid(1.0)
     }
 }
 
@@ -75,20 +125,35 @@ impl Permits {
         world: &mut WorldTxn<'_>,
         tick: u64,
         dt: f64,
-        target: Option<thrum_cloud_model::Parameters>,
+        commands: &[super::Command],
     ) -> Result<(), SimError> {
         let handle = self.handle.ok_or(SimError::InvalidConfig)?;
         let mut value = world
             .with(&self.read, handle, Clone::clone)
             .map_err(|_| SimError::InvalidHandle)?;
         let state = Arc::make_mut(&mut value.state);
-        if let Some(target) = target {
-            state
-                .set_target(target)
-                .map_err(|_| SimError::InvalidConfig)?;
-            #[cfg(feature = "proving")]
-            {
-                value.sequence = None;
+        let mut solar_edit = None;
+        for command in commands {
+            match *command {
+                super::Command::SetWeather(target) => {
+                    state
+                        .set_target(target)
+                        .map_err(|_| SimError::InvalidConfig)?;
+                    #[cfg(feature = "proving")]
+                    {
+                        value.sequence = None;
+                    }
+                }
+                super::Command::SetGroundWeather(target) => {
+                    if value.ground.is_none() {
+                        return Err(SimError::InvalidConfig);
+                    }
+                    target
+                        .apply(state.ground_mut())
+                        .map_err(|_| SimError::InvalidConfig)?;
+                }
+                super::Command::SetWeatherSolarTime(fraction) => solar_edit = Some(fraction),
+                _ => {}
             }
         }
         #[cfg(feature = "proving")]
@@ -97,10 +162,10 @@ impl Permits {
             if sequence == WeatherSequence::MistSweep {
                 let t = (1.0 - (seconds / 60.0 - 1.0).abs()).clamp(0.0, 1.0);
                 let amount = t * t * (3.0 - 2.0 * t);
-                state.set_ground(
-                    thrum_cloud_model::GroundState::new(vec![amount, 0.0], 0.0, 100_000.0)
-                        .map_err(|_| SimError::InvalidConfig)?,
-                );
+                state
+                    .ground_mut()
+                    .set_targets(&[amount, 0.0], 0.0, 244_000.0)
+                    .map_err(|_| SimError::InvalidConfig)?;
             }
             state
                 .set_target(sequence.target(initial, seconds))
@@ -110,6 +175,31 @@ impl Permits {
             demo.step(state).map_err(|_| SimError::InvalidConfig)?;
         }
         state.step(tick, dt).map_err(|_| SimError::NonFinite)?;
+        if let Some(ground) = &mut value.ground {
+            // At 1× the valley's authored day lasts five minutes. The cooling
+            // model consumes hours of solar time while wind consumes game seconds.
+            let radiative = state.ground().radiative_day();
+            let rate = if radiative {
+                state.parameters().time_scale
+            } else {
+                1.0
+            };
+            let advance = dt * rate / crate::clouds::ground::SOLAR_DAY_SECONDS;
+            ground.solar = SolarTime {
+                previous: solar_edit.map_or_else(|| ground.solar.at(1.0), f64::from),
+                advance: if solar_edit.is_some() { 0.0 } else { advance },
+            };
+            if radiative {
+                let sun = crate::clouds::ground::sun(ground.solar.sample(1.0), tick, 1.0);
+                state
+                    .advance_ground_cooling(
+                        &ground.fog,
+                        advance * 86_400.0,
+                        f64::from(sun.toward_sun[1].asin().to_degrees()),
+                    )
+                    .map_err(|_| SimError::InvalidConfig)?;
+            }
+        }
         world
             .put(&self.write, handle, value)
             .map_err(|_| SimError::InvalidHandle)?;

@@ -6,10 +6,20 @@ use serde_json::{Value, json};
 #[derive(serde::Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub(super) enum Take {
-    Sweep { key: String, from: f64, to: f64 },
-    Pan { from: f32, to: f32 },
+    Sweep {
+        key: String,
+        from: f64,
+        to: f64,
+        #[serde(default)]
+        logarithmic: bool,
+    },
+    Pan {
+        from: f32,
+        to: f32,
+    },
     Walk,
     Lapse,
+    Day,
     Preset,
     Cut,
     Profile,
@@ -30,6 +40,7 @@ impl Take {
     pub(super) fn bounds(&self) -> (f64, f64, f64) {
         match self {
             Self::Sweep { .. } => (22.5, 22.0, 22.0),
+            Self::Day => (5.4, 5.2, 4.6),
             _ => (8.5, 8.0, 8.0),
         }
     }
@@ -53,9 +64,28 @@ impl Take {
             Ok::<_, String>(Some(value))
         };
         match self {
-            Self::Sweep { key, from, to } => {
-                let value = (to - from).mul_add(phase(1.0, 20.0), *from);
-                parameter(driver, json!({key: value}))
+            Self::Day => Ok(None),
+            Self::Sweep {
+                key,
+                from,
+                to,
+                logarithmic,
+            } => {
+                let progress = phase(1.0, 20.0);
+                let value = if *logarithmic {
+                    if *from <= 0.0 || *to <= 0.0 {
+                        return Err(
+                            "a logarithmic control sweep needs positive endpoints".to_owned()
+                        );
+                    }
+                    (to.ln() - from.ln()).mul_add(progress, from.ln()).exp()
+                } else {
+                    (to - from).mul_add(progress, *from)
+                };
+                parameter(
+                    driver,
+                    json!({key: value.clamp(from.min(*to), from.max(*to))}),
+                )
             }
             Self::Pan { from, to } => {
                 let yaw = (to - from).mul_add(phase(2.0, 0.8) as f32, *from);

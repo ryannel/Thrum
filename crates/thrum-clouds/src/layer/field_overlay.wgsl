@@ -38,6 +38,7 @@ fn field_colour(field:u32,uv:vec2<f32>)->vec4<f32> {
             value=textureLoad(front,pixel,0,0).w/max(1.0,f32(cloud.temporal.z*cloud.temporal.z-1u));
             if cloud.temporal.w!=0u { value=0.0; }
         }
+        case 8u, 9u, 10u: { value=ground_field_value(field,uv); }
         default: {}
     }
     let heat=mix(vec3(0.012,0.025,0.085),vec3(1.0,0.72,0.12),clamp(value,0.0,1.0));

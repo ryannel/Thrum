@@ -606,9 +606,15 @@ impl WorldGame for GameRules {
         let weather = self
             .weather_edits
             .as_ref()
-            .and_then(super::WeatherEdits::pending);
-        if let Some(target) = weather {
+            .map_or_else(super::WeatherTargets::default, super::WeatherEdits::pending);
+        if let Some(target) = weather.sky {
             commands.push(crate::simulation::Command::SetWeather(target));
+        }
+        if let Some(target) = weather.ground {
+            commands.push(crate::simulation::Command::SetGroundWeather(target));
+        }
+        if let Some(time) = weather.solar {
+            commands.push(crate::simulation::Command::SetWeatherSolarTime(time));
         }
         self.sim
             .step(&commands)
@@ -616,8 +622,8 @@ impl WorldGame for GameRules {
                 operation: "simulation step",
                 source,
             })?;
-        if let (Some(edits), Some(target)) = (&self.weather_edits, weather) {
-            edits.committed(target);
+        if let Some(edits) = &self.weather_edits {
+            edits.committed(weather);
         }
         Ok(WorldStep {
             projected_changes: 0,

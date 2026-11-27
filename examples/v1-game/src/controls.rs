@@ -114,6 +114,17 @@ impl GameControls {
         weather: Option<thrum_cloud_model::Parameters>,
         sky: bool,
     ) -> Result<Self, ControlError> {
+        Self::with_cloud_ground(weather, sky, None)
+    }
+
+    /// Declare game controls with the targets of a Ground selection, when present.
+    /// # Errors
+    /// Refuses invalid initial control values.
+    pub fn with_cloud_ground(
+        weather: Option<thrum_cloud_model::Parameters>,
+        sky: bool,
+        ground: Option<crate::clouds::GroundTargets>,
+    ) -> Result<Self, ControlError> {
         let mut model = Controls::new();
         #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
         thrum_app::profile::declare(&mut model)?;
@@ -144,7 +155,7 @@ impl GameControls {
         let sun_elevation =
             model.readout("sky.sun_elevation", "Sun elevation", Display::degrees())?;
         let clouds = weather
-            .map(|weather| CloudControls::declare(&mut model, weather, sky))
+            .map(|weather| CloudControls::declare(&mut model, weather, sky, ground))
             .transpose()?;
         let mut controls = Self {
             model,

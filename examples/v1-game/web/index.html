@@ -29,6 +29,8 @@
           <button type="button" data-sky="noon">Noon</button>
           <button type="button" data-sky="sunset">Sunset</button>
           <button type="button" data-sky="twilight">Twilight</button>
+          <button type="button" data-ground-preset="dawn-mist" hidden>Dawn mist</button>
+          <button type="button" data-ground-preset="sea-fog" hidden>Sea fog</button>
           <button type="button" id="scene-view">Look at the scene</button>
           <button type="button" id="restore-graphics" hidden>Restore graphics</button>
         </div>
@@ -257,6 +259,22 @@
           look(yaw, pitch);
         }));
         document.querySelector("#scene-view").addEventListener("click", () => look(0, 0));
+        if (JSON.parse(game.controls_json()).controls.some(control => control.key === "clouds.radiative_day")) {
+          for (const button of document.querySelectorAll("[data-ground-preset]")) {
+            button.hidden = false;
+            button.addEventListener("click", async () => {
+              try {
+                const response = await fetch(`clouds-${button.dataset.groundPreset}.params.json`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const report = JSON.parse(game.apply_parameters(await response.text(), performance.now()));
+                if (report.problems.length) throw new Error(report.problems.join(", "));
+                controls.refresh();
+              } catch (error) {
+                status.textContent = `Control fault: ${error}`;
+              }
+            });
+          }
+        }
         if (probe.has("params")) {
           // Applied through the same checked edits as the sliders; a bad file or entry is
           // explained here and never stops the frame loop.

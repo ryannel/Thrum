@@ -219,6 +219,7 @@ pub(super) fn append_ground(
     ground: &crate::ground::GroundGpu,
     targets: &crate::ground::GroundTargets,
     shape_noise: EffectAccess,
+    epoch: u64,
 ) -> Vec<EffectAccess> {
     let access = |resource, range, kind| EffectAccess {
         resource,
@@ -232,16 +233,32 @@ pub(super) fn append_ground(
         D::of_texture(&ground.field.surface),
         S::Imported { initialized: true },
     ));
+    let retained = |owner| S::Persistent {
+        owner,
+        epoch,
+        initialized: false,
+    };
     let band = graph.resources.len();
-    graph.resources.push((
-        D::of_texture(&targets.band.texture),
-        S::Imported { initialized: false },
-    ));
+    graph
+        .resources
+        .push((D::of_texture(&targets.band.texture), retained(107)));
     let medium = &targets.medium.target;
     let coefficients = graph.resources.len();
+    graph
+        .resources
+        .push((D::of_texture(&medium.coefficients), retained(108)));
+    let ambient = &targets.medium.lighting.ambient;
+    let hemisphere = graph.resources.len();
     graph.resources.push((
-        D::of_texture(&medium.coefficients),
-        S::Imported { initialized: false },
+        D::Buffer {
+            bytes: ambient.size(),
+            usage: ambient.usage(),
+        },
+        S::Persistent {
+            owner: 109,
+            epoch,
+            initialized: true,
+        },
     ));
     let mut buffer = |buffer: &wgpu::Buffer, kind, initialized| {
         let index = graph.resources.len();
@@ -263,7 +280,7 @@ pub(super) fn append_ground(
     let phase = buffer(&ground.phases.buffer, A::StorageRead, true);
     let observer = buffer(&medium.observer, A::UniformRead, true);
     let history = buffer(&medium.history, A::UniformRead, true);
-    let hemisphere = buffer(&targets.medium.lighting.ambient, A::StorageReadWrite, true);
+    let hemisphere = access(hemisphere, 0..ambient.size(), A::StorageReadWrite);
     let deck_inputs = targets.medium.sky_params.as_ref().map(|params| {
         [
             buffer(params, A::UniformRead, true),
@@ -288,7 +305,7 @@ pub(super) fn append_ground(
     let band_read = access(band, 0..1, A::SampledRead);
     graph.passes.push(EffectPass {
         name: crate::ground::band::PASS.into(),
-        cadence: EffectCadence::EveryFrame,
+        cadence: EffectCadence::Skippable,
         async_eligible: false,
         accesses: paths
             .iter()
@@ -318,7 +335,7 @@ pub(super) fn append_ground(
     paths.extend(deck_inputs.into_iter().flatten());
     graph.passes.push(EffectPass {
         name: crate::ground::medium::PASS.into(),
-        cadence: EffectCadence::EveryFrame,
+        cadence: EffectCadence::Skippable,
         async_eligible: false,
         accesses: paths,
     });

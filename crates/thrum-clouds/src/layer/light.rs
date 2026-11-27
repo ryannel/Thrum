@@ -21,6 +21,7 @@ impl Lighting {
         surface: &SceneSurface<'_>,
         weather: &WeatherMap,
         environment: &EnvironmentProducts,
+        ground: bool,
     ) -> Result<Self, Error> {
         let phases: Vec<_> = weather
             .types()
@@ -43,7 +44,7 @@ impl Lighting {
         });
         let ambient = surface.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("cloud hemisphere radiance"),
-            size: 32,
+            size: 16 * if ground { 2 + 32 } else { 2 },
             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
             mapped_at_creation: false,
         });
@@ -156,6 +157,6 @@ impl Lighting {
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, environment.group(side), &[]);
         pass.set_bind_group(1, &self.group, &[]);
-        pass.dispatch_workgroups(2, 1, 1);
+        pass.dispatch_workgroups(2 + u32::from(self.ambient.size() > 32), 1, 1);
     }
 }

@@ -6,7 +6,7 @@ mod page;
 mod rules;
 mod types;
 mod weather;
-pub(crate) use weather::Weather;
+pub(crate) use weather::{SolarTime, Weather};
 
 use std::mem::size_of;
 
@@ -828,6 +828,28 @@ fn validate_commands(
                     return Err(SimError::ConflictingCommands);
                 }
             }
+            Command::SetGroundWeather(target) => {
+                if weather.is_none() || !target.valid() {
+                    return Err(SimError::InvalidConfig);
+                }
+                if commands[..index]
+                    .iter()
+                    .any(|prior| matches!(prior, Command::SetGroundWeather(_)))
+                {
+                    return Err(SimError::ConflictingCommands);
+                }
+            }
+            Command::SetWeatherSolarTime(time) => {
+                if weather.is_none() || !(0.0..=1.0).contains(time) {
+                    return Err(SimError::InvalidConfig);
+                }
+                if commands[..index]
+                    .iter()
+                    .any(|prior| matches!(prior, Command::SetWeatherSolarTime(_)))
+                {
+                    return Err(SimError::ConflictingCommands);
+                }
+            }
             Command::Spawn(entity) => {
                 if !finite(entity.position.0) || !finite(entity.velocity.0) {
                     return Err(SimError::NonFinite);
@@ -892,7 +914,10 @@ fn validate_commands(
 
 fn command_target(command: &Command) -> Option<(Handle, u8)> {
     match command {
-        Command::Spawn(_) | Command::SetWeather(_) => None,
+        Command::Spawn(_)
+        | Command::SetWeather(_)
+        | Command::SetGroundWeather(_)
+        | Command::SetWeatherSolarTime(_) => None,
         Command::Despawn(handle) => Some((*handle, 0)),
         Command::SetPosition(handle, _) => Some((*handle, 1)),
         Command::SetVelocity(handle, _) => Some((*handle, 2)),

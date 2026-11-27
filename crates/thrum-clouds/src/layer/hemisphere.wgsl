@@ -1,7 +1,17 @@
-@group(1) @binding(0) var<storage,read_write> hemisphere_light:array<vec4<f32>,2>;
+@group(1) @binding(0) var<storage,read_write> hemisphere_light:array<vec4<f32>>;
 var<workgroup> hemisphere_sum:array<vec3<f32>,64>;
 @compute @workgroup_size(64)
 fn hemispheres(@builtin(workgroup_id) group:vec3<u32>,@builtin(local_invocation_index) lane:u32) {
+    if group.x == 2u {
+        // Ground caps dark-side twilight against the sky above that bearing.
+        let count = arrayLength(&hemisphere_light) - 2u;
+        if lane < count {
+            let phi = f32(lane) * (2.0 * PI / f32(count));
+            let direction = vec3(cos(phi), 0.012, sin(phi));
+            hemisphere_light[2u + lane] = vec4(environment_sky_radiance(direction), 0.0);
+        }
+        return;
+    }
     var sum=vec3(0.0);
     // Equal-solid-angle midpoint quadrature. Irradiance / (2*pi) is the
     // isotropic hemispheric source, so the solid-angle factor cancels here.

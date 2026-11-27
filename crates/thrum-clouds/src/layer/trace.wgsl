@@ -55,6 +55,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
         }
     }
     let phase=cloud_phases(ray,atmosphere.sun_lux.xyz);
+    let ground_sky = ground_sky_limit(ray, atmosphere.sun_lux.xyz);
     let light_angles=cloud_light_angles(-ray);
     let sun_alignment=dot(ray,mapping.path_border.xyz);
     // The sky behind the layer includes the high radiance of the solar disc.
@@ -149,7 +150,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
         }
         if in_ground {
             if far>0.0 {
-                let fog=ground_light(world,ray,atmosphere.sun_lux.xyz,at,transmission,far<1.0);
+                let fog=ground_light(world,ray,atmosphere.sun_lux.xyz,at,transmission,far<1.0,ground_sky);
                 if fog.extinction>0.0 {
                     let solar=sun_irradiance(world)*fog.surface_visibility;
                     sigma+=fog.extinction*far;

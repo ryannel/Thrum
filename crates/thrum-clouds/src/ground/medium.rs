@@ -43,7 +43,7 @@ impl Medium {
         let environment = surface.environment_products().ok_or(Error::Unsupported(
             "Ground requires the physical environment",
         ))?;
-        let lighting = layer::light::Lighting::new(surface, weather, &environment)?;
+        let lighting = layer::light::Lighting::new(surface, weather, &environment, true)?;
         let device = surface.device;
         let stages = wgpu::ShaderStages::COMPUTE;
         let sky_params = sky.then(|| layer::parameter_buffer(device));
@@ -169,7 +169,7 @@ impl Medium {
             )
         } else {
             concat!(
-                "@group(1) @binding(10) var<storage, read> cloud_ambient:array<vec4<f32>,2>;\n",
+                "@group(1) @binding(10) var<storage, read> cloud_ambient:array<vec4<f32>>;\n",
                 include_str!("no_layer_light.wgsl"),
             )
             .into()

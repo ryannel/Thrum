@@ -1546,6 +1546,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     if (movingControl === 'generation') await publishSecondGeneration(assetsSource, output, timeout);
     if (lateAttach) await cdp.call('Fetch.enable', { patterns: [{ urlPattern: `${assetsOrigin}/*` }] }, sessionId);
     await cdp.call('Page.navigate', { url: mode === 'clouds-placed' ? `${origin}/?placed-clouds=${encodeURIComponent(origin)}&cloud-check`
+      : mode === 'clouds-ground-controls' ? `${origin}/?clouds=ground-mist-far&cloud-check&reconstruction=taau&params=clouds-ground-study.params.json`
       : mode === 'clouds-controls' ? `${origin}/?clouds=sky&cloud-check&reconstruction=taau&params=clouds-low-sun.params.json`
       : cloudCase ? `${origin}/?clouds=sky&cloud-check&reconstruction=taau&params=field-oracle.params.json` :
       url + cullingQuery + (exitStop ? '&scene=exit' : '') + (exitQuery ? `&${exitQuery}` : '') + (oracleCase && mixedOracle ? '&field-meshes' : '') }, sessionId);
@@ -1573,14 +1574,14 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
       const record = { case: mode, ...proof, actualWasmSha256,
         source_revision: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim() };
       await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(record, null, 2));
-      if (mode === 'clouds-controls') {
+      if (['clouds-controls', 'clouds-ground-controls'].includes(mode)) {
         // The control proof is complete. Drain the device while the page can
         // still acknowledge its destruction, before unloading the document.
         cdp.event = () => {};
         const devices = await releaseGameGraphics(cdp, sessionId, game);
         log(`Released ${devices} WebGPU device(s) after cloud controls`);
       }
-      if (mode === 'clouds-state' || mode === 'clouds-controls') {
+      if (['clouds-state', 'clouds-controls', 'clouds-ground-controls'].includes(mode)) {
         // Retire the WebGPU document before Chrome closes its target.
         // Target.closeTarget only accepts a close request and can overlap renderer teardown.
         await cdp.call('Runtime.releaseObject', { objectId: game.objectId }, sessionId);
@@ -2633,7 +2634,7 @@ async function qualifyExtent(cdp, origin, output, timeout, wasm) {
 
 async function main() {
   const args = options(process.argv.slice(2));
-  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|effect-state|effect-tick|effect-simulate-draw|shipping-boundary|normal|pause|resize|overload|input|controls|tabs|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|device-recovery-acquire|sky-reflections|valley|valley-recovery|valley-late-attach|material|material-disabled|field|field-direct|field-occlusion|field-oracle|route|moving-route|moving-route-controls|g4-route|no-compile|clouds-first-frame|clouds-state|clouds-placed|clouds-controls|sprite-sheets] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; tabs switches real Chrome tabs and checks authority, input release and manual pause; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real Restore button. The retry case throws once during canvas configure and checks that a second click admits a new candidate. The acquire case throws once after configure and checks recovery on the same candidate. Sky reflections saves nine paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached; valley-late-attach holds the valley requests until the device is lost, then proves the attach made no GPU call on the lost device and the valley draws on the replacement; material reloads a WGSL hook on that valley (valid, refused, and outstanding across a destroyed device) and records contended frame intervals around the valid reload; it needs the development page (web/build.sh --dev), so all leaves it out. material-disabled loads the default page with ?material and proves it starts no material work. Field qualifies the 100,513-instance flythrough with Frustum camera culling; field-direct and field-occlusion qualify it with Direct and Occlusion for a paired comparison; field-oracle pauses three fresh pages and compares Frustum and Occlusion captures with Direct byte for byte. Route launches one fresh page per checked-in examples/v1-game/params/showcase-*.params.json preset with the cooked valley, after requiring the web root to ship each byte for byte and no others; it proves the preset applied and the valley drew, brackets navigation to the first observed cooked draw on the page clock, and captures the paused canvas. Moving-route (not in all) loads route.html with the checked-in examples/v1-game/routes/moving-v1.json against the served cooked store it names, captures the presented canvas at each checkpoint hold and saves the page\'s per-tick record; moving-route-controls runs its negative controls, one fresh page each: hidden at start, hidden mid-route, a clamped timestamp, refused edits plus a performance-stamped frame, a canvas resize, an undeclared second cooked generation (each must end in its named refusal), and phase 0.1 for the comparator. The other cases make no timing claim.'); return; }
+  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|effect-state|effect-tick|effect-simulate-draw|shipping-boundary|normal|pause|resize|overload|input|controls|tabs|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|device-recovery-acquire|sky-reflections|valley|valley-recovery|valley-late-attach|material|material-disabled|field|field-direct|field-occlusion|field-oracle|route|moving-route|moving-route-controls|g4-route|no-compile|clouds-first-frame|clouds-state|clouds-placed|clouds-controls|clouds-ground-controls|sprite-sheets] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; tabs switches real Chrome tabs and checks authority, input release and manual pause; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real Restore button. The retry case throws once during canvas configure and checks that a second click admits a new candidate. The acquire case throws once after configure and checks recovery on the same candidate. Sky reflections saves nine paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached; valley-late-attach holds the valley requests until the device is lost, then proves the attach made no GPU call on the lost device and the valley draws on the replacement; material reloads a WGSL hook on that valley (valid, refused, and outstanding across a destroyed device) and records contended frame intervals around the valid reload; it needs the development page (web/build.sh --dev), so all leaves it out. material-disabled loads the default page with ?material and proves it starts no material work. Field qualifies the 100,513-instance flythrough with Frustum camera culling; field-direct and field-occlusion qualify it with Direct and Occlusion for a paired comparison; field-oracle pauses three fresh pages and compares Frustum and Occlusion captures with Direct byte for byte. Route launches one fresh page per checked-in examples/v1-game/params/showcase-*.params.json preset with the cooked valley, after requiring the web root to ship each byte for byte and no others; it proves the preset applied and the valley drew, brackets navigation to the first observed cooked draw on the page clock, and captures the paused canvas. Moving-route (not in all) loads route.html with the checked-in examples/v1-game/routes/moving-v1.json against the served cooked store it names, captures the presented canvas at each checkpoint hold and saves the page\'s per-tick record; moving-route-controls runs its negative controls, one fresh page each: hidden at start, hidden mid-route, a clamped timestamp, refused edits plus a performance-stamped frame, a canvas resize, an undeclared second cooked generation (each must end in its named refusal), and phase 0.1 for the comparator. The other cases make no timing claim.'); return; }
   if (Number(process.versions.node.split('.')[0]) < 24 || typeof WebSocket !== 'function') throw new Error('Node 24+ with builtin WebSocket is required');
   if (args.case === 'sprite-sheets') {
     if (args.cook === 'target/debug/thrum-cook') {
@@ -2670,8 +2671,10 @@ async function main() {
     const bytes = await fs.readFile(path.join(directory, 'interface-input.js'));
     files.set('/interface-input.js', { bytes, type: 'text/javascript', sha256: sha(bytes) });
   }
-  if (args.case === 'clouds-controls') {
-    for (const name of ['clear', 'fair', 'broken', 'overcast', 'low-sun']) {
+  if (['clouds-controls', 'clouds-ground-controls'].includes(args.case)) {
+    const presets = args.case === 'clouds-controls' ? ['clear', 'fair', 'broken', 'overcast', 'low-sun']
+      : ['dawn-mist', 'sea-fog', 'ground-study'];
+    for (const name of presets) {
       const preset = `clouds-${name}.params.json`;
       const bytes = await fs.readFile(path.join(directory, preset));
       files.set(`/${preset}`, { bytes, type: 'application/json', sha256: sha(bytes) });
@@ -2861,7 +2864,7 @@ async function main() {
   finally {
     cook?.kill();
     // These cases may leave Chrome draining WebGPU resources after tab close.
-    const drainGpuResources = statusCost || args.case === 'environment' || args.case === 'clouds-controls' || args.case === 'sprites-crisp' || args.case.startsWith('sprites-field');
+    const drainGpuResources = statusCost || args.case === 'environment' || ['clouds-controls', 'clouds-ground-controls'].includes(args.case) || args.case === 'sprites-crisp' || args.case.startsWith('sprites-field');
     const shutdown = {};
     try {
       await cleanup(child, () => ended, cdp, server, profile, {

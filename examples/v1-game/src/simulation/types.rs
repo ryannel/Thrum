@@ -73,6 +73,10 @@ pub struct ComponentEntity {
 pub enum Command {
     /// Set a target for the next weather tick, using the weather state's response time.
     SetWeather(thrum_cloud_model::Parameters),
+    /// Set ground condensate and haze targets for the next weather tick.
+    SetGroundWeather(crate::clouds::GroundTargets),
+    /// Rephase the Ground selection's committed solar clock on the next tick.
+    SetWeatherSolarTime(f32),
     /// Spawn a registered bundle after the current simulation step.
     Spawn(ComponentEntity),
     /// Retire a checked handle after the current simulation step.

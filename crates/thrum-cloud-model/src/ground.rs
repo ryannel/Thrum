@@ -197,7 +197,7 @@ fn distances(wet: &[bool], target: bool, size: [usize; 2], spacing: f64) -> Vec<
 }
 
 /// Which surface supports a row.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Affinity {
     /// All surfaces.
     Any,
@@ -208,7 +208,7 @@ pub enum Affinity {
 }
 
 /// One game-authored ground-condensate row, with no engine presets.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Fog {
     /// Physical liquid water kg/m³.
     pub liquid_water: f64,
@@ -259,7 +259,7 @@ impl Fog {
 }
 
 /// Numerical constants for ground rows and their radiative day. Angles in degrees.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct GroundProfile {
     /// Shore fade distance on each side, metres.
     pub shore_margin: f64,
@@ -274,6 +274,7 @@ pub struct GroundProfile {
 }
 
 /// Validated table and profile. Surface data and rows remain game supplied.
+#[derive(PartialEq)]
 pub struct Ground {
     pub(crate) rows: Vec<Fog>,
     profile: GroundProfile,
@@ -415,6 +416,9 @@ pub struct GroundState {
     moisture_target: f64,
     visual_range: f64,
     range_target: f64,
+    angstrom_exponent: f64,
+    angstrom_target: f64,
+    radiative_day: bool,
 }
 
 impl Default for GroundState {
@@ -427,8 +431,17 @@ impl Default for GroundState {
             moisture_target: 0.0,
             visual_range: 100_000.0,
             range_target: 100_000.0,
+            angstrom_exponent: 0.0,
+            angstrom_target: 0.0,
+            radiative_day: true,
         }
     }
+}
+
+fn valid_ground_controls(amounts: &[f64], moisture: f64, range: f64) -> bool {
+    amounts.iter().all(|&amount| unit(amount))
+        && unit(moisture)
+        && (3000.0..=300_000.0).contains(&range)
 }
 
 impl GroundState {
@@ -436,11 +449,7 @@ impl GroundState {
     /// # Errors
     /// Rejects amounts/moisture outside 0..=1 or range outside 3..=300 km.
     pub fn new(amounts: Vec<f64>, moisture: f64, visual_range: f64) -> Result<Self, Error> {
-        if amounts.iter().any(|&v| !unit(v))
-            || !unit(moisture)
-            || !visual_range.is_finite()
-            || !(3000.0..=300_000.0).contains(&visual_range)
-        {
+        if !valid_ground_controls(&amounts, moisture, visual_range) {
             return Err(Error::Invalid);
         }
         Ok(Self {
@@ -451,6 +460,7 @@ impl GroundState {
             moisture_target: moisture,
             visual_range,
             range_target: visual_range,
+            ..Self::default()
         })
     }
 
@@ -463,11 +473,12 @@ impl GroundState {
         moisture: f64,
         visual_range: f64,
     ) -> Result<(), Error> {
-        if amounts.len() != self.amounts.len() {
+        if amounts.len() != self.amounts.len()
+            || !valid_ground_controls(amounts, moisture, visual_range)
+        {
             return Err(Error::Invalid);
         }
-        let validated = Self::new(amounts.to_vec(), moisture, visual_range)?;
-        self.targets = validated.amounts;
+        self.targets.copy_from_slice(amounts);
         self.moisture_target = moisture;
         self.range_target = visual_range;
         Ok(())
@@ -475,7 +486,7 @@ impl GroundState {
 
     /// Current row amount; missing controls are absent.
     pub fn amount(&self, row: usize, radiative: bool) -> f64 {
-        if radiative {
+        if radiative && self.radiative_day {
             // Even saturated air needs finite cooling to condense. Warming
             // approaches zero asymptotically, so a zero threshold would leave
             // a positive amount throughout every clear saturated afternoon.
@@ -484,6 +495,16 @@ impl GroundState {
             self.amounts.get(row).copied().unwrap_or(0.0)
         }
     }
+    /// Whether the radiative response is enabled for rows marked radiative.
+    pub fn radiative_day(&self) -> bool {
+        self.radiative_day
+    }
+
+    /// Enable the radiative response of rows marked radiative.
+    pub fn set_radiative_day(&mut self, enabled: bool) {
+        self.radiative_day = enabled;
+    }
+
     /// Integrated ground cooling in 0..=1.
     pub fn cooling(&self) -> f64 {
         self.cooling
@@ -493,10 +514,28 @@ impl GroundState {
         self.visual_range
     }
 
+    /// The committed Ångström exponent of clear-air aerosol.
+    pub fn angstrom_exponent(&self) -> f64 {
+        self.angstrom_exponent
+    }
+
+    /// Set the clear-air aerosol's spectral target.
+    /// # Errors
+    /// Rejects values outside 0..=2, including nonfinite values.
+    pub fn set_angstrom_target(&mut self, exponent: f64) -> Result<(), Error> {
+        if !(0.0..=2.0).contains(&exponent) {
+            return Err(Error::Invalid);
+        }
+        self.angstrom_target = exponent;
+        Ok(())
+    }
+
     pub(crate) fn ramp(&mut self, rate: f64) {
         for (v, t) in self.amounts.iter_mut().zip(&self.targets) {
             *v += (*t - *v).clamp(-rate, rate);
         }
+        self.angstrom_exponent +=
+            (self.angstrom_target - self.angstrom_exponent).clamp(-2.0 * rate, 2.0 * rate);
         self.moisture += (self.moisture_target - self.moisture).clamp(-rate, rate);
         self.visual_range +=
             (self.range_target - self.visual_range).clamp(-297_000.0 * rate, 297_000.0 * rate);

@@ -50,11 +50,18 @@ pub struct PublishedPage(pub(crate) Arc<Page>);
 impl PublishedPage {
     /// Weather from this exact committed page, absent when clouds are disabled.
     pub fn weather(&self) -> Option<Arc<thrum_cloud_model::State>> {
-        let slot = u32::try_from(self.0.slot_capacity().checked_sub(1)?).ok()?;
-        let handle = self.0.handle(slot)?;
-        self.0
-            .component::<super::weather::Weather>(handle)
+        self.weather_component()
             .map(|weather| Arc::clone(&weather.state))
+    }
+
+    pub(crate) fn weather_solar(&self) -> Option<super::weather::SolarTime> {
+        self.weather_component()?.solar()
+    }
+
+    fn weather_component(&self) -> Option<&super::weather::Weather> {
+        let slot = u32::try_from(self.0.slot_capacity().checked_sub(1)?).ok()?;
+        self.0
+            .component::<super::weather::Weather>(self.0.handle(slot)?)
     }
     /// Old branch endpoint this inverse patch can update.
     pub fn patch_source(&self) -> Option<(SnapshotId, u64)> {

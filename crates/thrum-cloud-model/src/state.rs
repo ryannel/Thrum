@@ -179,6 +179,27 @@ impl State {
         Ok(())
     }
 
+    /// Integrate ground cooling over the solar time that elapsed on this tick.
+    /// Use this after `step` when the game's solar clock advances independently of advection.
+    /// # Errors
+    /// Rejects invalid elapsed solar time or elevation without changing the state.
+    pub fn advance_ground_cooling(
+        &mut self,
+        ground: &crate::Ground,
+        solar_seconds: f64,
+        elevation_degrees: f64,
+    ) -> Result<(), Error> {
+        if !solar_seconds.is_finite()
+            || solar_seconds < 0.0
+            || !(-90.0..=90.0).contains(&elevation_degrees)
+        {
+            return Err(Error::Invalid);
+        }
+        self.ground
+            .day(ground, solar_seconds, elevation_degrees, self.parameters);
+        Ok(())
+    }
+
     /// Last committed weather tick.
     pub fn tick(&self) -> u64 {
         self.tick

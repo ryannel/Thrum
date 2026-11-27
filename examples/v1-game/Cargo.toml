@@ -251,6 +251,15 @@ path = "tests/clouds_meter_gpu.rs"
 [[test]]
 name = "clouds_controls"
 
+# CLOUDS WP16 names both Ground qualification binaries.
+[[test]]
+name = "clouds_ground_controls"
+path = "tests/placed/clouds_ground_controls.rs"
+
+[[test]]
+name = "clouds_ground_knobs_gpu"
+path = "tests/placed/clouds_ground_knobs_gpu.rs"
+
 # The CLOUDS runtime knob check exercises the game's placed-sky graph and Metal counters.
 [[test]]
 name = "clouds_knobs_gpu"

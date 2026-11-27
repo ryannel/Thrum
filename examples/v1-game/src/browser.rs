@@ -246,6 +246,7 @@ pub async fn create_browser_game(
     if diagnostic_clouds == Some(true) || temporal_inputs == Some(true) {
         return Err(js_error("diagnostic scenes require the proving build"));
     }
+    let clouds = cloud_selection(clouds.as_deref(), diagnostic_clouds.unwrap_or(false))?;
     create_game(
         canvas,
         crate::GameSetup {
@@ -267,7 +268,8 @@ pub async fn create_browser_game(
             },
             #[cfg(feature = "proving")]
             diagnostic_clouds: diagnostic_clouds.unwrap_or(false),
-            clouds: cloud_selection(clouds.as_deref(), diagnostic_clouds.unwrap_or(false))?,
+            clouds,
+            cloud_weather: clouds.default_weather(),
             valley_stars: valley_stars.unwrap_or(false),
             field_meshes: meshes.unwrap_or(false),
             cooked_mesh_rows: (exit || (meshes.unwrap_or(false) && cooked_valley.unwrap_or(false)))

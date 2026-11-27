@@ -988,10 +988,115 @@ def mist_far_cost():
     }
 
 
+MIST_DAY_FIXTURE = ROOT / 'tests/fixtures/clouds/mist-day-cost.json'
+MIST_DAY_RATES = (1, 8, 60)
+
+
+def mist_day_tripwires(row, same_scene, wp15):
+    references = (same_scene, wp15)
+    names = {
+        name for name, value in row['pass_gpu_ns'].items()
+        if any(prior['pass_gpu_ns'].get(name, 0) > 0
+               and value >= 1.25 * prior['pass_gpu_ns'][name] for prior in references)
+    }
+    if row['whole_frame_gpu_ns'] > 1e9 / 120:
+        names.add('whole frame')
+    return names
+
+
+def validate_mist_day(record):
+    baseline = json.loads(MIST_FAR_FIXTURE.read_text())
+    far_mist = baseline['runs'][1]
+    if record.get('paired_wp15') != {'commit': baseline['commit'], 'run': far_mist}:
+        raise ValueError('mist-day requires the retained WP15 far-mist reference')
+    rows = record.get('runs', [])
+    if [row.get('weather_rate') for row in rows] != list(MIST_DAY_RATES):
+        raise ValueError('mist-day needs one arm at 1×, 8× and 60×')
+    required = ('cloud ground band', 'cloud medium coefficients', 'cloud trace',
+                'atmosphere aerial perspective')
+    for row in rows:
+        if (row['extent'] != [2560, 1440] or row['capture'] or row['view'] != far_mist['view']
+                or 'Metal' not in row['adapter'] or not positive(row['whole_frame_gpu_ns'])
+                or row['adapter'] != rows[0]['adapter'] or len(row['day_samples']) != row['frames']):
+            raise ValueError('mist-day arms must use the matched capture-off 1440p Metal camera')
+        for angle in ('yaw_degrees', 'pitch_degrees'):
+            if abs(row['view_angles'][angle] - far_mist['view_angles'][angle]) > 0.001:
+                raise ValueError(f'mist-day camera differs from WP15 at {angle}')
+        samples = row['day_samples']
+        if (len(samples) < 36
+                or any(not positive(sample['whole_frame_gpu_ns']) for sample in samples)
+                or any(not 0 <= sample['mist_amount'] <= 1 for sample in samples)):
+            raise ValueError('mist-day has an incomplete timing or amount record')
+        for low, high in [(16, 18), (19, 21), (23, 24), (0, 2), (3, 5), (5, 7), (9, 11)]:
+            if sum(low <= sample['solar_hours'] < high for sample in samples) < 2:
+                raise ValueError(f'mist-day does not cover solar hours {low} to {high}')
+        if not (samples[0]['mist_amount'] == samples[-1]['mist_amount'] == 0
+                and max(sample['mist_amount'] for sample in samples) > 0.5):
+            raise ValueError('mist-day missed the dry and occupied portions of the cycle')
+        for name in required:
+            if not any(name in key and positive(value) for key, value in row['pass_gpu_ns'].items()):
+                raise ValueError(f'mist-day lacks timing for {name}')
+        if (row['resources'] != rows[0]['resources']
+                or any(not positive(size) for _, size in row['resources'])):
+            raise ValueError('mist-day needs complete equal resource inventories at each rate')
+        if any(not row.get('investigations', {}).get(name)
+               for name in mist_day_tripwires(row, rows[0], far_mist)):
+            raise ValueError('mist-day is missing a tripwire investigation')
+
+
+def mist_day_cost():
+    baseline = json.loads(MIST_FAR_FIXTURE.read_text())
+    far_mist = baseline['runs'][1]
+    scratch = ROOT / 'tmp/clouds-wp16/cost'
+    scratch.mkdir(parents=True, exist_ok=True)
+    run(['cargo', 'build', '--release', '--locked', '--offline', '-p', 'v1-game',
+         '--example', 'cloud_cost'], timeout=1200)
+    run(['cargo', 'build', '--release', '--locked', '--offline', '-p', 'thrum-cook',
+         '--bin', 'thrum-cook'], timeout=1200)
+    valley = scratch / 'valley'
+    if not valley.exists():
+        run(['target/release/thrum-cook', 'cook', 'examples/v1-game/assets/showcase', str(valley)], timeout=180)
+    before = os.getloadavg()
+    rows = []
+    for rate in MIST_DAY_RATES:
+        environment = dict(os.environ, THRUM_SCENE='valley', THRUM_ASSET_STORE=str(valley),
+                           THRUM_CLOUDS='dawn-mist', THRUM_CLOUD_PRESET='clear', THRUM_CLOUD_WIND='0',
+                           THRUM_CLOUD_TIME_SCALE=str(rate), THRUM_CAMERA_X='35', THRUM_CAMERA_Z='16',
+                           THRUM_CAMERA_HEIGHT='246')
+        row = json.loads(run(['target/release/examples/cloud_cost', '--device-profile', 'portable',
+                              '--mist-day'], env=environment, timeout=360))
+        rows.append(dict(row, weather_rate=rate))
+    for row in rows:
+        samples = row['day_samples']
+        warm = [sample['whole_frame_gpu_ns'] for sample in samples if sample['mist_amount'] == 0]
+        mist = [sample['whole_frame_gpu_ns'] for sample in samples if sample['mist_amount'] > 0.5]
+        timing = (f'Dry submissions average {sum(warm)/len(warm)/1e6:.3f} ms and occupied ones '
+                  f'{sum(mist)/len(mist)/1e6:.3f} ms at this rate. '
+                  'The WP15 reference has static 10° lighting and an advected bank, '
+                  'while this arm covers daylight, twilight and night with varying mist.')
+        row['investigations'] = {}
+        for name in sorted(mist_day_tripwires(row, rows[0], far_mist)):
+            if name == 'whole frame':
+                observed = (f"{row['whole_frame_gpu_ns']/1e6:.3f} ms against the 8.333 ms wire, "
+                            f"WP15 at {far_mist['whole_frame_gpu_ns']/1e6:.3f} ms.")
+            else:
+                observed = (
+                    f"{row['pass_gpu_ns'][name]/1e6:.3f} ms, this cycle at 1× "
+                    f"{rows[0]['pass_gpu_ns'].get(name, 0)/1e6:.3f} ms and WP15 at "
+                    f"{far_mist['pass_gpu_ns'].get(name, 0)/1e6:.3f} ms (zero means absent)."
+                )
+            row['investigations'][name] = f'{observed} {timing} Device load was shared.'
+    return {
+        'commit': run(['git', 'rev-parse', 'HEAD']), 'machine': platform.platform(),
+        'paired_wp15': {'commit': baseline['commit'], 'run': far_mist},
+        'load': {'before': before, 'after': os.getloadavg()}, 'runs': rows,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['record', 'check', 'refuse', 'cadence', 'hold'])
-    parser.add_argument('--scene', choices=[*FIXTURES, 'wind', 'scripted', 'mist-near', 'mist-far'], required=True)
+    parser.add_argument('--scene', choices=[*FIXTURES, 'wind', 'scripted', 'mist-near', 'mist-far', 'mist-day'], required=True)
     parser.add_argument('--previous', type=Path, help='previous renderer cost record at the same low-Sun view')
     parser.add_argument('--output', type=Path, help='write a cost record to an alternate destination')
     parser.add_argument('--resume', action='store_true',
@@ -1005,6 +1110,16 @@ def main():
     if args.command in ('cadence', 'hold') and args.scene == 'wind':
         from cloud_cadence_capture import run_wind
         return run_wind(args.command, args.output, resume=args.resume)
+    if args.scene == 'mist-day' and args.command in ('check', 'record'):
+        if args.command == 'check':
+            validate_mist_day(json.loads(MIST_DAY_FIXTURE.read_text()))
+        record = mist_day_cost()
+        validate_mist_day(record)
+        encoded = json.dumps(record, indent=2) + '\n'
+        if args.output:
+            args.output.write_text(encoded)
+        print(encoded, end='')
+        return
     if args.scene == 'mist-far' and args.command in ('check', 'record', 'refuse'):
         if args.command != 'record':
             retained = json.loads(MIST_FAR_FIXTURE.read_text())

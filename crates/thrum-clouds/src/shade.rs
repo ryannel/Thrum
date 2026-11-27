@@ -216,9 +216,7 @@ impl Shade {
     /// Select ground condensate. The scene must declare a view-volume medium.
     #[must_use]
     pub fn with_ground(mut self, config: GroundConfig) -> Self {
-        if self.sky.is_some() {
-            self.fix_ground_scale();
-        }
+        self.configure_ground_quality();
         self.ground = Some(config);
         self
     }
@@ -464,7 +462,13 @@ impl SceneContribution for Shade {
                 ground
                     .phases
                     .upload(&gpu.queue, environment.true_sun.angular_radius_radians)?;
-                ground.targets.band.upload(&gpu.queue, camera, travel);
+                let anchor = crate::ground::band::Band::anchor(camera, travel);
+                if ground.band_cadence.plan(anchor, frame.history_reset) {
+                    ground.targets.band.upload(&gpu.queue, camera, travel);
+                }
+                ground
+                    .medium_cadence
+                    .plan(crate::ground::MediumView::new(frame), frame.history_reset);
                 if ground.targets.medium.sky_params.is_some() {
                     ground
                         .targets
@@ -499,9 +503,10 @@ impl SceneContribution for Shade {
     fn effect_runs(&self, index: usize, _frame: &ContributionFrame) -> bool {
         self.valid_recording
             && self.gpu.as_ref().is_some_and(|gpu| {
-                let index = match (gpu.ground.is_some(), index) {
-                    (true, 6 | 7) => return true,
-                    (true, 8..) => index - 2,
+                let index = match (&gpu.ground, index) {
+                    (Some(ground), 6) => return ground.band_cadence.runs(),
+                    (Some(ground), 7) => return ground.medium_cadence.runs(),
+                    (Some(_), 8..) => index - 2,
                     _ => index,
                 };
                 match index {
@@ -612,6 +617,10 @@ impl SceneContribution for Shade {
         {
             gpu.weather.submitted();
             gpu.sun.submitted();
+            if let Some(ground) = &mut gpu.ground {
+                ground.band_cadence.submitted();
+                ground.medium_cadence.submitted();
+            }
             if let Some(sky) = &mut gpu.sky {
                 sky.submitted();
                 sky.overlay_submitted();

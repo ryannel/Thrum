@@ -751,7 +751,11 @@ fn prepare_parameters(
     let library_view = placement
         .as_ref()
         .is_ok_and(|name| name.starts_with("library-"));
-    if weather_motion(scenario) || scenario == "clouds-inspect" || library_view {
+    let cloud_take = cloud_take::Take::requested(scenario)?;
+    let day_take = matches!(&cloud_take, Some(cloud_take::Take::Day));
+    let settle_ground =
+        crate::content::launch_value("THRUM_CAPTURE_SETTLE_GROUND").as_deref() == Ok("1");
+    if (weather_motion(scenario) && !day_take) || library_view || settle_ground {
         crate::host::hold_capture_sun(driver.host_mut());
     }
     let overlay_before = crate::content::launch_value("THRUM_CAPTURE_CLOUD_OVERLAY_BEFORE").ok();
@@ -770,6 +774,31 @@ fn prepare_parameters(
             .map_err(|error| error.to_string())?;
     }
     let preset_accepted = Instant::now();
+    if settle_ground {
+        let settle_ticks = if mode == "fixed" && matches!(scenario, "clouds-still" | "checkpoint") {
+            16
+        } else if matches!(cloud_take, Some(cloud_take::Take::Sweep { .. })) {
+            72
+        } else {
+            return Err("the Ground control warmup needs a fixed still or a sweep".to_owned());
+        };
+        driver
+            .parameters(r#"{"world.paused":false}"#)
+            .map_err(|error| error.to_string())?;
+        let target = driver.host().world().tick() + settle_ticks;
+        let deadline = Instant::now() + Duration::from_secs(15);
+        while driver.host().world().tick() < target {
+            driver.step().map_err(|error| error.to_string())?;
+            while driver.completed()?.is_some() {}
+            if Instant::now() >= deadline {
+                return Err("Ground controls did not settle before the still".to_owned());
+            }
+            std::thread::sleep(Duration::from_millis(4));
+        }
+        driver
+            .parameters(r#"{"world.paused":true}"#)
+            .map_err(|error| error.to_string())?;
+    }
     warmup_checkpoint(driver, parity_checkpoint)?;
     let settle_weather = mode != "realtime"
         || (scenario == "clouds-placed" && placement.as_deref() == Ok("library-mixed"));
@@ -1178,6 +1207,9 @@ async fn record(
                     json!(layer.as_ref().map(|layer| layer.history_valid));
                 record["cloud_trace_stride"] = json!(layer.map(|layer| layer.trace_stride));
             }
+        }
+        if matches!(cloud_take, Some(cloud_take::Take::Day)) && report.submitted {
+            record["solar_hours"] = json!(driver.host().time_of_day() * 24.0);
         }
         if let Some(idle_gpu_progress) = idle_gpu_progress {
             record["idle_gpu_progress"] = idle_gpu_progress;

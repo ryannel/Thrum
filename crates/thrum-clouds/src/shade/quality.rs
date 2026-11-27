@@ -13,6 +13,8 @@ const SCALE: &str = "cloud layer scale";
 const STEP: &str = "cloud trace step length";
 const CAP: &str = "cloud trace sample cap";
 pub(super) const OVERLAY: &str = "cloud sky overlay cadence";
+const GROUND_BAND: &str = "cloud ground band cadence";
+const MEDIUM: &str = "cloud medium coefficients cadence";
 const PLACED: &str = "cloud placed range";
 
 fn knob(
@@ -105,6 +107,19 @@ pub(super) fn sky(profile: crate::SkyProfile, ground: bool) -> [QualityKnob; 6] 
     ]
 }
 
+pub(super) fn ground_cadence() -> [QualityKnob; 2] {
+    let cadence = |name, max| {
+        knob(
+            name,
+            "Maximum submissions between whole-output refreshes",
+            1,
+            1..=max,
+            QualityInvalidation::Age,
+        )
+    };
+    [cadence(GROUND_BAND, 4), cadence(MEDIUM, 2)]
+}
+
 pub(super) fn placed() -> QualityKnob {
     knob(
         PLACED,
@@ -120,9 +135,10 @@ pub(super) fn settings(knobs: Vec<QualityKnob>) -> Result<QualitySettings, Error
 }
 
 impl Shade {
-    pub(super) fn fix_ground_scale(&mut self) {
-        self.configure_quality([scale(true)])
-            .expect("fixed Ground scale replaces the existing validated scale knob");
+    pub(super) fn configure_ground_quality(&mut self) {
+        let fixed_scale = self.sky.is_some().then(|| scale(true));
+        self.configure_quality(ground_cadence().into_iter().chain(fixed_scale))
+            .expect("validated Ground cadence and scale declarations");
     }
 
     pub(super) fn configure_quality(
@@ -167,6 +183,10 @@ impl Shade {
                     layer.invalidate();
                 }
             }
+        }
+        if let Some(ground) = &mut gpu.ground {
+            ground.band_cadence.set_period(required(GROUND_BAND));
+            ground.medium_cadence.set_period(required(MEDIUM));
         }
         if let Some((layer, profile)) = gpu.sky.as_mut().zip(self.sky) {
             layer.set_quality(crate::layer::Quality {
