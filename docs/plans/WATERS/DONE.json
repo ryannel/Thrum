@@ -1844,7 +1844,7 @@
     {
       "id": "WP16",
       "name": "Under water the Sun casts a moving net of light on the bed and the hull, shafts of light stand in the water, and the picture stays readable as the camera goes down",
-      "status": "not_started",
+      "status": "blocked",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -1985,7 +1985,17 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_context",
+        "what": "WP16.6 reached the WATERS design\u2019s three-look stop, so the planner must decide how to achieve a connected caustic net on the hull and float before tuning resumes.",
+        "work": {
+          "commit": "d072eb9242e2801627577af3d456c38409dacbaf",
+          "branch": "build/waters",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/WATERS/WP16-handoff.md"
+      }
     },
     {
       "id": "WP20",
