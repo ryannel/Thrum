@@ -1656,7 +1656,7 @@
         {
           "verdict": "fail",
           "commit": "a2fc287ddf7a1fca42f5d0a72fdcdc9c83b17b32",
-          "review": ".orchestrate/evidence/CLOUDS/WP11-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP11-review-2.md",
           "items": {
             "WP11.11": "pass",
             "WP11.1": "pass",
@@ -1698,6 +1698,40 @@
             "turns": 1
           },
           "at": "2026-11-27T20:45:41Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "18d51d6e844c157b31e3606076138a150e929536",
+          "review": ".orchestrate/evidence/CLOUDS/WP11-review.md",
+          "items": {
+            "WP11.11": "pass",
+            "WP11.1": "pass",
+            "WP11.2": "pass",
+            "WP11.3": "pass",
+            "WP11.4": "pass",
+            "WP11.5": "pass",
+            "WP11.6": "pass",
+            "WP11.8": "pass",
+            "WP11.9": "pass",
+            "WP11.10": "pass"
+          },
+          "summary": "All ten WP11 items pass. On Metal and Chrome, cloud shade crosses the swell, the water reflects the broken sky, and an advancing fog bank veils the craft and beach. Changing the lake stage now refreshes the reflected fog at a held weather tick, and the sea cost record accounts for the increases against its preceding clouds-visible run.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 198860,
+            "cached": 11047040,
+            "output": 23527,
+            "turns": 1
+          },
+          "at": "2026-11-27T21:23:23Z"
         }
       ],
       "authorised": {
@@ -1738,6 +1772,13 @@
           "output": 283521,
           "turns": 5
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "18d51d6e844c157b31e3606076138a150e929536",
+        "review": ".orchestrate/evidence/CLOUDS/WP11-review.md",
+        "checked": "e3b0b52a3a357a4b61b45f5b10b6310ccf8b7363",
+        "at": "2026-11-27T21:23:23Z"
       }
     },
     "WP12": {

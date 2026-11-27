@@ -1824,7 +1824,7 @@
     {
       "id": "WP11",
       "name": "Clouds drift over the open sea, shade it and show in its reflections, and a fog bank drifts ashore",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
@@ -1907,7 +1907,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP11/review-repair/sea-cost.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP11-review.md"
         },
         {
@@ -1941,18 +1941,6 @@
           "evidence": ".orchestrate/evidence/CLOUDS/WP11/repair/chrome-ground.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP11-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "Lake stage changes leave the sky overlay and reflection cube stale",
-          "repeat": false
-        },
-        {
-          "name": "Replacing the sea cost record skips the previous clouds-visible run",
-          "item": "WP11.6",
-          "different": "The earlier absolute time floor omitted crossings within one absent/visible pair. That comparison is repaired. Replacing an existing fixture now omits crossings against the previous visible arm.",
-          "repeat": false
         }
       ]
     },
