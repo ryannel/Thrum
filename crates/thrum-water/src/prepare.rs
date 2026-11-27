@@ -901,6 +901,7 @@ fn surface_pipelines(
     )
 }
 
+#[derive(Clone, Copy)]
 enum ShaderOptics {
     Disabled,
     Surface,
