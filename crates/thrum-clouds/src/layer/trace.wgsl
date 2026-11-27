@@ -97,30 +97,19 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
         var sigma=0.0;
         var radiance=vec3(0.0);
         let far = 1.0 - ground_near_weight(at);
-        let deck = cloud_deck_active();
-        // Both integrators use the coarse source on the shared interval.
-        // Beyond it the boundary response and fine detail come in gradually.
-        let procedural_deck = deck && cloud.density_profile.y == 0.0;
+        // Both integrators sample the coarse density through the handover.
+        // The fine detail comes in with the boundary response beyond it.
         let detail = select(1.0, cloud_boundary_weight(at), per_pixel);
-        if in_cloud && far > 0.0 {
-            let coarse_share = far * select(1.0 - detail, 1.0, procedural_deck);
-            if coarse_share > 0.0 {
-                let light = cloud_near_light(world, ray, atmosphere.sun_lux.xyz, at, transmission);
-                sigma = light.extinction * coarse_share;
-                radiance = (light.ambient + sun_irradiance(world) * light.surface_visibility * light.solar_kernel)
-                    * coarse_share;
-            }
-            if deck && !procedural_deck && detail > 0.0 {
-                let light = cloud_deck_light(world, ray, atmosphere.sun_lux.xyz, at, transmission);
-                let share = far * detail;
-                sigma += light.extinction * share;
-                radiance += (light.ambient + sun_irradiance(world) * light.surface_visibility * light.solar_kernel) * share;
-            }
+        if in_cloud && far > 0.0 && detail < 1.0 {
+            let light = cloud_near_light(world, ray, atmosphere.sun_lux.xyz, at, transmission);
+            let share = far * (1.0 - detail);
+            sigma = light.extinction * share;
+            radiance = (light.ambient + sun_irradiance(world) * light.surface_visibility * light.solar_kernel)
+                * share;
         }
-        if in_cloud && detail > 0.0 && (!deck || cloud.density_profile.y > 0.0) {
+        if in_cloud && detail > 0.0 {
             let placed=cloud_placed(point,footprint);
-            var column=vec4(0.0);
-            if !deck { column=cloud_column(point); }
+            var column=cloud_column(point);
             if column.x+placed.x>0.0 {
                 let upper_sigma=cloud_detail(column.x,point,footprint,cloud.physical.x,column.w)+placed.x;
                 let detailed_sigma = upper_sigma * (far * detail);
@@ -128,7 +117,13 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
                 column.y += placed.y;
                 column.z += placed.z;
                 if upper_sigma>0.0 {
-                    let solar=mix(sun_base,sun_top,clamp((point.y-cloud.heights.x)/(cloud.heights.y-cloud.heights.x),0.0,1.0));
+                    var solar=mix(sun_base,sun_top,clamp((point.y-cloud.heights.x)/(cloud.heights.y-cloud.heights.x),0.0,1.0));
+                    var fog_depth = 0.0;
+                    if per_pixel {
+                        let ground = cloud_layer_ground_path(world);
+                        solar *= ground.x;
+                        fog_depth = ground.y;
+                    }
                     let sunlit=any(solar>vec3(0.0));
                     var sun_depths=vec2(0.0);
                     var diffuse=vec3(0.0,0.0,1.0);
@@ -137,6 +132,10 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
                         diffuse=vec3(sun_depths,1.0);
                         if placed.x>0.0 && cloud.light_samples>0u {
                             diffuse=cloud_placed_diffuse(point,world,footprint,sun_alignment,sun_depths,placed.x/upper_sigma);
+                        }
+                        if per_pixel {
+                            sun_depths += vec2(fog_depth);
+                            diffuse = vec3(diffuse.xy + vec2(fog_depth), diffuse.z);
                         }
                     }
                     var source=cloud_source_with_diffuse(solar,phase,sun_depths.x,diffuse.xy,diffuse.z,

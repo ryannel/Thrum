@@ -65,18 +65,9 @@ fn trace_overlay(@builtin(global_invocation_id) id: vec3<u32>) {
             let world = camera + ray * at;
             var sigma = 0.0;
             var source = vec3(0.0);
-            if in_cloud && cloud_deck_active() {
-                let deck = cloud_deck_light(world, ray, atmosphere.sun_lux.xyz, at, transmission);
-                sigma = deck.extinction;
-                if sigma > 0.0 {
-                    source = (deck.ambient
-                        + sun_irradiance(world) * deck.surface_visibility * deck.solar_kernel) / sigma;
-                }
-            }
-            if in_cloud && (!cloud_deck_active() || cloud.density_profile.y > 0.0) {
+            if in_cloud {
                 let footprint = max(step * 0.5, at / f32(size.y));
-                var column = vec4(0.0);
-                if !cloud_deck_active() { column = cloud_column(point); }
+                let column = cloud_column(point);
                 let placed = cloud_placed(point, footprint);
                 let upper_sigma = cloud_eroded_density(column.x, point, footprint, cloud.physical.x, column.w, cloud.density_profile.x) + placed.x;
                 if upper_sigma > 0.0 {
@@ -84,13 +75,10 @@ fn trace_overlay(@builtin(global_invocation_id) id: vec3<u32>) {
                     let depths = cloud_sun_depths(world, point.y);
                     let solar = mix(base_sun, top_sun, clamp((point.y - cloud.heights.x) /
                         (cloud.heights.y - cloud.heights.x), 0.0, 1.0));
-                    let upper = cloud_source(solar, phases, depths.xy, vertical, angles, at, transmission);
-                    if sigma > 0.0 {
-                        source = (sigma * source + upper_sigma * upper) / (sigma + upper_sigma);
-                    } else {
-                        source = upper;
-                    }
-                    sigma += upper_sigma;
+                    let ground = cloud_layer_ground_path(world);
+                    source = cloud_source(solar * ground.x, phases, depths.xy + vec2(ground.y),
+                        vertical, angles, at, transmission);
+                    sigma = upper_sigma;
                 }
             }
             if in_fog {

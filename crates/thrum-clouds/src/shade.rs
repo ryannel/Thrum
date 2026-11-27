@@ -488,7 +488,6 @@ impl SceneContribution for Shade {
                         frame,
                         gpu.shapes.as_deref(),
                         field_overlay,
-                        gpu.ground.as_ref().map(|ground| &ground.field),
                     )
                     .is_err()
             {

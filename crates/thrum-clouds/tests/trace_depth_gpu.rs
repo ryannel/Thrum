@@ -116,6 +116,69 @@ fn elevated_cloud_uses_the_near_view_volume_before_the_surface() {
     }
 }
 
+#[test]
+fn raising_a_ridge_behind_the_camera_preserves_far_cloud_transmittance() {
+    let Some(gpu) = ground_support::open() else {
+        return;
+    };
+    let state = ground_support::state(1.0, 0.0);
+    let model = thrum_cloud_model::Profile {
+        erosion: 0.61,
+        ..ground_support::PROFILE
+    };
+    let kind = thrum_cloud_model::Type {
+        deck: 0.5,
+        ..ground_support::KIND
+    };
+    // The ridge at x = -200 m crosses the 900 m base. The camera looks
+    // in +x, so the hill cannot clip the cloud or the 3,500 m depth stop.
+    for (ground_height, view) in [(0.0, [40.0, 40.5]), (890.0, [975.0, 975.0])] {
+        let read_stops = |ridge| {
+            let ground = ground_support::surface_fixture(ground_support::fog(false), |x| {
+                if x == 3 { ridge } else { ground_height }
+            });
+            let (_host, input, _) = ground_support::render_layer(
+                &gpu,
+                &ground,
+                &state,
+                35.0,
+                view,
+                model,
+                kind,
+                Some(Box::new(DepthSteps::new([3500; 4]))),
+            );
+            let sky = input.sky_products().expect("submitted far trace");
+            let front = ground_support::read(&gpu, &sky.fresh_front, Mip::layer(0, 0));
+            assert!(
+                (front[72][3] - 3.5).abs() < 0.01,
+                "opaque stop in kilometres"
+            );
+            ground_support::read(&gpu, &sky.fresh_transport, Mip::level(0))
+        };
+        let below = read_stops(899.0);
+        let above = read_stops(901.0);
+        assert_eq!(below.len(), above.len());
+        let min_transmittance = below.iter().map(|cell| cell[3]).fold(1.0_f32, f32::min);
+        assert!(
+            min_transmittance < 0.99,
+            "the far trace must see cloud: {min_transmittance}"
+        );
+        let max_delta = below
+            .iter()
+            .zip(&above)
+            .map(|(a, b)| (a[3] - b[3]).abs())
+            .fold(0.0_f32, f32::max);
+        eprintln!(
+            "eye {} m, min far transmittance {min_transmittance}, maximum ridge-induced transmittance change {max_delta}",
+            view[0]
+        );
+        assert_eq!(
+            max_delta, 0.0,
+            "ridge height must leave extinction unchanged"
+        );
+    }
+}
+
 struct DepthSteps {
     metres: [u32; 4],
     pipeline: Option<wgpu::RenderPipeline>,

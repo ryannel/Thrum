@@ -36,7 +36,7 @@ fn shader_record_matches_rust_offsets() {
             bank_noise,
             density_profile,
             per_pixel_stops,
-            low_deck,
+            pad,
             active_extent,
             sample_cap,
             field_overlay,

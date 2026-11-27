@@ -105,7 +105,7 @@ pub(crate) struct Uniform {
     bank_noise: [f32; 4],
     density_profile: [f32; 2],
     per_pixel_stops: u32,
-    low_deck: u32,
+    pad: u32,
     active_extent: [u32; 2],
     sample_cap: u32,
     field_overlay: u32,
@@ -369,7 +369,6 @@ impl Layer {
         frame: &ContributionFrame,
         shapes: Option<&crate::shapes::Shapes>,
         field_overlay: crate::FieldOverlay,
-        ground: Option<&crate::ground::GroundField>,
     ) -> Result<(), Error> {
         let environment = frame.environment.ok_or(Error::Unsupported(
             "cloud light requires an environment frame",
@@ -396,9 +395,6 @@ impl Layer {
         // rounded floats in the shader. Noise keeps the anchor's wrapped phase.
         let anchor = std::array::from_fn::<_, 2, _>(|i| {
             ((f64::from(frame.camera[[0, 2][i]]) - travel[i]) / 200.0).floor() * 200.0
-        });
-        let low_deck = ground.is_some_and(|field| {
-            state.parameters().coverage > 0.0 && kind.base <= field.terrain_top()
         });
         let per_pixel_stops = self.per_pixel_stops;
         self.render_extent = frame.render_extent;
@@ -500,7 +496,7 @@ impl Layer {
                 if self.has_placed_map { 1.0 } else { 0.0 },
             ],
             per_pixel_stops: u32::from(per_pixel_stops),
-            low_deck: u32::from(low_deck),
+            pad: 0,
             active_extent,
             sample_cap: self.quality.cap,
             field_overlay: field_overlay as u32,

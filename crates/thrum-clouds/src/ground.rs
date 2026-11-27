@@ -247,10 +247,6 @@ impl GroundField {
         self.parameters.upper_heights = heights.map(|value| value as f32);
     }
 
-    pub(crate) fn terrain_top(&self) -> f64 {
-        f64::from(self.parameters.ground_heights[2])
-    }
-
     pub(super) fn heights(&self) -> [f32; 4] {
         self.parameters.ground_heights
     }

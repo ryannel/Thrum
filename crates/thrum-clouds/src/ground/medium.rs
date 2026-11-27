@@ -165,12 +165,12 @@ impl Medium {
                 layer::prepare::density_and_light_source(1),
                 include_str!("../erosion.wgsl"),
                 include_str!("../layer/billow.wgsl"),
-                include_str!("deck.wgsl"),
+                include_str!("layer_light.wgsl"),
             )
         } else {
             concat!(
                 "@group(1) @binding(10) var<storage, read> cloud_ambient:array<vec4<f32>,2>;\n",
-                include_str!("no_deck.wgsl"),
+                include_str!("no_layer_light.wgsl"),
             )
             .into()
         };

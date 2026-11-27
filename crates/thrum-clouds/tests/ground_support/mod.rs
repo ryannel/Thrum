@@ -80,10 +80,16 @@ pub(crate) fn fixture(row: Fog, ridge: bool) -> GroundConfig {
 }
 
 pub(crate) fn fixture_at_height(row: Fog, ridge: bool, ground_height: f64) -> GroundConfig {
+    surface_fixture(row, |x| {
+        ground_height + if ridge && x == 12 { 60.0 } else { 0.0 }
+    })
+}
+
+pub(crate) fn surface_fixture(row: Fog, height_at: impl Fn(usize) -> f64) -> GroundConfig {
     let nodes: Vec<_> = (0..3)
         .flat_map(|_| {
-            (0..17).map(move |x| SurfacePoint {
-                ground: ground_height + if ridge && x == 12 { 60.0 } else { 0.0 },
+            (0..17).map(|x| SurfacePoint {
+                ground: height_at(x),
                 water: None,
             })
         })
@@ -170,10 +176,36 @@ pub(crate) fn render_ground(
     thrum_clouds::WeatherInput,
     EnvironmentProducts,
 ) {
+    render_layer(
+        gpu,
+        ground,
+        state,
+        elevation,
+        [eye_y, eye_y],
+        PROFILE,
+        KIND,
+        depth_writer,
+    )
+}
+
+pub(crate) fn render_layer(
+    gpu: &Opened,
+    ground: &GroundConfig,
+    state: &State,
+    elevation: f32,
+    [eye_y, look_y]: [f32; 2],
+    model: Profile,
+    kind: Type,
+    depth_writer: Option<Box<dyn SceneContribution>>,
+) -> (
+    FrameHost<World, Source>,
+    thrum_clouds::WeatherInput,
+    EnvironmentProducts,
+) {
     let config = ShadeConfig {
         seed: SEED,
-        model: PROFILE,
-        types: vec![KIND; 2],
+        model,
+        types: vec![kind; 2],
         weather: WeatherProfile {
             size: 16,
             texels: vec![20.0, 80.0, 320.0, 3200.0],
@@ -212,7 +244,7 @@ pub(crate) fn render_ground(
         .expect("ground state");
     let view = SyntheticView::perspective(
         [0.0, eye_y, 0.0],
-        [1.0, eye_y, 0.0],
+        [1.0, look_y, 0.0],
         [0.0, 1.0, 0.0],
         10.0_f32.to_radians(),
         2.0,
