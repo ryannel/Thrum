@@ -6,7 +6,7 @@
 
 - Assumption: WP3 ends with a CPU diagnosis. The authored-spur replay and an in-game correction remain open under G3s. A later proposal needs the original inputs and the fixed and realtime captures specified in the design.
 - Assumption: WP4 compares the reconstructed geometry cases in one bounded CPU trial. The original ray inputs and exact finite-disk match remain open under G3s.
-- Assumption: under the governor the sky's charts are rebuilt over four frames even at the top quality tier, so the sky's light on the ground and its reflection may trail the Sun by up to six frames in every governed run. The owner can ask for the top tier to rebuild them in every frame, which gives back about 1.3 ms a frame for no visible gain and makes `APPLE-PRESENTATION` WP17 choose a smaller output scale.
+- Assumption: the governor spreads the chart refresh over four submissions at its first tier. During continuous motion the oldest chart inputs can trail by six submissions there, ten at cadence 6 and fourteen at cadence 8. WP12 judges the first tier on both targets and the fastest twilight scrub at cadence 8 in Chrome.
 
 ## WP5 Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once
 

@@ -798,3 +798,8 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   off and 4, 6 and 8 by tier, with a jump of the hour, a cut and a change of air run whole. It answers the
   code review's M31. `APPLE-PRESENTATION` WP17 waits for it. The assumption that the top tier already spreads
   the charts is in the plan.
+
+- 2026-11-27 Revised WP12 after the seven review findings. The plan covers reflection encoding, per-frame
+  haze, scrub and jump scheduling, GPU stage counts, cadence-1 invalidation, tier recovery and the local
+  reference guard. The visual checks compare the same material at matched Sun and camera poses.
+  [Changes for each finding](../../../.orchestrate/evidence/ATMOSPHERE/WP12-design-revision.md)
