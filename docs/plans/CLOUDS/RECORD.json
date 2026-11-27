@@ -2361,7 +2361,78 @@
     },
     "WP16": {
       "definitions": "8697c4469dae9233215a3344727621a479a37cb87a28a17ad1104c75958567e4",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "31ad023df943acc5d30f4d9c133683a0fc9e219f",
+          "review": ".orchestrate/evidence/CLOUDS/WP16-review.md",
+          "items": {
+            "WP16.1": "pass",
+            "WP16.2": "fail",
+            "WP16.3": "fail",
+            "WP16.4": "pass",
+            "WP16.11": "pass",
+            "WP16.5": "pass",
+            "WP16.6": "fail",
+            "WP16.7": "pass",
+            "WP16.8": "fail",
+            "WP16.9": "fail"
+          },
+          "findings": [
+            {
+              "name": "A camera route can hold noon while radiative mist cycles through the night",
+              "repeat": false
+            },
+            {
+              "name": "Sunward mist clips to white below a dimmer sunset sky",
+              "item": "WP16.2",
+              "repeat": false
+            },
+            {
+              "name": "Sunlit far mist shows horizontal bands on Metal",
+              "item": "WP16.3",
+              "repeat": false
+            },
+            {
+              "name": "Sunlit far mist shows horizontal bands in Chrome",
+              "item": "WP16.6",
+              "repeat": false
+            },
+            {
+              "name": "The mist-day cost pair omits the clouds-absent night",
+              "item": "WP16.8",
+              "repeat": false
+            },
+            {
+              "name": "Named-pass tripwires lack a pass-specific investigation or disposition",
+              "item": "WP16.8",
+              "repeat": false
+            },
+            {
+              "name": "The ledger's solar-clock claim omits the route divergence",
+              "item": "WP16.9",
+              "repeat": false
+            }
+          ],
+          "summary": "WP16 fails. The free-running valley shows mist forming and clearing on both targets, but on a camera route that holds noon, the hollow still fills and clears twice under a stationary Sun. Sunward mist clips to white at +2\u00b0, sunlit far mist shows horizontal stripes on both targets, and the night cost record lacks a matching clouds-off run.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 200132,
+            "cached": 12941440,
+            "output": 25613,
+            "turns": 1
+          },
+          "at": "2026-11-27T10:14:45Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",

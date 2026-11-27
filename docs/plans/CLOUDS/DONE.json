@@ -1708,8 +1708,8 @@
     {
       "id": "WP16",
       "name": "Through a day mist forms after dusk and burns off in the morning, haze runs from crisp to murky, and a visitor sets them, on the Mac and in Chrome",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -1722,28 +1722,28 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP16/VISUAL.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP16-review.md"
         },
         {
           "id": "WP16.2",
           "statement": "Through sunset, twilight and night the mist takes its colour from the sky and is never brighter than the sky above it; at night it is a dark layer that dims the stars near the horizon.",
           "inspect": "Capture `fixed` stills at Sun elevations of 2\u00b0, \u22123\u00b0, \u22129\u00b0 and \u221218\u00b0 toward and away from the Sun. Judge each whole and in native-size crops of the mist's top against the sky.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP16/VISUAL.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/CLOUDS/WP16-review.md"
         },
         {
           "id": "WP16.3",
           "statement": "As the clear air's visual range goes from 300 km to 5 km, the far ridges, the clouds near the horizon and the far mist fade into one horizon colour together, with no layer left crisp in front of a hazier one, and shafts under broken cloud strengthen as the haze thickens.",
           "inspect": "Capture `fixed` stills at visual ranges of 300, 60, 20 and 5 km at noon and at a 10\u00b0 Sun under the broken preset, and a `realtime` sweep. Judge the stills side by side and in native-size crops along the horizon.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP16/VISUAL.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/CLOUDS/WP16-review.md"
         },
         {
           "id": "WP16.4",
@@ -1752,8 +1752,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP16/IMPLEMENTATION.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP16-review.md"
         },
         {
           "id": "WP16.11",
@@ -1762,8 +1762,8 @@
           "ask": "Does the test step a state whose exponent moves while every other parameter is held, and compare the query's answers and the visual range bit for bit with a state whose exponent is fixed? Does the selection pass the state's exponent, and not a constant, to the haze input?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/CLOUDS/WP16/IMPLEMENTATION.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP16-review.md",
           "builder_result": "pass"
         },
         {
@@ -1774,18 +1774,18 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP16/chrome-controls.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP16-review.md"
         },
         {
           "id": "WP16.6",
           "statement": "In Chrome the night's time-lapse and the haze sweep pass WP16.1's and WP16.3's lists.",
           "inspect": "Capture in Chrome the three `realtime` 60x nights of WP16.1 (clear and calm, overcast, windy), the haze stills and the `realtime` haze sweep. Judge them by those lists.",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP16/VISUAL.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/CLOUDS/WP16-review.md"
         },
         {
           "id": "WP16.7",
@@ -1795,8 +1795,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP16/IMPLEMENTATION.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP16-review.md"
         },
         {
           "id": "WP16.8",
@@ -1804,20 +1804,56 @@
           "check": "python3 scripts/cloud_cost.py check --scene mist-day",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP16/COST.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/CLOUDS/WP16-review.md"
         },
         {
           "id": "WP16.9",
           "statement": "The maturity ledger's `E1.clouds` row is current.",
           "ask": "Does the row claim only what this work package proved, on the targets it ran on, with visuals apart from correctness?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP16/PROOF.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/CLOUDS/WP16-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "A camera route can hold noon while radiative mist cycles through the night",
+          "repeat": false
+        },
+        {
+          "name": "Sunward mist clips to white below a dimmer sunset sky",
+          "item": "WP16.2",
+          "repeat": false
+        },
+        {
+          "name": "Sunlit far mist shows horizontal bands on Metal",
+          "item": "WP16.3",
+          "repeat": false
+        },
+        {
+          "name": "Sunlit far mist shows horizontal bands in Chrome",
+          "item": "WP16.6",
+          "repeat": false
+        },
+        {
+          "name": "The mist-day cost pair omits the clouds-absent night",
+          "item": "WP16.8",
+          "repeat": false
+        },
+        {
+          "name": "Named-pass tripwires lack a pass-specific investigation or disposition",
+          "item": "WP16.8",
+          "repeat": false
+        },
+        {
+          "name": "The ledger's solar-clock claim omits the route divergence",
+          "item": "WP16.9",
+          "repeat": false
         }
       ]
     },
