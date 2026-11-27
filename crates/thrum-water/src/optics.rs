@@ -181,6 +181,7 @@ struct Inputs {
     reach_slope_scene: [f32; 4],
     dispatch: [u32; 4],
     film_sources: [u32; 4],
+    shaft_extent: [u32; 4],
     inverse_raster_view_proj: [[f32; 4]; 4],
     mask: [[[u32; 4]; GRID_WIDTH / 4]; GRID_HEIGHT],
     bodies: [BodyBounds; BODY_CAPACITY],
@@ -307,6 +308,7 @@ impl Gather {
         roughness: MirrorRoughness,
         underwater_admitted: bool,
         film: Option<BodyBounds>,
+        shaft_extent: [u32; 2],
     ) {
         let boxes = opaque.0.lock().expect("water optics bodies");
         let mut inputs = self.fields.inputs(
@@ -319,6 +321,7 @@ impl Gather {
             roughness,
             film,
         );
+        inputs.shaft_extent = [shaft_extent[0], shaft_extent[1], 0, 0];
         self.under = underwater_admitted;
         if self.under {
             inputs.dispatch = [0, 0, frame.render_extent[0], frame.render_extent[1]];
@@ -378,6 +381,7 @@ mod tests {
                     reach_slope_scene,
                     dispatch,
                     film_sources,
+                    shaft_extent,
                     inverse_raster_view_proj,
                     mask,
                     bodies,

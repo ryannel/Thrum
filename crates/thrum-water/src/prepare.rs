@@ -547,9 +547,9 @@ pub(super) fn new(
         && surface.sun_path.is_some()
         && gather.is_some())
     .then(|| shafts::Image::new(device));
-    if let Some((image, field)) = shaft_image.as_ref().zip(surface.sun_path) {
-        entries.extend(shafts::Image::read_layout(&field.mapping));
-        bindings.extend(image.read_entries(&field.mapping));
+    if let Some(image) = &shaft_image {
+        entries.push(shafts::Image::read_layout());
+        bindings.push(image.read_entry());
     }
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("water field"),

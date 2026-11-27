@@ -61,29 +61,17 @@ impl Image {
         Self { texture, view }
     }
 
-    pub(crate) fn read_layout(mapping: &wgpu::Buffer) -> [wgpu::BindGroupLayoutEntry; 2] {
-        [
-            binding::texture(
-                IMAGE,
-                wgpu::ShaderStages::FRAGMENT,
-                wgpu::TextureSampleType::Float { filterable: false },
-                wgpu::TextureViewDimension::D2,
-            ),
-            binding::uniform(MAPPING, wgpu::ShaderStages::FRAGMENT, mapping.size()),
-        ]
+    pub(crate) fn read_layout() -> wgpu::BindGroupLayoutEntry {
+        binding::texture(
+            IMAGE,
+            wgpu::ShaderStages::FRAGMENT,
+            wgpu::TextureSampleType::Float { filterable: false },
+            wgpu::TextureViewDimension::D2,
+        )
     }
 
-    pub(crate) fn read_entries<'a>(
-        &'a self,
-        mapping: &'a wgpu::Buffer,
-    ) -> [wgpu::BindGroupEntry<'a>; 2] {
-        [
-            texture(IMAGE, &self.view),
-            wgpu::BindGroupEntry {
-                binding: MAPPING,
-                resource: mapping.as_entire_binding(),
-            },
-        ]
+    pub(crate) fn read_entry(&self) -> wgpu::BindGroupEntry<'_> {
+        texture(IMAGE, &self.view)
     }
 }
 
@@ -101,6 +89,10 @@ fn texture(binding: u32, view: &wgpu::TextureView) -> wgpu::BindGroupEntry<'_> {
 }
 
 impl Shafts {
+    pub(crate) fn extent(render: [u32; 2], divisor: u32) -> [u32; 2] {
+        std::array::from_fn(|axis| render[axis].div_ceil(divisor).min(CAPACITY[axis]))
+    }
+
     pub(crate) fn texture(&self) -> &wgpu::Texture {
         &self.image.texture
     }
@@ -264,12 +256,7 @@ impl Shafts {
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(2, environment, &[]);
         pass.set_bind_group(3, &self.inputs, &[]);
-        let [x, y] = std::array::from_fn(|axis| {
-            frame.render_extent[axis]
-                .div_ceil(divisor)
-                .min(CAPACITY[axis])
-                .div_ceil(8)
-        });
+        let [x, y] = Self::extent(frame.render_extent, divisor).map(|size| size.div_ceil(8));
         pass.dispatch_workgroups(x, y, 1);
     }
 }

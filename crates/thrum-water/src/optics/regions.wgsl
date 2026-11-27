@@ -8,6 +8,7 @@ struct OpticsInputs {
     reach_slope_scene: vec4<f32>,
     dispatch: vec4<u32>,
     film_sources: vec4<u32>,
+    shaft_extent: vec4<u32>,
     inverse_raster_view_proj: mat4x4<f32>,
     mask: array<vec4<u32>, 144>,
     bodies: array<OpticsBody, 16>,

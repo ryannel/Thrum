@@ -792,7 +792,11 @@ impl SceneContribution for Water {
             }
             None => &map,
         };
-        if let Some((caustics, settings)) = p.caustics.as_mut().zip(self.light_quality.as_ref()) {
+        let light_quality = self
+            .light_quality
+            .as_ref()
+            .map(caustics::quality::Values::read);
+        if let Some((caustics, quality)) = p.caustics.as_mut().zip(light_quality) {
             let column = [f64::from(frame.camera[0]), f64::from(frame.camera[2])];
             let level = displayed_map
                 .sample(column)
@@ -802,7 +806,7 @@ impl SceneContribution for Water {
                 frame,
                 level,
                 self.spectrum.tail_slope_variance,
-                caustics::quality::Values::read(settings),
+                quality,
             );
         }
         if let Some(rain) = &mut p.rain {
@@ -862,6 +866,12 @@ impl SceneContribution for Water {
                     );
                     admitted
                 });
+            let shaft_extent =
+                light_quality
+                    .filter(|_| p.shafts.is_some())
+                    .map_or([0; 2], |quality| {
+                        caustics::shafts::Shafts::extent(frame.render_extent, quality.shaft_divisor)
+                    });
             gather.record(
                 &p.queue,
                 frame,
@@ -872,6 +882,7 @@ impl SceneContribution for Water {
                 self.mirror_roughness.with_foam(p.foam.is_some()),
                 underwater_admitted,
                 film,
+                shaft_extent,
             );
         }
         if let Some(cache) = &mut p.surf_cache {

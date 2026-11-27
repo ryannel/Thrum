@@ -12,8 +12,7 @@ struct ShaftMapping {
 }
 
 fn shaft_extent(capacity: vec2<u32>) -> vec2<u32> {
-    let divisor = max(shaft_mapping.quality.w, 2u);
-    return min((optics_extent() + divisor - 1u) / divisor, capacity);
+    return min(optics.shaft_extent.xy, capacity);
 }
 
 fn shaft_range(uv: vec2<f32>, camera: vec3<f32>, ray: vec3<f32>, level: f32) -> f32 {
