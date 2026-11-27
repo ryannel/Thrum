@@ -729,7 +729,7 @@
     {
       "id": "WP12",
       "name": "The sky's charts are rebuilt over several frames under the governor, so they cost each frame a fraction of what they did and nothing in the sky is seen to update",
-      "status": "blocked",
+      "status": "not_started",
       "depends_on": [
         "APPLE-PRESENTATION:WP7"
       ],
@@ -801,17 +801,7 @@
         }
       ],
       "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0,
-      "blocked": {
-        "reason": "needs_context",
-        "what": "WP12.5 needs a revised chart handoff that keeps cadence-8 twilight continuous in Chrome without introducing visible lag.",
-        "work": {
-          "commit": "286a3449115d99a0b9d54cab8b05da267c0f3591",
-          "branch": "build/atmosphere",
-          "pushed": false
-        },
-        "handoff": ".orchestrate/evidence/ATMOSPHERE/WP12-handoff.md"
-      }
+      "failed_reviews_with_repeat": 0
     }
   ]
 }
