@@ -1572,7 +1572,88 @@
     },
     "WP11": {
       "definitions": "db3439b2f5527e07aa9a7442fc0dd8b4d235394e122b92a4e5b881e23d79ea83",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "d21064e1f17ce8f6036924552c5200f6092a589e",
+          "review": ".orchestrate/evidence/CLOUDS/WP11-review.md",
+          "items": {
+            "WP11.11": "pass",
+            "WP11.1": "pass",
+            "WP11.2": "fail",
+            "WP11.3": "fail",
+            "WP11.4": "fail",
+            "WP11.5": "fail",
+            "WP11.6": "fail",
+            "WP11.8": "fail",
+            "WP11.9": "fail",
+            "WP11.10": "fail"
+          },
+          "findings": [
+            {
+              "name": "Water reflection samples the clear sky chart",
+              "item": "WP11.2",
+              "repeat": false
+            },
+            {
+              "name": "Metal sea stills lack directional cloud reflections",
+              "item": "WP11.3",
+              "repeat": false
+            },
+            {
+              "name": "Cloud reflections do not move across the sea under TAAU",
+              "item": "WP11.4",
+              "repeat": false
+            },
+            {
+              "name": "Chrome noon water lacks directional cloud reflections",
+              "item": "WP11.5",
+              "repeat": false
+            },
+            {
+              "name": "Metal lake mist has no readable dawn wisps",
+              "item": "WP11.9",
+              "repeat": false
+            },
+            {
+              "name": "Chrome lake mist has no readable dawn wisps",
+              "item": "WP11.10",
+              "repeat": false
+            },
+            {
+              "name": "The fog surface keeps the original lake stage",
+              "item": "WP11.8",
+              "repeat": false
+            },
+            {
+              "name": "Lake mist follows the startup Sun after a Sun control edit",
+              "repeat": false
+            },
+            {
+              "name": "The sea cost record omits tripped named passes",
+              "item": "WP11.6",
+              "repeat": false
+            }
+          ],
+          "summary": "WP11 fails because the sea reflects the clear sky under both fair and broken cloud. Cloud shade moves across the swell and the fog bank reaches the beach on Metal and Chrome, but the lake has no readable wisps at dawn, two ordinary controls leave the mist using stale inputs, and the cost record omits five required investigations.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 259494,
+            "cached": 10892800,
+            "output": 27579,
+            "turns": 1
+          },
+          "at": "2026-11-27T15:07:06Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The main-branch check cross-target fails on ff10e3295 (last pass 20227abd8) for x86_64-pc-windows-msvc: examples/v1-game",
