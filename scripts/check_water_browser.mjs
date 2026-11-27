@@ -823,8 +823,24 @@ try {
     await until(()=>evaluate('game.frame_ready()'),'free frame slot');
     await evaluate('game.begin_capture()');if(probe)await evaluate('__probeNext=true');
     now+=delta;
-    const submitted=frameInfo(await evaluate(`game.frame(${now});game.frame_info()`));
-    const image=await until(()=>evaluate('(()=>{const v=game.capture();if(!v)return null;globalThis.__capturePixels=v.rgba;return {identity:v.identity,frame:v.frame,exposure_words:v.exposure_words?Array.from(v.exposure_words):null};})()'),'submitted image');
+    const prior=frameInfo(await evaluate('game.frame_info()'));
+    const submitted=await until(async()=>{
+      if(!await evaluate('game.frame_ready()'))return null;
+      const frame=frameInfo(await evaluate(`game.frame(${now});game.frame_info()`));
+      assert(frame.generation===prior.generation,`${name}: graphics device changed during the checkpoint`);
+      return frame.submission>prior.submission?frame:null;
+    },`${name} frame submission`);
+    const image=await until(async()=>{
+      const state=await evaluate(`(()=>{
+        const v=game.capture();
+        if(!v)return {omissions:game.capture_omissions(),faults:__faults};
+        globalThis.__capturePixels=v.rgba;
+        return {image:{identity:v.identity,frame:v.frame,exposure_words:v.exposure_words?Array.from(v.exposure_words):null}};
+      })()`);
+      assert(!state.omissions,`${name}: the capture omitted the submitted image`);
+      assert(!state.faults?.length,`${name}: ${JSON.stringify(state.faults)}`);
+      return state.image;
+    },`${name} submitted image`);
     await evaluate('game.end_capture()');
     const rgba=await pixels('__capturePixels');
     assert(image.identity.includes('presented=true'),'checkpoint was not the submitted surface frame');
