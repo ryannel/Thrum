@@ -741,7 +741,9 @@
           "check": "cargo nextest run --locked --offline -p thrum-render --lib -E 'test(/chart_schedule/)' --no-tests=fail",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP12.2",
@@ -762,7 +764,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP12.4",
