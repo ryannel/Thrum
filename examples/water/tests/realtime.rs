@@ -18,6 +18,8 @@ use thrum_render::runtime::{CaptureLimits, FrameSample};
 const MAX_SUBMISSIONS: usize = 120;
 const CHANNEL_SUBMISSIONS: usize = 180;
 const DIVE_SUBMISSIONS: usize = 190;
+const DIVE_CROSSING_SECONDS: f64 = 4.0;
+const DIVE_CROSSING_HZ: f64 = 17.0;
 const RIVER_SUBMISSIONS: usize = 240;
 const RIVER_CAPTURE_LEASES: usize = 256;
 const WRITER_QUEUE: usize = 192;
@@ -228,7 +230,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     } else if yard {
         ([1280, 720], 20.0, 9.0, CHANNEL_SUBMISSIONS)
     } else if dive && dive_travel.is_some() {
-        ([2560, 1440], 20.0, 9.0, DIVE_SUBMISSIONS)
+        ([2560, 1440], 20.0, 4.0, DIVE_SUBMISSIONS)
     } else if dive && route == "under-light" {
         ([2560, 1440], 5.0, 16.0, MAX_SUBMISSIONS)
     } else if dive {
@@ -546,7 +548,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             let crossing = site.crossing_depth();
             let depth = if let Some(maximum) = dive_travel {
                 let way_down = elapsed.min(interval - elapsed).max(0.0);
-                let crossing_time = 4.0;
+                let crossing_time = DIVE_CROSSING_SECONDS;
                 if way_down < crossing_time {
                     let phase =
                         (2.0 * way_down / crossing_time - 1.0) * std::f64::consts::FRAC_PI_2;
@@ -718,10 +720,14 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             "writer rejected a frame; underlying outcome: {:?}",
             writer.finish(Duration::from_secs(60))
         );
-        if let Some(wait) = Duration::from_secs_f64(
-            (elapsed * opportunities).floor() / opportunities + 1.0 / opportunities,
-        )
-        .checked_sub(begin.elapsed())
+        let rate =
+            if dive_travel.is_some() && elapsed.min(interval - elapsed) < DIVE_CROSSING_SECONDS {
+                DIVE_CROSSING_HZ
+            } else {
+                opportunities
+            };
+        if let Some(wait) = Duration::from_secs_f64((elapsed * rate).floor() / rate + 1.0 / rate)
+            .checked_sub(begin.elapsed())
         {
             std::thread::sleep(wait);
         }
@@ -830,6 +836,9 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         );
         record["bearing"] = json!(dive_bearing);
         record["setback"] = json!(dive_setback);
+        if dive_travel.is_some() {
+            record["crossing_opportunities_hz"] = json!(DIVE_CROSSING_HZ);
+        }
         record["fov"] = json!(dive_fov);
         record
     });

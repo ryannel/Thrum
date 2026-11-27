@@ -1777,7 +1777,7 @@ try {
     const sweepDive=dive&&!diveView;
     const depthTour=dive&&Number.isFinite(Number(process.env.THRUM_WATER_DIVE_TRAVEL));
     const duration=cloudMotion?20500:offshore?22000:depthTour?20000:surfInspection?12000:dive?5000:1000;
-    const spacing=cloudMotion?200:offshore?200:depthTour?180:surfInspection?100:dive?50:0;
+    const spacing=cloudMotion?200:offshore?200:depthTour?290:surfInspection?100:dive?50:0;
     if(dive){
       const [depth,pitch]=diveView??[-diveDepth,0];
       result.dive_camera=diveView?{depth,pitch,bearing:diveBearing,sun:diveSun}:
@@ -1855,13 +1855,16 @@ try {
           game.edit_control('camera.island',8);
           __cameraCut={from:7,to:8,driver_elapsed:elapsed/1000,next_capture_index:presented()-__firstPresented};
         }
-        if(elapsed-lastOpportunity>=${spacing}){
+        const wait=${depthTour}&&Math.min(elapsed,${duration}-elapsed)<4000?115:${spacing};
+        if(elapsed-lastOpportunity>=wait){
           game.frame(${surfInspection||dive?'timestamp':`${now}+elapsed`});__opportunities++;lastOpportunity=elapsed;
         }
         if(game.capture_omissions())throw Error('submitted motion observer omitted an image');
         if(elapsed<${duration})__requestCaptureFrame(loop);else {__expected=presented()-__firstPresented;drain();}
       };game.begin_capture();__requestCaptureFrame(loop);`);
     await until(()=>evaluate('__motionDone'),'realtime pan');
+    const motionFaults=[...cdp.faults,...await evaluate('__faults')];
+    assert(motionFaults.length===0,JSON.stringify(motionFaults));
     if(handoffCut){
       result.camera_cut=await evaluate('__cameraCut');
       assert(result.camera_cut!==null,'capture did not reach the camera change');
@@ -1887,6 +1890,7 @@ try {
       assert(result.frames.at(-1)?.observation_seconds-first>=minimumCoverage,'surf motion has incomplete engine time coverage');
       for(const frame of result.frames)frame.elapsed=frame.observation_seconds-first;
     }
+    if(depthTour)assert(result.frames.at(-1)?.elapsed>=duration/1000-0.5,'dive motion has incomplete engine time coverage');
     const ids=result.frames.map(f=>Number(/submission=([0-9]+)/.exec(f.frame)[1]));
     assert(ids.length>1&&ids.every((v,i)=>i===0||v===ids[i-1]+1),'submitted motion IDs are not contiguous');
     assert(result.frames.every(f=>f.identity.includes('presented=true')),'motion contains an unpresented source');
