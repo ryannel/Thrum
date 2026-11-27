@@ -9,7 +9,7 @@ mod river_foam {
         time::Duration,
     };
     use thrum_app::sky::{Camera, ContentStatus, Controls, SkyGame};
-    use thrum_water::foam::{CHART_LOSS_BIRTH_RATE, Input, Tap, Witness};
+    use thrum_water::foam::{CHART_LOSS_BIRTH_RATE, CHART_LOSS_BREAKING, Input, Tap, Witness};
     use thrum_water_model::{FlowBands, FlowBandsProfile, Map};
     use water_scene::{channel, island::Wind, river};
 
@@ -58,19 +58,32 @@ mod river_foam {
             else {
                 continue;
             };
+            let quiet = matches!(station, 2 | 3);
             let Some(row) = map
                 .sample(p)
-                .filter(|row| row.depth > 0.055 && map.river_of(row.body).is_some())
+                .filter(|row| (quiet || row.depth > 0.055) && map.river_of(row.body).is_some())
             else {
                 continue;
             };
             let (_, power) = map.flow(row.body, p);
             let observed_rate = parcels[i as usize][1][3];
+            let [onset, full] = CHART_LOSS_BREAKING.map(f64::from);
+            let ramp = ((power - onset) / (full - onset)).clamp(0.0, 1.0);
             let expected = if enabled {
                 (f64::from(CHART_LOSS_BIRTH_RATE) * power).min(3.3)
+                    * ramp
+                    * ramp
+                    * (3.0 - 2.0 * ramp)
             } else {
                 0.0
             };
+            if quiet || !enabled {
+                assert_eq!(
+                    observed_rate.to_bits(),
+                    0,
+                    "local birth at {p:?}: {observed_rate}"
+                );
+            }
             assert!(
                 (f64::from(observed_rate) - expected).abs() < 0.017,
                 "source power at {p:?}: {observed_rate} vs {expected} ({power} W/m²)"
@@ -90,14 +103,15 @@ mod river_foam {
         map: Arc<Mutex<Map>>,
         control: Input,
         tap: Tap,
-        gauge: [f64; 2],
     }
 
-    fn trial(gpu: &thrum_test_support::Gpu) -> Trial {
+    fn trial(gpu: &thrum_test_support::Gpu, stage: f64) -> Trial {
         let forcing = channel::forcing(Wind::Calm);
         let (mut map, files) =
             river::map(&forcing, Some(&super::support::river_store())).expect("prepared island");
         let [lower, upper] = files[0].gauge_range();
+        map.set_gauge(0, (upper - lower).mul_add(stage, lower))
+            .expect("initial gauge");
         map.set_flow_bands(Some(
             FlowBands::new(FlowBandsProfile::default()).expect("flow bands"),
         ));
@@ -130,7 +144,6 @@ mod river_foam {
             map,
             control,
             tap,
-            gauge: [lower, upper],
         }
     }
 
@@ -150,14 +163,6 @@ mod river_foam {
                 enabled,
             )
         }
-
-        fn gauge(&self, end: usize) {
-            self.map
-                .lock()
-                .expect("valley")
-                .set_gauge(0, self.gauge[end])
-                .expect("gauge");
-        }
     }
 
     #[expect(
@@ -165,14 +170,16 @@ mod river_foam {
         reason = "record measured loss, birth rate and cover at the valley stations"
     )]
     pub(super) fn transport(gpu: &thrum_test_support::Gpu) {
-        let mut trial = trial(gpu);
+        let mut trial = trial(gpu, 0.5);
         trial.advance(4..=24);
         let current = trial.measure(true);
         trial.control.set_chart_loss_births(false);
         trial.advance(28..=68);
         let fading = trial.measure(false);
 
-        println!("chart loss birth constant {CHART_LOSS_BIRTH_RATE} m²/J");
+        println!(
+            "chart loss birth constant {CHART_LOSS_BIRTH_RATE} m²/J, breaking transition {CHART_LOSS_BREAKING:?} W/m²"
+        );
         for (((name, _), nominal), fading) in STATIONS.into_iter().zip(&current).zip(&fading) {
             println!(
                 "{name}: {} wet cells; power {:.3} W/m²; birth {:.5}/s; cover {:.5}, births off {:.5}",
@@ -183,10 +190,6 @@ mod river_foam {
         assert!(fading.iter().all(|station| station.births == 0.0));
         assert!(current.iter().all(|station| station.cells > 0));
         assert!(
-            current[2].cover < 0.014 && current[3].cover < 0.014,
-            "the pool and glide do not locally build visible foam"
-        );
-        assert!(
             fading[1].cover >= current[1].cover,
             "the transition receives transported foam even though births are off"
         );
@@ -195,13 +198,17 @@ mod river_foam {
 
     #[expect(clippy::print_stdout, reason = "record both gauge endpoints")]
     pub(super) fn gauges(gpu: &thrum_test_support::Gpu) {
-        let mut trial = trial(gpu);
-        trial.gauge(0);
-        trial.advance(4..=16);
-        let low = trial.measure(true);
-        trial.gauge(1);
-        trial.advance(20..=32);
-        let high = trial.measure(true);
+        let endpoints = [0.0, 1.0].map(|stage| {
+            let mut trial = trial(gpu, stage);
+            trial.advance(4..=4);
+            let first = trial.measure(true);
+            assert!(first[4].births > 0.05 && first[5].births > 0.05 && first[6].births > 0.05);
+            println!("gauge {stage:.1}, first step: pool {} cells at {:.3} W/m² and {:.6}/s, glide {} cells at {:.3} W/m² and {:.6}/s",
+                first[2].cells, first[2].loss, first[2].births, first[3].cells, first[3].loss, first[3].births);
+            trial.advance(8..=16);
+            trial.measure(true)
+        });
+        let [low, high] = endpoints;
         for (((name, _), low), high) in STATIONS.into_iter().zip(&low).zip(&high) {
             println!("{name} cover: low {:.5}, high {:.5}", low.cover, high.cover);
         }

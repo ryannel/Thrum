@@ -126,7 +126,15 @@ impl WaveTracks {
             .iter()
             .enumerate()
             .any(|(member, &value)| member != id && value == group);
-        if !linked && let Some(track) = CurrentTrack::prepare(chart, map.bed()) {
+        let changing = map.flow_bands().is_some()
+            && river_samples(map, id)
+                .iter()
+                .skip(1)
+                .any(|sample| sample.currents != chart.currents);
+        if !linked
+            && !changing
+            && let Some(track) = CurrentTrack::prepare(chart, map.bed())
+        {
             let record = [
                 track.reference as f32,
                 if track.axis == 0 { 1.0 } else { 2.0 },
@@ -138,6 +146,7 @@ impl WaveTracks {
             return record;
         }
         if !linked
+            && !changing
             && chart.ends.iter().all(thrum_water_model::End::is_brink)
             && uniform_current(chart)
         {
@@ -159,10 +168,20 @@ impl WaveTracks {
             // Joined charts must agree on carriage at their ends. Keep the
             // steady reference for any track shared with a one-sample chart.
             let sampled = charts.clone().all(|(member, _)| sampled_river(map, member));
-            let charts: Vec<_> = charts.map(|(_, chart)| chart).collect();
+            let authored: Vec<_> = charts.clone().map(|(_, chart)| chart).collect();
+            let mut track = BoundedTrack::prepare(&authored, size, spacing);
+            if map.flow_bands().is_some() {
+                let samples: Vec<_> = charts
+                    .map(|(member, _)| river_samples(map, member))
+                    .filter(|samples| !samples.is_empty())
+                    .collect();
+                if !samples.is_empty() {
+                    track.bound_entire_current(&samples, size, spacing);
+                }
+            }
             SharedTrack {
                 layer,
-                track: BoundedTrack::prepare(&charts, size, spacing),
+                track,
                 sampled,
             }
         });
@@ -228,6 +247,12 @@ impl WaveTracks {
             if axis == 0 { 1.0 } else { 2.0 },
         ]
     }
+}
+
+fn river_samples(map: &Map, body: usize) -> &[thrum_water_model::FlowSample] {
+    map.river_of(body)
+        .and_then(|(river, chart)| Some(map.river(river)?.charts.get(chart)?.samples.as_slice()))
+        .unwrap_or_default()
 }
 
 pub(super) fn sampled_river(map: &Map, body: usize) -> bool {

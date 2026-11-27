@@ -12,6 +12,9 @@ pub(crate) use gpu::Foam;
 /// Bounded whitewater birth rate per watt per square metre of chart loss.
 pub const CHART_LOSS_BIRTH_RATE: f32 = 0.0011;
 
+/// Start and end of the river water type's breaking transition, in W/m².
+pub const CHART_LOSS_BREAKING: [f32; 2] = [24.0, 40.0];
+
 #[derive(Clone)]
 pub(crate) struct Whitewater {
     pub(super) input: Input,

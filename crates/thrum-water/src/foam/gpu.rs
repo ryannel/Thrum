@@ -265,9 +265,11 @@ impl Foam {
             use std::fmt::Write;
             source.push_str(&crate::flow::constants(profile, first));
             source.push_str(include_str!("flow.wgsl"));
+            let [onset, full] = super::CHART_LOSS_BREAKING;
             writeln!(
                 &mut source,
-                "const CHART_LOSS_BIRTH_RATE: f32 = {:?};",
+                "const CHART_LOSS_BIRTH_RATE: f32 = {:?};
+const CHART_LOSS_BREAKING = vec2<f32>({onset:?}, {full:?});",
                 super::CHART_LOSS_BIRTH_RATE
             )
             .expect("foam loss constant");

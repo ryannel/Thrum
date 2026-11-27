@@ -11,6 +11,8 @@ pub(super) fn shot() -> Option<Shot> {
     let (station, angle) = name
         .rsplit_once('-')
         .expect("river inspection station and angle");
+    let minute = station == "rock-minute";
+    let station = if minute { "rock" } else { station };
     let (target, start, stream) = match station {
         "pool" => ([179.3, 16.8, -63.0], 17.0, true),
         "ledge" => ([179.0, 16.85, -52.8], 7.0, true),
@@ -38,6 +40,6 @@ pub(super) fn shot() -> Option<Shot> {
     Some(Shot {
         name,
         camera,
-        start,
+        start: if minute { 60.0 } else { start },
     })
 }

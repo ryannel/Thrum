@@ -1,4 +1,4 @@
-use thrum_water_model::Chart;
+use thrum_water_model::{Chart, FlowSample};
 
 /// Reference velocities for the bounded departure map of a general chart.
 /// Each component averages its own axis within a contiguous run of same-sign
@@ -79,6 +79,53 @@ impl BoundedTrack {
         }
     }
 
+    /// A two-dimensional solved current uses only the bounded departure.
+    /// Translating a spatially varying reference by elapsed time eventually
+    /// folds the chart, including when a point passes along a shear between
+    /// lanes. The exact uniform and section-uniform tracks are separate.
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "prepared departure period uses GPU seconds"
+    )]
+    pub(super) fn bound_entire_current(
+        &mut self,
+        charts: &[&[FlowSample]],
+        size: [usize; 2],
+        spacing: f64,
+    ) {
+        for cell in &mut self.cells {
+            cell[..2].fill(0.0);
+        }
+        let mut gradient = [0.0_f64; 2];
+        for samples in charts {
+            for (n, low) in samples.iter().enumerate() {
+                let high = samples.get(n + 1).unwrap_or(low);
+                for (i, (&a, &b)) in low.currents.iter().zip(&high.currents).enumerate() {
+                    let cell = [i % size[0], i / size[0]];
+                    for (axis, stride) in [1, size[0]].into_iter().enumerate() {
+                        if cell[axis] + 1 >= size[axis] {
+                            continue;
+                        }
+                        // Adjacent cells may start wetting at different gauges.
+                        // Bound all independent blends of the two sample rows.
+                        let j = i + stride;
+                        for from in [a, b] {
+                            for to in [low.currents[j], high.currents[j]] {
+                                let difference = (to[0] - from[0]).hypot(to[1] - from[1]);
+                                gradient[axis] = gradient[axis].max(difference / spacing);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        let bound = gradient[0]
+            .hypot(gradient[1])
+            .recip()
+            .min(f64::from(f32::MAX));
+        self.period_limit = self.period_limit.min(bound as f32);
+    }
+
     pub(super) fn cells(&self) -> &[[f32; 4]] {
         &self.cells
     }
@@ -152,6 +199,26 @@ pub(super) fn uniform_current(chart: &Chart) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn solved_river_bounds_the_full_current_at_every_wetting_blend() {
+        let mut track = BoundedTrack {
+            cells: vec![[0.5, 2.0, 0.5, 2.0]; 4],
+            period_limit: 4.0,
+        };
+        let sample = |a, b| FlowSample {
+            levels: vec![1.0; 4],
+            currents: vec![[a, 0.0], [b, 0.0]].repeat(2),
+            loss: vec![0.0; 4],
+            gains: vec![[0.0; 2]; 4],
+        };
+        // The high sample alone has a 2 m/s per metre gradient. Mixed
+        // wetting can put its 3 m/s beside the lower sample's still cell.
+        let samples = [sample(0.0, 0.0), sample(3.0, 1.0)];
+        track.bound_entire_current(&[&samples], [2, 2], 1.0);
+        assert!(track.cells().iter().all(|cell| cell[..2] == [0.0; 2]));
+        assert!((track.period_limit - 1.0 / 3.0).abs() < 1e-6);
+    }
 
     #[test]
     fn sampled_river_reference_stays_continuous_across_opposing_currents() {
