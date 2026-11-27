@@ -1721,7 +1721,7 @@
           "inspect": "Capture three `realtime` sequences at 60x from the valley's rim: the clear calm night, the overcast one and the windy one. Track one hollow through each, at 1x and frame by frame at dusk and after sunrise.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP16/VISUAL.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP16/repair/PROOF.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP16-review.md"
         },
@@ -1730,8 +1730,8 @@
           "statement": "Through sunset, twilight and night the mist takes its colour from the sky and is never brighter than the sky above it; at night it is a dark layer that dims the stars near the horizon.",
           "inspect": "Capture `fixed` stills at Sun elevations of 2\u00b0, \u22123\u00b0, \u22129\u00b0 and \u221218\u00b0 toward and away from the Sun. Judge each whole and in native-size crops of the mist's top against the sky.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP16/repair/PROOF.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP16-review.md"
         },
@@ -1740,8 +1740,8 @@
           "statement": "As the clear air's visual range goes from 300 km to 5 km, the far ridges, the clouds near the horizon and the far mist fade into one horizon colour together, with no layer left crisp in front of a hazier one, and shafts under broken cloud strengthen as the haze thickens.",
           "inspect": "Capture `fixed` stills at visual ranges of 300, 60, 20 and 5 km at noon and at a 10\u00b0 Sun under the broken preset, and a `realtime` sweep. Judge the stills side by side and in native-size crops along the horizon.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP16/repair/PROOF.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP16-review.md"
         },
@@ -1773,7 +1773,7 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP16/chrome-controls.json",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP16/repair/validated/chrome-controls.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP16-review.md"
         },
@@ -1782,8 +1782,8 @@
           "statement": "In Chrome the night's time-lapse and the haze sweep pass WP16.1's and WP16.3's lists.",
           "inspect": "Capture in Chrome the three `realtime` 60x nights of WP16.1 (clear and calm, overcast, windy), the haze stills and the `realtime` haze sweep. Judge them by those lists.",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP16/repair/PROOF.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP16-review.md"
         },
@@ -1804,8 +1804,8 @@
           "check": "python3 scripts/cloud_cost.py check --scene mist-day",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP16/repair/COST.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP16-review.md"
         },
@@ -1814,8 +1814,8 @@
           "statement": "The maturity ledger's `E1.clouds` row is current.",
           "ask": "Does the row claim only what this work package proved, on the targets it ran on, with visuals apart from correctness?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP16/repair/PROOF.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP16-review.md"
         }

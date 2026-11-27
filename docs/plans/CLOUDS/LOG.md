@@ -1298,3 +1298,18 @@ haze range and sweep. Metal checks verify the live Ground edits, cadence isolati
 the spectral exponent's separation from weather queries. The paired 1440p Metal cost
 record retains the named passes, resources and tripped-wire observations.
 [WP16 proof](../../../.orchestrate/evidence/CLOUDS/WP16/PROOF.md)
+
+### WP16 review repair
+
+The installed route now publishes its held or running Sun to Ground weather.
+The held-noon Metal route stayed dry past 600 ticks. The running route gained
+mist by dawn and cleared by mid-morning, in the submitted view and the committed
+weather query. The headless point agrees. Twilight limits the whole mist source
+against the sky at its bearing. At the review's low camera the +2° mist is warm
+and below the adjacent sky. Reconstructing neighbouring ray directions at the
+receiver's stop removes the alternating rows in the Metal and Chrome crops.
+
+The paired 1440p record now measures clouds absent at all three rates with the
+same Sun and haze. The pass comparisons report dry and occupied timings,
+occurrence counts and unresolved causes. The WP15 reference stays beside them.
+[Route, visual and cost evidence](../../../.orchestrate/evidence/CLOUDS/WP16/repair/PROOF.md)
