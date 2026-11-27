@@ -1,10 +1,10 @@
 {
   "module": "EFFECT-GRAPH",
   "design": {
-    "verdict": "changes",
+    "verdict": "ok",
     "review": ".orchestrate/evidence/EFFECT-GRAPH/design-review.md",
-    "commit": "25d599bbfc0a3d1ca9ecfac39087a43d0f3dcef5",
-    "hash": "0fa1e58b0bda38cf28ec117f6a9037807f622ba6b542b2b7debbd3a2be3e8a87",
+    "commit": "fd6e83c63773b9b6f74086ed3bc428bb1f55e870",
+    "hash": "3ed08eb547bcf869a58ade161c50e828d4299888d8977bc578528a8de0cfb2c7",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -16,12 +16,12 @@
     "cli": "codex-cli 0.171.0-alpha.13.2",
     "path": "headless",
     "usage": {
-      "input": 104601,
-      "cached": 2048640,
-      "output": 7642,
+      "input": 76131,
+      "cached": 1042304,
+      "output": 4630,
       "turns": 1
     },
-    "at": "2026-11-27T06:08:12Z"
+    "at": "2026-11-27T06:27:45Z"
   },
   "work_packages": {
     "WP1": {
@@ -968,7 +968,7 @@
     },
     {
       "verdict": "changes",
-      "review": ".orchestrate/evidence/EFFECT-GRAPH/design-review.md",
+      "review": ".orchestrate/evidence/EFFECT-GRAPH/design-review-1.md",
       "commit": "4177ffe7e53ad9129d176f5772cf2200661734c3",
       "hash": "7170825dc4732afb68f88af1e6bc95829dc1123e8f74a3d6db4f331c659253c1",
       "by": "review",
@@ -1001,6 +1001,29 @@
       "items_owed": [
         "WP7"
       ]
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/EFFECT-GRAPH/design-review-1.md",
+      "commit": "25d599bbfc0a3d1ca9ecfac39087a43d0f3dcef5",
+      "hash": "0fa1e58b0bda38cf28ec117f6a9037807f622ba6b542b2b7debbd3a2be3e8a87",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13.2",
+      "path": "headless",
+      "usage": {
+        "input": 104601,
+        "cached": 2048640,
+        "output": 7642,
+        "turns": 1
+      },
+      "at": "2026-11-27T06:08:12Z"
     }
   ]
 }
