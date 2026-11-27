@@ -1092,7 +1092,7 @@
         {
           "verdict": "fail",
           "commit": "61258031fffbea7f353d8675c133f28b4bb7993b",
-          "review": ".orchestrate/evidence/PUDDLES/WP6-review.md",
+          "review": ".orchestrate/evidence/PUDDLES/WP6-review-3.md",
           "items": {
             "WP6.6": "pass",
             "WP6.1": "pass",
@@ -1125,6 +1125,36 @@
             "turns": 1
           },
           "at": "2026-11-27T18:19:20Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "da12b3b6b92150324b0ec33e0b23b5e3c552abe6",
+          "review": ".orchestrate/evidence/PUDDLES/WP6-review.md",
+          "items": {
+            "WP6.6": "pass",
+            "WP6.1": "pass",
+            "WP6.2": "pass",
+            "WP6.3": "pass",
+            "WP6.4": "pass",
+            "WP6.5": "pass"
+          },
+          "summary": "All six WP6 items pass. At the soaked boulder face that failed the previous review, the public CPU point query and Metal now both report full pores, while the physical rain query retains its original shelter boundary. On Metal and in shipping Chrome, the shower darkened the valley floor and filled two distinct hollows. The ordinary exit retained its cooked content root.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 176461,
+            "cached": 7446016,
+            "output": 19131,
+            "turns": 1
+          },
+          "at": "2026-11-27T18:58:08Z"
         }
       ],
       "authorised": {
@@ -1157,6 +1187,13 @@
           "output": 351396,
           "turns": 5
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "da12b3b6b92150324b0ec33e0b23b5e3c552abe6",
+        "review": ".orchestrate/evidence/PUDDLES/WP6-review.md",
+        "checked": "b8d988602ea8aedbf23d794a988a91c80163c5f4",
+        "at": "2026-11-27T18:58:08Z"
       }
     },
     "WP7": {
