@@ -449,3 +449,33 @@
   returns after the grace keeps what their machine last heard; a launched thing flies on with no launcher;
   and a tile's smaller shape belongs to the scene's tile line. The reference gains `PhaseClock`, `SunAngle`,
   `Spawn`, `Bundle` and the binding sources, each a spelling a builder may change.
+- 2026-11-27 Second design review of that revision asked for changes, with 3 Must Fix findings
+  ([the review](../../../.orchestrate/evidence/GAME-SDK/design-review.md)). Each is settled below. This is the
+  last round, so each fix was read against its finding's own case. No other module's file changed,
+  [ruling 1](../ARCHITECTURE.md#seam-rulings-for-game-sdk) stands as written, `SESSION` is used as built, and
+  no decision of the owner's is touched.
+- 2026-11-27 Finding 1 (a pass that certifies another Cargo configuration): feature-dependent rule selection
+  is refused. The game check refuses `#[cfg(..)]`, `#[cfg_attr(..)]` and `cfg!(..)` in the `rules` module's
+  sources, on or off, so the same sources compile to the same rules under every feature and a pass still
+  applies after a change of one (sections 1, 8, 11 and 12). Ruling 1 is unchanged. WP2.10 gains two refused
+  cases and WP3's handoff a run with a feature turned on
+  ([the notes](../../../.orchestrate/evidence/GAME-SDK/round-4-revision.md)).
+- 2026-11-27 Finding 2 (the rail's origin between two ticks): a `#[seen]` press now carries a fourth thing,
+  its own character as the screen was drawing it: the entity, and the pair of ticks it was drawn between
+  with how far. The space's memory keeps whose character each remembered collider was.
+  `press.character()` is that entity where the memory has it as that player's, and goes on naming it after
+  a respawn. `press.place()` is rebuilt by the world between its own two places for that character, with
+  `as_seen_by`'s limits for a cut and the memory's edge, the last remembered place for one despawned, and
+  the world's places winning over a wrong prediction. They replace `press.place_of(entity)`. The reviewer's
+  craft, moving from x = 0 to x = 1 and fired at 0.5, fires from 0.5 (the entry and its rail example).
+- 2026-11-27 Finding 3 (a launched thing's action map once its player has gone): its function reads its
+  launcher's map while that player is here, what their character is given while they are away, and
+  `A::idle()` in every tick once that stay has ended, with every value at zero. A newcomer in the seat
+  steers only their own character and shots (the entry; R1 says what `idle()` holds).
+- 2026-11-27 Suggestion, taken: WP13's handoff compares the cooldown's ring in a picture at the committed
+  tick on both sides, because a picture between two ticks can differ rightly and WP3 already proves that
+  movement. It costs a clause.
+- 2026-11-27 Item changed: WP2.10, by two cases in its list of refusals. No check command changed. Planner's
+  choices in this revision, each for the owner to overturn: no `#[cfg]` in a `rules` module, `#[cfg(test)]`
+  included; a press names the craft it was made with, and the game says whether a craft since lost still
+  fires; and a launched thing whose player has gone flies under idle input.

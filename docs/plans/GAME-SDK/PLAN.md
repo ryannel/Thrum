@@ -25,11 +25,12 @@ and [the seam rulings](../ARCHITECTURE.md#seam-rulings-for-game-sdk) before any 
 - Assumption: "2D queries" includes rectangles, a level's fixed collision, tile maps and a sliding character move. Nothing pushes anything.
 - Assumption: a saved resource and a saved run are the match's, on the host's machine. A profile is each player's own, on theirs, built with a yes to scope question 11. A guest back within the grace keeps what the host confirmed meanwhile; after it, what their machine last heard.
 - Assumption: every game that runs keeps its rules in a checked `rules` module, a `mod rules { .. }` block in a one-file game. A game without one runs only in a test.
-- Assumption: `cargo run` plays only rules the check last passed, and refuses after an edit to them until `cargo play` runs it again.
+- Assumption: `cargo run` plays only rules the check last passed, and refuses after an edit until `cargo play` runs.
+- Assumption: a `rules` module holds no `#[cfg]`, so no build feature changes the rules. Their tests go outside it.
 - Assumption: a save keeps a timer's whole wait and a phase's clock, so a resumed run shows the same progress and ends its phase on time.
 - Assumption: a rule that panics stops the game in Chrome, with its message. Elsewhere it is reported with the world intact.
 - Assumption: the starter, stones and the lighthouse are rewritten on the SDK, and the sky kit is then removed.
-- Assumption: three fresh agents prove the documentation: a 2D, a 3D and an online game.
+- Assumption: three fresh agents prove the documentation: 2D, 3D and online.
 - Assumption: models that turn, scale or carry a texture wait for the V1 work packages that hold 3D drawing.
 - Assumption: a tick makes one change of scene or of phase, and the first asked for stands. A scene has one set of phases, for everyone; what happens to one character is kept on it.
 - Assumption: a person who joins a game full of bots takes a bot's seat, with a new character.
@@ -45,7 +46,7 @@ and [the seam rulings](../ARCHITECTURE.md#seam-rulings-for-game-sdk) before any 
 - Assumption: sheets, clips and tiles are cooked from an image and a small file beside it, in WP3.
 - Assumption: a player has one character at a time, and taking another player's fails and changes nothing. Anything else they own is an ordinary entity.
 - Assumption: no engine or backend type reaches a game through `thrum`.
-- Assumption: in [the extension map](DESIGN.md#the-extension-map), a predicted shot is one the control function fires, and it flies on without its launcher; a data pack adds no prefab names; a guest's profile travels as commands; a `#[seen]` press carries its picture, place and aim; a tile's smaller shape is said on the scene's tile line.
+- Assumption: in [the extension map](DESIGN.md#the-extension-map), a predicted shot is one the control function fires, and flies on without its launcher, under idle input; a data pack adds no prefab names; a guest's profile travels as commands; a `#[seen]` press carries its picture, craft, place and aim; a tile's smaller shape is said on the scene's tile line.
 - Assumption: a rule may turn a player to face a way, the pointer follows the input context, an offer with no expiry stays open, and what a tile map places is made by a spawn function.
 
 ## WP1 An agent writes a game's scenes, phases and rules in plain Rust against one crate, in the order they run, and proves them in an ordinary test with no window

@@ -355,12 +355,28 @@ Each invariant here is a mechanism a builder builds as written
   refuses and names the step: `cargo play`, or `cargo play --check`, whose refusal names the line. The same
   digest is the rules' part of [the rule-set identity](#11-multiplayer-an-opt-in-over-input-only-networking).
   `test()` asks for no record: a test is not play, and it steps a sketch too.
+- **No build setting chooses a game's rules, so a pass holds for every way Cargo builds those sources.** The
+  check refuses conditional compilation anywhere in the `rules` module: `#[cfg(..)]`, `#[cfg_attr(..)]` and
+  `cfg!(..)`, whatever they test (a feature, a target, a profile, `test`), in a macro's body too. It refuses
+  them from the sources as written, before it builds anything, so a line behind a feature that is off when
+  the check runs is refused all the same. The module reaches nothing but `thrum` and Rust's own library, and
+  everything it can name in `thrum` is there with `thrum`'s features off and means the same with them on.
+  So the same rule sources compile to the same rules under every feature, target and profile, and the
+  digest, which is over the sources, says which rules a program plays. **A pass still applies after any
+  change of a build feature**, with no new check. What differs between two builds goes where a build may
+  choose it: a value `game()` gives the world, such as a resource's starting value or a shared setting's
+  default.
+  `game()` and the scene functions are outside the module, so a feature may still choose what they
+  describe. Every function they can register is in the checked module, and what they describe is in the
+  rule-set identity as the program built it, so two peers built with different choices do not start a
+  match. A test of the rules is written outside the module, beside `game()` or under `tests/`.
 - **A game with no `rules` module is a sketch for a test.** `test()` steps it, which keeps a doc example and
   a unit test's own game a few lines long, and nothing else runs it: `run()` and every `cargo play` command
   refuse it at startup, and `Game::multiplayer` and `play_recording` refuse it in a test. Each names the
   functions that change the world and the one step: put them in `mod rules { .. }`.
 - A game that outgrows one package may move the module to a package of its own, whose manifest says
-  `[package.metadata.thrum] rules = true`: the same check on the same code.
+  `[package.metadata.thrum] rules = true`: the same check on the same code, with the same refusals, and
+  that package declares no feature.
 - **The repository's guard** holds every package in a games repository, under the engine's `templates/` and
   under its `examples/` to `thrum` alone, from WP8
   ([ruling 5](../ARCHITECTURE.md#seam-rulings-for-game-sdk)), with the packages written on the engine's own
@@ -921,10 +937,13 @@ left. A `Stick` pushed up is forward: `stick.y` is along the heading and `stick.
 **The check.** `cargo play` runs it before it builds, and `cargo play --check` runs it alone. It builds the
 game's [`rules` module](#1-a-game-one-crate-one-package-one-value) on its own and holds it to the profile, as the profile holds
 a rule package today: no raw-float arithmetic or methods, no unordered containers, clocks, threads,
-environment, files, sockets, processes or standard input, and no outside crate. Each refusal names the line,
+environment, files, sockets, processes or standard input, and no outside crate. Before it builds, it reads
+the module's sources and refuses [conditional compilation](#1-a-game-one-crate-one-package-one-value) in
+them, which is the game check's own refusal: the profile's lints and the check of the engine's registered
+rule packages are as they were. Each refusal names the line,
 the reason and what to write. A pass is recorded against the digest of the sources it built, and
 [`run()` asks for that record](#1-a-game-one-crate-one-package-one-value), so a game built by Cargo alone
-is held to the check too. It is a guard against mistakes, not a sandbox: `unsafe` code can still reach out,
+is held to the check too, with whatever features Cargo was given. It is a guard against mistakes, not a sandbox: `unsafe` code can still reach out,
 and what gets past is caught, where it shows, by the digests a match compares.
 
 ### 9. Frame functions, looks and the interface
@@ -1158,7 +1177,8 @@ panel, the Chrome page and parameter files work as they do today, and the profil
   world once, as a baseline, and then steps it. Digests are compared, and a difference is repaired.
 - **The SDK implements `SESSION`'s world for the game**, and a game writes none of the steps of
   [the session guide](../../SESSION.md): the rule-set identity, from the game's rules, content and build and
-  every starting value its description registers; the world image and digest, from the registered state; the
+  what its description registers as the program built it, which is each scene's entries in their order and
+  every starting value; the world image and digest, from the registered state; the
   action wire, from the action maps and commands; the roster, as [seats](#5-players-actions-and-control); and
   the driven world. Who does what is `SESSION`'s and unchanged: a native process hosts, browsers and the
   simulator join, the world is shown at the confirmed tick, and a match ends with its host.
@@ -1236,6 +1256,7 @@ panel, the Chrome page and parameter files work as they do today, and the profil
 | Compile | World state holds a `Vec`, a `String`, a reference, a raw float or `usize`; a content record holds a raw float | What to use: `Num`, `Text<N>`, `List<T, N>`, content, or a local setting |
 | Compile | A spawn of a `Prefab<N>` without its `N`; `Sprite::new` given a mesh; a field of an action map with no binding; a first scene with no default | Rust's own type error, with the SDK's note on what is missing |
 | Check | Raw-float arithmetic, an unordered container, a file, a clock or an outside crate in the `rules` module; a path from it to the rest of the game | The line, why it can differ between machines, and what to write |
+| Check | `#[cfg(..)]`, `#[cfg_attr(..)]` or `cfg!(..)` in the `rules` module | The line; that a build setting would choose the rules, so a pass could not say which rules are played; and to give the value from `game()` or a shared setting, or for a test to move it out of the module |
 | Startup | One parameter names a component twice and writes it; two parameters of one rule, or a control function's query and its character, conflict over a prefab | The function, the parameters, the component and the prefab, and what to drop |
 | Startup | Two accesses of one function reach one resource and one of them writes it, through a `Params` struct included; a writing parameter of the SDK's taken twice | The function, both parameters and the resource, and which to drop |
 | Startup | A scene calls `phases` twice, has two `players().spawn(..)` lines, or has two control lines that could run in one phase | The scene and the lines, and what to write instead |
@@ -1432,7 +1453,7 @@ Slot::new("records")   Slot::AUTO                       // InputContext::PLAY is
 |---|---|---|
 | `Component`, `Resource`, `Event`, `Command`, `Data` | — | Plain data of [the kinds world state holds](#2-the-world-entities-components-resources-and-prefabs). Each is `Data` too, so one derive lets a type nest in another and in a save |
 | `Scene`, `Phase` | — | `SceneType` on a struct whose fields the scene is entered with; `PhaseType` on an enum. Bounds are written on those traits, and a game writes the derive and never the trait |
-| `Actions`, `LocalActions` | `#[bind(..)]` or `#[sent]` on each field, `#[context(NAME)]` on the struct | A map of `Button`, `Axis`, `Stick` and `Heading` fields; a name for each field, `Controls::JUMP`; and `Controls::idle()`, nothing held |
+| `Actions`, `LocalActions` | `#[bind(..)]` or `#[sent]` on each field, `#[context(NAME)]` on the struct | A map of `Button`, `Axis`, `Stick` and `Heading` fields; a name for each field, `Controls::JUMP`; and `Controls::idle()`, nothing held and every value at zero |
 | `Content` | `#[content(validate = f)]`, with `fn(&T) -> thrum::Result` | `ContentType`. A record may also hold `String`, `Vec<T>`, a `Tilemap`, a typed asset name and a `Prefab<N>` |
 | `Save` | `#[save(version = 2, from = RecordsV1)]`, `max_kib = n`, `validate = f` | A versioned save. `impl From<RecordsV1> for Records` carries an old file forward |
 | `Settings` | `#[slider(4.0..=14.0, default = 9.0, label = "Run speed")]`, which also takes `step = 0.5` and `unit = "°"`; `#[toggle]`; `#[readout]` | A control on the panel for each field |
@@ -1870,7 +1891,8 @@ predicts one entity, the character. Depth 2 lets a control line declare more:
   bolt the host confirms are one thing, shown once. Who launched it is the game's to keep, in a component
   of its own, as any shot's pilot is: the `Player` component stays the character's alone.
 - **`f` has the control function's contract, one entity further out.** It is a function of one launched
-  thing: that thing's own components by `&T` and `&mut T`, and any parameter a rule may take, under
+  thing: that thing's own components by `&T` and `&mut T`, `&A` for its launcher's action map, and any
+  parameter a rule may take, under
   [the same table](#5-players-actions-and-control), row for row. What it reads from the first three rows is
   run ahead. Anything from the last two keeps that player's launched things confirmed and asks for
   `.unpredicted()`, as on any control line. An event it sends is shown when it is predicted, once, so a
@@ -1887,6 +1909,17 @@ predicts one entity, the character. Depth 2 lets a control line declare more:
   is not paused: when its launcher's character has been despawned, when its launcher is away or has left,
   and in a phase the line is not `.during`. So a bolt half-way to a wall when its shooter falls goes on to
   the wall, and its fuse still runs out.
+- **The `&A` it is given is its launcher's input, and no other player's.** A launched thing belongs to the
+  `Player` that launched it, which is [one stay in a seat](#5-players-actions-and-control), for its whole
+  flight. While that player is here, `f` reads the action map the control function reads that tick, with
+  or without a character. While they are away, it reads what their character is given: idle input, or what
+  `when_away` says. **Once that stay has ended**, because the player left or a person took a bot's seat,
+  **`f` is given the map's idle value, `A::idle()`, in every tick**: no button held, pressed or released,
+  every `Axis` and `Stick` at zero, and every `Heading` and `#[sent]` value at zero. The seat's turn
+  still steps the thing, after the newcomer's control function, and the newcomer's input reaches their own
+  character and what they launch, never what an earlier stay launched. The idle value is the rule set's
+  constant, so the host, every peer and a replay step the thing alike. A guided shot that should hold its
+  last course when its pilot goes keeps the course in a component of its own.
 - **The host and the predicting machine step the same things by the same rule.** A machine goes on running
   its own player's launched things ahead while that player has no character, and a thing leaves its
   predicted set only as it ends. What a player who has left launched is stepped by every machine as
@@ -1957,17 +1990,27 @@ it:
   that carries a view replaces it. A held or missing frame leaves it, so the view moves on a tick with the
   world. A player who has left has none, and what they launched is judged against the present.
 - **A press carries the moment it was made.** A button marked `#[seen]` on the action map sends, with the
-  set's other latest values, three things as they stood at its newest press: the view the screen was
-  showing, the tick the press was sampled for, and the set's `Heading` and `#[sent]` values, which are the
-  player's aim. They stand in every later frame until the next press, as the button's count does. So a
+  set's other latest values, four things as they stood when the button went down for its newest press:
+  - the view the screen was showing, which is its picture of everyone else;
+  - the tick the press was sampled for;
+  - **its own character as the screen was drawing it**: which entity this machine was moving as the
+    player's character, and where between two ticks the screen had it, as the newer tick of the pair and
+    how far between the two, on the wire's grid. This is a second pair, apart from the view. A screen
+    draws its own character between the last two steps it ran ahead, as `SESSION`'s local presentation
+    gives them, and draws everyone else a moment behind;
+  - the set's `Heading` and `#[sent]` values, which are the player's aim.
+
+  They stand in every later frame until the next press, as the button's count does. So a
   press whose own frame was late or lost, and which the world reads from the count on the next frame that
-  arrives, as [every press is](#5-players-actions-and-control), comes with the picture, the place and the
-  aim the player pressed with, and not the ones their screen shows by then. A player who fires straight
-  ahead and turns right before the next frame is sampled has fired straight ahead. The world holds all
-  three for the tick that reads the press. Presses read in one tick share the newest one's.
+  arrives, as [every press is](#5-players-actions-and-control), comes with the picture, the character, the
+  place and the aim the player pressed with, and not the ones their screen shows by then. A player who
+  fires straight ahead and turns right before the next frame is sampled has fired straight ahead. The world
+  holds all four for the tick that reads the press. Presses read in one tick share the newest one's.
 - **A space remembers a layer for a stated time**, as world state, so every machine and every replay judges
   the same hit, and a late joiner is sent the memory with the world. **It remembers each cut too**: the
-  tick at which a `teleport` moved a collider is marked in the memory, as it is for the picture.
+  tick at which a `teleport` moved a collider is marked in the memory, as it is for the picture. **And it
+  remembers whose character a collider was**: with each place, the `Player` whose character the entity was
+  at that tick, where it was one.
 - **`space.as_seen_by(player)`** is the same space with that layer as that player's screen drew it. A
   collider stands between its places at the two remembered ticks of the view, as far along as the view
   says, in the profile's numbers, so every machine places it alike. **One whose newer tick is a cut stands
@@ -1981,22 +2024,40 @@ it:
   answers the three questions such a shot asks:
   - **What was there to hit:** `press.seen()` is the space with its remembered layers as that press's
     picture drew them, as `as_seen_by` gives them for the present view.
-  - **Where the shot left from:** `press.place_of(entity)` is where the world had an entity of a remembered
-    layer at the tick the press was sampled for, from the same memory and held at its edge. Asked of the
-    shooter's own craft it is the firing origin: the place their screen drew the craft, to within whatever
-    correction their own screen was eased through if a frame of theirs was lost.
+  - **Who fired:** `press.character()` is the entity the press was made with, the character that player's
+    machine was moving. The world takes the press's word for which entity only where its own memory has
+    that entity as that player's character at a tick it remembers. Otherwise it is `None`, so a press
+    cannot name another player's craft, or one from before the memory. It goes on naming that entity when
+    the player has been given another character since, by `respawn` or `possess`, and when the entity has
+    been despawned. So a rule can tell a press made with the craft a pilot flies now from one made with a
+    craft they have lost, and which of those fires is the game's to say.
+  - **Where the shot left from:** `press.place()` is where that character stood on the pressing screen,
+    rebuilt by the world from its own memory, and `None` where `character()` is, or where the character is
+    on no remembered layer. It is between the places the world had for the character at the two ticks of
+    the press's own pair, as far along as the press says, in the profile's numbers, so every machine
+    places it alike. A craft that moved from x = 0 to x = 1 and fired when its screen showed it half-way
+    fires from x = 0.5, and hits a narrow target straight ahead of that. The limits are `as_seen_by`'s:
+    where the newer tick is a cut the character stands at its new place, and a tick older than the memory
+    is held at its edge. Where the world despawned the character before the newer tick, it stands at the
+    last place the memory has for it. Where the newer tick is the tick being stepped, its place is the
+    character's as the rule finds it, so a rule that judges a press is written after the control line, and
+    a pair that claims a later tick is held at that one.
+    **The places are the world's and never the pressing machine's.** Where that machine ran its character
+    ahead rightly, they are the two places its screen drew between. Where the world corrected it, because
+    a frame was held or something it read had changed, the shot leaves from where the world had the craft,
+    and the difference from the screen is the correction that screen was eased through.
   - **Which way it went:** `press.aim()` is the player's action map with each `Heading` and `#[sent]` value
     as it stood at the press. The direction comes from it, and never from a transform the control function
     has turned since.
 
-  All three are admitted input or world state, so every machine and every replay fires the same ray.
+  All four are admitted input or world state, so every machine and every replay fires the same ray.
 
 ```rust
 #[derive(Actions)]
 pub struct Fly {
     /* .. */
     #[bind(Mouse::look_x())] pub look: Heading,
-    #[bind(Mouse::LEFT)] #[seen] pub rail: Button,       // a press carries its picture, its place and its aim
+    #[bind(Mouse::LEFT)] #[seen] pub rail: Button,       // a press carries its picture, its craft, its place and its aim
 }
 
 scene.space3d(Space3d::cells(4.0).remembers(HULLS, seconds(0.25)));
@@ -2010,13 +2071,14 @@ fn bolts_hit(bolts: Query<(Entity, &Bolt)>, space: Space3d, mut hulls: Query<&mu
     }
 }
 
-/// A shot decided at the press. It leaves from where the craft stood and goes the way the player aimed when
-/// they pressed, and is judged in the picture they pressed in, however late its frame came and whichever way
-/// the craft has turned since.
+/// A shot decided at the press. It leaves from where the pilot's screen showed their craft, between two ticks,
+/// and goes the way they aimed when they pressed, and is judged in the picture they pressed in, however late
+/// its frame came and whichever way the craft has moved or turned since. Written after the control line.
 fn rails_hit(crafts: Query<(Entity, &Player), With<Craft>>, space: Space3d, mut hulls: Query<&mut Hull>) {
     for (me, pilot) in &crafts {
         let Some(press) = space.at_press(*pilot, Fly::RAIL) else { continue };    // no press read this tick
-        let from = press.place_of(me);
+        if press.character() != Some(me) { continue }      // pressed with a craft this pilot has since lost: no shot
+        let Some(from) = press.place() else { continue };
         let reach = from + press.aim().look.direction_xz() * 60.0;
         let Some(hit) = press.seen().ray(from, reach).except(me).on((HULLS, SOLID)).first_hit() else { continue };
         if let Some(mut hull) = hulls.get_mut(hit.entity) { hull.hurt(60); }
@@ -3676,7 +3738,9 @@ first work package that has everything it uses, so no item waits on a later one.
   nearest name; a frame function that asks for `PlayersMut`, which does not compile; a game outside the
   checkout, laid out as the templates are, whose registered frame function does float arithmetic and keeps a
   `HashMap`, which passes its check and runs; and the same game built by Cargo alone, with no `cargo play`
-  command, which runs through `game().run()` once `cargo play --check` has passed, and which, with a file
+  command, which runs through `game().run()` once `cargo play --check` has passed; which runs again with no
+  new check when Cargo alone builds it with a feature of its own package turned on, a feature its `game()`
+  reads to choose a resource's starting value; and which, with a file
   read then put inside its `rules` module and built by Cargo alone again, is refused by `run()` before the
   first tick with a message that names the check, while `cargo play` refuses it in the check with the line.
 - **WP4:** example B's cooked, textured rock turned by the example's rule `turn`, with `turn_rock` left out
@@ -3720,8 +3784,10 @@ first work package that has everything it uses, so no item waits on a later one.
   `then_run` rule had run and asked for nothing, restored, in which the rule does not run again; a `Timer`
   of four seconds saved two seconds in and one of eight seconds saved six seconds in, each restored with
   two seconds left, the first with a `fraction` of one half and the second of three quarters, and a
-  `Cooldown` saved part-way through its wait whose `left` and `fraction`, and the ring a frame function
-  draws from `frame.fraction`, read after the restore what they read at the capture; a restore whose enter function fails, a save over its limit and a damaged one, each leaving the
+  `Cooldown` saved part-way through its wait whose `left` and `fraction` read after the restore what they
+  read at the capture, and whose ring, drawn by a frame function from `frame.fraction` in a picture taken
+  at the committed tick with no time passed since it, is the same before the capture and after the
+  restore; a restore whose enter function fails, a save over its limit and a damaged one, each leaving the
   world as it was and the scene not entered, with the step that tried it returning no error and the next step
   running; a recording that holds a restored save and a saved resource's starting value, replayed with
   another value in the slot to the same digest.
