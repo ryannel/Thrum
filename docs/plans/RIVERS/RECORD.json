@@ -1058,12 +1058,12 @@
       }
     },
     "WP6": {
-      "definitions": "8d97dc64cedf9f63724b1c17b08f5682dcd0b289457eb7d86775db33d7b7ab23",
+      "definitions": "f4d8678a35fe8ea6d33aa4bd94f2c1acdb3dc83f77a6de4967c0ee4953cb5d5c",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "RIVERS WP6 (waterfall and plunge pool) is Blocked, Needs Context: may the receiving basin wet the bed below the brink wh",
-        "at": "2026-11-27T10:11:50Z"
+        "task": "The design review of RIVERS at .orchestrate/evidence/RIVERS/design-review.md asked for changes, with its 2 Must Fix find",
+        "at": "2026-11-27T11:03:13Z"
       }
     },
     "WP7": {
@@ -1378,11 +1378,15 @@
     {
       "task": "RIVERS WP6 (waterfall and plunge pool) is Blocked, Needs Context: may the receiving basin wet the bed below the brink while the upstream chart keeps its existing boundary? The builder measured a dry-to-1.6-2.1 m depth jump at the lower chart edge (z = -25 m) causing the plunge seam (WP6.5) and proposes letting the receiving basin follow the authored plunge bed below the brink; the alternative is reauthoring the fall with a dry bank. The lower-sheet curtain look in the flood (WP6.4) also remains. Handoff: .claude/worktrees/rivers/.orchestrate/evidence/RIVERS/WP6-handoff.md. Decide the brink rule from first principles (best-looking, plausible result at shipped-game quality), amend the design and WP6 items as needed, and leave WP6 ready to resume.",
       "at": "2026-11-27T10:11:50Z"
+    },
+    {
+      "task": "The design review of RIVERS at .orchestrate/evidence/RIVERS/design-review.md asked for changes, with its 2 Must Fix findings.",
+      "at": "2026-11-27T11:03:13Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T10:11:50Z"
+    "at": "2026-11-27T11:03:13Z"
   },
   "design_history": [
     {
