@@ -2513,10 +2513,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             return Err(FrameError::gpu("render encode", error));
         }
         if let Some(quality) = &mut prepared.sample.governor {
-            quality.chart_position = self
-                .prepared
-                .three_d()
-                .and_then(PreparedSynthetic::pending_chart_position);
+            let scene = self.prepared.three_d();
+            quality.chart_position = scene.and_then(PreparedSynthetic::pending_chart_position);
+            quality.chart_change = scene.and_then(PreparedSynthetic::pending_chart_change);
         }
         Ok(RecordedScene {
             native,

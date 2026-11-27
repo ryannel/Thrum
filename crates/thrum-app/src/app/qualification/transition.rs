@@ -510,6 +510,7 @@ fn governor_record(frame: &thrum_render::runtime::GovernorFrame) -> Value {
         "aerial_age": frame.aerial_age,
         "chart_update": frame.chart_update,
         "chart_position": frame.chart_position,
+        "chart_change": frame.chart_change,
         "knobs": frame.knobs.iter().map(|knob| (&knob.name, knob.value)).collect::<std::collections::BTreeMap<_, _>>(),
     })
 }

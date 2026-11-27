@@ -6,6 +6,7 @@ import platform
 import statistics
 import subprocess
 import time
+from collections import Counter
 from pathlib import Path
 
 from apple_governor_proof import awake_display
@@ -19,7 +20,7 @@ STAGES = (
     "atmosphere diffuse irradiance",
     *(f"atmosphere reflection mip {i}" for i in range(7)),
 )
-WHOLE = {"initialization", "camera cut", "air change", "Sun jump", "recovery"}
+WHOLE = {"initialization", "camera cut", "air change", "Sun jump", "recovery", "motion cut"}
 
 
 def jsonl(path):
@@ -41,6 +42,7 @@ def stage_rows(directory, cadence):
         actual = quality["knobs"].get("atmosphere.chart cadence") if quality else 1
         reason = quality.get("chart_update") if quality else None
         position = quality.get("chart_position") if quality else None
+        change = quality.get("chart_change") if quality else None
         order, timestamps = sample["gpu_pass_order"], sample["gpu_pass_ns"]
         if order is None or timestamps is None:
             raise ValueError(f"missing GPU execution trace for submission {sample['submission']}")
@@ -54,42 +56,57 @@ def stage_rows(directory, cadence):
         if actual not in (1, 4, 6, 8):
             raise ValueError(f"missing or invalid chart cadence for submission {sample['submission']}")
         if reason:
-            if reason not in WHOLE or tuple(stages) != STAGES:
+            if reason not in WHOLE or tuple(stages) != STAGES or position is not None:
                 raise ValueError(f"invalid whole update at submission {sample['submission']}: {reason}")
         elif cadence == 1 and not rows and tuple(stages) == STAGES:
             reason = "initialization"
         elif actual > 1:
-            effective = position[0] if position else actual
-            if len(stages) > math.ceil(len(STAGES) / effective):
-                raise ValueError(f"ordinary submission {sample['submission']} exceeds cadence {effective} bound")
+            if position is None:
+                if stages:
+                    raise ValueError(f"unlabelled chart stages on submission {sample['submission']}")
+            else:
+                spread, index = position
+                if not (isinstance(change, (int, float)) and math.isfinite(change) and change >= 0):
+                    raise ValueError(f"missing refresh change on submission {sample['submission']}")
+                expected = next((size for size in range(actual, 1, -1) if size * change <= 1), 1)
+                if not 0 <= index < spread or (index == 0 and spread != expected):
+                    raise ValueError(f"incorrect refresh spread on submission {sample['submission']}")
+                if len(stages) > math.ceil(len(STAGES) / spread):
+                    raise ValueError(f"submission {sample['submission']} exceeds spread {spread} bound")
         rows.append({"submission": sample["submission"], "tick": sample["tick"], "cadence": actual,
-                     "position": position, "whole_update": reason, "stages": stages, "chart_ns": sum(times)})
+                     "position": position, "change": change, "whole_update": reason, "stages": stages,
+                     "chart_ns": sum(times)})
     return rows
 
 
 def complete_refreshes(rows, cadence, route):
     first = route["origin_tick"]
     last = first + route["keys"][-1]["tick"]
-    moving = [r for r in rows if first <= r["tick"] < last and r["cadence"] == cadence]
+    moving = [r for r in rows if first <= r["tick"] < last]
+    if not moving or any(row["cadence"] != cadence for row in moving):
+        raise ValueError(f"moving segment did not hold the chart knob at {cadence}")
     matched = []
     for start, row in enumerate(moving):
-        window = moving[start:start + cadence]
-        neighbors = len(window) == cadence and all(
-            b["submission"] == a["submission"] + 1 for a, b in zip(window, window[1:]))
-        if not neighbors or any(r["whole_update"] for r in window):
-            continue
-        actual = tuple(stage for frame in window for stage in frame["stages"])
         if cadence == 1:
-            if actual != STAGES:
-                continue
+            if tuple(row["stages"]) == STAGES and not row["whole_update"]:
+                matched.append({"spread": 1, "first": row["submission"], "last": row["submission"]})
         else:
-            expected = [[cadence, i] for i in range(cadence)]
-            if [r["position"] for r in window] != expected:
+            if row["position"] is None or row["position"][1] != 0:
                 continue
-            if actual != STAGES:
+            spread = row["position"][0]
+            window = moving[start:start + spread]
+            if len(window) < spread or any(r["whole_update"] for r in window):
+                continue
+            actual = tuple(stage for frame in window for stage in frame["stages"])
+            positions = [r["position"] for r in window]
+            if actual != STAGES or positions != [[spread, index] for index in range(spread)] or any(
+                    r["change"] != row["change"] for r in window):
                 raise ValueError(f"incomplete chart stages in moving refresh {row['submission']}: {actual}")
-        matched.append([window[0]["submission"], window[-1]["submission"]])
-    return matched
+            matched.append({"spread": spread, "first": row["submission"], "last": window[-1]["submission"]})
+    by_spread = Counter(refresh["spread"] for refresh in matched)
+    if cadence == 4 and 4 * by_spread[4] < 0.75 * len(moving):
+        raise ValueError(f"four-submission refreshes cover only {4 * by_spread[4]}/{len(moving)} submissions")
+    return matched, {spread: by_spread[spread] for spread in range(1, cadence + 1)}, len(moving)
 
 
 def run_take(output, binary, store, route, cadence):
@@ -118,7 +135,7 @@ def run_take(output, binary, store, route, cadence):
         raise ValueError("route did not run on Apple M3 Max Metal")
     rows = stage_rows(directory, cadence)
     route_data = json.loads(route.read_text())
-    refreshes = complete_refreshes(rows, cadence, route_data)
+    refreshes, by_spread, moving_count = complete_refreshes(rows, cadence, route_data)
     if not refreshes:
         raise ValueError(f"no complete ordinary cadence-{cadence} refresh in the moving route")
     (directory / "chart-frames.json").write_text(json.dumps(rows, separators=(",", ":")) + "\n")
@@ -126,7 +143,9 @@ def run_take(output, binary, store, route, cadence):
     return {"host_load": json.loads((directory / "host-load.json").read_text()),
             "samples": len(rows), "p50_ns": statistics.median(chart_times),
             "p95_ns": chart_times[(95 * len(rows) - 1) // 100],
-            "max_stages": max(len(row["stages"]) for row in rows), "complete_refreshes": refreshes}
+            "max_stages": max(len(row["stages"]) for row in rows), "complete_refreshes": refreshes,
+            "moving_submissions": moving_count, "refreshes_by_spread": by_spread,
+            "whole_updates": dict(Counter(row["whole_update"] for row in rows if row["whole_update"]))}
 
 
 def measure(output=None):
@@ -142,6 +161,7 @@ def measure(output=None):
     if store_root(store) != route["cooked_root"]:
         raise ValueError("cooked valley root differs from the route")
     route["render_extent"] = [1920, 1080]
+    route["start"]["solar_hours"] = 16.0
     route["overlay"] = "off"
     path = output / "route.json"
     path.write_text(json.dumps(route) + "\n")

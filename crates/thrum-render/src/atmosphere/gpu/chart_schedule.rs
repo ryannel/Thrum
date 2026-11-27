@@ -53,6 +53,54 @@ impl Inputs {
         let dot = previous.dot(next);
         dot < 0.0 || previous.cross(next).length() > dot * 0.034_920_77
     }
+
+    fn change(self, previous: Self, tuning: Tuning) -> f32 {
+        let sun = glam::Vec3::from_array(self.direction);
+        let old_sun = glam::Vec3::from_array(previous.direction);
+        let angle = sun.cross(old_sun).length().atan2(sun.dot(old_sun));
+        let relative = |new: f32, old: f32| {
+            if new == old {
+                0.0
+            } else {
+                (new - old).abs() / new.max(old)
+            }
+        };
+        let light = self.colour.into_iter().zip(previous.colour).fold(
+            relative(self.illuminance, previous.illuminance),
+            |worst, (new, old)| worst.max(relative(new, old)),
+        );
+        (angle / tuning.sun_tolerance(sun.y))
+            .max((self.altitude - previous.altitude).abs() / tuning.altitude)
+            .max(light / tuning.light)
+    }
+}
+
+#[derive(Clone, Copy)]
+struct Tuning {
+    sun: f32,
+    altitude: f32,
+    light: f32,
+    /// Sine of the elevation and tolerance below it, in radians.
+    twilight: Option<(f32, f32)>,
+}
+
+impl Default for Tuning {
+    fn default() -> Self {
+        Self {
+            sun: 0.2_f32.to_radians(),
+            altitude: 10.0,
+            light: 0.01,
+            twilight: None,
+        }
+    }
+}
+
+impl Tuning {
+    fn sun_tolerance(self, sun_y: f32) -> f32 {
+        self.twilight
+            .filter(|(elevation, _)| sun_y < *elevation)
+            .map_or(self.sun, |(_, tolerance)| tolerance)
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -65,8 +113,9 @@ struct Source {
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct Refresh {
     snapshot: Source,
-    cadence: u32,
+    spread: u32,
     cursor: u32,
+    change: f32,
 }
 
 #[derive(Clone, Default)]
@@ -75,6 +124,7 @@ pub(super) struct ChartSchedule {
     sources: [Option<Source>; STAGES],
     refresh: Option<Refresh>,
     cadence: u32,
+    tuning: Tuning,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -84,6 +134,7 @@ pub(super) enum WholeUpdate {
     AirChange,
     SunJump,
     Recovery,
+    Motion,
 }
 
 impl WholeUpdate {
@@ -94,6 +145,7 @@ impl WholeUpdate {
             Self::AirChange => "air change",
             Self::SunJump => "Sun jump",
             Self::Recovery => "recovery",
+            Self::Motion => "motion cut",
         }
     }
 }
@@ -105,6 +157,7 @@ pub(super) struct ChartSubmission {
     next_refresh: Option<Refresh>,
     cadence: u32,
     pub(super) position: Option<(u32, u32)>,
+    pub(super) change: Option<f32>,
     writes: u16,
     pub(super) whole_update: Option<WholeUpdate>,
 }
@@ -130,11 +183,12 @@ impl ChartSchedule {
         self.cadence > 1
     }
 
-    fn due(&self, index: usize, snapshot: Source, live: Source) -> bool {
+    fn due(&self, index: usize, snapshot: Source, live: Source, overlay_light: bool) -> bool {
         self.sources[index].is_none_or(|previous| {
             !previous.inputs.same_air(snapshot.inputs)
                 || !previous.inputs.same_sky(snapshot.inputs)
-                || (index == 1 && !previous.inputs.same_diffuse_light(snapshot.inputs))
+                || ((index == 1 || (index > 1 && overlay_light))
+                    && !previous.inputs.same_diffuse_light(snapshot.inputs))
                 || (index > 0 && previous.overlay_revision != live.overlay_revision)
         })
     }
@@ -144,6 +198,7 @@ impl ChartSchedule {
         inputs: Inputs,
         cadence: u32,
         camera_cut: bool,
+        overlay_present: bool,
         overlay_written: bool,
     ) -> ChartSubmission {
         let live = Source {
@@ -152,7 +207,8 @@ impl ChartSchedule {
             overlay_revision: self.last.map_or(0, |last| last.overlay_revision)
                 + u64::from(overlay_written),
         };
-        let dirty = (0..STAGES).any(|index| self.due(index, live, live));
+        let overlay_light = cadence > 1 && overlay_present;
+        let dirty = (0..STAGES).any(|index| self.due(index, live, live, overlay_light));
         // Overlay writes are discovered after the sky pass. A write this frame
         // can dirty the overlay readers, but cannot retroactively replace the
         // sky. Changes outstanding at the boundary still trigger recovery.
@@ -160,7 +216,8 @@ impl ChartSchedule {
             overlay_revision: live.overlay_revision - u64::from(overlay_written),
             ..live
         };
-        let prior_dirty = (0..STAGES).any(|index| self.due(index, live, before_overlay));
+        let prior_dirty =
+            (0..STAGES).any(|index| self.due(index, live, before_overlay, overlay_light));
         let whole_update = match self.last {
             None => Some(WholeUpdate::Initialization),
             Some(last) if !inputs.same_air(last.inputs) => Some(WholeUpdate::AirChange),
@@ -173,14 +230,32 @@ impl ChartSchedule {
             {
                 Some(WholeUpdate::Recovery)
             }
+            Some(_)
+                if cadence > 1
+                    && self.refresh.is_some_and(|refresh| {
+                        inputs.change(refresh.snapshot.inputs, self.tuning) > 1.0
+                    }) =>
+            {
+                Some(WholeUpdate::Motion)
+            }
             _ => None,
         };
         let refresh = if cadence > 1 && whole_update.is_none() {
             self.refresh.or_else(|| {
-                dirty.then_some(Refresh {
-                    snapshot: live,
-                    cadence,
-                    cursor: 0,
+                dirty.then(|| {
+                    let change = self
+                        .last
+                        .map_or(0.0, |last| inputs.change(last.inputs, self.tuning));
+                    let spread = (2..=cadence)
+                        .rev()
+                        .find(|spread| f64::from(*spread) * f64::from(change) <= 1.0)
+                        .unwrap_or(1);
+                    Refresh {
+                        snapshot: live,
+                        spread,
+                        cursor: 0,
+                        change,
+                    }
                 })
             })
         } else {
@@ -189,27 +264,28 @@ impl ChartSchedule {
         let mut writes = 0;
         let mut written = live;
         let mut next_refresh = None;
-        let position = refresh.map(|refresh| (refresh.cadence, refresh.cursor));
+        let position = refresh.map(|refresh| (refresh.spread, refresh.cursor));
+        let change = refresh.map(|refresh| refresh.change);
         if let Some(mut refresh) = refresh {
             written = Source {
                 overlay_revision: live.overlay_revision,
                 ..refresh.snapshot
             };
-            // Bound each submission by ceil(9 / cadence), ending on the
+            // Bound each submission by ceil(9 / spread), ending on the
             // final submission with the final reflection level.
             let count = u32::try_from(STAGES).expect("nine chart stages");
-            let first = (refresh.cursor * count).div_ceil(refresh.cadence);
+            let first = (refresh.cursor * count).div_ceil(refresh.spread);
             refresh.cursor += 1;
-            let end = (refresh.cursor * count).div_ceil(refresh.cadence);
+            let end = (refresh.cursor * count).div_ceil(refresh.spread);
             for index in first as usize..end as usize {
-                if self.due(index, refresh.snapshot, live) {
+                if self.due(index, refresh.snapshot, live, overlay_light) {
                     writes |= 1 << index;
                 }
             }
-            next_refresh = (refresh.cursor < refresh.cadence).then_some(refresh);
+            next_refresh = (refresh.cursor < refresh.spread).then_some(refresh);
         } else if cadence == 1 || whole_update.is_some() {
             for index in 0..STAGES {
-                if whole_update.is_some() || self.due(index, live, live) {
+                if whole_update.is_some() || self.due(index, live, live, overlay_light) {
                     writes |= 1 << index;
                 }
             }
@@ -221,6 +297,7 @@ impl ChartSchedule {
             next_refresh,
             cadence,
             position,
+            change,
             writes,
             whole_update,
         }

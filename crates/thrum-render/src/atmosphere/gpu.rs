@@ -151,6 +151,10 @@ impl AtmospherePrepared {
         self.pending_charts[usize::from(self.overlay_write.0.load(Ordering::Relaxed))].position
     }
 
+    pub(crate) fn pending_chart_change(&self) -> Option<f32> {
+        self.pending_charts[usize::from(self.overlay_write.0.load(Ordering::Relaxed))].change
+    }
+
     pub(crate) fn pending_aerial_age(&self) -> u32 {
         self.pending_aerial_age
     }
@@ -382,7 +386,7 @@ impl AtmospherePrepared {
             ReflectionPrepared::new(device, &chart_uniform, &reflection_charts, &sampler)
         };
         let schedule = ChartSchedule::default();
-        let pending_charts = schedule.plan(frame.into(), 1, false, false);
+        let pending_charts = schedule.plan(frame.into(), 1, false, false, false);
         let mut result = Self {
             frame,
             environment: super::environment::EnvironmentState::new(frame),
@@ -638,6 +642,7 @@ impl AtmospherePrepared {
             self.frame.into(),
             self.quality()[1].value,
             self.camera_cut,
+            self.overlay.is_some(),
             overlay_written && self.overlay.is_some(),
         )
     }
