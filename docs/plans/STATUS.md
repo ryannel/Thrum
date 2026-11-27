@@ -348,6 +348,11 @@ A planner or the lead chose each of these where your words left it open. Each st
 - GAME-SDK assumes: one terrain is drawn and stood on from one source, and a level may place things that are drawn and not solid. ([plan](GAME-SDK/PLAN.md))
 - GAME-SDK assumes: in a 3D game, an edit that changes a mesh's or a terrain's shape waits for the game to be started again, and an edit to how it looks is redrawn at once. ([plan](GAME-SDK/PLAN.md))
 - GAME-SDK assumes: a host with no window continues a saved run only through the standard lobby, reads its save once as it starts, and takes no save or restore asked for by a player's screen. ([plan](GAME-SDK/PLAN.md))
+- SIM-3D assumes: shapes are spheres, capsules and cuboids, and a level's fixed collision is models' triangles, terrain heights and boxes, as the game SDK's design names them. A cuboid can be turned and scaled, but nothing spins or is pushed: no rigid bodies. ([plan](SIM-3D/PLAN.md))
+- SIM-3D assumes: a model's triangles and a terrain stop a shape from both sides and have no inside. A box is solid through. ([plan](SIM-3D/PLAN.md))
+- SIM-3D assumes: the sizes proved are 10,000 colliders with up to 2,000 of them asking each tick, V1's representative scene, and worlds within 32,768 units of the origin, which holds the showcase's 36 km terrain. Farther out, devices still agree and contacts get coarser. ([plan](SIM-3D/PLAN.md))
+- SIM-3D assumes: a shape stops within about 1.5 cm of what it meets (1/64 of a unit at most), and a walking character rests within about 3 cm of the ground. The exact figures are measured and set by the first and fourth work packages. ([plan](SIM-3D/PLAN.md))
+- SIM-3D assumes: the devices are the Mac, Chrome and the iPhone simulator, and devices agree for one build of one rule set, as in `SIM-2D`. The simulator proves the code runs there, never speed. ([plan](SIM-3D/PLAN.md))
 - A name in the glossary waits for your agreement: Game SDK (the planner chose the name and the crate's name, `thrum`)
 - A name in the glossary waits for your agreement: Scene (the planner chose this meaning for game code)
 - A name in the glossary waits for your agreement: Rule (the planner chose "rule" over "system" and "behaviour" for game code)
@@ -356,6 +361,8 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A name in the glossary waits for your agreement: Command (the planner carried it into the game SDK)
 - A name in the glossary waits for your agreement: Look (the planner chose the name)
 - A name in the glossary waits for your agreement: Placement (the planner chose the name, in place of "scenery")
+- A name in the glossary waits for your agreement: Fixed collision (the planner chose "fixed" over "static", which in Rust means something else)
+- A name in the glossary waits for your agreement: Kinematic move (the planner chose the name)
 - A name in the glossary waits for your agreement: Setting (the planner chose "setting" for game code, and keeps "action" for what a player does)
 - A name in the glossary waits for your agreement: Control function (the planner chose the name, in place of "per-player rule")
 - A name in the glossary waits for your agreement: Phase (the planner chose "phase" over "state", which here means everything the world holds)
@@ -377,6 +384,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - RIVERS's design: Design Changes Requested · [design](RIVERS/DESIGN.md) · [plan](RIVERS/PLAN.md)
 - GATE-TIME WP5 The post-rollout record shows a five-minute median for Rust landings: Blocked: Needs Context: WP5.1 needs 17 more qualifying ordinary Rust landings before the fixed window can be judged. The lead finds the missing fact, or asks you for it
 - GAME-SDK's design: Design Changes Requested · [design](GAME-SDK/DESIGN.md) · [plan](GAME-SDK/PLAN.md)
+- SIM-3D's design: Design Ready for Review · [design](SIM-3D/DESIGN.md) · [plan](SIM-3D/PLAN.md)
 
 ### Recently done
 
@@ -543,5 +551,5 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 35 | DEAD-TOOLS | Scripts, benches and records that nothing runs or reads are gone and the check refuses new ones, no tool writes into `docs/evidence`, and each module's record of what it copied is tracked in Git | Nothing to start; TEST-SUPPORT WP2 for its last work package | Done 21 Nov |
 | 36 | DEAD-CODE | Engine code that nothing calls is gone, and a scene contribution no longer writes empty methods | GATE-TIME WP1 to start; GATE-TIME WP6 for the contribution's defaults; WATERS WP7 for the water scene's settings; HOST WP3 for the game's projection; REVIEW-RENDER WP3 and GATE-TIME WP6 for the two helpers | Done 22 Nov |
 | 37 | GAME-SDK | A developer or an agent builds a 2D, a 3D or an online game in plain Rust against one documented crate, and the showcase and the swarm game are written on it | Nothing to start: the owner approved its design on 27 November 2026. SESSION WP7 for a game played online; GAME-UI WP4 for menus and status displays and GAME-UI WP6 for the iPhone simulator; APPLE-PRESENTATION WP8 to WP12, RAY-TRACING WP6 and MESH-SHADING WP3 for 3D models that turn between ticks; SIM-3D for a 3D character that walks on the ground and is stopped by walls; AUDIO for sound; GAME-SPLIT WP4 for the showcase on the SDK | Design Changes Requested |
-| 38 | SIM-3D | A 3D game's characters and shots find what is near them, what a ray meets and where they are stopped, the same on every device, and a character walks over hills, steps and solid models | SIM-2D WP3 | Not planned yet |
+| 38 | SIM-3D | A 3D game's characters and shots find what is near them, what a ray meets and where they are stopped, the same on every device, and a character walks over hills, steps and solid models | SIM-2D WP3 | Design Ready for Review |
 | 39 | AUDIO | A game's sounds and music are heard on the Mac, in Chrome and on the iPhone simulator, mixed in one place and never stalling a frame |  | Not planned yet |
