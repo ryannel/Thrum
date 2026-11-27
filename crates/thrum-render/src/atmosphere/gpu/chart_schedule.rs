@@ -59,10 +59,11 @@ impl Inputs {
         let old_sun = glam::Vec3::from_array(previous.direction);
         let angle = sun.cross(old_sun).length().atan2(sun.dot(old_sun));
         let relative = |new: f32, old: f32| {
-            if new == old {
-                0.0
+            let larger = new.max(old);
+            if larger > 0.0 {
+                (new - old).abs() / larger
             } else {
-                (new - old).abs() / new.max(old)
+                0.0
             }
         };
         let light = self.colour.into_iter().zip(previous.colour).fold(

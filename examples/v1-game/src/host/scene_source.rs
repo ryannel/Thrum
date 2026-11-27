@@ -470,7 +470,8 @@ impl GameScene {
             .map_or(offset, |([first, last], [from, to])| {
                 #[cfg(target_os = "macos")]
                 if self.chart_jump.is_some() {
-                    if tick < first {
+                    // Enter on the second 120 Hz sample of the authored tick.
+                    if tick < first || (tick == first && alpha < 0.75) {
                         return offset;
                     }
                     if tick > last {
@@ -1082,10 +1083,10 @@ impl SceneSource<PublishedPage> for GameScene {
         .with_reconstruction(self.reconstruction != GameReconstruction::Off);
         #[cfg(all(target_os = "macos", feature = "proving"))]
         let view = if self.chart_jump.is_some()
-            && self
-                .solar_sweep
-                .is_some_and(|([first, last], _)| (first..=last).contains(&source.tick))
-        {
+            && self.solar_sweep.is_some_and(|([first, last], _)| {
+                source.tick <= last
+                    && (source.tick > first || (source.tick == first && alpha >= 0.75))
+            }) {
             view.with_phase_history_reset()
         } else {
             view

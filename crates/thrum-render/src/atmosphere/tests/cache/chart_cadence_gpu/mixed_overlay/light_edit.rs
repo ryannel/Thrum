@@ -66,7 +66,7 @@ impl OneOverlay {
             layout: None,
             module: &shader,
             entry_point: Some("main"),
-            compilation_options: Default::default(),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
             cache: None,
         });
         let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
