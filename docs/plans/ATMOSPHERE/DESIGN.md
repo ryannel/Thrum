@@ -1443,8 +1443,9 @@ The sky's charts are the largest cost in that frame that asks nothing of the pic
 
 Three products follow the Sun and the camera's altitude: the sky view, the diffuse irradiance and the
 reflection cube's seven levels. A change in Sun direction or camera altitude invalidates all nine stages.
-At fixed direction and altitude, a change in solar illuminance or colour invalidates diffuse alone, and a
-registered overlay write makes diffuse and all seven reflection levels due. The running clock or a climb
+At fixed direction and altitude, a change in solar illuminance or colour invalidates diffuse. An allocated
+overlay also makes diffuse and all seven reflection levels due whenever its registered graph producer writes,
+or on every submission if it has no registered graph producer. The running clock or a climb
 therefore rebuilds all nine each moving frame. In the WP17 planner's full-screen takes they ran in
 434 to 444 of every 438 to 470 frames. Their median times sum to about 1.3 ms of an 8.33 ms interval,
 including about 0.1 ms for the sky view, 0.3 ms for diffuse and 0.8 ms for the seven reflection levels. [Full-screen measurements](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP17-plan/README.md)
@@ -1470,9 +1471,13 @@ knob.
 
 **Cadence 1 uses the existing product keys.** Empty charts, changed profile epoch, aerosol or night selection
 rebuild the nine. Sun direction and altitude are the sky and reflection keys, with diffuse also dependent
-on the sky and solar illuminance and colour. A registered overlay write adds diffuse and all seven reflection
-levels to the due set. The encoder takes the union in its existing order. A camera cut with valid, identical
-chart keys costs zero chart passes. The current diffuse, reflection and haze producers run together as today.
+on the sky and solar illuminance and colour. A camera cut with identical valid keys adds no stages. With
+no overlay, or a registered overlay producer that skips the write, the keys alone determine the due set.
+A registered overlay write adds diffuse and reflection levels 0–6. An allocated overlay with no registered
+graph producer adds those same eight stages on every submission because a contribution can upload it
+directly through the queue. This also refreshes cloudy reflections, whose stored radiance includes solar
+illuminance, on the submission that changes the light. The encoder runs the union in its existing order.
+The current diffuse, reflection and haze producers run together as today.
 
 **A governed refresh** visits the due stages in dependency order, sky view, diffuse irradiance, then reflection
 levels 0 to 6. On continuous Sun or altitude motion all nine are due.

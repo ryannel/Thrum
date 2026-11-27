@@ -803,3 +803,7 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   haze, scrub and jump scheduling, GPU stage counts, cadence-1 invalidation, tier recovery and the local
   reference guard. The visual checks compare the same material at matched Sun and camera poses.
   [Changes for each finding](../../../.orchestrate/evidence/ATMOSPHERE/WP12-design-revision.md)
+- 2026-11-27 Closed the remaining WP12 design finding on cadence-1 overlay invalidation. The design
+  preserves the per-submission fallback for an allocated overlay with no registered graph producer.
+  WP12.1 checks that diffuse and reflection levels 0–6 run both after a direct upload with no further
+  change and when solar illuminance is halved on the following submission.
