@@ -898,7 +898,69 @@
     },
     "WP12": {
       "definitions": "47642febe51da8bdeb339b6a03261e06d63eabad06b4a92c3a9daa3f9d5218db",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "6705e3633c033d68a8eaf88a5641c70bf88e163d",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP12-review.md",
+          "items": {
+            "WP12.1": "fail",
+            "WP12.2": "fail",
+            "WP12.3": "fail",
+            "WP12.4": "pass",
+            "WP12.5": "fail",
+            "WP12.6": "pass"
+          },
+          "findings": [
+            {
+              "name": "The level-6 reflection steps after the Chrome scrub ends",
+              "item": "WP12.5",
+              "repeat": false
+            },
+            {
+              "name": "A camera cut through FrameHost::source_mut skips the whole chart update",
+              "item": "WP12.1",
+              "repeat": false
+            },
+            {
+              "name": "Governed haze rescans a stationary overlay every submission",
+              "repeat": false
+            },
+            {
+              "name": "The CPU guard omits the required steady-motion sequences",
+              "item": "WP12.1",
+              "repeat": false
+            },
+            {
+              "name": "The Metal diffuse-edit probe accepts a meter-only change",
+              "item": "WP12.2",
+              "repeat": false
+            },
+            {
+              "name": "The route report counts refreshes only on the moving segment",
+              "item": "WP12.3",
+              "repeat": false
+            }
+          ],
+          "summary": "WP12 fails because Chrome\u2019s roughness-1 sphere visibly darkens in one frame after control returns to the game clock. The Mac window passes its visual inspection and the Metal route shows a lower chart cost, but the public camera-cut path misses a whole update, two required guards leave cases untested, the route report undercounts refreshes, and governed haze exceeds the design\u2019s overlay-scan budget.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 278849,
+            "cached": 15177600,
+            "output": 41987,
+            "turns": 1
+          },
+          "at": "2026-11-27T10:53:17Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 3 Must ",
