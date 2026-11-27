@@ -295,11 +295,12 @@ fn governed_light_edits_dirty_the_cloudy_levels_without_an_overlay_write() {
 
 #[test]
 fn chooses_spread_from_each_input_measure() {
+    type InputSequence = fn(Inputs, Tuning, f32, f32, i32) -> Inputs;
     let first = daylight(0.0);
     let tuning = Tuning::default();
     for (change, spread) in [(0.3, 3), (0.19, 5), (0.6, 1)] {
         let relative = 1.0 - tuning.light * change;
-        let inputs: [fn(Inputs, Tuning, f32, f32, i32) -> Inputs; 4] = [
+        let inputs: [InputSequence; 4] = [
             |_, tune, change, _, step| sun(30.0 + tune.sun.to_degrees() * change * step as f32),
             |first, tune, change, _, step| Inputs {
                 altitude: first.altitude + tune.altitude * change * step as f32,
