@@ -1340,7 +1340,7 @@
     {
       "id": "WP17",
       "name": "The valley holds the display's full 120 Hz at full screen on the built-in display",
-      "status": "blocked",
+      "status": "in_progress",
       "depends_on": [
         "ATMOSPHERE:WP12",
         "SHOWCASE:WP7"
@@ -1399,17 +1399,7 @@
         }
       ],
       "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0,
-      "blocked": {
-        "reason": "needs_access",
-        "what": "The lead needs to schedule the built-in-display full-refresh sitting with the other builders paused.",
-        "work": {
-          "commit": "c7e72428e6484d0d4c0291ba3d3477a14855d8c2",
-          "branch": "build/apple-presentation",
-          "pushed": false
-        },
-        "handoff": ".orchestrate/evidence/APPLE-PRESENTATION/WP17-handoff.md"
-      }
+      "failed_reviews_with_repeat": 0
     },
     {
       "id": "U1",
