@@ -300,6 +300,14 @@ fn build(
         .slider("camera.fov", "Camera field of view", 42.0..=105.0)
         .default(105.0)
         .add()?;
+    let setback = controls
+        .slider(
+            "camera.setback",
+            "Distance back from dive station (m)",
+            0.0..=24.0,
+        )
+        .default(0.0)
+        .add()?;
     let sun = controls
         .slider("sun.elevation", "Sun elevation", -18.0..=80.0)
         .default(60.0)
@@ -309,11 +317,15 @@ fn build(
         controls,
         camera(eye_at_surface, initial_depth, 45.0, 90.0, 105.0),
         move |controls, sky| {
+            let heading = controls.get(bearing);
+            let (east, south) = heading.to_radians().sin_cos();
+            let distance = controls.get(setback);
+            let [x, y, z] = eye_at_surface;
             sky.camera = camera(
-                eye_at_surface,
+                [x - east * distance, y, z + south * distance],
                 controls.get(depth),
                 controls.get(pitch),
-                controls.get(bearing),
+                heading,
                 controls.get(fov),
             );
             sky.sun_elevation_degrees = controls.get(sun);

@@ -32,8 +32,8 @@ const cloudRoute = cloudSelection === 'matrix' ? cloudMatrix[0][1]
   : cloudReflection ? '?clouds=fair&cloud-height=40' : cloudSelection;
 const cloudMotion = mode === 'realtime' && Boolean(cloudRoute);
 const [width,height] = mode === 'under-light' ? [320,180] : mode === 'under' ? [48,27]
-  : cloudMotion || (mode === 'realtime' && diveRoute) ? [1280,720]
-  : mode === 'fixed' && diveRoute && process.env.THRUM_WATER_ROUTE==='under-light' ? [1280,720]
+  : cloudMotion || (mode === 'realtime' && diveRoute && process.env.THRUM_WATER_ROUTE!=='under-light'
+      && process.env.THRUM_WATER_DIVE_TRAVEL===undefined) ? [1280,720]
   : mode === 'clouds' && (!cloudRoute || cloudControls || cloudReflection) ? [640,360]
   : ['rain-rings','rain-footfall','rain-ground'].includes(mode) ? [960,540]
   : [2560,1440];
@@ -1773,8 +1773,8 @@ try {
     ]).get(process.env.THRUM_WATER_ROUTE)):undefined;
     const sweepDive=dive&&!diveView;
     const depthTour=dive&&Number.isFinite(Number(process.env.THRUM_WATER_DIVE_TRAVEL));
-    const duration=cloudMotion?20500:offshore?22000:surfInspection||depthTour?12000:dive?5000:1000;
-    const spacing=cloudMotion?200:offshore?200:depthTour?125:surfInspection?100:dive?50:0;
+    const duration=cloudMotion?20500:offshore?22000:depthTour?20000:surfInspection?12000:dive?5000:1000;
+    const spacing=cloudMotion?200:offshore?200:depthTour?180:surfInspection?100:dive?50:0;
     if(dive){
       const [depth,pitch]=diveView??[-diveDepth,0];
       result.dive_camera=diveView?{depth,pitch,bearing:diveBearing,sun:diveSun}:
@@ -1830,9 +1830,14 @@ try {
         __intervals.push(timestamp);collect();
         if(${sweepDive}){
           const down=Math.max(0,Math.min(elapsed,${duration}-elapsed));
-          const depth=${depthTour}?(down<2000?${diveDepth}*(down/1000-1):
-            ${diveDepth}+${diveTravel-diveDepth}*0.5*(1-Math.cos(Math.PI*(down-2000)/4000))):
+          const depth=${depthTour}?(down<4000?${diveDepth}*Math.sin((down/2000-1)*Math.PI/2)**3:
+            ${diveDepth}+${diveTravel-diveDepth}*0.5*(1-Math.cos(Math.PI*(down-4000)/6000))):
             ${-diveDepth}*Math.cos(2*Math.PI*elapsed/${duration});
+          if(${depthTour}){
+            const below=Math.max(0,depth-${diveDepth});
+            game.edit_control('camera.setback',0.9*below);
+            game.edit_control('camera.pitch',32*Math.min(1,below/4));
+          }
           game.edit_control('camera.depth',depth);
         }
         else if(!${dive}&&!${surfInspection}&&!${cloudMotion})game.edit_control('camera.bearing',90+elapsed*0.012);

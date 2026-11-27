@@ -607,6 +607,21 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                 && std::env::var("THRUM_WATER_ROUTE").as_deref() == Ok("dive-depths")
             {
                 dive_depth_checkpoints(site)
+            } else if settings().dive().is_some()
+                && std::env::var("THRUM_WATER_ROUTE").as_deref() == Ok("dive-waterline")
+            {
+                (-18..=18)
+                    .map(|step| {
+                        let depth = f64::from(step) * 0.025;
+                        (
+                            format!("crossing-{:+04}", step),
+                            format!(
+                                r#"{{"camera.depth":{depth},"camera.pitch":0,"sun.elevation":1}}"#
+                            ),
+                            10.0,
+                        )
+                    })
+                    .collect()
             } else if let Some((_, site)) = settings().dive() {
                 let mut views = vec![
                     ("up-1m", 1.0, 89.99, 60.0),
@@ -786,11 +801,17 @@ fn dive_depth_checkpoints(site: DiveSite) -> Vec<(String, String, f64)> {
     };
     [("dawn", 1), ("noon", 60), ("twilight", -5)].into_iter()
         .flat_map(|(light, sun)| depths.iter().flat_map(move |depth| {
-            [("level", 0), ("down", -35)].map(|(view, pitch)| (
-                format!("{light}-{view}-{depth}m"),
-                format!(r#"{{"camera.depth":{depth},"camera.pitch":{pitch},"sun.elevation":{sun}}}"#),
-                10.0,
-            ))
+            let (hull_pitch, setback) = if *depth <= 0.5 {
+                (0.0, 0.0)
+            } else {
+                (35.0, depth * 0.9)
+            };
+            [("hull", hull_pitch, setback), ("bed", -72.0, 0.0), ("level", 0.0, 0.0)]
+                .map(|(view, pitch, setback)| (
+                    format!("{light}-{view}-{depth}m"),
+                    format!(r#"{{"camera.depth":{depth},"camera.pitch":{pitch},"camera.setback":{setback},"sun.elevation":{sun}}}"#),
+                    10.0,
+                ))
         }))
         .collect()
 }

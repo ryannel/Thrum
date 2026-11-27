@@ -17,6 +17,7 @@ use thrum_render::runtime::{CaptureLimits, FrameSample};
 // Keep ordinary elapsed-time stepping and pan speed; bound the observer, not time.
 const MAX_SUBMISSIONS: usize = 120;
 const CHANNEL_SUBMISSIONS: usize = 180;
+const DIVE_SUBMISSIONS: usize = 190;
 const RIVER_SUBMISSIONS: usize = 240;
 const RIVER_CAPTURE_LEASES: usize = 256;
 const WRITER_QUEUE: usize = 192;
@@ -29,7 +30,9 @@ const _: () = assert!(CHANNEL_SUBMISSIONS < CPU_LEASES);
 const _: () = assert!(RIVER_SUBMISSIONS < RIVER_CAPTURE_LEASES);
 const _: () = assert!(RIVER_SUBMISSIONS as u64 * 960 * 540 * 4 < PIXEL_ALLOWANCE);
 const _: () = assert!(CHANNEL_SUBMISSIONS as u64 * 1280 * 720 * 4 < PIXEL_ALLOWANCE);
-const _: () = assert!(MAX_SUBMISSIONS as u64 * 2560 * 1440 * 4 < PIXEL_ALLOWANCE);
+const _: () = assert!(DIVE_SUBMISSIONS < WRITER_QUEUE);
+const _: () = assert!(DIVE_SUBMISSIONS < CPU_LEASES);
+const _: () = assert!(DIVE_SUBMISSIONS as u64 * 2560 * 1440 * 4 < PIXEL_ALLOWANCE);
 
 fn dive_view(route: &str) -> Option<(f64, f64)> {
     match route {
@@ -221,7 +224,9 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     } else if yard {
         ([1280, 720], 20.0, 9.0, CHANNEL_SUBMISSIONS)
     } else if dive && dive_travel.is_some() {
-        ([1280, 720], 12.0, 9.0, MAX_SUBMISSIONS)
+        ([2560, 1440], 20.0, 9.0, DIVE_SUBMISSIONS)
+    } else if dive && route == "under-light" {
+        ([2560, 1440], 5.0, 16.0, MAX_SUBMISSIONS)
     } else if dive {
         ([1280, 720], 5.0, 20.0, MAX_SUBMISSIONS)
     } else if surf && island_view == "2" {
@@ -532,9 +537,11 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             let crossing = site.crossing_depth();
             let depth = if let Some(maximum) = dive_travel {
                 let way_down = elapsed.min(interval - elapsed).max(0.0);
-                let crossing_time = 2.0;
+                let crossing_time = 4.0;
                 if way_down < crossing_time {
-                    crossing * (2.0 * way_down / crossing_time - 1.0)
+                    let phase =
+                        (2.0 * way_down / crossing_time - 1.0) * std::f64::consts::FRAC_PI_2;
+                    crossing * phase.sin().powi(3)
                 } else {
                     let progress = (way_down - crossing_time) / (0.5 * interval - crossing_time);
                     let eased = 0.5 * (1.0 - (progress * std::f64::consts::PI).cos());
@@ -543,9 +550,16 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             } else {
                 -crossing * (elapsed * std::f64::consts::TAU / interval).cos()
             };
-            runtime
-                .parameters(&format!(r#"{{"camera.depth":{depth:.4}}}"#))
-                .expect("lower and raise the lens");
+            if dive_travel.is_some() {
+                let distance = 0.9 * (depth - crossing).max(0.0);
+                let pitch = 32.0 * ((depth - crossing) / 4.0).clamp(0.0, 1.0);
+                runtime.parameters(&format!(
+                    r#"{{"camera.depth":{depth:.4},"camera.setback":{distance:.4},"camera.pitch":{pitch:.4}}}"#,
+                ))
+            } else {
+                runtime.parameters(&format!(r#"{{"camera.depth":{depth:.4}}}"#))
+            }
+            .expect("lower and raise the lens");
         }
         if !dive && !yard && !channel && !river && island.is_none() && floating.is_none() {
             runtime
