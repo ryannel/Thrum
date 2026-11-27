@@ -273,31 +273,34 @@ const fallObserver = `
   };
   const render=GPUCommandEncoder.prototype.beginRenderPass;
   globalThis.__fallDraws=0;
-  let fallTargets;
+  let fallSamples, watchFall=false;
+  globalThis.__watchFall=()=>{watchFall=true;};
   GPUCommandEncoder.prototype.beginRenderPass=function(desc){
-    if(desc.label?.endsWith('waterfall sheet')){
-      __fallDraws++;
-      fallTargets=[
-        fallViews.get(desc.colorAttachments[1].view),
-        fallViews.get(desc.colorAttachments[2].view),
-        fallViews.get(desc.depthStencilAttachment.view),
-      ];
-    }
-    return render.call(this,desc);
+    const pass=render.call(this,desc);
+    if(!desc.label?.endsWith('waterfall sheet'))return pass;
+    __fallDraws++;
+    if(!watchFall)return pass;
+    watchFall=false;
+    const end=pass.end.bind(pass);
+    pass.end=()=>{
+      end();
+      const device=__devices.at(-1);
+      const targets=[desc.colorAttachments[1].view,desc.colorAttachments[2].view,desc.depthStencilAttachment.view];
+      fallSamples=targets.map((view,index)=>{
+        const source=fallViews.get(view);
+        const bytes=index===1?1:4;
+        const stride=Math.ceil(source.width*bytes/256)*256;
+        const buffer=device.createBuffer({size:stride*source.height,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+        this.copyTextureToBuffer({texture:source,aspect:index===2?'depth-only':'all'},
+          {buffer,bytesPerRow:stride},[source.width,source.height]);
+        return {buffer,stride};
+      });
+    };
+    return pass;
   };
   globalThis.__fallInputs=async(width,height)=>{
-    if(!fallTargets?.every(Boolean))throw Error('waterfall frame attachments were not seen');
-    const [motion,reactive,depth]=fallTargets;
-    const device=__devices.at(-1), encoder=device.createCommandEncoder();
-    const buffers=[[motion,4],[reactive,1],[depth,4]].map(([source,bytes])=>{
-      const stride=Math.ceil(width*bytes/256)*256;
-      const buffer=device.createBuffer({size:stride*height,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
-      encoder.copyTextureToBuffer({texture:source,aspect:source===depth?'depth-only':'all'},
-        {buffer,bytesPerRow:stride},[width,height]);
-      return {buffer,stride};
-    });
-    device.queue.submit([encoder.finish()]);
-    const [m,r,d]=await Promise.all(buffers.map(async({buffer,stride})=>{
+    if(!fallSamples)throw Error('waterfall frame attachments were not seen');
+    const [m,r,d]=await Promise.all(fallSamples.map(async({buffer,stride})=>{
       await buffer.mapAsync(GPUMapMode.READ);
       const view=new DataView(buffer.getMappedRange().slice(0));
       buffer.unmap();buffer.destroy();
@@ -914,7 +917,7 @@ try {
     },'the lens page clock origin');
     return origin;
   };
-  let now=['under','under-light'].includes(mode)?await lensClockOrigin():(fixedSurf||mode==='rain-ground')?await evaluate('performance.now()'):0;
+  let now=['under','under-light'].includes(mode)?await lensClockOrigin():(fixedSurf||mode==='rain-ground'||mode==='fall')?await evaluate('performance.now()'):0;
   const drive=async delta=>{now+=delta;await evaluate(`game.frame(${now})`);};
   const capture=async(name,delta=1000/120,probe=false)=>{
     await until(()=>evaluate('game.frame_ready()'),'free frame slot');
@@ -1484,17 +1487,19 @@ try {
       await until(()=>evaluate('game.frame_ready()'),'fall frame slot');
       await drive(1000/60);
     }
+    await evaluate('__watchFall()');
     await capture('waterfall');
     const rows=await evaluate(`__fallInputs(${width},${height})`);
     const foam=await evaluate('__readFoam()');
     await capture('waterfall-next',1000/60);
+    assert(result.frames[1].tick>result.frames[0].tick,'submitted fall clock must advance');
     assert(result.frames[0].sha256_rgba!==result.frames[1].sha256_rgba,'submitted fall must advance');
     assert(await evaluate('__fallDraws')>0,'waterfall draw must be submitted');
     assert(rows.length>12,'submitted white sheet must move across many rows: '+JSON.stringify(rows));
     const count=Math.max(3,Math.floor(rows.length/4));
     const average=group=>group.reduce((n,row)=>n+row.motion,0)/group.length;
     const lip=average(rows.slice(0,count)), foot=average(rows.slice(-count));
-    assert(foot>1.12*lip,`foot ${foot} must move faster than lip ${lip}`);
+    assert(foot>1.12*lip,`foot ${foot} must move faster than lip ${lip}: ${JSON.stringify(rows)}`);
     assert(rows.every(row=>row.minDepth>0&&row.maxDepth<=1),'sheet motion needs corresponding depth');
     assert(foam.peak>0.03&&foam.filmCells>5,'submitted pool must hold foam');
     result.fall={rows,lip,foot,foam,draws:await evaluate('__fallDraws')};
