@@ -9,7 +9,6 @@ import time
 from collections import Counter
 from pathlib import Path
 
-from apple_governor_proof import awake_display
 from run_v1_showcase import MOVING_ROUTE
 from run_v1_showcase import SOURCE, store_root
 from t2_load import LoadRecord
@@ -21,22 +20,19 @@ STAGES = (
     *(f"atmosphere reflection mip {i}" for i in range(7)),
 )
 WHOLE = {"initialization", "camera cut", "air change", "Sun jump", "recovery", "motion cut"}
-TAKE_TIMEOUT = 130
+TAKE_TIMEOUT = 180
 
 
 def jsonl(path):
     return [json.loads(line) for line in path.read_text().splitlines()]
 
 
-def stage_rows(directory, cadence):
-    frames = jsonl(directory / "frames.jsonl")
-    closing = json.loads((directory / "final-samples.json").read_text())
-    samples = [sample for frame in frames for sample in frame["governor"]["samples"]]
-    samples.extend(closing["samples"])
-    samples.sort(key=lambda sample: sample["submission"])
-    if not samples or closing["last_submission"] is None or [
-            sample["submission"] for sample in samples] != list(range(closing["last_submission"] + 1)):
-        raise ValueError("missing or duplicated submitted-frame timing")
+def stage_rows(directory, cadence, route):
+    samples = jsonl(directory / "chart-timing.jsonl")
+    last_tick = route["origin_tick"] + route["keys"][-1]["tick"]
+    if ([sample["submission"] for sample in samples] != list(range(last_tick))
+            or [sample["tick"] for sample in samples] != list(range(1, last_tick + 1))):
+        raise ValueError("missing or duplicated fixed-route submission timing")
     rows = []
     for sample in samples:
         quality = sample["quality"]
@@ -145,26 +141,27 @@ def run_take(output, binary, store, route, cadence):
     env = {key: value for key, value in os.environ.items() if not key.startswith("THRUM_")}
     env.update(
         THRUM_ASSET_STORE=str(store), THRUM_SCENE="valley", THRUM_RECIPE="portable",
-        THRUM_RECONSTRUCTION="taau", THRUM_GOVERNOR="off" if cadence == 1 else "on",
-        THRUM_GOVERNOR_ROUTE=str(route), THRUM_GOVERNOR_RECORD="observed",
-        THRUM_MAC_TRANSITION=str(directory), THRUM_MAC_TRANSITION_ARM="route",
-        THRUM_MAC_FRAME_RATE="60", THRUM_MAC_EDR="sdr", THRUM_ROUTE_OVERLAY="off",
-        THRUM_V1_FRAMES="550", THRUM_REPORT="1",
+        THRUM_RECONSTRUCTION="taau", THRUM_GOVERNOR="off",
+        THRUM_CAPTURE_ROUTE=str(route), THRUM_CAPTURE_SCENE=str(directory / "capture"),
+        THRUM_CAPTURE_CHART_CADENCE=str(cadence), THRUM_ROUTE_OVERLAY="off",
     )
-    if cadence == 4:
-        env["THRUM_MAC_CHART_CADENCE"] = "4"
     load = LoadRecord(directory)
+    log_path = directory / "game.log"
     try:
-        with (directory / "game.log").open("w") as log:
-            subprocess.run([binary], cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT,
-                           check=True, timeout=TAKE_TIMEOUT)
+        with log_path.open("w") as log:
+            result = subprocess.run([binary], cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT,
+                                    timeout=TAKE_TIMEOUT)
+        if result.returncode:
+            raise ValueError(f"cadence {cadence} failed, see {log_path}: {log_path.read_text()[-2000:]}")
     finally:
         (directory / "host-load.json").write_text(json.dumps(load.finish(), indent=2) + "\n")
-    prepared = json.loads((directory / "prepared.json").read_text())
-    if prepared["adapter"] != "Apple M3 Max":
+    capture = directory / "capture"
+    with (capture / "route.jsonl").open() as trace:
+        prepared = json.loads(next(trace))
+    if (prepared["adapter"], prepared["backend"], prepared["mode"]) != ("Apple M3 Max", "Metal", "fixed"):
         raise ValueError("route did not run on Apple M3 Max Metal")
-    rows = stage_rows(directory, cadence)
     route_data = json.loads(route.read_text())
+    rows = stage_rows(capture, cadence, route_data)
     refreshes = refresh_counts(rows, cadence, route_data)
     (directory / "chart-frames.json").write_text(json.dumps(rows, separators=(",", ":")) + "\n")
     chart_times = sorted(row["chart_ns"] for row in rows)
@@ -192,14 +189,11 @@ def measure(output=None):
     route["overlay"] = "off"
     path = output / "route.json"
     path.write_text(json.dumps(route) + "\n")
-    # The display can turn off after the default five-second user-activity
-    # assertion expires, even while the idle-sleep assertion is held.
-    with awake_display(activity_timeout=2 * TAKE_TIMEOUT + 15):
-        takes = {cadence: run_take(output, binary, store, path, cadence) for cadence in (1, 4)}
     result = {
         "revision": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
         "host": platform.platform(), "cooked_root": route["cooked_root"], "chart_stages": STAGES,
-        "takes": takes,
+        "mode": "fixed offscreen Metal, one ordinary submission per game tick",
+        "takes": {cadence: run_take(output, binary, store, path, cadence) for cadence in (1, 4)},
     }
     if result["takes"][4]["p50_ns"] >= result["takes"][1]["p50_ns"]:
         result["tripwire"] = "Governed median did not fall. Check the raw pass and load traces."

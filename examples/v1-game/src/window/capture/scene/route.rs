@@ -148,13 +148,18 @@ pub(super) fn record(
         return Ok(());
     }
     // The creation proof drives the normal render path without opening a readback tap.
-    let capture_images = !request.governor_thermal;
+    let capture_images = !request.governor_thermal && request.chart_cadence.is_none();
     #[cfg(feature = "creation-counters")]
     let capture_images = capture_images && request.creation_proof.is_none();
     let last = route.origin_tick + last_route_tick;
     let mut checkpoints = route.checkpoints.clone().into_iter().peekable();
     driver.host_mut().world_mut().resume(Duration::ZERO)?;
     let mut pending = Some(route.clone());
+    let mut chart_log = request
+        .chart_cadence
+        .map(|_| File::create(directory.join("chart-timing.jsonl")))
+        .transpose()
+        .map_err(|error| error.to_string())?;
     let scale_arm = request.scale_trace;
     let governor_identity = request.governor_identity.is_some();
     let thermal_proof = request
@@ -171,7 +176,8 @@ pub(super) fn record(
         },
         thermal: thrum_app::thermal_state(),
     };
-    if (request.governor_identity == Some(true) || thermal_proof.is_some())
+    let hold_chart = request.chart_cadence == Some(4);
+    if (request.governor_identity == Some(true) || thermal_proof.is_some() || hold_chart)
         && !driver.host_mut().enable_governor(display)
     {
         return Err("governor proof requires a prepared TAAU scene".to_owned());
@@ -195,6 +201,12 @@ pub(super) fn record(
         }
         let time = Duration::from_secs_f64(host.route_step_ms(phi) / 1000.0);
         let next_tick = tick + 1;
+        if hold_chart {
+            host.governor_display(display, true);
+            host.governor_display_tick(time, next_tick);
+            host.set_quality_knob("atmosphere.chart cadence", 4)
+                .map_err(|error| error.to_string())?;
+        }
         if let Some(proof) = thermal_proof {
             #[cfg(feature = "creation-counters")]
             if next_tick == 234 {
@@ -245,6 +257,9 @@ pub(super) fn record(
         }
         let index = u32::try_from(frame.tick).map_err(|error| error.to_string())?;
         let sample = completed_sample(host, index, frame.tick)?;
+        if let Some(log) = &mut chart_log {
+            write_chart_sample(log, &sample)?;
+        }
         if governor_identity {
             loaded_frames += u32::from(
                 sample
@@ -475,6 +490,32 @@ fn retain_image(
     std::fs::write(directory.join(format!("{name}.identity.json")), identity)
         .and_then(|()| std::fs::write(directory.join(format!("{name}.{suffix}")), rgba))
         .map_err(|error| error.to_string())
+}
+
+fn write_chart_sample(
+    log: &mut File,
+    sample: &thrum_render::runtime::FrameSample,
+) -> Result<(), String> {
+    let timing = sample
+        .gpu_pass_ns
+        .as_ref()
+        .ok_or("missing fixed-route GPU pass timing")?;
+    write_json_line(
+        log,
+        &serde_json::json!({
+            "submission": sample.submission_order,
+            "tick": sample.tick,
+            "gpu_pass_ns": timing.values(),
+            "gpu_pass_order": timing.passes().iter().map(|pass| pass.name.as_ref()).collect::<Vec<_>>(),
+            "quality": sample.governor.as_ref().map(|quality| serde_json::json!({
+                "knobs": quality.knobs.iter().map(|knob| (&knob.name, knob.value))
+                    .collect::<std::collections::BTreeMap<_, _>>(),
+                "chart_update": quality.chart_update,
+                "chart_position": quality.chart_position,
+                "chart_change": quality.chart_change,
+            })),
+        }),
+    )
 }
 
 fn write_ppm(path: &Path, extent: [u32; 2], bgra: &[u8]) -> Result<(), String> {

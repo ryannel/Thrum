@@ -855,3 +855,7 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   The merged check lost display callbacks when macOS turned off the display during the cadence-4 take.
   A retry confirmed that display sleep could interrupt a take after the default five-second user-activity assertion
   expired, even with the idle-sleep assertion held. [Route proof](../../../.orchestrate/evidence/ATMOSPHERE/WP12/review-route/README.md)
+- 2026-11-27 macOS also turned off the panel with both assertions active in the clean checkout.
+  WP12.3 now uses the fixed offscreen Metal route at one ordinary submission per game tick.
+  It times GPU passes for every submission at cadence 1 and held cadence 4 with the image tap off.
+  [Route proof](../../../.orchestrate/evidence/ATMOSPHERE/WP12/review-route/README.md)

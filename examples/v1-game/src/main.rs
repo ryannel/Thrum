@@ -556,6 +556,12 @@ fn scene_capture_request(
         windows: text("THRUM_CAPTURE_WINDOWS")?,
         scale_trace: render_scale_trace()?,
         governor_thermal: std::env::var("THRUM_GOVERNOR_RECORD").as_deref() == Ok("thermal"),
+        chart_cadence: match text("THRUM_CAPTURE_CHART_CADENCE")?.as_deref() {
+            None => None,
+            Some("1") => Some(1),
+            Some("4") => Some(4),
+            Some(_) => return Err("THRUM_CAPTURE_CHART_CADENCE must be 1 or 4".to_owned()),
+        },
         governor_identity: std::env::var_os("THRUM_GOVERNOR_IDENTITY")
             .map(|_| governor_enabled())
             .transpose()?,

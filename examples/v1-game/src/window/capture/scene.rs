@@ -80,6 +80,8 @@ pub struct SceneCaptureRequest {
     pub governor_identity: Option<bool>,
     /// Force a thermal excursion through the Mac platform record on the fixed route.
     pub governor_thermal: bool,
+    /// Record every fixed-route submission at chart cadence 1 or 4, without image capture.
+    pub chart_cadence: Option<u32>,
     /// `THRUM_CAPTURE_PRESENT_CONTROL`: `on` keeps each checkpoint's surface texture too.
     pub present_control: Option<String>,
     /// `THRUM_CAPTURE_PARAMS`: parameter files, one still each.
