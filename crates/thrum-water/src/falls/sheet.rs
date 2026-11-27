@@ -1,4 +1,5 @@
 use super::{Falls, Segment, active};
+use crate::interaction::Interaction;
 use bytemuck::{Pod, Zeroable};
 use glam::{DVec2, DVec3, Vec3, Vec4};
 use thrum_render::{
@@ -13,11 +14,11 @@ use thrum_water_model::{Map, PathPoint};
 
 pub(in crate::falls) const ROWS: usize = 32;
 pub(crate) const PASS: &str = "waterfall sheet";
-const SPLASHES_PER_SEGMENT: usize = 12;
+const SPLASHES_PER_SEGMENT: usize = 24;
 const RIBBONS_PER_SEGMENT: usize = 3;
 const VERTICES_PER_SEGMENT: usize =
     12 * RIBBONS_PER_SEGMENT * (ROWS + 3) + 6 * SPLASHES_PER_SEGMENT;
-const ATTRIBUTES: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4, 4 => Float32];
+const ATTRIBUTES: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4, 4 => Float32x2];
 
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
@@ -26,7 +27,7 @@ struct Vertex {
     velocity_along: [f32; 4],
     discharge: [f32; 4],
     across_fraction: [f32; 4],
-    edge: f32,
+    edge_receiver: [f32; 2],
 }
 
 #[repr(C)]
@@ -65,6 +66,7 @@ impl Sheet {
         environment: &EnvironmentProducts,
         library: &str,
         falls: &Falls,
+        interaction: Option<&Interaction>,
     ) -> Result<Self, String> {
         let device = surface.device;
         let capacity = falls
@@ -91,17 +93,23 @@ impl Sheet {
             mapped_at_creation: false,
         });
         let drawing = declaration().input_layout(device);
+        let mut layout_entries = vec![binding::uniform(0, wgpu::ShaderStages::VERTEX_FRAGMENT, 0)];
+        let mut group_entries = vec![wgpu::BindGroupEntry {
+            binding: 0,
+            resource: clock.as_entire_binding(),
+        }];
+        if let Some(waves) = interaction {
+            layout_entries.extend(Interaction::sample_layout(1, wgpu::ShaderStages::VERTEX));
+            group_entries.extend(waves.sample_entries(1));
+        }
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some(PASS),
-            entries: &[binding::uniform(0, wgpu::ShaderStages::VERTEX_FRAGMENT, 0)],
+            entries: &layout_entries,
         });
         let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some(PASS),
             layout: &layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: clock.as_entire_binding(),
-            }],
+            entries: &group_entries,
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some(PASS),
@@ -119,9 +127,11 @@ impl Sheet {
             "1.0"
         };
         let source = format!(
-            "{library}\n{}\nconst FALL_LOOP: f32 = {:?};\nfn fall_cloud(point: vec3<f32>) -> f32 {{ return {cloud}; }}\n{}\n{}",
+            "{library}\n{}\nconst FALL_LOOP: f32 = {:?};\nconst FALL_CONTACT_DROPS: f32 = {}.0;\nfn fall_cloud(point: vec3<f32>) -> f32 {{ return {cloud}; }}\n{}\n{}\n{}",
             crate::VIEW_RECORDS,
             thrum_sea_model::LOOP_SECONDS,
+            SPLASHES_PER_SEGMENT / 2,
+            Interaction::sample_source(3, 1, 2, interaction.is_some()),
             include_str!("../foam/noise.wgsl"),
             concat!(include_str!("pattern.wgsl"), include_str!("sheet.wgsl"))
         );
@@ -426,7 +436,7 @@ fn mesh(
                     across.y as f32,
                     fraction as f32,
                 ],
-                edge: f32::from(edge),
+                edge_receiver: [f32::from(edge), f32::from(segment.plunge.is_some())],
             }
         };
         let strip = |t| [at(t, 0), at(t, 1), at(t, 2)];
@@ -468,7 +478,7 @@ fn ribbons(section: [Vertex; 3]) -> [[Vertex; 3]; RIBBONS_PER_SEGMENT] {
             velocity_along: interpolate(a.velocity_along, b.velocity_along),
             discharge: interpolate(a.discharge, b.discharge),
             across_fraction: interpolate(a.across_fraction, b.across_fraction),
-            edge: 0.0,
+            edge_receiver: [0.0, a.edge_receiver[1]],
         }
     };
     std::array::from_fn(|index| {
@@ -495,7 +505,7 @@ fn ribbons(section: [Vertex; 3]) -> [[Vertex; 3]; RIBBONS_PER_SEGMENT] {
             let position =
                 Vec3::from_slice(&vertex.world_time) + outward * depth * (1.0 - 0.42 * edge.abs());
             vertex.world_time = position.extend(vertex.world_time[3]).to_array();
-            vertex.edge = edge.abs();
+            vertex.edge_receiver[0] = edge.abs();
             vertex
         })
     })
@@ -532,8 +542,15 @@ fn filament(
             + outward * (radius + (0.03 + 0.05 * smoothing) * tip);
         let age = vertex.world_time[3];
         vertex.across_fraction[1] = -2.0 - distance;
-        [across, outward, -across, -outward].map(|normal| {
+        [
+            (0.0, across),
+            (1.0, outward),
+            (2.0, -across),
+            (3.0, -outward),
+        ]
+        .map(|(side, normal)| {
             vertex.world_time = (centre + normal * radius).extend(age).to_array();
+            vertex.edge_receiver[0] = side;
             vertex
         })
     };
@@ -570,7 +587,7 @@ fn stitch(vertices: &mut Vec<Vertex>, top: [Vertex; 3], bottom: [Vertex; 3]) {
 
 // Render the liquid thrown back out of the impact as separate drops. The
 // plunge's impulse and foam birth still use the original receiving level.
-#[expect(clippy::cast_precision_loss, reason = "only twelve drops per impact")]
+#[expect(clippy::cast_precision_loss, reason = "the drop count is bounded")]
 fn splash(vertices: &mut Vec<Vertex>, foot: [Vertex; 3]) {
     for drop in 0..SPLASHES_PER_SEGMENT {
         let fraction = (drop as f32 + 0.5) / SPLASHES_PER_SEGMENT as f32;
