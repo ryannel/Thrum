@@ -2959,7 +2959,7 @@ not join them: the float raised into the shallow rungs, a broader crown, and a g
 looked the same and was reverted. They are not repeated. WP16.6 now asks moving light of the hull and the
 float and leaves its shape to WP26.
 
-Three leads, none of them a cause until WP26.6's pictures show it:
+Five leads, none of them a cause until WP26.6's pictures show it:
 
 - *Depth and the grid.* The hull's wetted side and the float's crown lie within about a metre of the
   surface, and the camera is a metre or two from them where it sees the bed from several. The first focus
@@ -2969,6 +2969,13 @@ Three leads, none of them a cause until WP26.6's pictures show it:
   bright lines are narrower than one, and from a metre away one cell of the field covers tens of pixels.
   [Light under water](#light-under-water-caustics-shafts-and-the-meter) already has the field at half to
   nine tenths of the reference's contrast shallower than 1 m.
+- *The light's own shape on a face that is not level.* A net's bright lines on a level plane are where
+  that plane cuts sheets of light that hang under the surface along the refracted Sun. An upright face
+  cuts the same sheets more nearly along them, and crosses depths where they have not yet met or have
+  spread. So a field sampled perfectly can hold closed cells on a level slice and streaks on a hull's side
+  that passes through it. A level plane at one depth says nothing of this. The hull crosses depths and the
+  float curves through them: in the handoff's read, depths of 0.25 m, 0.5 m and 1 m take rungs 0, 2 and 4
+  (`caustic_field_at` in `crates/thrum-water/src/caustics/sampling.wgsl` at `d072eb924`).
 - *The read on a receiver that is not level.* A level bed reads one depth, so one mix of two rungs serves
   the whole of it. A hull's side crosses rungs within a few pixels, and a line keeps its place from rung to
   rung only as far as its rays follow the mean refracted ray. The read also takes its level of the field's
@@ -2978,39 +2985,77 @@ Three leads, none of them a cause until WP26.6's pictures show it:
 - *The receiver's own lighting.* The factor is on the direct Sun alone. An upright side under a high Sun
   takes a little over half the direct Sun a level bed does, and the sky's and the water's light on it
   carry no net, so the same field shows fainter there.
+- *The water between the receiver and the lens.* The frame does not show the receiver as the forward pass
+  shaded it. The water's own pass takes the shaded receiver, dims it by the water's downwelling and
+  extinction, and adds the water's scattered light and the shafts in front of it (`water_to_gather` in
+  `crates/thrum-water/src/underwater.wgsl` at `d072eb924`). A net that joins on the shaded hull can be
+  lost there, with the forward pass working as [ruling 5](../ARCHITECTURE.md#seam-rulings-for-waters) has
+  it, and the remedy is then the water's own.
 
 **The study (WP26.6), in the same record as the beams'.** Before anything is changed, the builder records:
 
-- *The cause in the frame.* Three pictures of each receiver, in each body and at each Sun, in a trade
-  wind and at one engine time: the frame as shipped; the Sun-path factor alone on the receiver, as the
-  forward pass takes it, without the receiver's colour, the angle of its face to the Sun or the water in
-  front of it; and the caustic field on a level plane at the receiver's depth. They are read from the
-  last to the first. No joined net on the level plane makes the field a cause. A joined net there and
-  none in the factor on the receiver makes the read a cause. A joined net in the factor and none in the
-  frame makes the receiver's lighting a cause. The record names a cause only with the pictures that show
-  it, and may name more than one.
+- *The cause in the frame.* Four pictures of each receiver, in each body and at each Sun, in a trade
+  wind, from one camera at one engine time. They follow the light from the frame back to the field:
+
+  1. the frame as shipped;
+  2. the receiver as the forward pass shaded it, with none of the water between it and the lens: not
+     dimmed by the water, and with no scattered light or shafts added in front;
+  3. the Sun-path factor alone on the receiver, as the forward pass takes it from the production read,
+     without the receiver's colour or the angle of its face to the Sun;
+  4. what the caustic field supplies at the receiver's visible points, each at its own depth and where
+     its own Sun ray leaves the water. It does not pass through the production read, so that read's mix
+     of rungs, level of mip, footprint and fades cannot hide a net the field holds. The builder chooses
+     the diagnostic: the field's own generator run for those points at their depths is one, and a read of
+     the rungs at their finest level is another. It is a diagnostic as
+     [the bar](#proof-and-builder-handoff) has it, and nothing holds the shader to it.
+
+  Each loss lies between two neighbours. A joined net on the shaded receiver and none in the frame makes
+  the water in front of the receiver a cause. A joined net in the factor and none on the shaded receiver
+  makes the receiver's lighting a cause. A joined net in what the field supplies at the receiver's points
+  and none in the factor makes the read a cause. Where what the field supplies there holds no joined net,
+  a fifth picture by the same diagnostic tells two causes apart: the field on a level plane at the depth
+  of the middle of the receiver's lit part. A joined net on that plane makes the light's shape on the
+  face a cause, which a finer grid will not join. None there either makes the field a cause. The level
+  plane is evidence for that one question and for no other. The record names a cause, of these five, only
+  with the pictures that show it, and may name more than one.
 - *What shipped games show.* Frames of a hull's side or another sunlit object that is not the bed, seen
   from under water within a few metres of the surface, in Subnautica and Sea of Thieves and in at least
   two high-end 3D games released from 2022 on: whether the light on it joins into a net, whether it shows
   on upright faces, how wide its cells are beside the object, and whether it moves with the surface above.
-- *Published techniques*, under [the beams' rule](#beams-in-shallow-water-wp26): from 2020 on, in use in a
-  current engine or game, and never because code is at hand. Four searches on 27 November found no
-  published account of how a shipped game draws the net on a hull. Two leads, found by search and not
-  read, and neither portable as it stands: Ray Tracing Gems II, chapter 30, on real-time ray-traced
-  caustics ([preprint](https://developer.download.nvidia.com/ray-tracing-gems/rtg2-chapter30-preprint.pdf)),
-  and NVIDIA's ray-guided water caustics for Unreal Engine 4
-  ([its blog](https://developer.nvidia.com/blog/generating-ray-traced-caustic-effects-in-unreal-engine-4-part-2/)).
+- *Technical accounts*, under [the beams' rule](#beams-in-shallow-water-wp26): from 2020 on, in use in a
+  current engine or game, never because code is at hand, and read by the builder before the remedy rests
+  on them. At least one account read covers the net on a receiver that is not the bed. Four searches on
+  27 November found no published account of how one of the named games draws the net on a hull, so what
+  the record says of those games' methods is inference from their frames and is marked so. Three leads,
+  which a planner opened on 27 November for what they cover and the builder reads for the study:
+  - NVIDIA's ray-guided water caustics for Unreal Engine 4, shown in *JX3 Online*
+    ([its blog](https://developer.nvidia.com/blog/generating-ray-traced-caustic-effects-in-unreal-engine-4-part-2/),
+    December 2020). Rays leave the water's surface along the refracted Sun, and the pattern is formed
+    where they hit the scene's own geometry, drawn against scene depth, and not on level slices looked up
+    by depth. It needs hardware ray tracing, so it is not the portable path as it stands. It is a
+    receiver technique to weigh all the same: what forming the pattern at the receiver's own surface
+    gives that a read of level rungs does not.
+  - Ray Tracing Gems II, chapter 30, the same authors' longer account
+    ([preprint](https://developer.download.nvidia.com/ray-tracing-gems/rtg2-chapter30-preprint.pdf)).
+  - Unity's HDRP water system
+    ([caustics](https://docs.unity3d.com/Packages/com.unity.render-pipelines.high-definition@17.2/manual/water-caustics-in-the-water-system.html)):
+    one caustics texture made from a band of the simulation at a set virtual plane distance and applied
+    to opaque objects under water. It needs no ray tracing.
 
 **What a remedy for the net may change.** How a receiver reads the field: the depth it reads at, how it
 mixes rungs, its filter and footprint, and the contrast of what it reads. The field: its grid, window,
-rungs, blur and cadence, or a finer window near the lens. The example's hull and float: their material
+rungs, blur and cadence, or a finer window near the lens. What the water draws between a receiver and a
+lens under water: how it dims the receiver's light, and the scattered light and shafts it adds in front,
+which by bound 6 is the bed's view too. The example's hull and float: their material
 and shape, which are the example's own, and not a move out of the views WP26.7 names. Under
 [the owner's bar](#proof-and-builder-handoff), plausible before accurate, the net on a receiver may stand
 out more than the model's light gives it. How the forward pass applies the factor is not the water's to
 change. It is [ruling 5](../ARCHITECTURE.md#seam-rulings-for-waters)'s seam: a factor on the direct Sun,
-read at the receiver's own position. Where the study names the receiver's lighting, and the example's own
-material and shape cannot answer it, the builder writes a proposal for that seam in the log and ends
-`BLOCKED`.
+read at the receiver's own position. That seam is in question only where the study names the receiver's
+lighting, by its own pictures: a net that joins in the factor and not on the receiver as the forward pass
+shaded it. There, where the example's own material and shape cannot answer it, the builder writes a
+proposal for that seam in the log and ends `BLOCKED`. A net that joins on the shaded receiver and is lost
+in the frame is the water's to remedy, and no seam changes for it.
 
 ### Beams in shallow water (WP26)
 
@@ -3075,15 +3120,29 @@ its frames show rays. If a review fails a station that stays on this cue, a plan
   above them. A still shows whether beams separate. Whether they move is read from a clip or from frames
   in time order, and where a source is one still the note says it does not show. Four searches on 27 November found no published account of how a shipped game draws shafts
   in shallow water, so the frames carry the study.
-- *Published techniques.* Accounts for engines and games from 2020 on. A technique is a candidate when a
-  current engine or game uses it, and never because code for it is at hand, in Broadsides or anywhere else.
-  Leads found by search and not read: Unity's HDRP sample for Unity 6, where volumetric fog reads the water
-  system's caustics buffer ([Unity, 2025](https://unity.com/blog/lighting-and-environments-hdrp-updates-unity-6));
-  and Ray Tracing Gems, chapter 14, on volumetric water caustics traced with DXR
-  ([2019](https://rd.springer.com/content/pdf/10.1007/978-1-4842-4427-2_14.pdf)), which is not portable and
-  shows the look.
-- *The remedy*, for the beams and the net together, saying where one change serves both, with the
-  candidates not chosen and why, and whether it alters a body's water.
+- *Technical accounts.* The frames say what a player sees. How the light is made comes from technical
+  accounts: a paper, a talk, or an engine's documentation or source, for engines and games from 2020 on.
+  The lead asked for this research before building, so the remedy rests on accounts the builder has read.
+  At least one account read covers shafts under water and at least one the net on a receiver that is not
+  the bed, and one account may do both. Beside each account read the record says what it establishes: how
+  the technique makes the pattern, how the pattern reaches a receiver's own surface or the water's volume,
+  what it asks of the hardware, and what the remedy takes from it or why it takes nothing. An account
+  whose technique the remedy rejects, for its hardware or anything else, still counts when the record says
+  what it taught. An account found and not read is listed apart, and no part of the remedy rests on it. A
+  technique is a candidate when a current engine or game uses it, and never because code for it is at
+  hand, in Broadsides or anywhere else. Where the record says how a named game draws a cue and no account
+  read documents it, the record marks that as an inference and says what in the frames it rests on. Leads
+  for shafts, which a planner opened on 27 November for what they cover and the builder reads for the
+  study: Unity's HDRP sample for Unity 6, a cave where volumetric fog samples the water system's caustics
+  buffer, which is this design's own mechanism in a current engine
+  ([Unity, 2025](https://unity.com/blog/lighting-and-environments-hdrp-updates-unity-6); the page gives
+  one sentence, and the sample itself is where to look for the how); and Ray Tracing Gems, chapter 14, on volumetric
+  water caustics traced with DXR
+  ([2019](https://rd.springer.com/content/pdf/10.1007/978-1-4842-4427-2_14.pdf)), which is older than the
+  rule allows a candidate, is not portable and shows the look.
+- *The remedy*, for the beams and the net together, saying where one change serves both, the account read
+  that each change draws on or that it draws on none, the candidates not chosen and why, and whether it
+  alters a body's water.
 
 **What a remedy may change.** The example's water, which is the example's own and tuned by eye. How the
 march reads the field: its phase function, the contrast and blur of what the shafts read, its steps and
@@ -3123,7 +3182,7 @@ WP16's six looks changed the blur, the phase, the jitter and the aim, and are no
 5. *Both targets.* The remedy is the portable path's, and draws in Chrome what it draws on Metal.
 6. *What WP16 passed stays passed.* Its tests, WP16.7's list at its own views, and WP16.6's list at all its
    views, on Metal and at noon in Chrome, whatever the remedy changed. A remedy for the net reaches the
-   field or the receivers' read of it, which is the net on the bed too. A remedy for the beams can reach
+   field, the receivers' read of it or the water drawn in front of a receiver, and each is the bed's too. A remedy for the beams can reach
    the receivers by the field, or by what the frame draws between a receiver and a lens under water,
    because the view up to the surface and the view of a receiver share code. At WP16's handoff both pass
    their light through one function for the water's path and add the shafts from another (`water_path` and
@@ -3144,14 +3203,18 @@ planner decides. After the study, three looks that fail the same cue end `BLOCKE
 ### Proof for WP26
 
 WP26.1 and WP26.6 hold the study, one record written before anything is changed: WP26.1 the beams' part,
-the published accounts and the remedy for both cues, WP26.6 the net's part. WP26.2 judges the two stations
+the technical accounts read and the remedy for both cues, WP26.6 the net's part, whose pictures place
+each loss between the field and the frame. WP26.6's reviewer question asks that its two diagnostics are
+what the record says they are, and WP26.1's that the record's note on each account read agrees with the
+account. WP26.2 judges the two stations
 on Metal, with a calm, a sequence under temporal sampling and WP16.7's list again, and a body whose water
 the remedy changed by WP16.8's descent. WP26.7 judges the net on the hull's sunlit side and the sunk float
 on Metal, and WP16.6's list again at all its views. WP26.3 runs WP16's tests with the remedy in, and a
 rippled, sunlit profile with caustics and without shafts for bound 4. WP26.4 judges Chrome, at both
 stations and at WP16.7's noon views, and at noon the net on the hull and the float and WP16.6's list: this
 is where the lake's separate beams at noon are judged in Chrome, which the design review of 27 November
-asked of WP16.11 and WP16 no longer holds.
+asked of WP16.11 and WP16 no longer holds. It adds one view with the Sun 15° up, the hull and the float
+under the lake in a trade wind, because that and the sea at noon are the two views on record with no net.
 
 WP26.5 takes the paired cost record again, and its comparison is WP16 and not WP15. The scene's own
 check sets the light on beside the light off, and the arm with it off has no shaft pass, so a march that

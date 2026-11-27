@@ -1709,3 +1709,35 @@
 - 2026-11-27 Planner, not changed here: WP16.7's dark water beside the hull, which the handoff leaves open
   with looks remaining. The builder's matched view of the signed march beside the frame is the next step.
   [The change](../../../.orchestrate/evidence/WATERS/WP16-parked-net.md).
+
+## WP26 study design review
+
+- 2026-11-27 Planner, for the three Must Fix findings of the design review at `9c3ae63a5`. Only WP26.1,
+  WP26.6, WP26.4 and [WP26's section](DESIGN.md#light-under-water-that-wp16-left-wp26) changed, and all
+  three findings were about the study that chooses the remedy.
+- 2026-11-27 Planner, Must Fix 1, a level plane at one depth cannot tell the field from the read: WP26.6's
+  picture of the level plane is replaced by what the caustic field supplies at the receiver's visible
+  points, each at its own depth and Sun-ray exit, by a diagnostic the builder chooses that does not pass
+  through the production read. The read is a cause where the net joins there and not in the factor. The
+  level plane stays as a fifth picture for one question only, where that picture holds no net: a net on
+  the level and none at the receiver's points is the light's shape on the face, and none in either is the
+  field. The design has the upright face cutting sheets of light as a lead, with the handoff's rungs.
+- 2026-11-27 Planner, Must Fix 2, a net lost in the water in front of the hull went to the forward
+  lighting's owner: WP26.6 adds a picture of the receiver as the forward pass shaded it, with none of the
+  water between it and the lens. The receiver's lighting is a cause only where the net joins in the factor
+  and not on the shaded receiver. Joined on the shaded receiver and not in the frame names the water in
+  front, which is the water's to remedy. The design's stop for a change to ruling 5's seam now holds for
+  the first alone, and what the water draws in front of a receiver is on the list a remedy may change.
+- 2026-11-27 Planner, Must Fix 3, the study could pass with every technical source only found: WP26.1 (d)
+  asks for at least one account read on shafts and one on the net on a receiver that is not the bed, each
+  with a note of how the pattern is made, how it reaches the receiver or the volume, what hardware it
+  asks, and what the remedy takes from it. Each change names the account read it draws on, or says none.
+  Nothing rests on an account only found, and how a named game draws a cue is cited or marked as an
+  inference from its frames. The reviewer question opens each account read. A planner opened NVIDIA's
+  account, Unity's HDRP caustics page and Unity's Unity 6 page for what they cover; the design says what.
+- 2026-11-27 Planner, both reviewer questions are new or longer: WP26.6 has one, that its two diagnostics
+  are what the record says, because a picture of the production read under another name would pass the
+  inspection.
+- 2026-11-27 Planner, the review's suggestion taken: WP26.4 adds the hull and the float under the lake
+  in a trade wind with the Sun 15° up in Chrome, one question, as one of the two views on record with no
+  net.
