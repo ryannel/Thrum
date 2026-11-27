@@ -69,7 +69,8 @@ fn wet_shore(point: vec2<f32>) -> vec4<f32> {
     return select(vec4(0.0), shore, all(point >= bounds.xy) && all(point <= bounds.zw));
 }
 
-fn ground_wetness_footprint(point: vec3<f32>, normal: vec3<f32>, footprint: f32) -> GroundWetness {
+fn ground_wetness_at(point: vec3<f32>, normal: vec3<f32>, footprint: f32,
+                     material: bool) -> GroundWetness {
     let header = wet_load(0u);
     let lattice = wet_load(2u);
     var cell = vec4(0.0, -1.0, 0.0, 0.0);
@@ -124,6 +125,18 @@ fn ground_wetness_footprint(point: vec3<f32>, normal: vec3<f32>, footprint: f32)
     let open = GroundWetness(pores, surface, cover, class_index, ground);
     if cell.y < 0.0 { return open; }
     let hollow = wet_load(39u + u32(cell.y));
+    if material {
+        // Spread very shallow wetness across the bed's relief so a nearly
+        // level patch can fade as its final band drains through the relief.
+        let relief = max(0.002, class_data.x);
+        let band = max(hollow.z, relief);
+        let margin = wet_band(point.y - hollow.x, band) * min(1.0, hollow.z / band);
+        let submerged = smoothstep(0.0, relief, hollow.x - max(point.y, cell.w));
+        let held = smoothstep(-relief, relief, hollow.y - point.y) *
+            smoothstep(0.0, relief, hollow.y - cell.w);
+        let fill = mix(open.pores, hollow.w, held);
+        return GroundWetness(max(fill, max(margin, submerged)), surface, cover, class_index, ground);
+    }
     if hollow.x > cell.w && point.y < hollow.x {
         return GroundWetness(1.0, 0.0, 0.0, class_index, ground);
     }
@@ -134,13 +147,17 @@ fn ground_wetness_footprint(point: vec3<f32>, normal: vec3<f32>, footprint: f32)
     return GroundWetness(max(open.pores, margin), surface, cover, class_index, ground);
 }
 
+fn ground_wetness_footprint(point: vec3<f32>, normal: vec3<f32>, footprint: f32) -> GroundWetness {
+    return ground_wetness_at(point, normal, footprint, false);
+}
+
 fn ground_wetness(point: vec3<f32>, normal: vec3<f32>) -> GroundWetness {
     return ground_wetness_footprint(point, normal, 0.0);
 }
 
 fn wet_material(point: vec3<f32>, normal: vec3<f32>, base: vec3<f32>, roughness: f32,
                 metalness: f32) -> vec4<f32> {
-    let wet = ground_wetness(point, normal);
+    let wet = ground_wetness_at(point, normal, 0.0, true);
     if wet.pores <= 0.0 && (wet.hollows_ground || wet.cover <= 0.0) {
         return vec4(base, roughness);
     }

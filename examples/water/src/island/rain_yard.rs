@@ -42,7 +42,7 @@ pub(super) fn camera(index: usize) -> Camera {
         15 => Camera::look_at([144.85, 19.82, 64.8], [149.25, 18.73, 66.3], 56.0),
         16 => Camera::look_at([153.85, 21.65, 65.95], [152.35, 19.15, 68.05], 58.0),
         17 => Camera::look_at([149.2, 19.82, 65.32], [147.43, 18.77, 67.86], 57.0),
-        18 => Camera::look_at([149.12, 18.62, 64.15], [148.72, 18.68, 68.1], 60.0),
+        18 => Camera::look_at([148.3, 18.62, 64.0], [148.4, 18.40, 68.1], 56.0),
         _ => Camera::look_at([149.0, 33.12, 64.94], [149.0, 18.12, 65.0], 45.0),
     }
 }
@@ -681,7 +681,7 @@ fn wet_classes(classes: &[GroundClass]) -> [thrum_water::wet_ground::GroundClass
         } else if index == 0 {
             // The two ruts leave a crown as high as the track shoulders.
             thrum_water::wet_ground::ReliefPattern {
-                elevation: [18.064, 18.11],
+                elevation: [18.090, 18.16],
                 ..thrum_water::wet_ground::ReliefPattern::default()
             }
         } else {
