@@ -395,3 +395,57 @@
   `disable` returns). No check command changed. The proofs later work packages carry are extended in the
   design for WP12, WP3, WP4, WP6, WP13 and WP5. No other module's file changed, and nothing new is asked of
   one. The glossary gains "profile", proposed.
+- 2026-11-27 Design review of the round-3 revision asked for changes, with 11 Must Fix findings
+  ([the review](../../../.orchestrate/evidence/GAME-SDK/design-review.md)). Each is settled below. No other
+  module's file changed, `SESSION` is used as built, and no decision of the owner's is touched.
+- 2026-11-27 Finding 1 (a guest's unlock after a reconnect): a machine keeps its own slot equal to what the
+  world confirms for its own player, comparing after every tick it commits and every baseline it installs,
+  so a best committed while its link was down is written when the baseline arrives. "Its own player" is the
+  `Player`, seat and count of joins: a return within the grace is the same one and is reconciled, and after
+  the grace a later holder of the seat is another, never written (section 10, the entry, state and owners).
+- 2026-11-27 Finding 2 (rules run unchecked through `run()`): the check records each pass against the rule
+  sources' digest, the built program carries the digest it was compiled from, and `run()` refuses before the
+  first tick without a pass for it. `cargo play` builds the record in, and a build Cargo made alone looks in
+  the build folder (sections 1, 8, 12 and 14, risk 13, the open question). WP3 carries the proof: the same
+  game runs through `run()` after a pass and is refused after a file read is put in its `rules` module.
+- 2026-11-27 Finding 3 (a resumed timer's progress): a `Timer` and a `Cooldown` in a save keep the whole wait
+  and the time left, so `left` and `fraction` both come back (sections 4 and 10, R2). WP13 carries the
+  reviewer's two timers, with fractions of one half and three quarters, and a cooldown's ring.
+- 2026-11-27 Finding 4 (a phase's deadline on resume): a phase's clock is world state fixed on entry, read as
+  `Phase::clock()` and kept in a save as a `PhaseClock`. `resume(phase, clock)` carries on with it and asks
+  no `lasts` function and no `then_run` already run again (section 4, R2, R3, example G). WP1.2's clause 8
+  is written again on a length that came from a function whose answer has since changed, and on `then_run`
+  before and after its time; WP13 carries the same through a save.
+- 2026-11-27 Finding 5 (the platformer's screen with two heroes): example D's `animate_hero` walks every
+  hero and shows a dying one its own clip. The same mistake is taken out of two entries of the extension
+  map, skeletal animation and camera rigs, which asked for a `Single` that a second player breaks.
+- 2026-11-27 Finding 6 (a bolt whose shooter loses their character): each seat has a turn on the control
+  line, the control function where the player has a character and then the function of each thing launched
+  from that seat. A thing in flight is stepped in every tick that is not paused, with its launcher's
+  character gone, its launcher away or gone, and in a phase the line is not `.during`. The predicting
+  machine goes on running its own things ahead by the same rule (the entry).
+- 2026-11-27 Finding 7 (the shot a recovered press aimed): a `#[seen]` press carries its view, the tick it
+  was sampled for and the set's `Heading` and `#[sent]` values. `space.at_press(player, ACTION)` gives a
+  rule the picture, the place the world had the shooter's craft at that tick and the aim, and the rail
+  example fires from them. It replaces `as_seen_at_press`. Presses read in one tick still share the newest
+  one's (the entry).
+- 2026-11-27 Finding 8 (a tile sheet a rule chose): the sheet a load named is in the level's recipe with its
+  map, so it is digested, rewound and sent to a late joiner. Built collision is kept by what is solid, so
+  two recipes that differ only in a sheet share one (section 7, state and owners, cost). Carried into WP12,
+  WP3 and WP5.
+- 2026-11-27 Finding 9 (the reference and the starter games): R1 lists what `#[bind(..)]` takes, with
+  `Touch::drag_x()`, and a slider's `step` and `unit`; R3 says what `Spawn` and `Bundle` are, and examples A
+  and B return `impl Spawn` as every spawn function does; R5 has `SunAngle` and how a frame function sets
+  it, and `bar(..).mine(..)`. Every call of examples A to F was then looked up in the reference again.
+- 2026-11-27 Finding 10 (a modal in WP3): WP3 proves the pointer's capture and release by switching the
+  input context, and the modal that frees and returns it is WP6's.
+- 2026-11-27 Finding 11 (a tile's smaller shape): a new smaller entry. The shape is said on the glyph's line
+  of the scene's `Tileset`, is the rules' and never the sheet's, and is met by the same move and queries.
+- 2026-11-27 Suggestions, both taken: a recording holds the profile a lone player or a host started with
+  (section 13), which costs a sentence and closes a real ambiguity; and WP11.2's clause 6 says once which
+  queries visit a disabled entity.
+- 2026-11-27 Items changed: WP1.2 and WP11.2. No check command changed. Planner's choices in this revision,
+  each for the owner to overturn: a game built by Cargo alone runs only after a passed check; a guest who
+  returns after the grace keeps what their machine last heard; a launched thing flies on with no launcher;
+  and a tile's smaller shape belongs to the scene's tile line. The reference gains `PhaseClock`, `SunAngle`,
+  `Spawn`, `Bundle` and the binding sources, each a spelling a builder may change.
