@@ -42,11 +42,14 @@ pub(in crate::query) struct ReadyBody {
     pub(super) step: Duration,
 }
 
+pub(super) type FlowPrediction = ([[f32; 4]; 2], [[f32; 4]; 2]);
+
 pub(super) struct MapPrediction {
     revision: [u64; 2],
     cascades: [CascadeSample; 3],
     advection_rate: [f32; 3],
     wake: [f32; 4],
+    flow: Option<FlowPrediction>,
 }
 
 impl MapPrediction {
@@ -55,12 +58,14 @@ impl MapPrediction {
         cascades: [CascadeSample; 3],
         advection_rate: [f32; 3],
         wake: [f32; 4],
+        flow: Option<FlowPrediction>,
     ) -> Self {
         Self {
             revision,
             cascades,
             advection_rate,
             wake,
+            flow,
         }
     }
 }
@@ -148,8 +153,7 @@ impl Correction {
         let Some(row) = row else {
             return Some(corrected);
         };
-        let gains =
-            thrum_water_model::limit(row.row, row.depth, self.variances, map.profile()).gains;
+        let (gains, flow_gains) = map.layer_gains(self.variances, point, row);
         let mut sample = Sample {
             height: row.row.level,
             slope: map.level_slope(row.body, point),
@@ -184,6 +188,19 @@ impl Correction {
             }
             for (value, delta) in sample.velocity.iter_mut().zip(wave.velocity) {
                 *value += delta;
+            }
+        }
+        if let Some((waves, velocities)) = prediction.flow {
+            let dt = dt.clamp(-carry_bound, carry_bound);
+            for ((wave, velocity), gain) in waves.into_iter().zip(velocities).zip(flow_gains) {
+                let [h, sx, sz, rate] = wave.map(f64::from);
+                sample.height += gain * rate.mul_add(dt, h);
+                sample.height_dt += gain * rate;
+                sample.slope[0] += gain * sx;
+                sample.slope[1] += gain * sz;
+                for (axis, value) in sample.velocity.iter_mut().enumerate() {
+                    *value += gain * f64::from(velocity[axis]);
+                }
             }
         }
         if row.depth > 0.0 {

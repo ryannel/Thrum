@@ -8,12 +8,12 @@ use super::{
 use crate::{
     column::{COMPONENT_LIMIT, Component},
     interaction::{Interaction, SampleSettings},
-    map_gpu::{self, MapGpu},
+    map_gpu::MapGpu,
     surf::{QUERY_ONE_SHEET, QUERY_WAVE_LANES, SurfGpu},
 };
 use bytemuck::{Pod, Zeroable};
 use coarse::CoarsePlan;
-use correction::{CascadeSample, MapPrediction};
+use correction::{CascadeSample, FlowPrediction, MapPrediction};
 pub(super) use correction::{Correction, ReadyBody};
 use std::{
     collections::HashMap,
@@ -90,13 +90,21 @@ struct RiverPoint {
     receiver: RiverReceiver,
 }
 
-fn point_stride(rivers: bool) -> u64 {
-    let bytes = if rivers {
-        size_of::<RiverPoint>()
+#[repr(C)]
+#[derive(Clone, Copy, Pod, Zeroable)]
+struct FlowPoint {
+    river: RiverPoint,
+    flow: [f32; 4],
+}
+
+fn point_stride(rivers: bool, flow: bool) -> u64 {
+    if flow {
+        size_of::<FlowPoint>() as u64
+    } else if rivers {
+        size_of::<RiverPoint>() as u64
     } else {
-        size_of::<Point>()
-    };
-    bytes as u64
+        size_of::<Point>() as u64
+    }
 }
 
 #[repr(C)]
@@ -127,6 +135,56 @@ struct Answer {
     wake: [f32; 4],
 }
 
+#[repr(C)]
+#[derive(Clone, Copy, Pod, Zeroable)]
+struct FlowAnswer {
+    answer: Answer,
+    flow: [[f32; 4]; 2],
+    velocity: [[f32; 4]; 2],
+}
+
+fn answer_stride(flow: bool) -> u64 {
+    if flow {
+        size_of::<FlowAnswer>() as u64
+    } else {
+        size_of::<Answer>() as u64
+    }
+}
+
+fn flow_shader(source: &str, profile: thrum_water_model::FlowBandsProfile, first: u32) -> String {
+    source
+        .replace("receiver: RiverReceiver,", "receiver: RiverReceiver, flow: vec4<f32>,")
+        .replace("wake: vec4<f32>,\n}", "wake: vec4<f32>, flow: array<vec4<f32>, 2>, flow_velocity: array<vec4<f32>, 2>,\n}")
+        .replace("fn cascade_column(uv: vec2<f32>, band: u32, lod: f32) -> Wave {\n    let layer = i32(band * 5u);",
+            "fn cascade_column_layer(uv: vec2<f32>, layer: i32, lod: f32) -> Wave {")
+        .replace("    var carried = cascade_column(motion.departure / extent, band, lod);",
+            "    return carried_column_layer(motion, extent, i32(band * 5u), lod, gradient);\n}\n\nfn carried_column_layer(motion: CascadeMotion, extent: f32, layer: i32, lod: f32, gradient: CarriageGradient) -> CarriedColumn {\n    var carried = cascade_column_layer(motion.departure / extent, layer, lod);")
+        .replace("cascade_column(motion.second / extent, band, lod)", "cascade_column_layer(motion.second / extent, layer, lod)")
+        .replace("fn query_gains(point: QueryPoint)", "fn query_gains(index: u32, point: QueryPoint)")
+        .replace("var gains = query_gains(point);", "var gains = query_gains(station, point);")
+        .replace("query_gains(point)", "query_gains(index, point)")
+        .replace("query_gains(query)", "query_gains(index, query)")
+        .replace("    return limit_gains(point.gains, depth, settings.heights, settings.swash_margin.x, settings.swash_margin.y);",
+            "    let swash = flow_swatch(point.gains * settings.heights, points[index].flow.xy, settings.swash_margin.x, settings.swash_margin.y);\n    return limit_wind_with_flow(point.gains, settings.heights, depth, swash);")
+        .replace("    if point.body != 0xffffffffu {\n        let depth", "    query_flows(index, point, carriage, &out);\n    if point.body != 0xffffffffu {\n        let depth")
+        .replace("        out.wake = wake_at", concat!(
+            "        let raw_flow = points[index].flow.xy;\n",
+            "        let swash = flow_swatch(point.gains * settings.heights, raw_flow, settings.swash_margin.x, settings.swash_margin.y);\n",
+            "        let flow_gains = limit_flow(raw_flow, depth, swash);\n",
+            "        var flow_height = 0.0;\n",
+            "        for (var band = 0; band < 2; band++) {\n",
+            "            let wave = flow_gains[band] * out.flow[band];\n",
+            "            flow_height += wave.x + point.carry.x * wave.w;\n",
+            "            slope += wave.yz;\n",
+            "            rate += wave.w;\n",
+            "            velocity += flow_gains[band] * out.flow_velocity[band].xyz;\n",
+            "        }\n        out.wake = wake_at"
+        ))
+        .replace(" + out.wake.x;", " + out.wake.x + flow_height;")
+        + &crate::flow::constants(profile, first)
+        + include_str!("../query/flow.wgsl")
+}
+
 struct Slot {
     group: wgpu::BindGroup,
     settings: wgpu::Buffer,
@@ -140,12 +198,41 @@ struct Slot {
 }
 
 impl Slot {
+    fn write_points(
+        &self,
+        queue: &wgpu::Queue,
+        points: &[Point],
+        receivers: Option<Vec<RiverReceiver>>,
+        flows: Option<Vec<[f32; 4]>>,
+    ) {
+        if let Some(receivers) = receivers {
+            let river = points
+                .iter()
+                .copied()
+                .zip(receivers)
+                .map(|(point, receiver)| RiverPoint { point, receiver });
+            if let Some(flows) = flows {
+                let values: Vec<_> = river
+                    .zip(flows)
+                    .map(|(river, flow)| FlowPoint { river, flow })
+                    .collect();
+                queue.write_buffer(&self.points, 0, bytemuck::cast_slice(&values));
+            } else {
+                let values: Vec<_> = river.collect();
+                queue.write_buffer(&self.points, 0, bytemuck::cast_slice(&values));
+            }
+        } else {
+            queue.write_buffer(&self.points, 0, bytemuck::cast_slice(points));
+        }
+    }
+
     fn new(
         device: &wgpu::Device,
         layout: &wgpu::BindGroupLayout,
         cascades: &wgpu::TextureView,
         count: u64,
         rivers: bool,
+        flow: bool,
         wake: Option<&Interaction>,
         coarse: Option<&CoarseGpu>,
     ) -> Self {
@@ -165,13 +252,13 @@ impl Slot {
         let points = buffer(
             device,
             "query points",
-            count * point_stride(rivers),
+            count * point_stride(rivers, flow),
             Usage::STORAGE | Usage::COPY_DST,
         );
         let answers = buffer(
             device,
             "query answers",
-            count * size_of::<Answer>() as u64,
+            count * answer_stride(flow),
             Usage::STORAGE | Usage::COPY_SRC,
         );
         let staging = buffer(
@@ -303,12 +390,15 @@ struct Batch {
     fine_groups: u32,
     single_sheet: bool,
     fine_width: u32,
+    flow: bool,
 }
 
 pub(crate) struct Readback {
     mailbox: QueryMailbox,
     plain: Option<wgpu::ComputePipeline>,
     rivers: bool,
+    flow: bool,
+    flow_pending: bool,
     surf: Option<wgpu::BindGroup>,
     coarse: Option<CoarseGpu>,
     slots: [Slot; SLOT_COUNT],
@@ -344,6 +434,7 @@ impl Readback {
         components: usize,
         only_one_body: bool,
         rivers: bool,
+        flow: Option<(thrum_water_model::FlowBandsProfile, u32)>,
     ) -> Self {
         let count = u64::from(mailbox.limits.points);
         let surf_source = if let Some((map, _)) = &surf {
@@ -351,27 +442,30 @@ impl Readback {
         } else {
             PLAIN_QUERY.to_owned()
         };
+        let source = format!(
+            "{}\n{}\n{}\n{}\n{}\n{}",
+            if surf.is_some() {
+                ""
+            } else {
+                include_str!("../gains.wgsl")
+            },
+            Interaction::sample_source(0, 5, 6, wake.is_some()),
+            include_str!("../column/records.wgsl"),
+            concat!(
+                include_str!("../column.wgsl"),
+                include_str!("../carriage.wgsl")
+            ),
+            sampling_source(rivers),
+            surf_source,
+        );
+        let source = if let Some((profile, first)) = flow {
+            flow_shader(&source, profile, first)
+        } else {
+            source
+        };
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("water body query"),
-            source: wgpu::ShaderSource::Wgsl(
-                format!(
-                    "{}\n{}\n{}\n{}\n{}\n{}",
-                    if surf.is_some() {
-                        ""
-                    } else {
-                        include_str!("../gains.wgsl")
-                    },
-                    Interaction::sample_source(0, 5, 6, wake.is_some()),
-                    include_str!("../column/records.wgsl"),
-                    concat!(
-                        include_str!("../column.wgsl"),
-                        include_str!("../carriage.wgsl")
-                    ),
-                    sampling_source(rivers),
-                    surf_source,
-                )
-                .into(),
-            ),
+            source: wgpu::ShaderSource::Wgsl(source.into()),
         });
         let visibility = wgpu::ShaderStages::COMPUTE;
         let mut layout = vec![
@@ -394,7 +488,7 @@ impl Readback {
             entries: &layout,
         });
         let surf_layout = surf.as_ref().map(|(map, _)| {
-            let mut entries = map_gpu::bindings(visibility).to_vec();
+            let mut entries = map.bindings(visibility).to_vec();
             entries.extend(map.hollows_bindings(visibility));
             entries.extend(SurfGpu::layout(SURF_BINDING, visibility));
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -480,9 +574,10 @@ impl Readback {
             Slot::new(
                 device,
                 &layout,
-                &ambient.filtered_views()[0],
+                ambient.query_view(),
                 count,
                 rivers,
+                flow.is_some(),
                 wake,
                 coarse.as_ref(),
             )
@@ -492,6 +587,8 @@ impl Readback {
             mailbox,
             plain,
             rivers,
+            flow: flow.is_some(),
+            flow_pending: false,
             surf: surf_group,
             coarse,
             slots,
@@ -509,16 +606,22 @@ impl Readback {
         graph: &mut EffectGraph,
         wake: Option<EffectAccess>,
     ) {
-        let cascade = ambient.filtered_accesses().remove(0);
+        let mut fields = ambient.filtered_accesses();
+        let cascade = fields[0].resource;
+        if ambient.flow_first_layer().is_some() {
+            fields.retain(|access| access.resource == cascade);
+        } else {
+            fields.truncate(1);
+        }
         // The cascade texture is allocated by Ambient and retained across views.
-        graph.resources[cascade.resource].1 = ResourceScope::Persistent {
+        graph.resources[cascade].1 = ResourceScope::Persistent {
             owner: 0x7761_7465,
             epoch: 0,
             initialized: false,
         };
         graph.tick_passes.push(TickPass {
             name: QUERY_PASS.into(),
-            reads: std::iter::once(cascade).chain(wake).collect(),
+            reads: fields.into_iter().chain(wake).collect(),
         });
     }
 
@@ -566,6 +669,7 @@ impl Readback {
     ) -> bool {
         let chop = water_profile.waves.choppiness;
         self.pending.clear();
+        self.flow_pending = false;
         let mut state = self.mailbox.state.lock().expect("water query mailbox");
         let slots = self
             .slots
@@ -611,6 +715,7 @@ impl Readback {
             .then(|| frame_map.expect("prepared river phase map"));
         for (slot, endpoint, bodies) in work {
             let mut receivers = river_map.map(|_| Vec::new());
+            let mut flows = self.flow.then(Vec::new);
             let origin = bodies[0].points[0].position;
             let components: Vec<_> = spectrum
                 .long
@@ -630,6 +735,11 @@ impl Readback {
                     let index = maps.partition_point(|(tick, _)| *tick <= point.use_tick);
                     let domain = if index > 0 { &maps[index - 1].1 } else { map };
                     let mut input = Point::new(point, dt, domain, frame_map);
+                    if let Some(flows) = &mut flows {
+                        let flow = flow_point(input, domain);
+                        self.flow_pending |= flow[2] != 0.0;
+                        flows.push(flow);
+                    }
                     input.carry[0] = dt.clamp(-bound, bound) as f32;
                     if let Some((wake_tick, _)) = wake_settings {
                         let wake_dt =
@@ -712,17 +822,7 @@ impl Readback {
                 },
             };
             queue.write_buffer(&buffers.settings, 0, bytemuck::bytes_of(&settings));
-            if let Some(receivers) = receivers {
-                let river_points: Vec<_> = points
-                    .iter()
-                    .copied()
-                    .zip(receivers)
-                    .map(|(point, receiver)| RiverPoint { point, receiver })
-                    .collect();
-                queue.write_buffer(&buffers.points, 0, bytemuck::cast_slice(&river_points));
-            } else {
-                queue.write_buffer(&buffers.points, 0, bytemuck::cast_slice(&points));
-            }
+            buffers.write_points(queue, &points, receivers, flows);
             if !components.is_empty() {
                 queue.write_buffer(&buffers.components, 0, bytemuck::cast_slice(&components));
             }
@@ -732,6 +832,7 @@ impl Readback {
                 epoch,
                 frame: time,
                 seconds,
+                flow: self.flow,
                 wake_tick: wake_settings.map(|(tick, _)| tick),
                 count,
                 bodies,
@@ -750,6 +851,12 @@ impl Readback {
             });
         }
         resources_grew
+    }
+
+    pub(crate) fn flow_query_time(&self) -> Option<f64> {
+        self.flow_pending
+            .then(|| self.pending.first().map(|batch| batch.seconds))
+            .flatten()
     }
 
     pub(crate) fn resource_bytes(&self) -> Vec<(String, u64)> {
@@ -854,7 +961,7 @@ impl Readback {
     pub(crate) fn copy(&self, encoder: &mut wgpu::CommandEncoder) {
         for batch in &self.pending {
             let slot = &self.slots[batch.slot];
-            let size = u64::from(batch.count) * size_of::<Answer>() as u64;
+            let size = u64::from(batch.count) * answer_stride(batch.flow);
             encoder.copy_buffer_to_buffer(&slot.answers, 0, &slot.buffer, 0, size);
         }
     }
@@ -899,19 +1006,55 @@ impl Readback {
         let mailbox = mailbox.clone();
         let busy = Arc::clone(&slot.busy);
         let buffer = slot.buffer.clone();
-        let size = u64::from(batch.count) * size_of::<Answer>() as u64;
+        let size = u64::from(batch.count) * answer_stride(batch.flow);
         slot.buffer
             .slice(..size)
             .map_async(wgpu::MapMode::Read, move |result| {
                 if result.is_ok() {
                     if let Ok(mapped) = buffer.slice(..size).get_mapped_range() {
-                        batch.publish(bytemuck::cast_slice(&mapped), &mailbox);
+                        if batch.flow {
+                            batch.publish(
+                                bytemuck::cast_slice::<_, FlowAnswer>(&mapped).iter().map(
+                                    |value| (value.answer, Some((value.flow, value.velocity))),
+                                ),
+                                &mailbox,
+                            );
+                        } else {
+                            batch.publish(
+                                bytemuck::cast_slice::<_, Answer>(&mapped)
+                                    .iter()
+                                    .map(|value| (*value, None)),
+                                &mailbox,
+                            );
+                        }
                     }
                     buffer.unmap();
                 }
                 busy.store(false, Ordering::Release);
             });
     }
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "prepared chart gains are read in f32"
+)]
+fn flow_point(point: Point, map: &Map) -> [f32; 4] {
+    let place = point.position.map(f64::from);
+    let [a, b] = if point.body == u32::MAX {
+        [0.0; 2]
+    } else {
+        map.flow_gains(point.body as usize, place)
+    };
+    let active = a > 0.0
+        || b > 0.0
+        || (0..crate::map_gpu::BODY_LIMIT).any(|id| {
+            map.river_of(id).is_some()
+                && map.surface_bounds(id).is_some_and(|[lo, hi]| {
+                    (0..2).all(|axis| (lo[axis]..=hi[axis]).contains(&place[axis]))
+                })
+        });
+    [a as f32, b as f32, f32::from(active), 0.0]
 }
 
 impl Point {
@@ -994,12 +1137,16 @@ impl RiverReceiver {
 }
 
 impl Batch {
-    fn publish(self, values: &[Answer], mailbox: &QueryMailbox) {
+    fn publish(
+        self,
+        values: impl Iterator<Item = (Answer, Option<FlowPrediction>)> + Clone,
+        mailbox: &QueryMailbox,
+    ) {
         let mut state = mailbox.state.lock().expect("water query mailbox");
         if state.epoch != self.epoch {
             return;
         }
-        let nodes = values.iter().fold([0, 0], |[coarse, fine], answer| {
+        let nodes = values.clone().fold([0, 0], |[coarse, fine], (answer, _)| {
             [
                 coarse + u64::from(answer.cut_coarse_nodes),
                 fine + u64::from(answer.cut_fine_nodes),
@@ -1019,7 +1166,7 @@ impl Batch {
                 },
             );
         }
-        let mut values = values.iter().zip(self.map_revisions);
+        let mut values = values.zip(self.map_revisions);
         for body in self.bodies {
             let mut fields = (&mut values).take(body.points.len());
             if state.generations.get(&body.id) != Some(&body.generation) {
@@ -1033,7 +1180,7 @@ impl Batch {
                 .into_iter()
                 .zip(fields)
                 .enumerate()
-                .map(|(index, (point, (raw, revision)))| {
+                .map(|(index, (point, ((raw, flow), revision)))| {
                     cut_nodes[0] += u64::from(raw.cut_coarse_nodes);
                     cut_nodes[1] += u64::from(raw.cut_fine_nodes);
                     let mut sources = [None; 5];
@@ -1060,7 +1207,13 @@ impl Batch {
                         .is_some_and(|tick| point.use_tick.abs_diff(tick) as f64 <= CARRY_TICKS);
                     (
                         raw.decode(index, point, sources, supported),
-                        MapPrediction::new(revision, raw.cascades, raw.advection_rate, raw.wake),
+                        MapPrediction::new(
+                            revision,
+                            raw.cascades,
+                            raw.advection_rate,
+                            raw.wake,
+                            flow,
+                        ),
                     )
                 })
                 .unzip();
@@ -1134,13 +1287,15 @@ pub(crate) fn validate(
     surf: bool,
     wake: bool,
     rivers: bool,
+    flow: Option<(thrum_water_model::FlowBandsProfile, u32)>,
 ) -> Result<(), String> {
+    let flow = flow.is_some();
     let groups = if surf {
         limits.points
     } else {
         limits.points.div_ceil(GROUP_WIDTH)
     };
-    if u64::from(limits.points) * point_stride(rivers).max(size_of::<Answer>() as u64)
+    if u64::from(limits.points) * point_stride(rivers, flow).max(answer_stride(flow))
         > device.max_storage_buffer_binding_size
         || groups > device.max_compute_workgroups_per_dimension
         || 3 + 2 * u32::from(surf) + u32::from(wake) > device.max_storage_buffers_per_shader_stage

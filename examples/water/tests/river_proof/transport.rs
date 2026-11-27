@@ -96,8 +96,13 @@ fn transport(gpu: &thrum_test_support::Gpu, wind: Wind, submit: bool) {
     reason = "keep the actual submitted query readings"
 )]
 fn query(gpu: &thrum_test_support::Gpu) {
-    let route = river::build(Wind::Calm, true, Some(&crate::support::river_store()))
-        .expect("river query route");
+    let route = river::build_with_flow(
+        Wind::Calm,
+        true,
+        Some(&crate::support::river_store()),
+        false,
+    )
+    .expect("river query route");
     let map = route.map;
     let query = route.query;
     // Use the actual scene's query pipe and a static set of extra float stations.

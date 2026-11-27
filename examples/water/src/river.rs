@@ -166,7 +166,7 @@ use thrum_app::sky::{Camera, ContentStatus, Controls, MeshPlacement, SkyGame};
 pub const OUTLET_RELEASE: [f64; 2] = [218.0, 5.0];
 
 /// Inspection lenses at the pool, sill, narrows, joins and both river overlooks.
-pub const VIEWS: [(&str, Camera); 17] = [
+pub const VIEWS: [(&str, Camera); 19] = [
     (
         "Pool along",
         Camera::look_at([175.0, 19.0, -72.0], [180.0, 17.1, -58.0], 66.0),
@@ -226,6 +226,14 @@ pub const VIEWS: [(&str, Camera); 17] = [
         "Sea mouth across",
         Camera::look_at([356.0, 2.15, 17.0], [345.5, -0.05, 2.0], 70.0),
     ),
+    (
+        "Riffle along",
+        Camera::look_at([175.5, 20.0, -90.0], [180.0, 18.1, -82.0], 66.0),
+    ),
+    (
+        "Riffle across",
+        Camera::look_at([186.0, 20.0, -84.0], [180.0, 18.0, -84.0], 64.0),
+    ),
 ];
 
 /// Selected river scene and the observations used by its target checks.
@@ -240,6 +248,8 @@ pub struct Scene {
     pub files: [RiverFile; 2],
     /// Queries and replies on the submitted water.
     pub query: thrum_water::query::QueryMailbox,
+    /// Submitted river whitewater and control over chart-loss births.
+    pub foam: Option<(thrum_water::foam::Tap, thrum_water::foam::Input)>,
     /// The stream and outlet floats.
     pub floats: Box<dyn Fn() -> [crate::floating::Body; 2]>,
 }
@@ -250,10 +260,28 @@ pub struct Scene {
 /// # Panics
 /// Panics if the water map lock is poisoned or its bounded controls fail.
 pub fn build(wind: Wind, draw_water: bool, store: Option<&Path>) -> Result<Scene, Box<dyn Error>> {
+    build_with_flow(wind, draw_water, store, true)
+}
+
+/// Build the river selection with a switch for comparing its original chart surface.
+/// # Errors
+/// Returns invalid assets, water or controls.
+pub fn build_with_flow(
+    wind: Wind,
+    draw_water: bool,
+    store: Option<&Path>,
+    flow: bool,
+) -> Result<Scene, Box<dyn Error>> {
     let mut forcing = crate::channel::forcing(wind);
     // The exposed floats take the prevailing wind alongside the map's current.
     forcing.wind_direction = 0.42;
-    let (map, files) = map(&forcing, store)?;
+    let (mut map, files) = map(&forcing, store)?;
+    if flow {
+        map.set_flow_bands(Some(
+            thrum_water_model::FlowBands::new(thrum_water_model::FlowBandsProfile::default())
+                .map_err(|error| model_error(&error))?,
+        ));
+    }
     #[cfg(target_arch = "wasm32")]
     {
         let loaded = js_sys::Array::new();
@@ -279,12 +307,20 @@ pub fn build(wind: Wind, draw_water: bool, store: Option<&Path>) -> Result<Scene
         max_age: 8,
     });
     let fallback = crate::floating::fallback(&spectrum, profile.waves.choppiness)?;
-    let water = thrum_water::Water::mapped(Arc::clone(&map), spectrum, profile)?;
+    let mut water = thrum_water::Water::mapped(Arc::clone(&map), spectrum, profile)?;
+    let (z, x) = forcing.wind_direction.sin_cos();
+    let wind = glam::DVec2::new(x, z) * forcing.wind_speed;
+    let foam = if flow {
+        let input = water.enable_foam(wind.as_vec2().to_array())?;
+        Some((water.tap_foam(), input))
+    } else {
+        None
+    };
     let query = water.query_mailbox().expect("river queries");
     let report = water.report();
     let mut controls = Controls::new();
     let camera = controls
-        .slider("camera.river", "River view", 0.0..=16.0)
+        .slider("camera.river", "River view", 0.0..=18.0)
         .step(1.0)
         .add()?;
     let lake = controls
@@ -299,6 +335,10 @@ pub fn build(wind: Wind, draw_water: bool, store: Option<&Path>) -> Result<Scene
         .slider("sea.stage", "Tide (m)", -0.5..=0.5)
         .default(0.0)
         .add()?;
+    let sun = controls
+        .slider("sun.elevation", "Sun elevation", -15.0..=90.0)
+        .default(48.0)
+        .add()?;
     let stage_map = Arc::clone(&map);
     let game = SkyGame::new(controls, VIEWS[0].1, move |values, sky| {
         #[expect(
@@ -308,7 +348,7 @@ pub fn build(wind: Wind, draw_water: bool, store: Option<&Path>) -> Result<Scene
         )]
         let view = values.get(camera).round() as usize;
         sky.camera = VIEWS[view].1;
-        sky.sun_elevation_degrees = 48.0;
+        sky.sun_elevation_degrees = values.get(sun);
         sky.sun_azimuth_degrees = 165.0;
         sky.exposure_compensation_ev = 0.3;
         sky.temporal_inputs = true;
@@ -329,8 +369,6 @@ pub fn build(wind: Wind, draw_water: bool, store: Option<&Path>) -> Result<Scene
     let material = crate::island::island_material(0.0);
     let (game, _) =
         game.with_meshes_and_texture_lease(terrain, Some(("river island", &material)), &[])?;
-    let (z, x) = forcing.wind_direction.sin_cos();
-    let wind = glam::DVec2::new(x, z) * forcing.wind_speed;
     let (game, floats) =
         crate::floating::install_river_floats(game, Arc::clone(&map), &water, fallback, wind);
     let game = if draw_water {
@@ -344,6 +382,7 @@ pub fn build(wind: Wind, draw_water: bool, store: Option<&Path>) -> Result<Scene
         map,
         files,
         query,
+        foam,
         floats,
     })
 }

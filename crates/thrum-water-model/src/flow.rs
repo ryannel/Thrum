@@ -154,6 +154,25 @@ impl FlowBands {
         [self.modes[0].len(), self.modes[1].len()]
     }
 
+    /// The periodic Fourier components used by the GPU transform, in model order.
+    /// # Panics
+    /// If `band` is not 0 or 1.
+    pub fn components(
+        &self,
+        band: usize,
+    ) -> impl Iterator<Item = (thrum_sea_model::Component, f64)> + '_ {
+        self.modes[band].iter().map(|m| {
+            (
+                thrum_sea_model::Component {
+                    wave_vector: m.wave_vector,
+                    amplitude: m.amplitude,
+                    phase: m.phase,
+                },
+                m.omega,
+            )
+        })
+    }
+
     /// One band at a gain of one, at a world point and time: an f64 sum of its modes, each
     /// turning on the cascades' loop. The bands have no horizontal displacement, so a point is
     /// its own label and the Jacobian is one.
@@ -251,6 +270,17 @@ impl Map {
             bands.variances(),
             self.profile,
         )
+    }
+
+    /// Depth-limited gains for wind and flow at a map sample, given wind-layer variances.
+    pub fn layer_gains(
+        &self,
+        variances: [f64; 4],
+        point: [f64; 2],
+        map: MapSample,
+    ) -> ([f64; 4], [f64; 2]) {
+        let (wind, flow) = self.limited_with_variances(variances, point, map);
+        (wind.gains, flow)
     }
 
     /// The flow bands' depth-limited gains at a point on a map sample; none without the bands.

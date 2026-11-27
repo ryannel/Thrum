@@ -9,11 +9,41 @@ use thrum_sea_model::{LOOP_SECONDS, Spectrum, loop_cycles};
 
 #[expect(
     clippy::cast_possible_truncation,
-    reason = "physical values reduce to GPU-relative f32; bounded loop/lattice values fit integers"
-)]
-#[expect(
     clippy::cast_sign_loss,
-    reason = "loop fraction and rem_euclid lattice indices are nonnegative"
+    reason = "loop time is reduced to an unsigned fixed-point fraction"
+)]
+pub(super) fn loop_fraction(time: f64) -> u32 {
+    (time.rem_euclid(LOOP_SECONDS) / LOOP_SECONDS * 4_294_967_296.0) as u32
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "validated modes have bounded lattice indices and round to binary32 on the GPU"
+)]
+pub(super) fn lattice_mode(
+    component: thrum_sea_model::Component,
+    length: f64,
+    cycles: u32,
+) -> (usize, records::Bin) {
+    let lattice = component.wave_vector.map(|k| {
+        ((k * length / TAU).round() as i32).rem_euclid(crate::TRANSFORM_SIZE.cast_signed()) as usize
+    });
+    let index = lattice[1] * crate::TRANSFORM_SIZE as usize + lattice[0];
+    let record = records::Bin {
+        physical: [
+            component.wave_vector[0] as f32,
+            component.wave_vector[1] as f32,
+            component.amplitude as f32,
+            component.phase as f32,
+        ],
+        clock: [cycles, 0, 0, 0],
+    };
+    (index, record)
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "physical values reduce to GPU-relative f32; bounded loop/lattice values fit integers"
 )]
 pub(super) fn frame(
     sea: &mut Ambient,
@@ -38,28 +68,14 @@ pub(super) fn frame(
         sea.modes.fill(records::Bin::zeroed());
         for (band, cascade) in spectrum.cascades.iter().enumerate() {
             for c in cascade.components() {
-                let lattice = c
-                    .wave_vector
-                    .map(|k| (k * cascade.length() / TAU).round() as i32);
-                let index = band * PIXELS as usize
-                    + lattice[1].rem_euclid(crate::TRANSFORM_SIZE.cast_signed()) as usize
-                        * crate::TRANSFORM_SIZE as usize
-                    + lattice[0].rem_euclid(crate::TRANSFORM_SIZE.cast_signed()) as usize;
-                sea.modes[index] = records::Bin {
-                    physical: [
-                        c.wave_vector[0] as f32,
-                        c.wave_vector[1] as f32,
-                        c.amplitude as f32,
-                        c.phase as f32,
-                    ],
-                    clock: [loop_cycles(*c), 0, 0, 0],
-                };
+                let (index, record) = lattice_mode(*c, cascade.length(), loop_cycles(*c));
+                sea.modes[band * PIXELS as usize + index] = record;
             }
         }
     }
     let mut params = records::Params::zeroed();
     params.time = [
-        (time.rem_euclid(LOOP_SECONDS) / LOOP_SECONDS * 4_294_967_296.0) as u32,
+        loop_fraction(time),
         u32::try_from(spectrum.long.len()).expect("validated count"),
         u32::try_from(queries.len()).expect("validated count"),
         0,

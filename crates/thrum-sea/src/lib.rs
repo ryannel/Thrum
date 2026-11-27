@@ -4,6 +4,7 @@
 mod error;
 pub use error::{AmbientError, ProfileField};
 mod filtered;
+mod flow;
 mod prepare;
 /// Rain wave layers reconstructed from committed rates and a prepared ring table.
 pub mod rain;
@@ -182,6 +183,7 @@ pub struct CacheLevel {
 /// Prepared generation resources. All products are overwritten, including on capture frames.
 pub struct Ambient {
     filtered: filtered::Filtered,
+    flow: Option<flow::Flow>,
     profile: Profile,
     buffers: BTreeMap<spec::BufferKey, wgpu::Buffer>,
     passes: BTreeMap<spec::PassKey, prepare::PreparedPass>,
@@ -278,7 +280,7 @@ impl Ambient {
         device: &thrum_render::runtime::DeviceSite,
         profile: Profile,
     ) -> Result<Self, AmbientError> {
-        prepare::new(device, profile, false)
+        prepare::new(device, profile, false, None)
     }
 
     /// Prepare the ambient fields with four reserved rain planes in the cascade array.
@@ -288,7 +290,46 @@ impl Ambient {
         device: &thrum_render::runtime::DeviceSite,
         profile: Profile,
     ) -> Result<Self, AmbientError> {
-        prepare::new(device, profile, true)
+        prepare::new(device, profile, true, None)
+    }
+
+    /// Prepare river flow bands in the shared wave array. Rain can reserve its own planes.
+    /// # Errors
+    /// Names the first unsupported profile or resource limit.
+    pub fn with_flow_bands(
+        device: &thrum_render::runtime::DeviceSite,
+        queue: &wgpu::Queue,
+        profile: Profile,
+        rain: bool,
+        flow: &thrum_water_model::FlowBands,
+    ) -> Result<Self, AmbientError> {
+        prepare::new(device, profile, rain, Some((queue, flow)))
+    }
+
+    /// Base array layer of the two flow bands, when prepared.
+    pub fn flow_first_layer(&self) -> Option<u32> {
+        self.flow.as_ref().map(|flow| flow.first)
+    }
+
+    /// The periodic wind and flow planes with mip zero at a 256-square lattice.
+    pub fn query_view(&self) -> &wgpu::TextureView {
+        self.flow
+            .as_ref()
+            .map_or(&self.filtered.views[0], |flow| &flow.view)
+    }
+
+    /// First ordinal of the skippable flow producer.
+    pub fn flow_pass_start(&self) -> Option<usize> {
+        self.flow
+            .as_ref()
+            .map(|_| self.specs.len() + self.filtered.pass_count())
+    }
+
+    /// Upload the time of the next flow-band evaluation.
+    pub fn upload_flow(&mut self, queue: &wgpu::Queue, time: f64) {
+        if let Some(flow) = &mut self.flow {
+            flow.upload(queue, time);
+        }
     }
 
     /// Every GPU resource and its bytes, including staging and mip uniforms.
@@ -298,6 +339,7 @@ impl Ambient {
             .map(|r| (r.name, self.buffers[&r.key].size()))
             .collect();
         resources.extend(self.filtered.resource_bytes());
+        resources.extend(self.flow.iter().flat_map(flow::Flow::bytes));
         resources
     }
 
@@ -309,11 +351,20 @@ impl Ambient {
         );
         let mut graph = declaration(&prepare::sizes());
         self.filtered.append_graph(&mut graph);
+        if let Some(flow) = &self.flow {
+            flow.append_graph(&mut graph, &self.specs, Self::cascade_resource());
+        }
         graph
     }
 
     /// Record one named graph pass, under the host's encoder and timing scope.
     pub fn encode_pass(&self, index: usize, pass: &mut wgpu::ComputePass<'_>) {
+        if let (Some(flow), Some(start)) = (&self.flow, self.flow_pass_start())
+            && index >= start
+        {
+            flow.encode(index - start, pass);
+            return;
+        }
         if index >= self.specs.len() {
             self.filtered.encode(index - self.specs.len(), pass);
             return;
@@ -363,7 +414,13 @@ impl Ambient {
     }
     /// Sampled texture hazards for the complete forward field and its mips.
     pub fn filtered_accesses(&self) -> Vec<thrum_render::contribution::EffectAccess> {
-        self.filtered.surface_accesses(spec::resources().len())
+        let mut reads = self.filtered.surface_accesses(Self::cascade_resource());
+        reads.extend(
+            self.flow
+                .iter()
+                .flat_map(|flow| flow.reads(Self::cascade_resource())),
+        );
+        reads
     }
     /// Query samples followed by eight row-major 128-square cache levels, three vec4s per sample.
     pub fn long_buffer(&self) -> &wgpu::Buffer {

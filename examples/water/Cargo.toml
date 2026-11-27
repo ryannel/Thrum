@@ -126,3 +126,10 @@ name = "under_frame_gpu"
 
 [[test]]
 name = "lens_gpu"
+
+# RIVERS WP5 names these Metal checks.
+[[test]]
+name = "flow_bands_gpu"
+
+[[test]]
+name = "river_foam_gpu"

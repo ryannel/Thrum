@@ -88,3 +88,30 @@ impl ChartLayers {
         self.first
     }
 }
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "admitted sample layers and GPU chart values"
+)]
+pub(super) fn write_flow(
+    queue: &wgpu::Queue,
+    texture: &wgpu::Texture,
+    map: &Map,
+    body: usize,
+    first: u32,
+    pixels: &mut [[f32; 4]],
+) {
+    let (river, chart) = map.river_of(body).expect("river flow layers");
+    let chart = &map.river(river).expect("prepared river").charts[chart];
+    for (index, sample) in chart.samples.iter().enumerate() {
+        for (i, pixel) in pixels.iter_mut().enumerate() {
+            *pixel = [
+                sample.gains[i][0] as f32,
+                sample.gains[i][1] as f32,
+                sample.loss[i] as f32,
+                0.0,
+            ];
+        }
+        write_layer(queue, texture, first + index as u32, pixels);
+    }
+}

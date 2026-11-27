@@ -51,6 +51,14 @@ fn river_route() -> bool {
 }
 
 #[cfg(target_os = "macos")]
+fn river_cost_view() -> usize {
+    match settings() {
+        Settings::River(Wind::Calm) => 3,
+        _ => 14,
+    }
+}
+
+#[cfg(target_os = "macos")]
 fn surf_route() -> bool {
     matches!(settings(), Settings::Surf(_))
 }
@@ -329,7 +337,7 @@ fn driver(gpu: &thrum_test_support::Gpu) {
         support::Fixture::new(gpu, [2560, 1440])
     };
     if river_route() {
-        fixture.parameters(r#"{"camera.river":14}"#);
+        fixture.parameters(&format!(r#"{{"camera.river":{}}}"#, river_cost_view()));
     }
     for index in 0..8 {
         fixture.frame(f64::from(index) / 120.0);
@@ -360,7 +368,7 @@ fn driver(gpu: &thrum_test_support::Gpu) {
     result["recipe"] =
         json!(std::env::var("THRUM_WATER_RECIPE").unwrap_or_else(|_| "native".into()));
     if river_route() {
-        let (_, camera) = water_scene::river::VIEWS[14];
+        let (_, camera) = water_scene::river::VIEWS[river_cost_view()];
         result["body_vertices"] = json!(report.bodies);
         result["camera"] = json!({"position": camera.position, "target": camera.target});
     }
@@ -405,7 +413,7 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                     let mut fixture = support::Fixture::from_game(gpu, [2560, 1440], game, report);
                     fixture.warm_cooked();
                     if river_route() {
-                        fixture.parameters(r#"{"camera.river":14}"#);
+                        fixture.parameters(&format!(r#"{{"camera.river":{}}}"#, river_cost_view()));
                     }
                     fixture
                 } else if let Some(wind) = island_wind() {

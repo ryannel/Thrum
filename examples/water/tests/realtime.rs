@@ -126,6 +126,16 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     };
     let held_dive = dive_view(&route);
     let optics_height = std::env::var("THRUM_WATER_OPTICS_HEIGHT").unwrap_or_else(|_| "2".into());
+    let river_sequence = river && route == "flow-inspection";
+    let river_gauges = river && route == "foam-gauge-inspection";
+    let river_shots: &[u8] = if river_sequence {
+        &[17, 18, 0, 1, 4, 5, 8, 3]
+    } else if river_gauges {
+        &[4, 4]
+    } else {
+        &[]
+    };
+    let shot_seconds = 4.0;
     let river_stage = river && matches!(route.as_str(), "stage" | "lake-stage" | "spring-stage");
     let late_channel = channel && route == "late";
     let handoff_cut = surf && route == "handoff-cut";
@@ -170,6 +180,10 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         ([2560, 1440], 22.0, 5.0, MAX_SUBMISSIONS)
     } else if surf && island_view == "9" {
         ([2560, 1440], 18.0, 6.5, MAX_SUBMISSIONS)
+    } else if river_sequence {
+        ([960, 540], 8.0 * shot_seconds, 7.0, CHANNEL_SUBMISSIONS)
+    } else if river_gauges {
+        ([960, 540], 2.0 * shot_seconds, 16.0, CHANNEL_SUBMISSIONS)
     } else if river_stage {
         ([1280, 720], 20.5, 8.0, CHANNEL_SUBMISSIONS)
     } else if river {
@@ -243,14 +257,25 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             .expect("channel view");
     }
     if river {
+        let river_view = river_shots
+            .first()
+            .map_or_else(|| river_view.clone(), u8::to_string);
         let stages = match route.as_str() {
             "stage" => r#","lake.stage":0,"spring.stage":0"#,
             "lake-stage" => r#","lake.stage":0,"spring.stage":0.5"#,
-            "spring-stage" => r#","lake.stage":0.5,"spring.stage":0"#,
+            "spring-stage" | "foam-gauge-inspection" => r#","lake.stage":0.5,"spring.stage":0"#,
             _ => "",
         };
+        let sun = std::env::var("THRUM_WATER_RIVER_SUN")
+            .ok()
+            .map_or_else(String::new, |v| format!(r#","sun.elevation":{v}"#));
+        let gauge = std::env::var("THRUM_WATER_RIVER_GAUGE")
+            .ok()
+            .map_or_else(String::new, |v| format!(r#","spring.stage":{v}"#));
         runtime
-            .parameters(&format!(r#"{{"camera.river":{river_view}{stages}}}"#))
+            .parameters(&format!(
+                r#"{{"camera.river":{river_view}{stages}{sun}{gauge}}}"#
+            ))
             .expect("river view");
     }
     for _ in 0..8 {
@@ -311,6 +336,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let mut deadline = interval;
     let mut footfall_edit_time = None;
     let mut yard_view = 11;
+    let mut river_shot = 0;
     while begin.elapsed() < Duration::from_secs_f64(deadline) && submitted < max_submissions {
         let elapsed = begin.elapsed().as_secs_f64();
         if let Some(start) = footfall_start {
@@ -383,6 +409,21 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
                     70.0 + elapsed * 12.0
                 ))
                 .expect("pan control");
+        }
+        if let Some(&view) = river_shots.get(river_shot + 1)
+            && elapsed
+                >= shot_seconds * f64::from(u8::try_from(river_shot + 1).expect("river shot count"))
+        {
+            river_shot += 1;
+            let edit = if river_gauges {
+                json!({"camera.river":view, "spring.stage":1})
+            } else {
+                json!({"camera.river":view})
+            };
+            runtime
+                .parameters(&edit.to_string())
+                .expect("river inspection controls");
+            weather_edits.push(json!({"elapsed":elapsed,"parameters":edit}));
         }
         if river_stage {
             let stage = (1.0 - (elapsed / 10.0 - 1.0).abs()).clamp(0.0, 1.0);

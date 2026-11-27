@@ -231,8 +231,9 @@ impl WaveTracks {
 }
 
 pub(super) fn sampled_river(map: &Map, body: usize) -> bool {
-    map.river_of(body)
-        .is_some_and(|(river, _)| map.river(river).is_some_and(|river| river.gauges.len() > 1))
+    map.river_of(body).is_some_and(|(river, _)| {
+        map.flow_bands().is_some() || map.river(river).is_some_and(|river| river.gauges.len() > 1)
+    })
 }
 
 pub(super) fn river_receivers(map: &Map) -> [bool; BODY_LIMIT] {
@@ -289,6 +290,7 @@ pub struct MapGpu {
     support: Vec<[f32; 4]>,
     hollows: Option<HollowsGpu>,
     rivers: [Option<rivers::ChartLayers>; BODY_LIMIT],
+    flow: bool,
     sea_receives_river: bool,
 }
 
@@ -450,6 +452,14 @@ pub fn bindings(visibility: wgpu::ShaderStages) -> [wgpu::BindGroupLayoutEntry; 
 }
 
 impl MapGpu {
+    pub(crate) fn bindings(
+        &self,
+        visibility: wgpu::ShaderStages,
+    ) -> [wgpu::BindGroupLayoutEntry; 2] {
+        let [bed, _] = bindings(visibility);
+        [bed, binding::uniform(6, visibility, self.info.size())]
+    }
+
     #[expect(
         clippy::cast_possible_truncation,
         reason = "map lattice and rows use GPU metres"
@@ -472,6 +482,8 @@ impl MapGpu {
         let height = u32::try_from(size[1]).map_err(|_| UnsupportedMap("water map height"))?;
         record.size_count_sea = [width, height, 0, u32::MAX];
         record.swash[0] = map.profile().swash_ratio as f32;
+        let flow = map.flow_bands().is_some();
+        let mut flow_layers = [[0_u32; 4]; BODY_LIMIT];
         let mut layers = 1;
         if map.body(BODY_LIMIT).is_some() {
             return Err(UnsupportedMap("water map body limit exceeded"));
@@ -503,6 +515,14 @@ impl MapGpu {
                         &mut layers,
                         limits.max_texture_array_layers,
                     )?;
+                    if flow
+                        && let Some(river) =
+                            map.river_of(id).and_then(|(river, _)| map.river(river))
+                    {
+                        flow_layers[id][0] = layers;
+                        layers += u32::try_from(river.gauges.len())
+                            .map_err(|_| UnsupportedMap("river samples exceed map layer limit"))?;
+                    }
                     for (n, end) in chart.ends.iter().filter(|end| !end.is_brink()).enumerate() {
                         let segment = destination
                             .ends
@@ -533,7 +553,8 @@ impl MapGpu {
             }
         }
         if layers > limits.max_texture_array_layers
-            || size_of::<MapRecord>() as u64 > limits.max_uniform_buffer_binding_size
+            || (size_of::<MapRecord>() + if flow { size_of_val(&flow_layers) } else { 0 }) as u64
+                > limits.max_uniform_buffer_binding_size
             || record.origin_spacing_margin.iter().any(|n| !n.is_finite())
             || record.origin_spacing_margin[2] <= 0.0
             || !record.swash[0].is_finite()
@@ -582,6 +603,9 @@ impl MapGpu {
                 if let Some(samples) = &rivers[id] {
                     samples.write(queue, &texture, map, &mut support);
                 }
+                if flow_layers[id][0] != 0 {
+                    rivers::write_flow(queue, &texture, map, id, flow_layers[id][0], &mut support);
+                }
                 if let Some(track) = &tracks.parallel[id] {
                     for (i, pixel) in support.iter_mut().enumerate() {
                         let section = if track.axis == 0 {
@@ -599,9 +623,13 @@ impl MapGpu {
         for shared in tracks.bounded.iter().flatten() {
             write_layer(queue, &texture, shared.layer, shared.track.cells());
         }
+        let mut info_bytes = bytemuck::bytes_of(&record).to_vec();
+        if flow {
+            info_bytes.extend_from_slice(bytemuck::bytes_of(&flow_layers));
+        }
         let info = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("water map records"),
-            contents: bytemuck::bytes_of(&record),
+            contents: &info_bytes,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
         tracks.records = record.bodies.map(|body| body.track);
@@ -619,6 +647,7 @@ impl MapGpu {
             support,
             hollows,
             rivers,
+            flow,
             sea_receives_river: river_receivers(map)
                 .get(record.size_count_sea[3] as usize)
                 .copied()
@@ -635,11 +664,24 @@ impl MapGpu {
 
     /// Map shader declarations specialized to the products that were prepared.
     pub fn source(&self, group: u32) -> String {
-        map_source(group, self.hollows.is_some(), self.has_rivers())
+        let source = map_source(group, self.hollows.is_some(), self.has_rivers());
+        if self.flow {
+            source.replace(
+                "bodies: array<BodyRecord, BODY_LIMIT>,",
+                "bodies: array<BodyRecord, BODY_LIMIT>, flow_layers: array<vec4<u32>, BODY_LIMIT>,",
+            ) + include_str!("map_gpu/flow.wgsl")
+                + if self.has_rivers() {
+                    "\nfn flow_chart_level(cell: Cell, k: u32, body: BodyRecord) -> f32 { return river_chart_cell(cell, k, body).x; }\n"
+                } else {
+                    "\nfn flow_chart_level(cell: Cell, k: u32, body: BodyRecord) -> f32 { return textureLoad(bed_map, cell.corners[k], i32(body.layers.z), 0).x; }\n"
+                }
+        } else {
+            source
+        }
     }
 
     pub(crate) fn has_rivers(&self) -> bool {
-        self.rivers.iter().any(Option::is_some)
+        self.flow || self.rivers.iter().any(Option::is_some)
     }
 
     pub(super) fn sea_receives_river(&self) -> bool {

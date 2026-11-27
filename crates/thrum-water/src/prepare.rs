@@ -307,13 +307,25 @@ pub(super) fn new(
         })
         .transpose()
         .map_err(|error| error.to_string())?;
-    let ambient = if map.rain().is_some() {
+    let flow_profile = mapped.then(|| map.flow_bands()).flatten();
+    let ambient = if let Some(flow) = flow_profile {
+        thrum_sea::Ambient::with_flow_bands(
+            device,
+            surface.queue,
+            profile.waves,
+            map.rain().is_some(),
+            flow,
+        )
+    } else if map.rain().is_some() {
         thrum_sea::Ambient::with_rain(device, profile.waves)
     } else {
         thrum_sea::Ambient::new(device, profile.waves)
     }
     .map_err(|error| error.to_string())?;
     let ambient_passes = ambient.graph().passes.len();
+    let flow = flow_profile
+        .zip(ambient.flow_first_layer())
+        .map(|(flow, first)| (flow.profile(), first));
     let wind_samplers = field_samplers(surface, 0.0);
     let rain = map
         .rain()
@@ -338,6 +350,7 @@ pub(super) fn new(
             surf.is_some(),
             interaction.is_some(),
             rivers,
+            flow,
         )?;
         let query_map = surf
             .as_ref()
@@ -353,6 +366,7 @@ pub(super) fn new(
             long_components,
             map.body(1).is_none(),
             rivers,
+            flow,
         ))
     } else {
         None
@@ -389,7 +403,7 @@ pub(super) fn new(
         .collect();
     if mapped {
         let stages = wgpu::ShaderStages::VERTEX_FRAGMENT;
-        entries.extend(map_gpu::bindings(stages));
+        entries.extend(map_gpu.as_ref().expect("mapped water").bindings(stages));
         entries.extend(
             map_gpu
                 .as_ref()
@@ -411,6 +425,9 @@ pub(super) fn new(
         interaction.as_ref(),
     );
     let foam = whitewater.map(|(settings, report)| {
+        if flow.is_some() {
+            bindings[1].resource = wgpu::BindingResource::TextureView(ambient.query_view());
+        }
         Foam::new(
             device,
             settings,
@@ -420,13 +437,14 @@ pub(super) fn new(
             interaction.is_some(),
             surf.as_ref(),
             map_gpu.as_ref(),
+            flow,
         )
     });
     let shared_samplers = rain
         .as_ref()
         .map(|_| field_samplers(surface, f32::from(thrum_sea::rain::WIND_BASE_MIP)));
     let samplers = shared_samplers.as_ref().unwrap_or(&wind_samplers);
-    if rain.is_some() {
+    if rain.is_some() || flow.is_some() {
         bindings[1].resource = wgpu::BindingResource::TextureView(&ambient.surface_views()[0]);
         bindings[3].resource = wgpu::BindingResource::Sampler(&samplers[0]);
     }
@@ -482,6 +500,7 @@ pub(super) fn new(
         has_shore(map),
         tidal_grid,
         rain.is_some(),
+        flow,
     );
     let lens_cut = lens_buffers
         .as_ref()
@@ -655,6 +674,7 @@ fn surface_pipelines(
     shore: bool,
     tidal_grid: bool,
     rain: bool,
+    flow: Option<(thrum_water_model::FlowBandsProfile, u32)>,
 ) -> (
     SurfacePipelines,
     Option<thrum_render::runtime::PipelineInput<wgpu::ShaderModule>>,
@@ -682,7 +702,7 @@ fn surface_pipelines(
             &mut source,
             "\nconst RAIN_FIRST_LAYER = {}u;\nconst RAIN_SHARED_LAYERS = {}u;",
             thrum_sea::rain::FIRST_LAYER,
-            thrum_sea::rain::SHARED_LAYERS
+            thrum_sea::rain::SHARED_LAYERS + if flow.is_some() { 10 } else { 0 }
         )
         .expect("write shader source");
         source.push_str(super::RAIN_GAIN_WGSL);
@@ -710,6 +730,34 @@ fn surface_pipelines(
                 return 0.0;
             }"
         });
+    }
+    if let Some((profile, first)) = flow {
+        source = source
+            .replace("    return f;\n}\nstruct SurfaceRow", concat!(
+                "    let flow = surface_flow(spacing, row, motion);\n",
+                "    f.displacement.y += flow.x;\n    f.velocity.y += flow.y;\n",
+                "    return f;\n}\nstruct SurfaceRow"
+            ))
+            .replace("    let gains = limit_gains(row.gains, depth, water.heights, map.swash.x, map.origin_spacing_margin.w);", concat!(
+                "    let raw_flow = map_flow(point, body).xy;\n",
+                "    let swash = flow_swatch(row.gains * water.heights, raw_flow, map.swash.x, map.origin_spacing_margin.w);\n",
+                "    let gains = limit_wind_with_flow(row.gains, water.heights, depth, swash);"
+            ))
+            .replace("    body: u32,\n}\nstruct VertexOut", "    body: u32, flow_gains: vec2<f32>,\n}\nstruct VertexOut")
+            .replace("map_wave_track(point, body, row.water.yz), body);", "map_wave_track(point, body, row.water.yz), body, limit_flow(raw_flow, depth, swash));")
+            .replace("    var swash = 0.0;\n    var loss", "    var loss")
+            .replace("        swash = min(map.swash.x * length(before), map.origin_spacing_margin.w);\n", "")
+            .replace("    if map.bodies[id].joins[0].w > 0.0 { return 1.0; }", "    if map.flow_layers[id].x != 0u || map.bodies[id].joins[0].w > 0.0 { return 1.0; }")
+            .replace("    return row.level + height + river_rain_height", "    height += surface_flow(0.0, row, motion).x;\n    return row.level + height + river_rain_height")
+            .replace(include_str!("surface_lighting.wgsl"), &format!("{}{}", include_str!("flow/normal.wgsl"), include_str!("surface_lighting.wgsl")));
+        if rain {
+            source = source.replace(
+                "layer < i32(RAIN_FIRST_LAYER)",
+                "(layer < i32(RAIN_FIRST_LAYER) || layer >= FLOW_FIRST)",
+            );
+        }
+        source.push_str(&crate::flow::constants(profile, first));
+        source.push_str(include_str!("flow/surface.wgsl"));
     }
     let module = |source: String| {
         surface

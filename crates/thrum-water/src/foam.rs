@@ -2,9 +2,15 @@
 //! water map and wave field supply the other births and the transport support.
 mod gpu;
 
-use std::sync::{Arc, Mutex};
+use std::sync::{
+    Arc, Mutex,
+    atomic::{AtomicBool, Ordering},
+};
 
 pub(crate) use gpu::Foam;
+
+/// Bounded whitewater birth rate per watt per square metre of chart loss.
+pub const CHART_LOSS_BIRTH_RATE: f32 = 0.004;
 
 #[derive(Clone)]
 pub(crate) struct Whitewater {
@@ -31,8 +37,17 @@ pub struct Hull {
 
 /// The latest authored hull input. A missing page supplies no births.
 #[derive(Clone, Default)]
-pub struct Input(Arc<Mutex<(u64, Vec<Hull>)>>);
+pub struct Input(Arc<Mutex<(u64, Vec<Hull>)>>, Arc<AtomicBool>);
 impl Input {
+    /// Switch births from chart loss off or on. Existing foam continues to age and travel.
+    pub fn set_chart_loss_births(&self, enabled: bool) {
+        self.1.store(!enabled, Ordering::Relaxed);
+    }
+
+    pub(crate) fn chart_loss_births(&self) -> bool {
+        !self.1.load(Ordering::Relaxed)
+    }
+
     /// Replace the hull input for a tick.
     /// # Panics
     /// Panics if another thread poisoned the hull input lock.

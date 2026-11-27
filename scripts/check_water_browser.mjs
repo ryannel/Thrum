@@ -8,7 +8,7 @@ import zlib from 'node:zlib';
 import {installWasmReceipt,readWasmReceipt} from './wasm_receipt.mjs';
 
 const mode = process.argv[process.argv.indexOf('--case') + 1];
-if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf','channel','river','rain-puddles','rain-rings','rain-footfall','under'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf|channel|river|rain-puddles|rain-rings|rain-footfall|under');
+if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf','channel','river','river-calm','rain-puddles','rain-rings','rain-footfall','under'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf|channel|river|river-calm|rain-puddles|rain-rings|rain-footfall|under');
 const opticsRoute = mode === 'fixed' ? process.env.THRUM_WATER_BROWSER_OPTICS : undefined;
 const diveRoute = ['fixed','realtime'].includes(mode) ? process.env.THRUM_WATER_BROWSER_DIVE : undefined;
 const surfInspection = process.env.THRUM_WATER_INSPECT_SURF === '1' && ['fixed','realtime'].includes(mode);
@@ -586,8 +586,8 @@ try {
   await cdp.call('Page.enable',{},sid);await cdp.call('Runtime.enable',{},sid);
   await installWasmReceipt(cdp,sid);
   const surfRoute=mode==='surf'||surfInspection;
-  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(mode==='under'?lensObserver:'')+(['island','surf','channel','river','rain-puddles','rain-rings','rain-footfall'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
-  const route=diveRoute??opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='river'?'?river=trade':['rain-puddles','rain-rings','rain-footfall'].includes(mode)?'?rain=calm':mode==='under'?lensRoute('sea','baseline'):'');
+  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(mode==='under'?lensObserver:'')+(['island','surf','channel','river','river-calm','rain-puddles','rain-rings','rain-footfall'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
+  const route=diveRoute??opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='river-calm'?'?river=calm':mode==='river'?'?river=trade':['rain-puddles','rain-rings','rain-footfall'].includes(mode)?'?rain=calm':mode==='under'?lensRoute('sea','baseline'):'');
   result.route=route;
   const navigate=async search=>{
     await cdp.call('Page.navigate',{url:url+search},sid);
@@ -880,6 +880,35 @@ try {
       'the float must rise and fall, with dry ground under the roof');
     assert(new Set(result.frames.map(frame=>frame.sha256_rgba)).size===3,'the submitted yard states must differ');
     result.rain={first,joined,high,parted,draws,submitted};
+  } else if(mode==='river-calm'){
+    await until(async()=>{
+      const status=await evaluate(`game.frame(${now});game.report()`);
+      return /^Cooked generation [0-9]+ drawn/.test(status);
+    },'cooked calm river island drawn');
+    const flowPasses=await evaluate(`(()=>{
+      const passes={flow:0,foam:0};
+      const start=GPUCommandEncoder.prototype.beginComputePass;
+      GPUCommandEncoder.prototype.beginComputePass=function(desc) {
+        if(desc?.label?.includes('river flow bands'))passes.flow++;
+        if(desc?.label?.endsWith('whitewater'))passes.foam++;
+        return start.call(this,desc);
+      };
+      globalThis.__riverPasses=passes;
+      return passes;
+    })()`);
+    for(const [camera,name] of [[2,'riffle'],[0,'pool'],[3,'ledge']]){
+      await evaluate(`game.edit_control('camera.river',${camera})`);
+      for(let tick=0;tick<16;tick++){
+        await until(()=>evaluate('game.frame_ready()'),'calm river frame slot');
+        await drive(1000/30);
+      }
+      await capture(name);
+    }
+    const submitted=await evaluate('__riverPasses');
+    const specialized=await evaluate('__island.source.includes("fn surface_flow(") && __island.source.includes("fn foam_surface(")');
+    assert(specialized&&submitted.flow>flowPasses.flow&&submitted.foam>flowPasses.foam,'calm river flow and whitewater must submit');
+    assert(result.frames.length===3&&new Set(result.frames.map(frame=>frame.sha256_rgba)).size===3,'three calm river cameras must submit distinct output');
+    result.river_calm={passes:submitted};
   } else if(mode==='river'){
     const floats=()=>evaluate('(game.report(),globalThis.waterRiverFloats)');
     await until(async()=>{

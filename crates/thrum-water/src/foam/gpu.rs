@@ -88,6 +88,7 @@ pub(crate) struct Foam {
     recorded: Option<Frame>,
     step: bool,
     initial_report: Report,
+    flow: bool,
 }
 
 fn buffer(device: &DeviceSite, label: &str, size: u64, usage: wgpu::BufferUsages) -> wgpu::Buffer {
@@ -146,6 +147,7 @@ impl Foam {
         wake: bool,
         surf: Option<&SurfGpu>,
         map: Option<&crate::map_gpu::MapGpu>,
+        flow: Option<(thrum_water_model::FlowBandsProfile, u32)>,
     ) -> Self {
         use wgpu::BufferUsages as Usage;
         use wgpu::ShaderStages as Stages;
@@ -242,7 +244,7 @@ impl Foam {
              }"
             .to_owned()
         };
-        let source = (include_str!("../field.wgsl").to_owned() + &Self::source(surf.is_some()))
+        let mut source = (include_str!("../field.wgsl").to_owned() + &Self::source(surf.is_some()))
             .replace("@group(3)", "@group(0)")
             .replace(
                 "var<storage, read> foam_stocks",
@@ -253,6 +255,30 @@ impl Foam {
             + include_str!("../carriage.wgsl")
             + &shore
             + include_str!("step.wgsl");
+        if let Some((profile, first)) = flow {
+            use std::fmt::Write;
+            source = source
+                .replace("        let gain = limit_gains(row.row.gains, depth, water.heights, map.swash.x, map.origin_spacing_margin.w);",
+                    concat!(
+                        "        let flow = map_flow(point, row.body);\n",
+                        "        let swash = flow_swatch(row.row.gains * water.heights, flow.xy, map.swash.x, map.origin_spacing_margin.w);\n",
+                        "        let gain = limit_wind_with_flow(row.row.gains, water.heights, depth, swash);\n",
+                        "        let flow_gains = limit_flow(flow.xy, depth, swash);"
+                    ))
+                .replace("            column = foam_column(point, gain, dt_column, current, track);",
+                    "            column = foam_column(point, gain, dt_column, current, track);\n                     column.displacement.y += foam_flow_height(point, current, track, flow_gains, spacing);")
+                .replace("            let rates = vec4(", "            let river_birth = min(3.3, flow.z * CHART_LOSS_BIRTH_RATE) * foam_settings.long_bounds.z;\n            let rates = vec4(")
+                .replace(" + vec4(hull.xy, 0.0, hull.w);", " + vec4(hull.xy, 0.0, hull.w) + river_birth * vec4(0.22, 1.0, 0.0, 0.14);")
+                .replace("movement = vec4(shift, diffusion, shore.x);", "movement = vec4(shift, diffusion, shore.x + river_birth);");
+            source.push_str(&crate::flow::constants(profile, first));
+            source.push_str(include_str!("flow.wgsl"));
+            writeln!(
+                &mut source,
+                "const CHART_LOSS_BIRTH_RATE: f32 = {:?};",
+                super::CHART_LOSS_BIRTH_RATE
+            )
+            .expect("foam loss constant");
+        }
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(PASS),
             source: wgpu::ShaderSource::Wgsl(source.into()),
@@ -282,6 +308,7 @@ impl Foam {
             recorded: None,
             step: false,
             initial_report,
+            flow: flow.is_some(),
         }
     }
 
@@ -429,6 +456,9 @@ impl Foam {
         settings.time_wind[2..].copy_from_slice(&self.whitewater.wind);
         settings.jacobian_variance = self.whitewater.jacobian_variance;
         settings.long_bounds = self.whitewater.long_bounds;
+        if self.flow {
+            settings.long_bounds[2] = f32::from(self.whitewater.input.chart_loss_births());
+        }
         let origin = [frame.camera[0], frame.camera[2]];
         let tick_seconds = time.tick_duration.as_secs_f32();
         // A normal step samples its committed tick. Catch-up steps sample

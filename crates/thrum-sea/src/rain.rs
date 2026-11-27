@@ -79,7 +79,7 @@ impl Bands {
         Self::prepare(device, rain, None)
     }
 
-    /// Prepare rain in the last four layers of an ambient cascade array.
+    /// Prepare rain in the four reserved layers after the wind cascades.
     /// # Errors
     /// Refuses an incompatible array or a profile beyond the device's limits.
     pub fn in_cascades(
@@ -89,7 +89,7 @@ impl Bands {
     ) -> Result<Self, super::AmbientError> {
         if array.width() != SIZE
             || array.height() != SIZE
-            || array.depth_or_array_layers() != SHARED_LAYERS
+            || array.depth_or_array_layers() < SHARED_LAYERS
             || array.mip_level_count() != MIPS
             || array.format() != FORMAT
         {
@@ -179,7 +179,7 @@ impl Bands {
                 view_formats: &[],
             })
         });
-        let base_layer = texture.depth_or_array_layers() - LAYERS;
+        let base_layer = if cascades.is_some() { FIRST_LAYER } else { 0 };
         let view = texture.create_view(&wgpu::TextureViewDescriptor {
             base_array_layer: base_layer,
             array_layer_count: Some(LAYERS),

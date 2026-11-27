@@ -2,7 +2,7 @@ use super::SurfGpu;
 use crate::{
     WaterError,
     column::{COMPONENT_LIMIT, Component},
-    map_gpu::{self, MapGpu},
+    map_gpu::MapGpu,
 };
 use bytemuck::{Pod, Zeroable};
 use std::sync::{Arc, Mutex};
@@ -157,7 +157,7 @@ impl Cache {
             binding::storage(2, compute, true, components.size()),
             binding::storage(3, compute, false, samples.size()),
         ];
-        layout_entries.extend(map_gpu::bindings(compute));
+        layout_entries.extend(map.bindings(compute));
         layout_entries.extend(map.hollows_bindings(compute));
         layout_entries.extend(SurfGpu::layout(COMPUTE_SURF_BINDING, compute));
         if let Some(work) = &work {

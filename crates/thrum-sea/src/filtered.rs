@@ -12,9 +12,9 @@ pub(super) const SHADER: &str = concat!(
     include_str!("filtered.wgsl")
 );
 pub(super) const PACK_PASS: &str = "sea filtered pack";
-const PLANES: u32 = 5;
+pub(super) const PLANES: u32 = 5;
 pub(super) const CASCADE_PLANES: u32 = super::spec::CASCADES * PLANES;
-const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
+pub(super) const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
 const USAGE: wgpu::TextureUsages = wgpu::TextureUsages::STORAGE_BINDING
     .union(wgpu::TextureUsages::TEXTURE_BINDING)
     .union(wgpu::TextureUsages::COPY_SRC);
@@ -36,6 +36,7 @@ impl Filtered {
         cascades: &wgpu::Buffer,
         long: &wgpu::Buffer,
         rain: bool,
+        flow: bool,
     ) -> Self {
         let cascade_mip = if rain {
             u32::from(super::rain::WIND_BASE_MIP)
@@ -46,7 +47,7 @@ impl Filtered {
             let (width, layers) = match i {
                 0 => (
                     256_u32 << cascade_mip,
-                    CASCADE_PLANES + if rain { super::rain::LAYERS } else { 0 },
+                    super::flow::first_layer(rain) + if flow { super::flow::LAYERS } else { 0 },
                 ),
                 _ => (128_u32, 8 * PLANES),
             };
@@ -77,7 +78,7 @@ impl Filtered {
             wind_view(None),
             textures[1].create_view(&wgpu::TextureViewDescriptor::default()),
         ];
-        let surface_views = rain.then(|| {
+        let surface_views = (rain || flow).then(|| {
             [
                 textures[0].create_view(&wgpu::TextureViewDescriptor::default()),
                 views[1].clone(),
@@ -209,6 +210,10 @@ impl Filtered {
             passes,
         }
     }
+    pub(super) fn pass_count(&self) -> usize {
+        self.passes.len()
+    }
+
     pub(super) fn encode(&self, index: usize, pass: &mut wgpu::ComputePass<'_>) {
         let p = &self.passes[index];
         pass.set_pipeline(&p.pipeline);
@@ -219,7 +224,10 @@ impl Filtered {
     pub(super) fn append_graph(&self, graph: &mut EffectGraph) {
         let offset = graph.resources.len();
         for (i, texture) in self.textures.iter().enumerate() {
-            let scope = if i == 0 && self.cascade_mip != 0 {
+            let scope = if i == 0
+                && (self.cascade_mip != 0
+                    || self.textures[0].depth_or_array_layers() > CASCADE_PLANES)
+            {
                 ResourceScope::Persistent {
                     owner: 0x7261_696e,
                     epoch: 0,
@@ -291,7 +299,7 @@ impl Filtered {
         }
     }
     pub(super) fn surface_accesses(&self, offset: usize) -> Vec<EffectAccess> {
-        if self.cascade_mip != 0 {
+        if self.cascade_mip != 0 || self.textures[0].depth_or_array_layers() > CASCADE_PLANES {
             let mut accesses: Vec<_> = (0..self.textures[0].mip_level_count() - self.cascade_mip)
                 .map(|mip| self.access(offset, 0, mip, AccessKind::SampledRead))
                 .collect();

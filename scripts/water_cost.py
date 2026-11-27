@@ -20,6 +20,7 @@ RECORDS = {'first-frame': ROOT / 'tests/fixtures/waters/first-frame-cost.json',
            'foam': ROOT / '.orchestrate/evidence/WATERS/M7/cost.json',
            'surf': ROOT / '.orchestrate/evidence/WATERS/WP21/surf-cost.json',
            'channel': ROOT / '.orchestrate/evidence/WATERS/WP9/channel-cost.json',
+           'river-calm': ROOT / '.orchestrate/evidence/RIVERS/WP5/river-calm-cost.json',
            'river': ROOT / '.orchestrate/evidence/RIVERS/WP4/river-cost.json',
            'rain-puddles': ROOT / 'tests/fixtures/puddles/yard-water-cost.json',
            'rain-rings': ROOT / 'tests/fixtures/puddles/rain-rings-cost.json',
@@ -32,6 +33,7 @@ WORKING = ROOT / '.orchestrate/evidence/WATERS'
 FIRST_FRAME_FORMER = '/WATERS/M2-cost.json'
 WAKE_HISTORY = ROOT / 'examples/water/tests/fixtures/wake-cost-prior.json'
 SURF_HISTORY = ROOT / 'examples/water/tests/fixtures/surf-cost-prior.json'
+RIVER_HISTORY = ROOT / 'examples/water/tests/fixtures/river-cost-wp4.json'
 WP13_SURF = ROOT / 'examples/water/tests/fixtures/surf-cost-wp13.json'
 SURF_CACHE_INVESTIGATION = ROOT / 'examples/water/tests/fixtures/surf-cache-investigation.json'
 WAKE_ROUTE = {'wind': 'trade', 'view': 'overhead', 'speed_mps': 6}
@@ -46,8 +48,10 @@ def run(command, **kwargs):
 def measure(scene):
     island = scene == 'island'
     channel = scene == 'channel'
-    river = scene == 'river'
+    calm_river = scene == 'river-calm'
+    river = scene in ('river', 'river-calm')
     output = ROOT / ({
+        'river-calm': 'tmp/rivers-wp5/cost-current',
         'river': 'tmp/rivers-wp4/cost-current', 'channel': 'tmp/waters-wp9/cost-current', 'island': 'tmp/waters-M4/cost-current',
     }.get(scene, 'tmp/waters-M2/cost-current'))
     output.mkdir(parents=True, exist_ok=True)
@@ -57,7 +61,7 @@ def measure(scene):
     else:
         env.pop('THRUM_WATER_CHANNEL', None)
     if river:
-        env['THRUM_WATER_RIVER'] = 'trade'
+        env['THRUM_WATER_RIVER'] = 'calm' if calm_river else 'trade'
     elif channel:
         env.pop('THRUM_WATER_RIVER', None)
     if island:
@@ -92,7 +96,9 @@ def measure(scene):
     if channel:
         data['view'] = 'Narrows camera under trade wind; same cooked outlet terrain, float, post and sky in both arms'
     if river:
-        data['view'] = 'Both rivers from above the lake in trade wind, with identical terrain, floats and sky in both arms'
+        data['view'] = ('Spring sill and narrows in a calm, with identical terrain, floats and sky in both arms'
+                        if calm_river else
+                        'Both rivers from above the lake in trade wind, with identical terrain, floats and sky in both arms')
         data['river_files'] = products
     data['scene'] = scene
     data['estimates'] = {'surface_vertices': 200000, 'surface_gpu_ms': 'unmeasured in design; largest term', 'long_cache_gpu_ms': '0.2-0.3', 'previous_inverted_cache_gpu_ms': 3.6, 'broadsides_surface_ms': 10.5}
@@ -140,7 +146,7 @@ def measure(scene):
             'commit': prior['commit'], 'view': prior['view'], 'summary': prior['summary'],
         }
         data['investigations'].extend(channel_investigations(data['summary'], prior['summary']))
-    if river:
+    if scene == 'river':
         # Keep the current channel comparison in memory and preserve its saved record.
         channel_record = measure('channel')
         data['channel_record'] = {key: channel_record[key] for key in ('view', 'commit', 'summary')}
@@ -156,6 +162,28 @@ def measure(scene):
                                 'The paired water-off timing shows which changes also occur without water. '
                                 'This comparison does not isolate coverage from the cost of mixing samples.'),
             })
+    if calm_river:
+        prior = json.loads(RIVER_HISTORY.read_text())
+        data['wp4'] = prior
+        for row, label, baseline, duration in channel_growth(data['summary'], prior['summary']):
+            data['investigations'].append({
+                'wire': 'pass grew by at least 25% compared to WP4',
+                'water': row['water'], 'tick_frame': row['tick_frame'], 'pass': label,
+                'measurement': f'{label} grew from {baseline:.3f} ms to {duration:.3f} ms.',
+                'disposition': ('The paired dry arm measures scene work for the closer bank camera. '
+                                'The new flow transforms and foam step have their own timestamps. '
+                                'Wind, depth coverage and camera differ from WP4, so shared passes also reflect scene changes.'),
+            })
+        for row in data['summary']:
+            if row['water']:
+                new_passes = {label: ms for label, ms in row['passes_ms'].items()
+                              if 'river flow bands' in label or 'whitewater' in label}
+                data['investigations'].append({
+                    'wire': 'added river passes', 'water': True, 'tick_frame': row['tick_frame'],
+                    'measurement': new_passes,
+                    'disposition': ('The flow transforms reuse wind FFT pipelines and use independent scratch for their cadence. The whitewater transport cost belongs '
+                                    'to tick frames. No dedicated texture binding was added to the surface.'),
+                })
     return data
 
 
@@ -269,6 +297,16 @@ def validate(data, scene):
             assert (row['water'], row['tick_frame'], label) in investigated, label
         for name in ['Spring stream', 'Lake river']:
             assert any(n.startswith(name) and count > 0 for n, count in data['body_vertices'])
+    if scene == 'river-calm':
+        assert data['extent'] == [2560, 1440] == data['wp4']['extent']
+        wet = [row for row in data['summary'] if row['water']]
+        assert all(any('river flow bands' in label for label in row['passes_ms']) for row in wet)
+        assert any('whitewater' in label for row in wet for label in row['passes_ms'])
+        investigated = {(item['water'], item['tick_frame'], item['pass'])
+                        for item in data['investigations']
+                        if item['wire'] == 'pass grew by at least 25% compared to WP4'}
+        for row, label, _, _ in channel_growth(data['summary'], data['wp4']['summary']):
+            assert (row['water'], row['tick_frame'], label) in investigated, label
     if scene == 'island':
         named = data['first_frame_record']
         assert named == str(RECORDS['first-frame'].relative_to(ROOT)) or named.endswith(FIRST_FRAME_FORMER)
@@ -1434,7 +1472,7 @@ def main():
     record = RECORDS[args.scene]
     data = measure(args.scene)
     validate(data, args.scene)
-    if args.scene in ('channel', 'river'):
+    if args.scene in ('channel', 'river', 'river-calm'):
         record = Path(os.environ.get('THRUM_WATER_OUTPUT', record))
         if record.is_dir():
             record /= f'{args.scene}-cost.json'

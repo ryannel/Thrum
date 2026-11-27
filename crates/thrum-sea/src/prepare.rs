@@ -26,10 +26,36 @@ fn transform_twiddles() -> [[f32; 2]; TRANSFORM_SIZE as usize / 2] {
     })
 }
 
+fn prepare_buffers(
+    device: &DeviceSite,
+    resources: Vec<spec::Resource>,
+) -> Result<BTreeMap<BufferKey, wgpu::Buffer>, AmbientError> {
+    let mut buffers = BTreeMap::new();
+    for resource in resources {
+        let buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some(&resource.name),
+            size: resource.size,
+            usage: resource.usage,
+            mapped_at_creation: resource.key == BufferKey::Twiddles,
+        });
+        if resource.key == BufferKey::Twiddles {
+            buffer
+                .slice(..)
+                .get_mapped_range_mut()
+                .map_err(AmbientError::Mapping)?
+                .copy_from_slice(bytemuck::cast_slice(&transform_twiddles()));
+            buffer.unmap();
+        }
+        buffers.insert(resource.key, buffer);
+    }
+    Ok(buffers)
+}
+
 pub(super) fn new(
     device: &DeviceSite,
     profile: Profile,
     rain: bool,
+    flow: Option<(&wgpu::Queue, &thrum_water_model::FlowBands)>,
 ) -> Result<Ambient, AmbientError> {
     if profile.transform_size != TRANSFORM_SIZE {
         return Err(AmbientError::UnsupportedProfile(
@@ -52,12 +78,18 @@ pub(super) fn new(
         ));
     }
     let limits = device.limits();
-    if rain
-        && (limits.max_texture_dimension_2d < crate::rain::SIZE
-            || limits.max_texture_array_layers < crate::rain::SHARED_LAYERS)
+    if (rain && limits.max_texture_dimension_2d < crate::rain::SIZE)
+        || ((rain || flow.is_some())
+            && limits.max_texture_array_layers
+                < crate::flow::first_layer(rain)
+                    + if flow.is_some() {
+                        crate::flow::LAYERS
+                    } else {
+                        0
+                    })
     {
         return Err(AmbientError::DeviceLimit {
-            resource: "shared wind and rain cascade array".into(),
+            resource: "shared wave layer array".into(),
             limit: "cascade texture extent or array layers",
         });
     }
@@ -99,24 +131,7 @@ pub(super) fn new(
             limit: "max_compute_workgroup_size",
         });
     }
-    let mut buffers = BTreeMap::new();
-    for resource in resources {
-        let buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some(&resource.name),
-            size: resource.size,
-            usage: resource.usage,
-            mapped_at_creation: resource.key == BufferKey::Twiddles,
-        });
-        if resource.key == BufferKey::Twiddles {
-            buffer
-                .slice(..)
-                .get_mapped_range_mut()
-                .map_err(AmbientError::Mapping)?
-                .copy_from_slice(bytemuck::cast_slice(&transform_twiddles()));
-            buffer.unmap();
-        }
-        buffers.insert(resource.key, buffer);
-    }
+    let buffers = prepare_buffers(device, resources)?;
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("sea ambient"),
         source: wgpu::ShaderSource::Wgsl(crate::SHADER.into()),
@@ -195,13 +210,28 @@ pub(super) fn new(
     }
     let dynamic_size =
         usize::try_from(buffers[&BufferKey::UploadStaging].size()).expect("bounded upload");
-    Ok(Ambient {
-        filtered: crate::filtered::Filtered::new(
+    let filtered = crate::filtered::Filtered::new(
+        device,
+        &buffers[&BufferKey::Cascades],
+        &buffers[&BufferKey::LongField],
+        rain,
+        flow.is_some(),
+    );
+    let flow = flow.map(|(queue, bands)| {
+        crate::flow::Flow::new(
             device,
-            &buffers[&BufferKey::Cascades],
-            &buffers[&BufferKey::LongField],
+            queue,
+            bands,
             rain,
-        ),
+            &filtered.textures[0],
+            &buffers,
+            &passes,
+            &specs,
+        )
+    });
+    Ok(Ambient {
+        filtered,
+        flow,
         profile,
         buffers,
         passes,

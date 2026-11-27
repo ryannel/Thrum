@@ -1,5 +1,6 @@
 //! Shared water, lit by the scene's lent environment. The host owns all clocks and submission.
 mod column;
+mod flow;
 pub mod foam;
 #[cfg(test)]
 mod fresnel_tests;
@@ -119,6 +120,10 @@ pub struct WaterReport {
     pub foam_pattern_invalidations: u64,
     /// Live drops in the two submitted rain bands, when prepared.
     pub rain_drops: Option<[usize; 2]>,
+    /// Whether the most recently submitted view evaluated the flow bands.
+    pub flow_bands_ran: Option<bool>,
+    /// Tick submissions that evaluated the flow field for posted query points.
+    pub flow_query_evaluations: u64,
 }
 
 /// A single contribution containing the ambient passes and the displaced surface.
@@ -147,6 +152,8 @@ pub struct Water {
     underwater: Option<underwater::Underwater>,
     prepared: Option<prepare::Prepared>,
     rain_quality: Option<QualitySettings>,
+    flow: Option<flow::Flow>,
+    flow_query_pending: Option<f64>,
     previous: Option<(f64, u64, f64)>,
     recorded: (f64, u64, f64),
     invalid: bool,
@@ -249,6 +256,7 @@ impl Water {
             None
         };
         let rain_quality = guard.rain().map(|_| rain::quality());
+        let flow = (mapped && guard.flow_bands().is_some()).then(|| flow::Flow::new(&guard));
         drop(guard);
         if !row.level.is_finite() {
             return Err(WaterError::InvalidLevel);
@@ -315,6 +323,8 @@ impl Water {
             opaque: OpticsBodies::default(),
             prepared: None,
             rain_quality,
+            flow,
+            flow_query_pending: None,
             previous: None,
             recorded: (0.0, 0, 0.0),
             invalid: true,
@@ -607,8 +617,14 @@ impl SceneContribution for Water {
             foam_pattern: None,
             foam_pattern_invalidations,
             rain_drops: None,
+            flow_bands_ran: None,
+            flow_query_evaluations: 0,
         };
         self.previous = None;
+        self.flow_query_pending = None;
+        if let Some(flow) = &mut self.flow {
+            flow.reset();
+        }
         if let Some(tap) = &self.foam_tap {
             *tap.0.lock().expect("foam witness") = None;
         }
@@ -619,10 +635,17 @@ impl SceneContribution for Water {
     }
     fn quality_knobs(&self) -> Vec<QualityKnob> {
         self.rain_quality
-            .as_ref()
-            .map_or_else(Vec::new, |settings| settings.knobs().to_vec())
+            .iter()
+            .chain(self.flow.iter().map(|flow| &flow.quality))
+            .flat_map(|settings| settings.knobs().iter().cloned())
+            .collect()
     }
     fn set_quality_knob(&mut self, name: &str, value: u32) -> Result<(), QualityError> {
+        if name == flow::CADENCE
+            && let Some(flow) = &mut self.flow
+        {
+            return flow.quality.set(name, value);
+        }
         self.rain_quality
             .as_mut()
             .ok_or_else(|| QualityError::UnknownKnob { name: name.into() })?
@@ -641,7 +664,11 @@ impl SceneContribution for Water {
         {
             rain.invalidate();
         }
-        invalidation
+        invalidation.max(
+            self.flow
+                .as_mut()
+                .map_or(QualityInvalidation::None, |flow| flow.quality.commit()),
+        )
     }
     fn effect_graph(&self) -> EffectGraph {
         self.prepared
@@ -779,7 +806,7 @@ impl SceneContribution for Water {
                 &[],
             )
             .expect("validated water spectrum and camera");
-        let parameters = records::Parameters::new(
+        let mut parameters = records::Parameters::new(
             row,
             &self.spectrum,
             &p.ambient,
@@ -792,13 +819,29 @@ impl SceneContribution for Water {
             self.profile.deep_scatter,
             records::carriage(now, self.profile.carriage_period),
         );
+        if let Some(flow) = &mut self.flow {
+            let age = flow.record(frame, now, self.invalid);
+            #[expect(
+                clippy::cast_possible_truncation,
+                reason = "display age is in GPU seconds"
+            )]
+            {
+                parameters.cache[0][3] = age as f32;
+            }
+            if flow.runs() {
+                p.ambient.upload_flow(&p.queue, now);
+            }
+        }
         p.queue
             .write_buffer(&p.parameters, 0, bytemuck::bytes_of(&parameters));
     }
     fn effect_runs(&self, index: usize, _frame: &ContributionFrame) -> bool {
         self.prepared.as_ref().is_some_and(|p| {
             if index < p.ambient_passes {
-                true
+                p.ambient
+                    .flow_pass_start()
+                    .is_none_or(|start| index < start)
+                    || self.flow.as_ref().is_some_and(flow::Flow::runs)
             } else if index == p.ambient_passes
                 && let Some(interaction) = &p.interaction
             {
@@ -847,14 +890,15 @@ impl SceneContribution for Water {
     fn encode_tick_upload(
         &mut self,
         _index: usize,
-        _encoder: &mut wgpu::CommandEncoder,
+        encoder: &mut wgpu::CommandEncoder,
         _step: std::time::Duration,
     ) {
+        self.flow_query_pending = None;
         let resources_grew = if let Some(p) = &mut self.prepared
             && let Some(query) = &mut p.query
         {
             let map = self.map.lock().expect("water map lock");
-            query.record(
+            let grew = query.record(
                 &p.queue,
                 &self.spectrum,
                 &self.profile,
@@ -862,7 +906,28 @@ impl SceneContribution for Water {
                 &map,
                 p.map.as_ref(),
                 p.interaction.as_ref(),
-            )
+            );
+            if let Some(time) = query.flow_query_time()
+                && self
+                    .flow
+                    .as_ref()
+                    .is_some_and(|flow| flow.needs_query(time))
+                && let Some(first) = p.ambient.flow_pass_start()
+            {
+                // Tick submissions may come between any two displayed frames.
+                // Reconstruct the one field at the source frame's time before
+                // reading it, including points posted since that view was made.
+                p.ambient.upload_flow(&p.queue, time);
+                for index in first..p.ambient_passes {
+                    let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                        label: Some("river flow bands for query"),
+                        timestamp_writes: None,
+                    });
+                    p.ambient.encode_pass(index, &mut pass);
+                }
+                self.flow_query_pending = Some(time);
+            }
+            grew
         } else {
             false
         };
@@ -881,6 +946,15 @@ impl SceneContribution for Water {
         }
     }
     fn tick_submitted(&mut self, _passes: &[usize]) {
+        if let Some(time) = self.flow_query_pending.take()
+            && let Some(flow) = &mut self.flow
+        {
+            flow.submit_query(time);
+            self.report
+                .lock()
+                .expect("water report")
+                .flow_query_evaluations += 1;
+        }
         if let Some(query) = self.prepared.as_mut().and_then(|p| p.query.as_mut()) {
             query.submit();
         }
@@ -990,6 +1064,10 @@ impl SceneContribution for Water {
         }
     }
     fn submitted(&mut self, history_advanced: bool) {
+        if let Some(flow) = &mut self.flow {
+            flow.submit(history_advanced);
+            self.report.lock().expect("water report").flow_bands_ran = Some(flow.runs());
+        }
         if self.underwater.is_some() {
             self.report
                 .lock()
