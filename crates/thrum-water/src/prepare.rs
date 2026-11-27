@@ -1094,31 +1094,26 @@ fn compose_rain_film(
     shore: bool,
     rain: bool,
 ) -> String {
-    const APPEARANCE: &str = include_str!("foam/appearance.wgsl");
+    const SHORE_FILM: &str = include_str!("foam/film.wgsl");
     const VERTEX: &str = "@vertex fn film_vertex(";
     const SHORE: &str = "    let footprint = length(ground - view.camera_xyz_time.xyz)";
-    let (_, film) = APPEARANCE.split_once(VERTEX).expect("film entry point");
-    let (header, tail) = film.split_once(SHORE).expect("film support");
-    if shore {
-        source.truncate(source.find(VERTEX).expect("shore film entry point"));
-    } else {
-        source.push_str("\n@group(1) @binding(0) var shore_depth: texture_depth_2d;\n");
-    }
-    source.push_str(VERTEX);
-    source.push_str(header);
-    source.push_str(
-        "    let normal = film_normal(pixel.xy, ground);
+    const STANDING_WATER: &str = "    let normal = film_normal(pixel.xy, ground);
     let wet = ground_wetness_footprint(ground, normal, film_footprint(ground, normal));
     if wet.hollows_ground {
         if wet.cover <= 0.0 { discard; }
         return standing_film(pixel.xy, ground, normal, wet);
     }
-",
-    );
+";
     if shore {
-        source.push_str(SHORE);
-        source.push_str(tail);
+        let at = source.find(SHORE).expect("shore film support");
+        source.insert_str(at, STANDING_WATER);
     } else {
+        let (_, film) = SHORE_FILM.split_once(VERTEX).expect("film entry point");
+        let (header, _) = film.split_once(SHORE).expect("film support");
+        source.push_str("\n@group(1) @binding(0) var shore_depth: texture_depth_2d;\n");
+        source.push_str(VERTEX);
+        source.push_str(header);
+        source.push_str(STANDING_WATER);
         source.push_str("    discard;\n    return Output(vec4(0.0), vec2(0.0), 0.0);\n}\n");
     }
     source.push_str(&wet.shader(3, WET_GROUND_BINDING));
