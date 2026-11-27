@@ -735,7 +735,81 @@
     },
     "WP5": {
       "definitions": "b773fb293a5806d1974d6283d78c7d194a2018c5ffb79e5b224c4dd44251e45c",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "b5cb5000a6b3529da7d53ae5d79a690a926b897d",
+          "review": ".orchestrate/evidence/PUDDLES/WP5-review.md",
+          "items": {
+            "WP5.1": "fail",
+            "WP5.2": "fail",
+            "WP5.3": "pass",
+            "WP5.4": "fail",
+            "WP5.5": "pass",
+            "WP5.6": "pass",
+            "WP5.7": "fail",
+            "WP5.8": "pass",
+            "WP5.9": "fail"
+          },
+          "findings": [
+            {
+              "name": "The forward material disagrees with the rain model at a wet hollow",
+              "item": "WP5.2",
+              "repeat": false
+            },
+            {
+              "name": "Standing film disappears when water optics are disabled",
+              "item": "WP5.4",
+              "repeat": false
+            },
+            {
+              "name": "Dry off-screen hollows force a full-frame water gather",
+              "repeat": false
+            },
+            {
+              "name": "The paving and its film have separate relief patterns",
+              "item": "WP5.4",
+              "repeat": false
+            },
+            {
+              "name": "Adding hollows separates the beach film and dark-sand edges",
+              "item": "WP5.7",
+              "repeat": false
+            },
+            {
+              "name": "The dry provider changes a submitted lake pixel",
+              "item": "WP5.1",
+              "repeat": false
+            },
+            {
+              "name": "The 4,096-point check never creates its required puddle margin",
+              "item": "WP5.2",
+              "repeat": false
+            },
+            {
+              "name": "The paired cost record leaves water-pass tripwires uninvestigated",
+              "item": "WP5.9",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 327128,
+            "cached": 17662464,
+            "output": 37019,
+            "turns": 1
+          },
+          "at": "2026-11-27T05:35:53Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
