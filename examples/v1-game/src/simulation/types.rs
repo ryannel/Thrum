@@ -76,7 +76,12 @@ pub enum Command {
     /// Set ground condensate and haze targets for the next weather tick.
     SetGroundWeather(crate::clouds::GroundTargets),
     /// Rephase the Ground selection's committed solar clock on the next tick.
-    SetWeatherSolarTime(f32),
+    SetWeatherSolarTime {
+        /// The requested phase, with noon at one half.
+        phase: f32,
+        /// Keep the Sun at this phase on subsequent ticks.
+        held: bool,
+    },
     /// Spawn a registered bundle after the current simulation step.
     Spawn(ComponentEntity),
     /// Retire a checked handle after the current simulation step.

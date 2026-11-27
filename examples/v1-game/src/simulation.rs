@@ -839,13 +839,13 @@ fn validate_commands(
                     return Err(SimError::ConflictingCommands);
                 }
             }
-            Command::SetWeatherSolarTime(time) => {
-                if weather.is_none() || !(0.0..=1.0).contains(time) {
+            Command::SetWeatherSolarTime { phase, .. } => {
+                if weather.is_none() || !(0.0..=1.0).contains(phase) {
                     return Err(SimError::InvalidConfig);
                 }
                 if commands[..index]
                     .iter()
-                    .any(|prior| matches!(prior, Command::SetWeatherSolarTime(_)))
+                    .any(|prior| matches!(prior, Command::SetWeatherSolarTime { .. }))
                 {
                     return Err(SimError::ConflictingCommands);
                 }
@@ -917,7 +917,7 @@ fn command_target(command: &Command) -> Option<(Handle, u8)> {
         Command::Spawn(_)
         | Command::SetWeather(_)
         | Command::SetGroundWeather(_)
-        | Command::SetWeatherSolarTime(_) => None,
+        | Command::SetWeatherSolarTime { .. } => None,
         Command::Despawn(handle) => Some((*handle, 0)),
         Command::SetPosition(handle, _) => Some((*handle, 1)),
         Command::SetVelocity(handle, _) => Some((*handle, 2)),

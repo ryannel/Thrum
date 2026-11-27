@@ -777,7 +777,7 @@ struct WeatherEdits(std::sync::Arc<std::sync::Mutex<WeatherTargets>>);
 struct WeatherTargets {
     sky: Option<thrum_cloud_model::Parameters>,
     ground: Option<crate::clouds::GroundTargets>,
-    solar: Option<f32>,
+    solar: Option<(f32, bool)>,
 }
 
 impl WeatherEdits {
@@ -972,6 +972,10 @@ pub trait GameHost {
     /// # Errors
     /// See the route's installation refusals.
     fn set_camera_route(&mut self, route: CameraRoute) -> Result<(), String>;
+    /// Play the clouds-off proof through the same solar sampling windows as Ground.
+    #[doc(hidden)]
+    #[cfg(all(target_os = "macos", feature = "proving"))]
+    fn set_cost_solar_sweep(&mut self, ticks: [u64; 2], hours: [f32; 2]);
     /// The installed route's pose and history epoch for `tick` presented at `alpha`.
     fn route_pose(&self, tick: u64, alpha: f32) -> Option<crate::RoutePose>;
     /// World time, in milliseconds from the clock origin, of the next tick boundary
@@ -1070,6 +1074,10 @@ impl GameHost for Runtime {
         self.source_mut().install_route(route, tick)?;
         self.invalidate_history();
         Ok(())
+    }
+    #[cfg(all(target_os = "macos", feature = "proving"))]
+    fn set_cost_solar_sweep(&mut self, ticks: [u64; 2], hours: [f32; 2]) {
+        self.continuous_source_mut().solar_sweep = Some((ticks, hours));
     }
     fn route_pose(&self, tick: u64, alpha: f32) -> Option<crate::RoutePose> {
         self.source().route_pose(tick, alpha)
@@ -1218,6 +1226,10 @@ pub(crate) fn set_time_of_day(runtime: &mut Runtime, fraction: f32) -> Result<()
 }
 
 fn queue_ground_solar(source: &GameScene, fraction: f32) {
+    queue_ground_sun(source, fraction, source.held_solar_tick().is_some());
+}
+
+fn queue_ground_sun(source: &GameScene, fraction: f32, held: bool) {
     if matches!(source.cloud_selection, crate::CloudSelection::Ground(_))
         && let Some(inbox) = &source.weather_edits
     {
@@ -1225,14 +1237,16 @@ fn queue_ground_solar(source: &GameScene, fraction: f32) {
             .0
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .solar = Some(fraction);
+            .solar = Some((fraction, held));
     }
 }
 
 #[cfg(all(target_os = "macos", feature = "proving"))]
 pub(crate) fn hold_capture_sun(runtime: &mut Runtime) {
+    let phase = time_of_day(runtime);
     let tick = runtime.world().tick();
     runtime.continuous_source_mut().capture_solar_tick = Some(tick);
+    queue_ground_solar(runtime.source(), phase);
 }
 
 #[cfg(all(target_os = "macos", feature = "proving"))]
@@ -1247,19 +1261,22 @@ pub(crate) fn scrub_haze_sun(runtime: &mut Runtime, fraction: f32) -> Result<(),
 /// Committed solar time of the runtime's latest world tick.
 pub(crate) fn time_of_day(runtime: &Runtime) -> f32 {
     let source = runtime.source();
-    let tick = source.held_solar_tick().unwrap_or(runtime.world().tick());
-    source
-        .ground_time_of_day(1.0)
-        .unwrap_or_else(|| DayCycle::time_of_day(tick, source.day_phase_offset))
+    let tick = runtime.world().tick();
+    source.ground_time_of_day(1.0).unwrap_or_else(|| {
+        if let Some(held) = source.held_solar_tick() {
+            return DayCycle::time_of_day(held, source.day_phase_offset);
+        }
+        DayCycle::time_of_day(tick, source.solar_offset(tick, 1.0))
+    })
 }
 
 fn rendered_time_of_day(source: &GameScene, tick: u64, alpha: f32) -> f32 {
-    let (tick, alpha) = source
-        .held_solar_tick()
-        .map_or((tick, alpha), |held| (held, 1.0));
-    source
-        .ground_time_of_day(alpha)
-        .unwrap_or_else(|| DayCycle::rendered_time_of_day(tick, alpha, source.day_phase_offset))
+    source.ground_time_of_day(alpha).unwrap_or_else(|| {
+        if let Some(held) = source.held_solar_tick() {
+            return DayCycle::rendered_time_of_day(held, 1.0, source.day_phase_offset);
+        }
+        DayCycle::rendered_time_of_day(tick, alpha, source.solar_offset(tick, alpha))
+    })
 }
 
 /// Change the game camera elevation continuously.

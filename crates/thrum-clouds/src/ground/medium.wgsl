@@ -9,13 +9,18 @@ fn ground_medium(@builtin(global_invocation_id) cell: vec3<u32>) {
     if near > 0.0 && (ground_frame.has_active_rows != 0u || in_layer) {
         let ray = normalize(sample.xyz - medium_observer.camera_altitude.xyz);
         let sun = medium_observer.sun_lux.xyz;
-        let mist = ground_light(sample.xyz, ray, sun, sample.w, 1.0, true, ground_sky_limit(ray, sun));
+        let sky_limit = ground_sky_limit(ray, sun);
+        let mist = ground_light(sample.xyz, ray, sun, sample.w, 1.0, true, sky_limit);
+        // Nearby cells use the incident solar irradiance at the observer.
+        // The atmosphere applies the local Sun and terrain visibility when integrating.
+        let solar = cloud_ambient[arrayLength(&cloud_ambient) - 1u].rgb;
+        let mist_solar = ground_solar_kernel(mist, solar, sky_limit);
         var layer = GroundLight(0.0, 0.0, vec3(0.0), 1.0);
         if in_layer {
             layer = cloud_near_light(sample.xyz, ray, sun, sample.w, 1.0);
         }
         let ambient = dot(mist.ambient + layer.ambient, vec3(0.2126, 0.7152, 0.0722));
-        value = near * vec3(mist.extinction + layer.extinction, mist.solar_kernel + layer.solar_kernel, ambient);
+        value = near * vec3(mist.extinction + layer.extinction, mist_solar + layer.solar_kernel, ambient);
     }
     textureStore(medium_out, vec2<i32>(cell.xy), i32(cell.z), vec4(value, 0.0));
 }

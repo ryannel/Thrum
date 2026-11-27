@@ -1208,8 +1208,22 @@ async fn record(
                 record["cloud_trace_stride"] = json!(layer.map(|layer| layer.trace_stride));
             }
         }
-        if matches!(cloud_take, Some(cloud_take::Take::Day)) && report.submitted {
-            record["solar_hours"] = json!(driver.host().time_of_day() * 24.0);
+        if report.submitted
+            && (matches!(cloud_take, Some(cloud_take::Take::Day)) || scenario == "clouds-route")
+        {
+            let host = driver.host_mut();
+            record["solar_hours"] = json!(host.time_of_day() * 24.0);
+            if scenario == "clouds-route" {
+                let page = host
+                    .world_mut()
+                    .publication()
+                    .map_err(|error| error.to_string())?
+                    .page;
+                record["radiative_mist_amount"] = json!(
+                    page.weather()
+                        .map(|weather| weather.ground().amount(0, true))
+                );
+            }
         }
         if let Some(idle_gpu_progress) = idle_gpu_progress {
             record["idle_gpu_progress"] = idle_gpu_progress;

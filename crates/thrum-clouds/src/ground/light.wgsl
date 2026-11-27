@@ -25,9 +25,9 @@ fn ground_sky_limit(ray: vec3<f32>, true_sun: vec3<f32>) -> vec4<f32> {
     // Diffuse hemisphere averages include the glowing side of twilight.
     // Above a dark horizon that average can light droplets more than the
     // local sky. Limit their ambient source to the same azimuth at twilight.
-    let weight = 1.0 - smoothstep(-0.040, 0.016, true_sun.y);
+    let weight = 1.0 - smoothstep(0.04, 0.11, true_sun.y);
     if weight == 0.0 || ground_frame.has_active_rows == 0u { return vec4(0.0); }
-    let count = arrayLength(&cloud_ambient) - 2u;
+    let count = arrayLength(&cloud_ambient) - 3u;
     let turn = fract(atan2(ray.z, ray.x) / 6.28318530718 + 1.0) * f32(count);
     let lower = u32(turn) % count;
     let upper = (lower + 1u) % count;

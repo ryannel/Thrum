@@ -44,7 +44,7 @@ impl Lighting {
         });
         let ambient = surface.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("cloud hemisphere radiance"),
-            size: 16 * if ground { 2 + 32 } else { 2 },
+            size: 16 * if ground { 3 + 32 } else { 2 },
             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
             mapped_at_creation: false,
         });

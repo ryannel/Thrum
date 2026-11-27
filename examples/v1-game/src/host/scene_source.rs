@@ -452,11 +452,8 @@ pub(crate) type SolarSweep = ([u64; 2], [f32; 2]);
 
 impl GameScene {
     pub(super) fn ground_time_of_day(&self, alpha: f32) -> Option<f32> {
-        if self.held_solar_tick().is_some() || self.route.is_some() {
-            return None;
-        }
         let solar = self.ground_solar.get()?;
-        if let Some(time) = self
+        if let Some((time, _)) = self
             .weather_edits
             .as_ref()
             .and_then(|edits| edits.pending().solar)
@@ -466,14 +463,17 @@ impl GameScene {
         Some(solar.sample(alpha))
     }
 
-    fn sample_sun(&self, tick: u64, alpha: f32) -> crate::environment::SunSample {
-        let offset = self.day_phase_offset;
+    pub(super) fn solar_offset(&self, tick: u64, alpha: f32) -> f32 {
         #[cfg(all(target_os = "macos", feature = "proving"))]
-        let sweep = self.solar_sweep.filter(|_| self.chart_jump.is_none());
-        #[cfg(all(target_arch = "wasm32", feature = "proving"))]
-        let sweep = self.solar_sweep;
+        if let Some((jump, hour)) = self.chart_jump {
+            return if tick >= jump {
+                DayCycle::offset_for_time(tick, hour / 24.0).unwrap_or(self.day_phase_offset)
+            } else {
+                self.day_phase_offset
+            };
+        }
         #[cfg(all(any(target_os = "macos", target_arch = "wasm32"), feature = "proving"))]
-        let offset = sweep.map_or(offset, |([first, last], [from, to])| {
+        if let Some(([first, last], [from, to])) = self.solar_sweep {
             #[expect(
                 clippy::cast_precision_loss,
                 reason = "a proof sweep fits within the route's bounded tick range"
@@ -481,17 +481,17 @@ impl GameScene {
             let progress = (tick.saturating_sub(first).min(last - first) as f32
                 + if tick < first { 0.0 } else { alpha })
                 / (last - first) as f32;
-            let solar = from + (to - from) * progress.clamp(0.0, 1.0);
-            DayCycle::offset_for_time(tick, solar / 24.0).unwrap_or(offset)
-        });
-        #[cfg(all(target_os = "macos", feature = "proving"))]
-        let offset = self
-            .chart_jump
-            .filter(|(jump, _)| tick >= *jump)
-            .and_then(|(_, hour)| DayCycle::offset_for_time(tick, hour / 24.0))
-            .unwrap_or(offset);
+            let time = ((from + (to - from) * progress.clamp(0.0, 1.0)) / 24.0).rem_euclid(1.0);
+            return DayCycle::offset_for_time(tick, time).unwrap_or(self.day_phase_offset);
+        }
+        #[cfg(not(all(any(target_os = "macos", target_arch = "wasm32"), feature = "proving")))]
+        let _ = (tick, alpha);
+        self.day_phase_offset
+    }
+
+    fn sample_sun(&self, tick: u64, alpha: f32) -> crate::environment::SunSample {
         self.ground_time_of_day(alpha).map_or_else(
-            || DayCycle::sample(tick, alpha, offset),
+            || DayCycle::sample(tick, alpha, self.solar_offset(tick, alpha)),
             |time| crate::clouds::ground::sun(time, tick, alpha),
         )
     }
@@ -573,6 +573,7 @@ impl GameScene {
         self.day_phase_offset =
             DayCycle::offset_for_time(route.origin_tick, route.solar_hours / 24.0)
                 .ok_or("route solar hour is outside the day")?;
+        super::queue_ground_sun(self, route.solar_hours / 24.0, route.hold_solar);
         self.route = Some(route);
         Ok(())
     }
@@ -1111,7 +1112,10 @@ impl SceneSource<PublishedPage> for GameScene {
         let sun = chart_sweep
             .filter(|_| self.chart_jump.is_none_or(|(jump, _)| source.tick < jump))
             .map_or(sun, |(sample, _)| sample);
-        let sun = if let Some(tick) = self.held_solar_tick() {
+        let sun = if let Some(tick) = self
+            .held_solar_tick()
+            .filter(|_| self.ground_solar.get().is_none())
+        {
             crate::environment::SunSample {
                 simulation_time_seconds: sun.simulation_time_seconds,
                 ..DayCycle::sample(tick, 1.0, self.day_phase_offset)

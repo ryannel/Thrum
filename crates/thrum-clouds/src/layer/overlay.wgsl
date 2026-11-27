@@ -85,8 +85,9 @@ fn trace_overlay(@builtin(global_invocation_id) id: vec3<u32>) {
             if in_fog {
                 let fog = ground_light(world, ray, atmosphere.sun_lux.xyz, at, transmission, at <= CLOUD_RAMP_END_M, ground_sky);
                 if fog.extinction > 0.0 {
+                    let solar = sun_irradiance(world) * fog.surface_visibility;
                     source = (sigma * source + fog.ambient
-                        + sun_irradiance(world) * fog.surface_visibility * fog.solar_kernel) / (sigma + fog.extinction);
+                        + solar * ground_solar_kernel(fog, solar, ground_sky)) / (sigma + fog.extinction);
                     sigma += fog.extinction;
                 }
             }

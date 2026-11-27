@@ -5,7 +5,7 @@ use std::{
 };
 use thrum_fixtures::mixed_field::day_cycle::DayCycle;
 use thrum_render::capabilities::{DeviceProfile, DeviceRecipe, OpenedDevice};
-use thrum_render::runtime::FrameConfig;
+use thrum_render::runtime::{FrameConfig, FrameWorld as _};
 use v1_game::GameHost as _;
 
 fn main() -> Result<(), String> {
@@ -135,36 +135,29 @@ async fn measure(
         setup_pass_peaks,
     } = settle_scene(&mut host, &device, content.as_ref(), has_shapes, library)?;
     v1_game::apply_cloud_quality(&mut host).map_err(|e| e.to_string())?;
-    let day_schedule = if mist_day {
-        use v1_game::{CloudSelection, GroundWeather};
-        if setup.clouds != CloudSelection::Ground(GroundWeather::DawnMist) {
-            return Err("--mist-day needs the dawn-mist Ground selection".into());
-        }
-        host.set_time_of_day(16.5 / 24.0)?;
-        view_angles.as_mut().expect("mist day camera")["start_solar_hours"] = 16.5.into();
-        view_angles.as_mut().expect("mist day camera")["start_sun_elevation_degrees"] =
-            DayCycle::sample(
-                0,
-                0.0,
-                DayCycle::offset_for_time(0, 16.5 / 24.0).expect("mist day start"),
-            )
-            .toward_sun[1]
-                .asin()
-                .to_degrees()
-                .into();
-        Some(day_schedule(setup.cloud_weather.time_scale))
+    let day = if mist_day {
+        Some(prepare_mist_day(
+            &mut host,
+            setup,
+            view_angles.as_mut().expect("mist day camera"),
+        )?)
     } else {
         None
     };
+    let day_clouds = day.as_ref().map(|(clouds, _)| *clouds);
+    let day_schedule = day.map(|(_, schedule)| schedule);
     let measurement_ticks = day_schedule
         .as_ref()
         .map_or(120, |ticks| ticks.last().copied().unwrap_or_default());
     let mut day_samples = Vec::new();
+    let mut day_clocks = BTreeMap::new();
     let mut passes: BTreeMap<String, Vec<f64>> = BTreeMap::new();
     let mut whole = Vec::new();
     let mut minimum_volume_instances = usize::MAX;
     for relative_tick in 1..=measurement_ticks {
-        let time = Duration::from_secs_f64(f64::from(last_tick + relative_tick) / 60.0);
+        // A quarter tick avoids resolving nanosecond rounding on a tick boundary.
+        let phase = if mist_day { 0.25 } else { 0.0 };
+        let time = Duration::from_secs_f64((f64::from(last_tick + relative_tick) + phase) / 60.0);
         if day_schedule
             .as_ref()
             .is_some_and(|ticks| ticks.binary_search(&relative_tick).is_err())
@@ -175,6 +168,10 @@ async fn measure(
         let report = host.drive(time, None)?;
         if !report.submitted {
             continue;
+        }
+        if let Some(clouds) = day_clouds {
+            let (submission, solar, amount) = mist_day_submission(&mut host, clouds)?;
+            day_clocks.insert(submission, (relative_tick, solar, amount));
         }
         if library {
             let shapes = host
@@ -190,22 +187,21 @@ async fn measure(
             .poll(wgpu::PollType::wait_indefinitely())
             .map_err(|e| e.to_string())?;
         while let Some(sample) = host.poll_completed()? {
+            let clock = day_clocks.remove(&sample.submission_order);
+            if mist_day && clock.is_none() {
+                continue;
+            }
             let timings = sample.gpu_pass_ns.ok_or("GPU counters required")?;
             let frame_time = timings.passes().iter().map(|p| p.nanoseconds).sum::<f64>();
             whole.push(frame_time);
-            if mist_day {
-                use thrum_render::runtime::FrameWorld as _;
-                let weather = host
-                    .world_mut()
-                    .publication()
-                    .map_err(|error| error.to_string())?
-                    .page
-                    .weather()
-                    .ok_or("mist day has no committed weather")?;
+            if let Some((tick, solar, amount)) = clock {
                 day_samples.push(serde_json::json!({
-                    "solar_hours": host.time_of_day() * 24.0,
-                    "mist_amount": weather.ground().amount(0, true),
+                    "sample_tick": tick,
+                    "solar_hours": solar,
+                    "mist_amount": amount,
                     "whole_frame_gpu_ns": frame_time,
+                    "passes": timings.passes().iter().map(|pass| (pass.name.to_string(), pass.nanoseconds))
+                        .collect::<BTreeMap<_, _>>(),
                 }));
             }
             let mut sun_sum = 0.0;
@@ -244,6 +240,7 @@ async fn measure(
             "view_angles":view_angles,
             "minimum_volume_instances":library.then_some(minimum_volume_instances),
             "day_samples":mist_day.then_some(day_samples),
+            "day_clouds":day_clouds,
             "setup_pass_peaks_ns":setup_pass_peaks,
             "first_submission":first,"ray_statistics":ray_statistics(&device,&queue,host.cloud_sky_products().as_ref())?,
             "quality":host.quality_knobs().iter().map(|q|serde_json::json!({"name":q.name,"value":q.value})).collect::<Vec<_>>(),
@@ -253,6 +250,64 @@ async fn measure(
 }
 
 type Host = thrum_render::runtime::FrameHost<v1_game::GameWorld, v1_game::GameScene>;
+
+fn prepare_mist_day(
+    host: &mut Host,
+    setup: v1_game::GameSetup,
+    view_angles: &mut serde_json::Value,
+) -> Result<(bool, Vec<u32>), String> {
+    use v1_game::{CloudSelection, GroundWeather};
+    let clouds = match setup.clouds {
+        CloudSelection::Ground(GroundWeather::DawnMist) => true,
+        CloudSelection::Off => false,
+        _ => return Err("--mist-day needs the dawn-mist or clouds-off selection".into()),
+    };
+    let rate = if clouds {
+        setup.cloud_weather.time_scale
+    } else {
+        clouds_off_rate()?
+    };
+    let schedule = day_schedule(rate);
+    host.set_time_of_day(16.5 / 24.0)?;
+    if !clouds {
+        let origin = host.world().tick() + 1;
+        let duration = *schedule.last().expect("mist day schedule");
+        host.set_cost_solar_sweep(
+            [origin + 1, origin + 1 + u64::from(duration)],
+            [16.5, mist_day_end(duration, rate)],
+        );
+    }
+    view_angles["start_solar_hours"] = 16.5.into();
+    view_angles["start_sun_elevation_degrees"] = DayCycle::sample(
+        0,
+        0.0,
+        DayCycle::offset_for_time(0, 16.5 / 24.0).expect("mist day start"),
+    )
+    .toward_sun[1]
+        .asin()
+        .to_degrees()
+        .into();
+    Ok((clouds, schedule))
+}
+
+fn mist_day_submission(host: &mut Host, clouds: bool) -> Result<(u64, f32, f64), String> {
+    let clock = host
+        .last_submitted_clock()
+        .ok_or("mist day submission has no clock")?;
+    let solar = host.rendered_time_of_day(clock.presentation_alpha) * 24.0;
+    let amount = if clouds {
+        host.world_mut()
+            .publication()
+            .map_err(|error| error.to_string())?
+            .page
+            .weather()
+            .map(|weather| weather.ground().amount(0, true))
+            .ok_or("mist day has no committed weather")?
+    } else {
+        0.0
+    };
+    Ok((clock.submission_order, solar, amount))
+}
 
 struct Warmup {
     last_tick: u32,
@@ -341,6 +396,25 @@ fn day_schedule(rate: f64) -> Vec<u32> {
             tick..tick + 8
         })
         .collect()
+}
+
+fn clouds_off_rate() -> Result<f64, String> {
+    // Off skips weather setup, so read the paired run's rate for the proof clock.
+    let rate = std::env::var("THRUM_CLOUD_TIME_SCALE").map_or(Ok(1.0), |value| {
+        value.parse::<f64>().map_err(|error| error.to_string())
+    })?;
+    if !(1.0..=60.0).contains(&rate) {
+        return Err("mist-day rate must be between 1 and 60".into());
+    }
+    Ok(rate)
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "the proof's end hour fits the presentation's solar phase"
+)]
+fn mist_day_end(ticks: u32, rate: f64) -> f32 {
+    (16.5 + f64::from(ticks) * rate / 750.0) as f32
 }
 
 fn resources(

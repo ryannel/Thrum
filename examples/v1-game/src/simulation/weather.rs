@@ -37,6 +37,7 @@ impl Weather {
         self.ground = Some(GroundDay {
             fog,
             solar: SolarTime::default(),
+            held: false,
         });
         self
     }
@@ -62,6 +63,7 @@ impl Weather {
 struct GroundDay {
     fog: Arc<thrum_cloud_model::Ground>,
     solar: SolarTime,
+    held: bool,
 }
 
 /// The endpoints of one committed solar tick, independent of advection.
@@ -152,7 +154,9 @@ impl Permits {
                         .apply(state.ground_mut())
                         .map_err(|_| SimError::InvalidConfig)?;
                 }
-                super::Command::SetWeatherSolarTime(fraction) => solar_edit = Some(fraction),
+                super::Command::SetWeatherSolarTime { phase, held } => {
+                    solar_edit = Some((phase, held));
+                }
                 _ => {}
             }
         }
@@ -185,9 +189,17 @@ impl Permits {
                 1.0
             };
             let advance = dt * rate / crate::clouds::ground::SOLAR_DAY_SECONDS;
+            if let Some((_, held)) = solar_edit {
+                ground.held = held;
+            }
             ground.solar = SolarTime {
-                previous: solar_edit.map_or_else(|| ground.solar.at(1.0), f64::from),
-                advance: if solar_edit.is_some() { 0.0 } else { advance },
+                previous: solar_edit
+                    .map_or_else(|| ground.solar.at(1.0), |(phase, _)| f64::from(phase)),
+                advance: if ground.held || solar_edit.is_some() {
+                    0.0
+                } else {
+                    advance
+                },
             };
             if radiative {
                 let sun = crate::clouds::ground::sun(ground.solar.sample(1.0), tick, 1.0);

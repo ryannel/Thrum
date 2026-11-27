@@ -4,7 +4,10 @@ var<workgroup> hemisphere_sum:array<vec3<f32>,64>;
 fn hemispheres(@builtin(workgroup_id) group:vec3<u32>,@builtin(local_invocation_index) lane:u32) {
     if group.x == 2u {
         // Ground caps dark-side twilight against the sky above that bearing.
-        let count = arrayLength(&hemisphere_light) - 2u;
+        let count = arrayLength(&hemisphere_light) - 3u;
+        if lane == count {
+            hemisphere_light[2u + count] = environment_directional.irradiance;
+        }
         if lane < count {
             let phi = f32(lane) * (2.0 * PI / f32(count));
             let direction = vec3(cos(phi), 0.012, sin(phi));

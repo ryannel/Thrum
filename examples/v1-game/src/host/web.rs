@@ -60,8 +60,10 @@ pub(crate) fn set_capture_eye(shell: &mut Shell, eye: [f32; 3]) -> Result<(), St
 
 #[cfg(feature = "proving")]
 pub(crate) fn hold_capture_sun(shell: &mut Shell) {
+    let phase = time_of_day(shell);
     let tick = shell.host().world().tick();
     shell.continuous_source_mut().capture_solar_tick = Some(tick);
+    super::queue_ground_solar(shell.host().source(), phase);
 }
 
 #[cfg(feature = "proving")]

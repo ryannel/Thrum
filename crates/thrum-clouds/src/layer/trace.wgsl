@@ -154,7 +154,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
                 if fog.extinction>0.0 {
                     let solar=sun_irradiance(world)*fog.surface_visibility;
                     sigma+=fog.extinction*far;
-                    radiance+=(fog.ambient+solar*fog.solar_kernel)*far;
+                    radiance+=(fog.ambient+solar*ground_solar_kernel(fog, solar, ground_sky))*far;
                 }
             }
         }

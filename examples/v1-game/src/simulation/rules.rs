@@ -438,7 +438,7 @@ impl Rules {
                 | Command::Despawn(_)
                 | Command::SetWeather(_)
                 | Command::SetGroundWeather(_)
-                | Command::SetWeatherSolarTime(_) => {}
+                | Command::SetWeatherSolarTime { .. } => {}
             }
         }
         for index in 0..stage.touched.len() {

@@ -613,8 +613,8 @@ impl WorldGame for GameRules {
         if let Some(target) = weather.ground {
             commands.push(crate::simulation::Command::SetGroundWeather(target));
         }
-        if let Some(time) = weather.solar {
-            commands.push(crate::simulation::Command::SetWeatherSolarTime(time));
+        if let Some((phase, held)) = weather.solar {
+            commands.push(crate::simulation::Command::SetWeatherSolarTime { phase, held });
         }
         self.sim
             .step(&commands)
