@@ -516,8 +516,8 @@
           "ask": "Is the comparison of shader text, passes and storage made against the commit before this work package?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP5/README.md#submitted-depth-and-opt-out",
           "verdict": "",
           "review": ""
         },
@@ -527,8 +527,8 @@
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test flow_bands_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP5/flow-metal.log",
           "verdict": "",
           "review": ""
         },
@@ -539,8 +539,8 @@
           "ask": "Does the test post its points through the game's query and read the answers from its mailbox? Would it fail if the query's sum left out either flow band, and if a band were read at the frame's time and not brought to the use tick?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP5/flow-metal.log",
           "verdict": "",
           "review": ""
         },
@@ -551,8 +551,8 @@
           "ask": "Is the birth constant the shallows' own, or a recorded constant of the water type with its reason in the log?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP5/foam-metal.log",
           "verdict": "",
           "review": ""
         },
@@ -583,8 +583,8 @@
           "ask": "Does the test read the answers from the game's mailbox, in the scene where WP5.10 holds them to the model, so that equality carries WP5.10's proof to every cadence and camera? Would it fail if a frame the cadence skips answered from the field last written, and if the bands stopped when the river left the view? Does it show the producer skipped at the lowest cadence, so the equality does not come from running every frame?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP5/flow-metal.log",
           "verdict": "",
           "review": ""
         },
@@ -594,8 +594,8 @@
           "check": "node scripts/check_water_browser.mjs --case river-calm",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP5/chrome/run.json",
           "verdict": "",
           "review": ""
         },
@@ -605,8 +605,8 @@
           "check": "python3 scripts/water_cost.py check --scene river-calm",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP5/river-calm-cost.json",
           "verdict": "",
           "review": ""
         }

@@ -317,3 +317,17 @@
   depths from both the chart and its separate puddle. The puddle reading is identical in
   both arms. The three existing hollows tests and the configured WP4 item checks passed.
   [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/mixed-hollows/README.md)
+
+- 2026-11-27 WP5. The flow profile adds two bands to the shared water field and keeps the
+  chart's standing level. It uses the prepared friction gain at `c = 2`. The display
+  can skip the band's producer, and the game's query refreshes the same field when its
+  dispatch needs it. Metal measured 21.60 mm and 20.45 mm RMS in running water and
+  1.304 mm in the quiet pool. The mailbox agreed with the model for both bands and
+  returned 320 bit-identical answers across cadence and camera changes.
+- 2026-11-27 WP5. Chart loss feeds the existing whitewater stocks at 0.0011 m²/J.
+  This is a water-type constant for the river profile. It was chosen against the
+  valley's measured loss to retain whitewater at ledges and rock shoulders while
+  keeping the pool and glide below visible cover from their small local losses.
+  Metal reads the birth rates and transported stock at all eight valley stations.
+  Hardware Chrome shows the riffle, quiet pool and thinning ledge foam.
+  [Target evidence](../../../.orchestrate/evidence/RIVERS/WP5/README.md)
