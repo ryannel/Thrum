@@ -502,7 +502,7 @@
     {
       "id": "WP5",
       "name": "On a windless day the stream still reads as running water: its riffles are rough and glitter, its pools lie glassy, and foam forms below its ledges and behind its rocks and trails away downstream",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
@@ -563,7 +563,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RIVERS/WP5/renewal/README.md#wp54-running-water",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/RIVERS/WP5-review.md"
         },
         {
@@ -573,7 +573,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RIVERS/WP5/renewal/README.md#wp55-whitewater",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/RIVERS/WP5-review.md"
         },
         {
@@ -609,20 +609,6 @@
           "evidence": ".orchestrate/evidence/RIVERS/WP5/river-calm-cost.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RIVERS/WP5-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "Riffle chop pulses at the solved current\u2019s carriage period",
-          "item": "WP5.4",
-          "different": "The straight bands after prolonged play are gone. The amplitude of the drawn chop now falls and recovers across the riffle at each half-cycle, including at startup.",
-          "repeat": false
-        },
-        {
-          "name": "Foam trails fade and brighten together across the reach",
-          "item": "WP5.5",
-          "different": "The downstream holes stay rounded after a minute. The new finding is the synchronized loss and return of white contrast in separate areas of the rock reach and in the pool.",
-          "repeat": false
         }
       ]
     },

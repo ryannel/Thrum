@@ -935,7 +935,7 @@
         {
           "verdict": "fail",
           "commit": "104d7681f4bbe130981934755044eadb6aad41bc",
-          "review": ".orchestrate/evidence/RIVERS/WP5-review.md",
+          "review": ".orchestrate/evidence/RIVERS/WP5-review-2.md",
           "items": {
             "WP5.1": "pass",
             "WP5.2": "pass",
@@ -978,6 +978,39 @@
             "turns": 1
           },
           "at": "2026-11-27T06:30:31Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "70c5bd446d21bc9fa70d9b3a94e747e0984e2524",
+          "review": ".orchestrate/evidence/RIVERS/WP5-review.md",
+          "items": {
+            "WP5.1": "pass",
+            "WP5.2": "pass",
+            "WP5.10": "pass",
+            "WP5.3": "pass",
+            "WP5.4": "pass",
+            "WP5.5": "pass",
+            "WP5.6": "pass",
+            "WP5.7": "pass",
+            "WP5.8": "pass"
+          },
+          "summary": "All nine items pass, including both items that failed the previous review. In a dead calm the riffle keeps its glitter as the pool reflects its banks, and the narrows carry detail downstream faster than the pool. After a minute at the same rock, separate foam strands open and disappear at different times.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 252329,
+            "cached": 10412416,
+            "output": 26712,
+            "turns": 1
+          },
+          "at": "2026-11-27T07:23:54Z"
         }
       ],
       "authorised": {
@@ -1015,6 +1048,13 @@
           "output": 244906,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "70c5bd446d21bc9fa70d9b3a94e747e0984e2524",
+        "review": ".orchestrate/evidence/RIVERS/WP5-review.md",
+        "checked": "c314b15c75893298b6696b3d83b9f4dfff29003f",
+        "at": "2026-11-27T07:23:54Z"
       }
     },
     "WP6": {
