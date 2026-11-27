@@ -1,17 +1,27 @@
 {
   "module": "EFFECT-GRAPH",
   "design": {
-    "verdict": "ok",
-    "by": "review_limit",
-    "hash": "640f0799f4883cfe5577a131ffd69ed5dff419336906913543c90c4c191af686",
-    "after": [
-      ".orchestrate/evidence/EFFECT-GRAPH/design-review-9.md",
-      ".orchestrate/evidence/EFFECT-GRAPH/design-review.md"
-    ],
-    "at": "2026-11-25T12:30:44Z",
-    "items_owed": [
-      "WP7"
-    ]
+    "verdict": "changes",
+    "review": ".orchestrate/evidence/EFFECT-GRAPH/design-review.md",
+    "commit": "25d599bbfc0a3d1ca9ecfac39087a43d0f3dcef5",
+    "hash": "0fa1e58b0bda38cf28ec117f6a9037807f622ba6b542b2b7debbd3a2be3e8a87",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6.2-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6.2-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.171.0-alpha.13.2",
+    "path": "headless",
+    "usage": {
+      "input": 104601,
+      "cached": 2048640,
+      "output": 7642,
+      "turns": 1
+    },
+    "at": "2026-11-27T06:08:12Z"
   },
   "work_packages": {
     "WP1": {
@@ -974,6 +984,19 @@
         "turns": 1
       },
       "at": "2026-11-25T12:20:38Z"
+    },
+    {
+      "verdict": "ok",
+      "by": "review_limit",
+      "hash": "640f0799f4883cfe5577a131ffd69ed5dff419336906913543c90c4c191af686",
+      "after": [
+        ".orchestrate/evidence/EFFECT-GRAPH/design-review-9.md",
+        ".orchestrate/evidence/EFFECT-GRAPH/design-review.md"
+      ],
+      "at": "2026-11-25T12:30:44Z",
+      "items_owed": [
+        "WP7"
+      ]
     }
   ]
 }
