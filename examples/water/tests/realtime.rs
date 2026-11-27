@@ -157,7 +157,10 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         super::proof_game(true)
     };
     let (extent, interval, opportunities, max_submissions) = if footfall {
-        ([1280, 720], if walking { 5.5 } else { 5.0 }, 120.0, 750)
+        // The moving take samples the same game at the browser proof's
+        // extent to keep the capture observer from hiding intermediate fronts.
+        let extent = if walking { [960, 540] } else { [1280, 720] };
+        (extent, if walking { 5.5 } else { 5.0 }, 120.0, 750)
     } else if yard {
         ([1280, 720], 20.0, 9.0, CHANNEL_SUBMISSIONS)
     } else if dive {
