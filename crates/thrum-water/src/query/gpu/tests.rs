@@ -247,7 +247,7 @@ fn river_query_records_extend_the_plain_layout() {
         + include_str!("../../gains.wgsl")
         + include_str!("../../column/records.wgsl")
         + include_str!("../../column.wgsl")
-        + include_str!("../../carriage.wgsl")
+        + crate::flow::UNIFORM_CARRIAGE
         + &super::sampling_source(true, false)
         + super::PLAIN_QUERY;
     records::named(
@@ -273,7 +273,7 @@ fn query_records_match_the_shader_layout() {
         + include_str!("../../gains.wgsl")
         + include_str!("../../column/records.wgsl")
         + include_str!("../../column.wgsl")
-        + include_str!("../../carriage.wgsl")
+        + crate::flow::UNIFORM_CARRIAGE
         + &super::sampling_source(false, false)
         + super::PLAIN_QUERY;
     records::named(
@@ -325,7 +325,7 @@ fn surf_query_passes_parse_with_all_shared_bindings() {
     let source = Interaction::sample_source(0, 5, 6, true)
         + include_str!("../../column/records.wgsl")
         + include_str!("../../column.wgsl")
-        + include_str!("../../carriage.wgsl")
+        + crate::flow::UNIFORM_CARRIAGE
         + &super::sampling_source(true, false)
         + &crate::map_gpu::declarations_at(super::SURF_GROUP)
         + &crate::surf::SurfGpu::query_source(super::SURF_GROUP, super::SURF_BINDING);

@@ -1,4 +1,4 @@
-let span = min(settings.swash_margin.w, track.z);
+        let span = min(settings.swash_margin.w, track.z);
         let renewal = flow_renewal(point.position, settings.swash_margin.z, span);
         let phase_gradient = span * flow_phase_gradient(point.position);
         // The offset changes both departure Jacobians and the blend slope.

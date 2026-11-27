@@ -10,7 +10,7 @@ impl records::Kind for super::HullRecord {
 fn foam_settings_match_the_shader_layout() {
     let source = concat!(
         include_str!("../../field.wgsl"),
-        include_str!("../../carriage.wgsl")
+        crate::flow::UNIFORM_CARRIAGE
     )
     .to_owned()
         + &Foam::source(true);

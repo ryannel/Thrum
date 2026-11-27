@@ -1,6 +1,6 @@
     var lace: f32;
     if map.flow_layers[row.body].x != 0u {
-        lace = river_foam_cover(stocks, point.xz, row.current, footprint);
+        lace = river_foam_cover(stocks, point.xz, row.current, row.track, footprint);
     } else if any(row.current != vec2(0.0)) {
         let reading = carried_points(point.xz, row.current, water.carriage.xy);
         let cycle = u32(water.carriage.z);

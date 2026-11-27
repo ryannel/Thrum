@@ -48,7 +48,7 @@ fn surf_records_match_the_cache_and_query() {
         + COMPONENT
         + &SurfGpu::query_source(1, 7)
         + include_str!("../column.wgsl")
-        + include_str!("../carriage.wgsl")
+        + crate::flow::UNIFORM_CARRIAGE
         + &crate::interaction::Interaction::sample_source(0, 5, 6, true)
         + &crate::query::sampling_source(false, false);
     validate(&query);

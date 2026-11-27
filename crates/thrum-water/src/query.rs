@@ -46,20 +46,18 @@ pub(super) fn sampling_source(rivers: bool, flow: bool) -> String {
     } else {
         include_str!("query/plain.wgsl")
     };
-    let sampling = include_str!("query/sampling.wgsl");
     let sampling = if flow {
-        std::borrow::Cow::Owned(sampling.replace(
-            concat!(
-                "let renewal = cascade_renewal(settings.swash_margin.z, min(settings.swash_margin.w, track.z));\n",
-                "        let reference = mat2x2<f32>(derivative.xy, derivative.zw);\n",
-                "        let current = mat2x2<f32>(point.current_gradient.xy, point.current_gradient.zw);\n",
-                "        let residual = current - reference;\n",
-                "        let base = COLUMN_IDENTITY - reference * settings.swash_margin.z;"
-            ),
+        concat!(
+            include_str!("query/sampling.wgsl"),
             include_str!("query/flow_renewal.wgsl"),
-        ))
+            include_str!("query/sampling_tail.wgsl"),
+        )
     } else {
-        std::borrow::Cow::Borrowed(sampling)
+        concat!(
+            include_str!("query/sampling.wgsl"),
+            include_str!("query/sampling_renewal.wgsl"),
+            include_str!("query/sampling_tail.wgsl"),
+        )
     };
     format!(
         "{point}{point_fields}{QUERY_RECORDS}{answer_fields}{}{gains}{}{read}{}{sum}{}{height}{}{carriage}",

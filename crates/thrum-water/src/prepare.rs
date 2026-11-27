@@ -992,6 +992,8 @@ fn shader_source(
             + rain_normal
             + if flow { include_str!("flow/normal.wgsl") } else { "" }
             + include_str!("surface_lighting.wgsl")
+            + if flow { include_str!("foam/river_contact.wgsl") } else { "" }
+            + include_str!("surface/radiance.wgsl")
             + if has_hollows && gather {
                 include_str!("map_gpu/hollows_transport.wgsl")
             } else {
