@@ -53,12 +53,12 @@ fn march_shafts(@builtin(global_invocation_id) slot: vec3<u32>) {
     let sun_slope = water_mean_sun_slope(sun);
     let footprint = step * length(ray.xz + ray.y * sun_slope);
     let noise = fract(52.9829189 * fract(dot(vec2<f32>(slot.xy), vec2(0.06711056, 0.00583715))));
+    // Keep jitter near the midpoint. A full-step offset puts neighbouring
+    // pixels on opposite sides of the brightest shallow caustic sheets.
+    let jitter = mix(0.4, 0.6, noise);
     var result = vec3(0.0);
     if shaft_mapping.window.w > 0.0 && length_m > 0.0 {
         for (var index = 0u; index < count; index++) {
-            // Adjacent intervals use opposite offsets so a bright sheet
-            // crossing both does not inherit the pixel's jitter pattern.
-            let jitter = select(noise, 1.0 - noise, (index & 1u) != 0u);
             let t = (f32(index) + jitter) * step;
             let point = camera + ray * (entry + t);
             let column = caustic_column(point.xz, window, shaft_columns);

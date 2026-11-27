@@ -472,8 +472,8 @@ fn dive_meshes(
     if !matches!(site, DiveSite::Swash | DiveSite::Pond) {
         meshes.push(
             MeshPlacement::new("meshes/float", "textures/white")
-                .at([x + 0.65, level - 1.35, z + 3.4])
-                .scale(0.92),
+                .at([x + 0.65, level - 1.55, z + 3.4])
+                .scale(1.65),
         );
     }
     if site == DiveSite::DeepSea {

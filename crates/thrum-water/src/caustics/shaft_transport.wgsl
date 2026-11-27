@@ -12,7 +12,7 @@ fn shaft_beam(ray: vec3<f32>, surface: vec3<f32>) -> ShaftBeam {
     let refracted = -water_sun_beam(sun, vec3(0.0, 1.0, 0.0));
     // Forward scattering for the water profiles in this recipe, with a
     // unit mean over 4π. Keep the lobe broad enough to resolve nearby beams.
-    let g = 0.83;
+    let g = 0.86;
     let phase = (1.0 - g * g) / pow(1.0 + g * g - 2.0 * g * clamp(dot(ray, refracted), -1.0, 1.0), 1.5);
     let c = optics.extinction_sight.xyz;
     let k = optics.downwelling_mirror.xyz;
