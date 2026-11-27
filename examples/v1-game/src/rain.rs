@@ -82,7 +82,7 @@ const CLASS: GroundClass = GroundClass {
     share: 0.66,
     porosity: 0.88,
     steepest: 0.46,
-    film_roughness: 0.36,
+    film_roughness: 0.58,
 };
 
 #[expect(clippy::cast_possible_truncation, reason = "wetness field uses f32")]
