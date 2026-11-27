@@ -17,7 +17,7 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 - Assumption: rapids have no spray and no standing waves that overturn, and nothing in a river surges by itself: the flow is steady, and what moves is its ripples, its foam and what it carries.
 - Assumption: a fall is one shape, a sheet that follows the water's free path or the rock's face, from 0.75 m to 12 m high, with layers about it where the fall is heavy. A lower drop is a chute in the stream. Only the island's fall, about 4 m, is judged by eye.
 - Assumption: the water a fall lands in stands right up to the rock under it, as a plunge pool does, and its waves wash that rock as they wash a bank. A fall whose foot the water could cover to the lip at any level in its range is refused, whether by its own rise or by a lake backing up the reach below, since a drowned fall is not built.
-- Assumption: until WP11 is Done the island's fall at the lake's highest level reads as a curtain, and WP6 closes with it so. In Chrome the heavy fall is judged by eye on the curtain and the strand ends alone.
+- Assumption: until WP11 is Done the island's fall at the stream's highest gauge reads as a curtain, and WP6 closes with it so. In Chrome the heavy fall is judged by eye on the curtain and the strand ends alone.
 - Assumption: the heavy fall's technique comes from published accounts and one frame study, with no footage studied ([design](DESIGN.md#research-and-selection)). Horizon Forbidden West sets the bar and publishes no technique; the mechanism is Season: A Letter to the Future's (2023) and Star Wars Jedi: Fallen Order's (2019). It gets one build and two rounds of tuning for each cue. If it still fails, main keeps WP6's fall and the owner is asked again whether to park the look.
 - Assumption: how soon a fall turns white is set by eye for each game's water, and not by the laboratory figure for when a falling sheet breaks up, which draws the island's flood clearer than its middling flow.
 - Assumption: the island shows the solved rivers and the waterfall only when a selection is turned on, until `WATERS` closes, so that `WATERS`' own reviews see the island they were written for.
@@ -61,17 +61,19 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 
 ## WP6 A waterfall pours over its lip in a smooth tongue, breaks into white strands as it gathers speed and plunges into its pool, which boils, foams and sends out rings
 
-WP6.10's figures are parts 9 and 12's: build the ladder in `thrum-water`'s interaction step. No f64 reference of it is required. The wave share is tuned by eye against WP6.5 and recorded, and nothing asserts the fall's power as its ceiling. The game names a body in the plunge pool for the views that judge rings, because interaction windows follow the named body.
+WP6.10's figures are parts 9 and 12's: build the ladder in `thrum-water`'s interaction step. The game names a body in the plunge pool for the views that judge rings, because interaction windows follow the named body.
 
-WP6 resumes from `7bafabb80` on `build/rivers` ([handoff](../../../.orchestrate/evidence/RIVERS/WP6-handoff.md)), where WP6.12 is built. Change nothing more in how the flood draws, because its look below the lip [is WP11's](DESIGN.md#the-heavy-fall-at-the-highest-gauge). What is left is the proof of WP6.4 and WP6.5 as they now read, with the cues the handoff says were not taken again; the rings' arrival at the banks is one. WP6.4 judges the lip at the highest gauge too. The nine items with a check have open results: run them on the resumed tree and record them. What stands behind the sheet is the selection's scenery and may change with it.
+WP6 resumes from `7bafabb80` on `build/rivers` ([handoff](../../../.orchestrate/evidence/RIVERS/WP6-handoff.md)), where WP6.12 is built. Change nothing more in how the flood draws, because its look below the lip [is WP11's](DESIGN.md#the-heavy-fall-at-the-highest-gauge). What is left is the proof of WP6.4 and WP6.5 as they now read, with the cues the handoff says were not taken again; the rings' arrival at the banks is one. The nine items with a check have open results: run them on the resumed tree and record them. What stands behind the sheet is the selection's scenery and may change with it.
 
-## WP11 With the lake at its highest the waterfall reads as heavy falling water from the side and the bank, with no curtain and no strand that ends hard at the pool, drawn the way shipped games draw a heavy fall today
+## WP11 With the stream in flood the waterfall reads as heavy falling water from the side and the bank, with no curtain and no strand that ends hard at the pool, drawn the way shipped games draw a heavy fall today
 
 The technique is chosen, a layered fall with spray at its foot: read [the heavy fall](DESIGN.md#the-heavy-fall-at-the-highest-gauge) first.
 
 Stop rule: build the foot first and judge it against WP11.3, then the layers against WP11.2. Then each cue gets two rounds of tuning: one change, then takes from beside and from the bank at the highest gauge. If either cue still fails, merge nothing that changes how the island's fall draws, log which point failed in which take, and end `BLOCKED`. Try no other mechanism.
 
 Before the first change to how the fall is drawn, record the fixture's plunge sources at the highest gauge as WP11.4's test data. WP11.4's cases go in WP6's `falls_gpu` and `plunge_gpu`, which join the package's one test binary, `it`, here ([the settings' rule](../../../ORCHESTRATE.md#test-tiers)).
+
+The flood is the spring's highest gauge: on the island, `spring.stage` at 1 (`THRUM_WATER_RIVER_GAUGE=1` in WP6's captures). `lake.stage` moves another body.
 
 ## WP7 A visitor raises the lake, sets the stream's flow and takes the day from dawn to night, and the rivers and the waterfall hold up in motion, in shade and from under water, on the Mac and in Chrome
 

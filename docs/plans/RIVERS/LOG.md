@@ -464,3 +464,27 @@
 - 2026-11-27 Planner, stop rule for WP11: one build of the selection, then two rounds of tuning for each of
   the two cues. If either still fails the builder merges nothing that changes the island's fall, logs which
   point failed in which take and ends `BLOCKED`, and the owner is asked again whether to park the look.
+
+- 2026-11-27 Planner, design review 17, Must Fix 1. WP11.1 asked that everything drawn come from the fall
+  record and the time alone, which shut out the receiving level that places the spray: on the small fall a
+  pool raised 0.33 m moves the landing 0.33 m up and 0.09 m in, and the stored path is the same.
+  [The design](DESIGN.md#the-heavy-fall-at-the-highest-gauge) now names a third input, the plunge line, which
+  the plunge finds each tick against the water map's level, and says one finding serves the births, the
+  impulses and the foot of the drawn fall. WP11.1 is written again to ask that. WP11.4 gained the proof: the
+  spray's highest place rises at least 0.11 m when the fixture's pool is raised through its 0.33 m. It is on
+  the fixture because the island's plunge pool stands at one level at every gauge, so WP11.3 is unchanged.
+- 2026-11-27 Planner, design review 17, Must Fix 2. WP11.4's test surface was placed from the depth the frame
+  wrote, so a layer depth-tested and written at the core's depth passed it. WP11.4 gained a second surface,
+  placed from the fall record's path and the profile's stand-off, between the core and the outer layer: the
+  frame must show water over part of it with a nearer depth. The design's frame contract says an outer layer
+  is depth-tested and written where it stands.
+- 2026-11-27 Planner, design review 17, Must Fix 3. WP11.4 read motion only above the spray, and WP6's clumps
+  write none. It now takes a clump that stands apart in two frames and has risen at least 2 pixels, and holds
+  the motion written on it to the shift of its coverage within 1 pixel. Spray is found by drawing the same
+  frame with the profile's amount of spray set to nothing.
+- 2026-11-27 Planner, design review 17, Must Fix 4. WP7.12's check, moved from WP11.8, had lost its required
+  GPU and its failure on an empty selection, so it passed by skipping on a Mac with no Metal. WP7.3 and WP7.12
+  now run `river_shade_gpu` through the package's `it` target with `THRUM_REQUIRE_GPU=1` and
+  `--no-tests=fail`. WP7.12 selects its own cases by the name `heavy_fall`, so it fails if they are missing.
+- 2026-11-27 Planner, design review 17, suggestion taken. WP11 is named for the stream in flood and not the
+  lake at its highest, and its note names the control, `spring.stage` at 1.

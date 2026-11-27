@@ -180,7 +180,7 @@ water ends; and speed is shown by stretching the pattern down the fall.
 | R5, a heavy fall | A simulated particle system for the falling water (Jedi's small streams) | Needs state stepped each frame and an owner the engine does not have, and a pause and a capture's time would need rules of their own. Not selected |
 | R5, a heavy fall | A baked simulation played back (Horizon's impacts) | Needs a fluid pipeline and an asset for each fall and each discharge, and does not answer the gauge. Not selected |
 | R5, a heavy fall | Mist as a medium in the air | The weather's, and late. No account read hides a foot with one: they use planes and particles at the foot. Not selected, and still the owner's |
-| R5, a heavy fall | **Layers about the sheet, white water lit as foam, no end above the pool, and spray at the foot, each a function of the fall record and the time (Season's layers and particles, Jedi's body, layer and vapour)** | **Selected** |
+| R5, a heavy fall | **Layers about the sheet, white water lit as foam, no end above the pool, and spray at the foot, each a function of the fall record, the time and the plunge line (Season's layers and particles, Jedi's body, layer and vapour)** | **Selected** |
 | R6 | One flow, its level raised by the chart's stage | Fails part 3 |
 | R6 | A live solve of the reach | Not selected, as above |
 | R6 | **Flow samples a gauge reads between** | **Selected** |
@@ -600,7 +600,11 @@ that shows the rock behind it (WP6.4), and no item judges its look below the lip
    or dark water under them, and nothing stands in front of the ends.
 
 **What draws a heavy fall.** Four changes, each the answer to one of those three, and each a function of
-[the fall record](#what-a-solve-writes) and the time.
+three things: [the fall record](#what-a-solve-writes), the time and the plunge line. The **plunge line** is
+where the paths of a fall's segments meet the receiving water. [The plunge](#the-plunge) finds it as the game
+runs, from the level the water map has there, with the drop to it and the water's speed into the surface. The
+fall record cannot give it: the record's path runs to the ground, and the receiving water rises and falls with
+its own stage and gauge.
 
 - **Layers.** The sheet stays, as the fall's core. About it stand outer layers: on both faces where the water
   falls free, and on the outer face alone where the rock holds it. An outer layer follows the record's paths as
@@ -620,13 +624,17 @@ that shows the rock behind it (WP6.4), and no item judges its look below the lip
   thinned to tips above it. Each runs on below that level, where the pool's surface covers it, with the cover
   it has just above. Over a short height at the receiving level, no more than the pool's own waves stand
   there, its cover thins into the boil's foam. The two are lit by the same functions, so white meets white
-  with no line.
+  with no line. The receiving level is the plunge line's, as it stands in that frame.
 - **Spray at the foot.** Along the plunge line the fall throws up spray: clumps of white water that leave the
   line upward and outward, rise and fall back, and larger, slower, softer ones that stand over the foot. A
-  clump is a function of its index and the time alone. It is born on the pattern's loop and flies a ballistic
-  arc from a launch its index gives. Nothing is stored and nothing is stepped. Their number and their launch
-  speed follow the fall's power for each metre of lip, the `ρ g q z` that drives [the plunge](#the-plunge)'s
-  births, so a dry lip throws none and the flood the most. Every clump lives and dies within the spray
+  clump is a function of its index, the time and the plunge line as it stands in that frame. It is born on
+  the pattern's loop, at the place where its segment's path meets the receiving water and on that water's
+  level, and flies a ballistic arc from there, from a launch its index gives. Nothing is stored and nothing is
+  stepped. So when the receiving water rises or falls the spray's foot moves with it, and no clump starts
+  under the pool or in the air over it. Their number and their launch speed follow the fall's power for each
+  metre of lip, the `ρ g q z` that drives [the plunge](#the-plunge)'s births, with `z` the drop to the
+  receiving level as the plunge has it, so a dry lip throws none and the flood the most. Every clump lives and
+  dies within the spray
   reach of the plunge line, a length the profile gives, on the island no more than half the fall's height.
   Nothing drifts off or hangs, which would be [mist](#purpose-and-scope). The spray stands on both sides of the
   layers' feet and higher than the fade at the receiving level, so from the bank, from beside and from above it
@@ -669,8 +677,15 @@ draws the heavy fall on the Mac and in Chrome.
 **What holds, however it is tuned.**
 
 - *One source.* [The fall record](#what-a-solve-writes) still says where the water goes, how fast, how thick and
-  how much. What is drawn is made from it and the time, with no state kept from one frame to the next. Nothing
-  drawn is a body or answers a query.
+  how much, and [the plunge](#the-plunge) says where it meets the receiving water. The engine finds that
+  meeting once, against the level the water map has there (WP6 built it in `thrum-water`'s `Segment::new`),
+  and the one finding serves both the plunge's births
+  and impulses and the foot of the drawn fall: the fade at the receiving level, and the spray's origin, drop
+  and amount. The drawing finds no landing place of its own and fixes none on the stored path, which would
+  leave the spray under a pool that has risen or in the air over one that has dropped. What is drawn is made
+  from the fall record, the time and that plunge. It may also read the height of the receiving surface as the
+  water draws it, as WP6's sheet does where it meets the pool. It keeps no state of its own from one frame to
+  the next. Nothing drawn is a body or answers a query.
 - *What a game reads does not move.* The plunge's births and impulses stay the fall record's, at the same places
   and amounts whatever the camera sees and whichever recipe draws the fall, on every machine ([the plunge](#the-plunge)).
   They are the ones the engine gave before the drawing changed. The spray is drawn and gives no birth, no
@@ -682,9 +697,12 @@ draws the heavy fall on the Mac and in Chrome.
   fall record's paths that its recipe declares, which is at least the outer layers' greatest stand-off and the
   spray reach. That distance bounds where water may be drawn and is no
   allowance on the depth: the depth written at a place is that of the water drawn there, so the scene orders
-  against the fall as it is seen. A ledge nearer than the written depth shows in front of the water, and water
+  against the fall as it is seen. An outer layer is depth-tested and written where it stands, off the core,
+  and never at the core's depth. A ledge nearer than the written depth shows in front of the water, and water
   seen in front of a ledge has written a depth in front of it, because
-  [the water's gather](../WATERS/DESIGN.md#optics) and the reconstructor read that depth.
+  [the water's gather](../WATERS/DESIGN.md#optics) and the reconstructor read that depth. The spray's motion
+  is each clump's own, from where that clump was at the last presentation. It is neither nothing nor the
+  motion of the falling water behind the clump.
 - *Light.* Whatever is drawn is lit by the water's own functions and has no light of its own: the direct Sun
   on it takes the scene's Sun visibility ([ruling 7](../ARCHITECTURE.md#seam-rulings-for-rivers)) once WP7 has
   built that for the sheet and for foam, and its white follows the sky to dusk and night. Ruling 7 takes only
@@ -1076,7 +1094,8 @@ dependencies. In addition:
   through the tongue was never one of the two parked cues, and WP11.2 holds it on the layered fall. WP11's
   inspections of the fall and its foot are written from what the three attempts left on screen, and they pass
   whatever removes it: neither says how the fall is drawn. WP11.1 asks that separately, and only of what the
-  design rests on: that everything drawn is made from the fall record and the time with nothing stored, that
+  design rests on: that everything drawn is made from the fall record, the time and the plunge the engine
+  finds, with nothing of the fall's own stored, that the foot of the drawn fall takes that plunge, that
   ruling 7's pass draws it, and that it is more than one surface with spray at its foot and not a fourth
   tuning of the sheet. A count of layers or of clumps is the builder's and no item names one. Its other proofs
   are written so that the layered fall can pass them and the sheet alone cannot:
@@ -1096,6 +1115,33 @@ dependencies. In addition:
     stand-off for the test, small beside the distance a recipe declares and far above the depth's precision
     at these cameras. The surface stands in front and not behind, so a recipe that thins its water against
     the scene behind it passes.
+
+    That surface is placed from the depth the frame wrote, so it cannot catch a layer that is depth-tested
+    and written at the core's depth: a layer shaped 4.75 m off but tested and written at the core's 5 m
+    gives way to a ledge at 4.95 m, which is all that case asks, where the layer as drawn should cover the
+    ledge. So one ordering is placed from the geometry and from no depth read in a frame. At a height where
+    the test's profile stands the outer layers at least 0.2 m off the core, a second surface stands in front
+    of the fall record's path by half that stand-off, between the core and the outer layer. The frame must
+    show water over part of it, with a depth nearer than the surface's. A layer kept at the core's depth is
+    hidden behind the surface and fails. A layer drawn in front with no depth of its own, or with the
+    core's, fails the first surface. Part of the surface is enough, because an outer layer has gaps.
+  - *The spray's motion (WP11.4).* The falling water's motion, read above the spray reach, shows that the
+    fall gathers speed and says nothing of the spray. WP6's clumps write no motion, so a clump can rise and
+    fall back in WP11.3's takes and still tell the reconstructor it stood still. The case finds the spray by
+    drawing the same frame with the profile's amount of spray set to nothing: the spray's places are those
+    the frame covers nearer with spray than without. It takes a clump that stands apart from the others in
+    two successive frames and has risen at least 2 pixels between them, and compares the motion written on it
+    with the shift of its coverage, which the test measures itself, within 1 pixel. No motion fails, and so
+    does the downward motion of the water behind a rising clump.
+  - *The spray and the receiving water (WP11.4).* The island's plunge pool stands at one level at every gauge
+    ([WP6's audit](../../../.orchestrate/evidence/RIVERS/WP6/revised-flanks-audit.log)), so no take on the
+    island moves the receiver. WP6's small fall has a pool with a stage range of 0.33 m. Raised through it at
+    a fixed gauge, the free path meets the water about 0.33 m higher and 0.09 m nearer the cliff, and the
+    stored path is the same. A spray fixed on the stored path does not rise at all. One born on the plunge
+    line rises with the pool, less the loft its drop, now a ninth shorter, costs it, and the test's own
+    profile keeps its spray low enough that this loss is small beside the rise. So the highest place spray is
+    drawn, over one run of ticks as long as a clump's flight, must rise by at least 0.11 m, a third of the
+    pool's rise.
   - *The pool (WP11.4).* One camera and least amounts of foam and rings cannot tell the fall record's sources
     from sources that follow the camera, or from sources the spray has added to. The sources the engine
     submits are compared to the bit across two cameras that both hold the foot in view and one turned away,
@@ -1109,7 +1155,11 @@ dependencies. In addition:
     direct Sun's look ends at the shadow's edge and that what is left is the sky's light. They set no order of
     brightness between the shaded fall and the shaded foam, because a tongue that mirrors bright sky is
     rightly the brighter of the two. WP7's other views of the fall stay at the middle gauge. Until WP7 closes
-    the ledger says the heavy fall's light in shade is unjudged.
+    the ledger says the heavy fall's light in shade is unjudged. The stills show the look and cannot show the
+    direct Sun's ratio or that the sky's term is unchanged, so both measures run with a GPU required: a Mac
+    with no Metal fails them, where the test kit would otherwise skip and pass. WP7.3 runs the whole file.
+    WP7.12 selects the heavy fall's cases by their name, `heavy_fall`, and fails if there are none.
+    The two share one file, `river_shade_gpu`, a module of the package's one test binary, `it`.
 - **Maturity.** A ledger row for `E1.rivers` is added in WP4 and kept current.
 
 ## Open questions
