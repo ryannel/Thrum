@@ -97,10 +97,14 @@ def generate():
             position = [world_x, terrain + relief(x, z, ground) + padding, world_z]
             dx = (relief(x + SPACING, z, ground) - relief(x - SPACING, z, ground)) / (2 * SPACING)
             dz = (relief(x, z + SPACING, ground) - relief(x, z - SPACING, ground)) / (2 * SPACING)
-            # Preserve the original interpolated terrain normal at the join.
-            # Add only the bank's slope; the millimetre skirt is buried.
+            # Keep the basin slope at the waterline. Blend the outer shoulder
+            # into the valley normals so the broad lift reads as continuous
+            # terrain in grazing light.
+            r = min(radius(x, z, *bowl[:4]) for bowl in HOLLOWS)
+            blend = min(1, max(0, (1.5 - r) / 0.48))
+            weight = blend * blend * (3 - 2 * blend)
             nx, ny, nz = normal
-            perturbed = [nx - ny * dx, ny, nz - ny * dz]
+            perturbed = [nx - ny * dx * weight, ny, nz - ny * dz * weight]
             scale = math.sqrt(sum(v*v for v in perturbed))
             positions.append(position)
             normals.append([v / scale for v in perturbed])
