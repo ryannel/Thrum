@@ -99,7 +99,7 @@ fn ground_wetness(point: vec3<f32>, normal: vec3<f32>) -> GroundWetness {
     let store = wet_reach(wet_load(first + 2u), low.xy, wet_exposure(point, header) * sky);
     let slope = length(normal.xz) / max(up, 1e-20);
     let hold = class_data.x * max(0.0, 1.0 - slope / max(class_data.y, 1e-20));
-    let surface = select(0.0, min(store.x, hold), up > 0.0);
+    let surface = select(0.0, max(0.0, store.x - (class_data.x - hold)), up > 0.0);
     let share = clamp(surface / max(class_data.x, 1e-20), 0.0, 1.0);
     var cover = share;
     if appearance.z > 0.0 && any(low.zw > vec2(0.0)) {

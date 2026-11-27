@@ -25,7 +25,7 @@ fn standing_film(pixel: vec2<f32>, ground: vec3<f32>, normal: vec3<f32>, wet: Gr
     let appearance = wet_load(wet_class_start(wet.class_index) + 1u);
     let r = appearance.y;
     let v = normalize(view.camera_xyz_time.xyz - ground);
-    let still = mix(vec3(0.0, 1.0, 0.0), normal, smoothstep(0.012, 0.2, length(normal.xz)));
+    let still = mix(vec3(0.0, 1.0, 0.0), normal, smoothstep(0.055, 0.24, length(normal.xz)));
     let footprint = distance(view.camera_xyz_time.xyz, ground) * view_aux.viewport_inv_viewport.w;
     let ripple = film_rings(ground, normal, footprint);
     let n = normalize(still - vec3(ripple.x, 0.0, ripple.y));

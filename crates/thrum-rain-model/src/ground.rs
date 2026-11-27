@@ -363,7 +363,8 @@ pub fn wetness(stores: &GroundStores, class: usize, at: WetPoint) -> Wetness {
     let reach = at.exposure.clamp(0.0, 1.0) * sky_share(at.normal);
     let s = stores.read(class, reach);
     let hold = c.relief * relief_share(c, at.normal);
-    let surface = s.surface.min(hold);
+    // The exposed, lower-capacity slope runs out before the level store.
+    let surface = (s.surface - (c.relief - hold)).max(0.0);
     let share = if c.relief > 0.0 {
         (surface / c.relief).min(1.0)
     } else {

@@ -778,7 +778,7 @@ fn build_island(
                 "Island view"
             },
             0.0..=if wet_yard {
-                15.0
+                18.0
             } else if marker.is_some() {
                 11.0
             } else if yard {
@@ -882,6 +882,7 @@ fn build_island(
         }
         sky.sun_elevation_degrees = c.get(sun);
         sky.sun_azimuth_degrees = match (yard, index, surf_route && wind == Wind::Trade) {
+            (true, 12..=18, _) => 22.0,
             (true, 6, _) => 40.0,
             (true, 7, _) => 11.0,
             (true, 8..=11, _) => footfall_sun.map_or(12.0, |azimuth| c.get(azimuth)),
@@ -914,7 +915,7 @@ fn build_island(
     };
     let mut meshes = placements(&map, !surf_route, 0.0);
     if yard {
-        meshes.extend(rain_yard::placements());
+        meshes.extend(rain_yard::placements(wet_yard));
         if wet_yard {
             meshes.push(
                 MeshPlacement::new("meshes/lens-panel", "textures/white")
@@ -926,6 +927,18 @@ fn build_island(
                         metalness: 1.0,
                     }),
             );
+            for position in [[146.95, 18.21, 67.55], [148.31, 18.18, 67.68]] {
+                meshes.push(
+                    MeshPlacement::new("meshes/rock", "textures/rain-yard-track")
+                        .at(position)
+                        .scale(0.145)
+                        .material(thrum_app::sky::CookedMaterial {
+                            base_colour: [0.29, 0.24, 0.18, 1.0],
+                            roughness: 0.94,
+                            metalness: 0.0,
+                        }),
+                );
+            }
         }
     }
     let (game, lease) = game.with_meshes_and_texture_lease(

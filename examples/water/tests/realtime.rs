@@ -191,6 +191,8 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         // extent to keep the capture observer from hiding intermediate fronts.
         let extent = if walking { [960, 540] } else { [1280, 720] };
         (extent, if walking { 5.5 } else { 5.0 }, 120.0, 750)
+    } else if wet_yard && route == "wet-dry" {
+        ([1280, 720], 12.0, 16.0, 200)
     } else if wet_yard || shore_ebb {
         ([1280, 720], 9.0, 16.0, CHANNEL_SUBMISSIONS)
     } else if yard {
@@ -416,6 +418,13 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
                 footfall_edit_time = Some(elapsed);
                 deadline = interval + elapsed;
             }
+        } else if wet_yard && route == "wet-dry" && elapsed >= 3.25 && applied != "final dry" {
+            let change = r#"{"rain.rate":0,"rain.drying":100,"rain.time_scale":600}"#;
+            runtime
+                .parameters(change)
+                .expect("finish draining the puddles");
+            weather_edits.push(json!({"elapsed":elapsed, "parameters":serde_json::from_str::<Value>(change).expect("weather")}));
+            applied = "final dry";
         } else if wet_yard && elapsed >= 0.8 && applied.is_empty() {
             let change = if route == "wet-dry" {
                 r#"{"rain.rate":0,"rain.drying":100,"rain.time_scale":90}"#
@@ -651,6 +660,18 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         let joined = route == "yard-joined";
         assert_eq!(yard_levels.len(), frames.len());
         assert!(yard_levels.iter().all(|pair| matches!(pair, [Some(left), Some(right)] if (left.to_bits() == right.to_bits()) == joined)), "the held fill changed during the dry interaction take: {yard_levels:?}");
+    } else if wet_yard && route == "wet-dry" {
+        assert!(
+            yard_levels
+                .first()
+                .is_some_and(|row| row.iter().all(Option::is_some)),
+            "soaked start"
+        );
+        assert_eq!(
+            yard_levels.last(),
+            Some(&[None; 2]),
+            "both puddles must dry during the take"
+        );
     } else if yard && !wet_yard {
         assert_eq!(
             yard_levels.len(),

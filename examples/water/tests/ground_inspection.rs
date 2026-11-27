@@ -92,13 +92,31 @@ pub(super) fn fixed(gpu: &thrum_test_support::Gpu, directory: &Path, shore: Opti
                     images.push(checkpoint(&mut f, &mut time, &label, directory));
                 }
             }
+            if name != "damp" {
+                for (camera, view) in [
+                    (16, "roof-top"),
+                    (17, "wall-rock-metal"),
+                    (18, "wall-reflection"),
+                ] {
+                    f.parameters(&format!(
+                        r#"{{"camera.island":{camera},"sun.elevation":35}}"#
+                    ));
+                    images.push(checkpoint(
+                        &mut f,
+                        &mut time,
+                        &format!("{name}-{view}"),
+                        directory,
+                    ));
+                }
+            }
         }
         f.parameters(r#"{"sun.elevation":35}"#);
         for (name, ticks, speed) in [
             ("soaked", 0, 120),
             ("slope-clears", 8, 120),
             ("film-clears", 12, 120),
-            ("margin-fades", 54, 600),
+            ("margin-recedes", 54, 600),
+            ("dry-finish", 210, 600),
         ] {
             weather(&mut f, 0, DRYING, speed);
             advance(&mut f, &mut time, ticks);

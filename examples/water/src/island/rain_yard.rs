@@ -40,6 +40,9 @@ pub(super) fn camera(index: usize) -> Camera {
         13 => Camera::look_at([146.15, 18.62, 64.82], [149.0, 18.42, 66.0], 59.0),
         14 => Camera::look_at([147.45, 19.82, 65.70], [147.7, 18.10, 65.94], 61.0),
         15 => Camera::look_at([144.85, 19.82, 64.8], [149.25, 18.73, 66.3], 56.0),
+        16 => Camera::look_at([153.85, 21.65, 65.95], [152.35, 19.15, 68.05], 58.0),
+        17 => Camera::look_at([149.2, 19.82, 65.32], [147.43, 18.77, 67.86], 57.0),
+        18 => Camera::look_at([149.12, 18.62, 64.15], [148.72, 18.68, 68.1], 60.0),
         _ => Camera::look_at([149.0, 33.12, 64.94], [149.0, 18.12, 65.0], 45.0),
     }
 }
@@ -58,7 +61,7 @@ pub(super) fn walk_camera(marker: &crate::floating::YardFloat) -> Camera {
     Camera::look_at([x, 19.74, 67.95], [x + 0.15, 18.04, 66.15], 74.0)
 }
 
-pub(super) fn placements() -> [MeshPlacement; 5] {
+pub(super) fn placements(wet_ground: bool) -> [MeshPlacement; 5] {
     [
         (
             "meshes/rain-yard-paving",
@@ -86,7 +89,11 @@ pub(super) fn placements() -> [MeshPlacement; 5] {
         ),
         (
             "meshes/rain-yard-wall",
-            "textures/white",
+            if wet_ground {
+                "textures/rain-yard-paving"
+            } else {
+                "textures/white"
+            },
             [0.39, 0.29, 0.21],
             0.95,
         ),
