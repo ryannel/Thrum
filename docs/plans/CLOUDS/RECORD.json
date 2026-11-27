@@ -2144,7 +2144,7 @@
         {
           "verdict": "fail",
           "commit": "45d10f20b3f15e59111836789136177aad312cdd",
-          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review-6.md",
           "items": {
             "WP15.1": "pass",
             "WP15.14": "pass",
@@ -2184,6 +2184,51 @@
             "turns": 1
           },
           "at": "2026-11-27T05:11:23Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "4139974f4ac1309180534efcdf50d3c522b16ded",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md",
+          "items": {
+            "WP15.1": "pass",
+            "WP15.14": "pass",
+            "WP15.15": "pass",
+            "WP15.16": "pass",
+            "WP15.17": "pass",
+            "WP15.4": "pass",
+            "WP15.13": "pass",
+            "WP15.5": "pass",
+            "WP15.6": "pass",
+            "WP15.7": "pass",
+            "WP15.18": "pass",
+            "WP15.8": "pass",
+            "WP15.9": "pass",
+            "WP15.10": "pass",
+            "WP15.11": "pass"
+          },
+          "findings": [
+            {
+              "name": "Elevated cloud bypasses the near view volume",
+              "repeat": false
+            }
+          ],
+          "summary": "WP15 fails the handover between CLOUDS and ATMOSPHERE. With a camera 40 m above flat ground inside a cloud, the far trace attenuated a surface only 120 m away while every cloud extinction coefficient in the view volume was zero. The repair to World light passed an independent byte comparison, including the full 2560 \u00d7 1440 frame.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 257908,
+            "cached": 12189952,
+            "output": 30064,
+            "turns": 1
+          },
+          "at": "2026-11-27T06:09:35Z"
         }
       ],
       "authorised": {

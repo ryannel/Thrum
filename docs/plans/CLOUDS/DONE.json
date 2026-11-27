@@ -1533,8 +1533,8 @@
     {
       "id": "WP15",
       "name": "Mist and fog banks reach the horizon, low cloud hides the hilltops, and a climbing camera passes into the cloud and out above it",
-      "status": "ready_for_review",
-      "failed_reviews": 2,
+      "status": "in_progress",
+      "failed_reviews": 3,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 1,
       "depends_on": [],
@@ -1547,8 +1547,8 @@
           "ask": "Would the nearest and farthest stops blended to the middle depth fail the bank cases?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP15/exposure-scope/trace.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
@@ -1559,8 +1559,8 @@
           "ask": "In a profile with Ground, is whether a texel keeps a stop for each pixel, how often it is traced and which stop a pixel composes decided by the profile and the pixels' depths alone, never by the fog amounts, the coverage or the shapes? In case 2, is the expected transport worked out from the sky stops alone and compared with what the compose pass wrote, and does the test fail when the sky pixel takes a tap from a stop that ended on the surface?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP15/exposure-scope/depth-contract.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
@@ -1571,8 +1571,8 @@
           "ask": "Is the frame of case 1 compared with one drawn by a build of the commit this work package started from, or, if another module's landing has since moved those bytes, by a build that differs from the compared one only in this work package's commits? Does case 2's test read the dimensions of the textures the Sky selection prepared, and not only their names or that they hold bytes?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP15/exposure-scope/PROOF.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
@@ -1581,8 +1581,8 @@
           "statement": "Declaring Ground leaves the look of the clouds overhead as it is without it. Over the valley under the fair preset with every fog amount at zero, a cloud's edge against the sky is as smooth as in the same view without Ground, its sunlit lobes and shaded base keep their relief, and no bright or dark fringe follows a ridge that stands against cloud. In a pan the clouds' edges crawl and flicker no more than they do without Ground. Switching far mist on leaves upper cloud as it was with the mist off, also where that cloud is nearer the camera than the end of the handover: from inside an overcast layer, looking up, no opening appears in the cloud and its brightness does not change.",
           "inspect": "Capture with T2 engine capture. From 40 m above the V1 valley under the fair preset: `fixed` stills of one view with the Ground selection at zero fog amounts and with the Sky selection, each on the portable recipe with reconstruction off and on the Apple recipe with TAAU; and a `realtime` 10-second pan across the cloud on the Apple recipe with TAAU, once under each selection. From inside the upper cloud under the overcast preset, on a sightline that meets cloud nearer than 500 m, the end of the handover, and passes through no far mist: a `fixed` pair under the Ground selection with far mist off and on and nothing else changed. The retained pairs' pose is one such view: 1,850 m up, pitched up 25\u00b0, with the Sun at 35\u00b0. Judge native-size crops of a cloud's edge against sky and of a ridge against cloud, the whole cloud in each still, the pans at 1x, and the pair side by side: 1. in each recipe the Ground still's cloud edges are as smooth as the Sky still's, with no steps two pixels wide; 2. in each recipe the Ground still's cloud shows its sunlit lobes and shaded base with no less relief than the Sky still's; 3. no bright or dark fringe follows the ridge line in the Ground stills; 4. in the pan the Ground take's cloud edges crawl and flicker no more than the Sky take's; 5. in the pair the mist-on frame shows the same cloud around the camera as the mist-off frame, with no opening to blue sky or to the Sun's disc and no change of brightness.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP15/exposure-scope/PROOF.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
@@ -1593,8 +1593,8 @@
           "ask": "Does a test take each of the seven cases through the frame host's public resize, with cases 4 and 5 giving the host one member that returns no job from its secondary hook? Does case 2 count creations by thread over the whole span from collecting the worker's inputs to the end of publication, so that a contribution which made its replacement while handing over its job would fail it?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP15/exposure-scope/resize.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
@@ -1603,8 +1603,8 @@
           "statement": "From 40 m above the valley at dawn, mist fills the hollows to the horizon and a bank stands across the valley 2 km off. Ridges in front of mist have clean edges, with no halo and no mist drawn over them. No ring, step or change of softness or brightness shows where the view volume hands over to the trace, with the camera still or walking, and a bank the camera walks up to keeps its look as it crosses the handover. A far bank sits in the same haze as the land beside and behind it, neither brighter nor bluer.",
           "inspect": "Capture `fixed` stills at a 10\u00b0 Sun from 2 m and from 40 m, at clear-air visual ranges of 8 and 60 km, and a `realtime` walk toward the bank that takes it from beyond the handover to inside it. Judge each whole, native-size crops of a ridge line against mist and of the band 300 to 600 m from the camera, and the bank's face frame by frame through the walk.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP15/exposure-scope/PROOF.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
@@ -1613,8 +1613,8 @@
           "statement": "One bank is as bright whichever integrator draws it. A fog bank of about a 50 m visual range, seen from outside along its flank under a 45\u00b0 Sun, has the same brightness and the same shading across its face with its near face 200 m from the camera, where the view volume draws it, and at 350 m and 450 m, where the view volume and the trace share it. No edge or band lies across its face where the ramp is.",
           "inspect": "Capture `fixed` stills with T2 engine capture at 2560\u00d71440 from 25 m above the ground, at a clear-air visual range of 60 km, of one bank with its near face 200, 350, 450 and 700 m from the camera and the view otherwise the same. Judge native-size crops of the flank from the first three side by side. At 700 m the bank is beyond the ramp, where the design's boundary weight has begun to dim its flank: judge there only that it is no brighter than the others and has no step.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP15/exposure-scope/PROOF.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
@@ -1623,8 +1623,8 @@
           "statement": "Under a deck whose base is below the hilltops, the hilltops are hidden along a level, soft base. A camera climbing the hill sees the base come down to it, stands in grey cloud with a visual range of tens of metres, and comes out above a sea of cloud with the Sun on it and other summits standing out of it. Nothing pops as the camera crosses the base or the top.",
           "inspect": "Capture `fixed` stills from the valley floor, from just below the base, from inside the cloud and from the summit above it, and a `realtime` sequence of the climb. Judge the stills whole and in native-size crops of the base against a hillside, and the sequence at 1x.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP15/exposure-scope/PROOF.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
@@ -1633,8 +1633,8 @@
           "statement": "At a 5\u00b0 Sun the shadows of ridges and of clouds lie across far mist, and mist in shadow is dimmer than mist in sunlight beside it, in step with the lit and shaded land.",
           "inspect": "Capture `fixed` stills at a 5\u00b0 Sun across the valley under the fair preset, from 40 m. Judge whole and in native-size crops of a ridge's shadow where it crosses from land onto mist.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP15/exposure-scope/PROOF.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
@@ -1645,8 +1645,8 @@
           "ask": "Does the test move an occluder across far mist and check that every pixel it uncovers composes a stop traced in that frame at its own depth?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP15/exposure-scope/depth-contract.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
@@ -1657,8 +1657,8 @@
           "ask": "Is the coverage read from the texture the reconstructor reads, and would a resolve that writes each sky stop's opacity as reactive coverage in every frame fail case 1? Would a cloud that wrote no coverage after the reset fail case 2? Does the resolve compare a sky stop with the history read where the cloud's front point and wind drift carried it from, never at the same screen position, and weight the difference by the cloud's opacity alone, so that a resolve which compared the same screen position fails case 4 and one which wrote 1 for any difference fails case 3?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP15/exposure-scope/depth-contract.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
@@ -1667,8 +1667,8 @@
           "statement": "In a pan, a walk and with a mover crossing in front of far mist, nothing crawls on a ridge line, no ghost follows the mover, and after a cut the mist is whole in the first frame.",
           "inspect": "Capture `realtime` sequences at dawn: a 10-second pan across ridges in front of mist, a 40 m walk, a mover crossing, and a cut. Judge consecutive frames at 1x in native-size crops of the edges.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP15/exposure-scope/PROOF.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
@@ -1677,8 +1677,8 @@
           "statement": "In Chrome the far mist, the walk toward the bank and the climb through the deck pass WP15.4's and WP15.5's lists.",
           "inspect": "Capture the same stills, the `realtime` 40 m walk toward the bank and the climb in Chrome. Judge them by those lists, then compare native-size crops with the Mac's.",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP15/exposure-scope/PROOF.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
@@ -1688,8 +1688,8 @@
           "check": "python3 scripts/cloud_cost.py check --scene mist-far",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP15/exposure-scope/cost.json",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
@@ -1698,15 +1698,15 @@
           "statement": "The maturity ledger's `E1.clouds` row is current.",
           "ask": "Does the row claim only what this work package proved, on the targets it ran on, with visuals apart from correctness?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP15/exposure-scope/PROOF.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         }
       ],
       "findings": [
         {
-          "name": "World light with a view volume changes exposure without Ground",
+          "name": "Elevated cloud bypasses the near view volume",
           "repeat": false
         }
       ]
