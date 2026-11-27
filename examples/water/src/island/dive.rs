@@ -68,7 +68,9 @@ fn lake_crest_group(spectrum: &mut Spectrum, eye: [f32; 3]) -> Result<(), Box<dy
     let band = &spectrum.cascades[0];
     let length = band.length();
     let step = std::f64::consts::TAU / length;
-    let train = [(65, -9, 0.017), (68, 8, 0.012), (58, 22, 0.009)];
+    // The focused modes compress enough to seed foam while retaining a
+    // positive horizontal stretch of their own at the crest.
+    let train = [(65, -9, 0.0060), (68, 8, 0.0042), (58, 22, 0.0031)];
     let mut modes: Vec<_> = band
         .components()
         .iter()
