@@ -14,7 +14,7 @@ struct Step {
     seconds: f32,
     ticks: f32,
 }
-struct Cell { region: u32, low: u32, high: u32, blend: f32 }
+struct Cell { region: u32, low: u32, high: u32, blend: f32, shore_loss: f32 }
 struct Patch {
     place: vec2<f32>,
     axis: vec2<f32>,
@@ -165,7 +165,7 @@ fn blend_depth(@builtin(global_invocation_id) invocation: vec3<u32>) {
     let edge = min(at, vec2(WAKE_SIDE - 1u) - at);
     let border = smoothstep(0.0, f32(WAKE_SIDE) / 8.0, f32(min(edge.x, edge.y)));
     let shore = select(1.0, cell.blend * cell.blend, cell.low == REST_DEPTH);
-    let decay = pow(border * shore * 0.997, step.ticks);
+    let decay = pow(border * shore * 0.997, step.ticks) * exp(-cell.shore_loss * step.seconds);
     var weight = 0.0;
     if cell.low == step.depth_index {
         weight += 1.0 - cell.blend;

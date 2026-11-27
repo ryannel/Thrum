@@ -544,8 +544,8 @@
           "ask": "Does the fine level take one tick at a time and never more than two in a frame?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP8/revision.md#wp83-metal-interaction",
           "verdict": "fail",
           "review": ".orchestrate/evidence/PUDDLES/WP8-review.md"
         },
@@ -566,8 +566,8 @@
           "statement": "A footfall and a dropped stone ring a puddle: round rings cross it, slower in the shallower puddle, and die at its edge. The walking marker leaves a train of them. Nothing shows on the puddle beyond a dry sill, and no edge of the window shows.",
           "inspect": "`realtime` sequences from 1.7 m of the marker walking through two puddles of different depths a sill apart, with no rain, and of a stone dropped in each; one more after the two have joined.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP8/revision.md#wp84-realtime-metal-inspection",
           "verdict": "fail",
           "review": ".orchestrate/evidence/PUDDLES/WP8-review.md"
         },
@@ -577,7 +577,7 @@
           "check": "node scripts/check_water_browser.mjs --case rain-footfall",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP8/chrome/run.json",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP8/revision-chrome/run.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP8-review.md",
           "builder_result": "pass"
@@ -588,10 +588,10 @@
           "check": "python3 scripts/water_cost.py check --scene rain-footfall",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP8/rain-footfall-cost.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/PUDDLES/WP8-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "findings": [

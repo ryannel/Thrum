@@ -1035,6 +1035,10 @@ impl YardFloat {
         fleet.current[0].position = DVec3::new(x, height, z);
     }
 
+    pub(crate) fn marker_position(&self) -> DVec3 {
+        self.fleet.lock().expect("yard marker").current[0].position
+    }
+
     pub(crate) fn waterline(&self) -> f64 {
         let float = self.fleet.lock().expect("yard float").current[0];
         float.position.y + f64::from(Self::SCALE) * float.draft()

@@ -107,9 +107,9 @@ pub(super) fn costs(gpu: &thrum_test_support::Gpu, directory: &Path) {
 pub(super) fn footfall_costs(gpu: &thrum_test_support::Gpu, directory: &Path) {
     let extent = [2560, 1440];
     let mut arms = Vec::new();
-    for fine in [false, true] {
+    for (water, fine) in [(false, false), (true, false), (true, true)] {
         let (game, report, map, _) =
-            build_rain_footfall_cost(Wind::Calm, fine).expect("footfall cost arm");
+            build_rain_footfall_cost(Wind::Calm, water, fine).expect("footfall cost arm");
         let mut fixture = Fixture::from_game(gpu, extent, game, report);
         controls(&mut fixture, 8, 0.0, 600);
         fixture.warm_cooked();
@@ -135,8 +135,8 @@ pub(super) fn footfall_costs(gpu: &thrum_test_support::Gpu, directory: &Path) {
             let frame = fixture.frame(time);
             let mut record = super::sample_json(&frame);
             let report = fixture.report.lock().expect("water report");
-            let waves = report.interaction.expect("yard interaction");
-            let fine = waves.fine.map(|fine| {
+            let waves = report.interaction;
+            let fine = waves.and_then(|waves| waves.fine).map(|fine| {
                 json!({
                     "regions": fine.regions, "solves": fine.solves, "steps": fine.steps,
                     "dropped_ticks": fine.dropped_ticks, "refused_regions": fine.refused_regions,
@@ -145,13 +145,15 @@ pub(super) fn footfall_costs(gpu: &thrum_test_support::Gpu, directory: &Path) {
             record["elapsed_s"] = json!(f64::from(sample) / 120.0);
             record["completion_upper_ms"] = json!(fixture.last_elapsed.as_secs_f64() * 1000.0);
             record["upload_cpu_ms"] = json!(frame.upload_cpu.as_secs_f64() * 1000.0);
-            record["labelling_cpu_ms"] = json!(waves.labelling_ms);
+            record["labelling_cpu_ms"] = json!(waves.map_or(0.0, |waves| waves.labelling_ms));
             record["fine"] = json!(fine);
-            assert!(report.rain_drops.is_some());
+            assert_eq!(report.rain_drops.is_some(), water);
             frames.push(record);
         }
         let report = fixture.report.lock().expect("water report");
-        arms.push(json!({"fine": fine, "resources": report.resources, "frames": frames}));
+        arms.push(
+            json!({"water": water, "fine": fine, "resources": report.resources, "frames": frames}),
+        );
     }
     write(
         directory,

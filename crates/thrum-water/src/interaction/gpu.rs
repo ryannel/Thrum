@@ -1,7 +1,7 @@
 use super::{
     BodyPressure, CELL_METRES, CELLS, DENSITY, FAR, FINE, FINE_TICKS, FineEndpoint, FineReport,
     GRAVITY, GRID_CELLS, GRID_WIDTH, MAX_TICKS, Mailbox, NEAR, Report, SIDE, Witness,
-    regions::{Cell, DEPTHS, DRY, FineActivity, REST, Window},
+    regions::{Cell, DEPTHS, DRY, REST, RegionActivity, WetHollows, Window},
     static_dent,
 };
 use bytemuck::{Pod, Zeroable};
@@ -146,8 +146,9 @@ pub(crate) struct Interaction {
     committed: Option<Frame>,
     recorded: Option<Frame>,
     windows: [Window; 3],
-    committed_activity: FineActivity,
-    recorded_activity: FineActivity,
+    wet_hollows: WetHollows,
+    committed_activity: [RegionActivity; 3],
+    recorded_activity: [RegionActivity; 3],
     dispatches: Vec<Dispatch>,
     step_bytes: Vec<u8>,
     patch_rows: Vec<Patch>,
@@ -417,8 +418,9 @@ impl Interaction {
             committed: None,
             recorded: None,
             windows: Default::default(),
-            committed_activity: FineActivity::default(),
-            recorded_activity: FineActivity::default(),
+            wet_hollows: WetHollows::default(),
+            committed_activity: Default::default(),
+            recorded_activity: Default::default(),
             dispatches: Vec::new(),
             step_bytes: Vec::new(),
             patch_rows: Vec::new(),
@@ -525,7 +527,9 @@ impl Interaction {
         });
         let mut fine_previous = Self::fine_endpoint(next);
         let endpoint = if reset {
-            self.recorded_activity.reset();
+            for activity in &mut self.recorded_activity {
+                activity.reset();
+            }
             encoder.clear_buffer(&self.endpoints, 0, None);
             report.resets += 1;
             report.regions = [0; 2];
@@ -595,6 +599,13 @@ impl Interaction {
             };
             // Both fine substeps use this frame's published wet support and window.
             // At a hitch, the most recent two source ticks survive, as on the other levels.
+            let start = Instant::now();
+            self.wet_hollows.update(map);
+            // On the fine profile, a yard window overlaps the ambient bodies
+            // as well as several small puddles. Never transform an untouched
+            // region's zero state merely because it is inside that window.
+            let track_hollows = mailbox.fine && self.wet_hollows.is_present();
+            report.labelling_ms += start.elapsed().as_secs_f64() * 1000.0;
             for (level, first, last) in [(NEAR, first, time.tick), (FAR, first, time.tick)]
                 .into_iter()
                 .chain((0..fine_ticks).map(|step| {
@@ -603,14 +614,21 @@ impl Interaction {
                 }))
             {
                 let fine = level == FINE;
+                let track_activity = fine || track_hollows;
+                let activity = &mut self.recorded_activity[level];
                 let second = fine && fine_ticks == 2 && last == time.tick;
                 let to_scratch = fine && fine_ticks == 2 && !second;
                 let start = Instant::now();
                 let window = &mut self.windows[level];
-                let relabelled = window.label(map, origins[level], CELL_METRES[level], level);
-                if fine && !second {
-                    self.recorded_activity
-                        .inherit(&self.committed_activity, window);
+                let relabelled = window.label(
+                    map,
+                    &self.wet_hollows,
+                    origins[level],
+                    CELL_METRES[level],
+                    level,
+                );
+                if track_activity && !second {
+                    activity.inherit(&self.committed_activity[level], window);
                 }
                 if relabelled {
                     report.labelling_ms += start.elapsed().as_secs_f64() * 1000.0;
@@ -640,7 +658,7 @@ impl Interaction {
                         pressures.next_if(|(_, pressure)| pressure.tick == tick)
                     {
                         let body = pressure.body;
-                        if fine && body.force == 0.0 {
+                        if track_activity && body.force == 0.0 {
                             continue;
                         }
                         let place = local(body.place);
@@ -653,7 +671,7 @@ impl Interaction {
                                 impulse: body.force as f32 * dt,
                                 padding: 0.0,
                             },
-                            region: window.region(place),
+                            region: window.source_region(place, body.place, &self.wet_hollows),
                             tick,
                             body: Some(index),
                         });
@@ -673,7 +691,7 @@ impl Interaction {
                                 impulse: impulse.vertical as f32,
                                 padding: 0.0,
                             },
-                            region: window.region(place),
+                            region: window.source_region(place, impulse.place, &self.wet_hollows),
                             tick,
                             body: None,
                         });
@@ -683,15 +701,15 @@ impl Interaction {
                 self.regions.clear();
                 self.regions
                     .extend(window.depths.iter().enumerate().map(|(region, _)| {
-                        let latest = if fine {
-                            self.recorded_activity.latest[region].unwrap_or(0)
+                        let latest = if track_activity {
+                            activity.latest[region].unwrap_or(0)
                         } else {
                             0
                         };
                         (region as u32, latest, 0)
                     }));
                 for source in &self.candidates {
-                    if fine && source.patch.impulse == 0.0 {
+                    if track_activity && source.patch.impulse == 0.0 {
                         continue;
                     }
                     if let Some((_, newest, count)) = self.regions.get_mut(source.region as usize) {
@@ -704,22 +722,24 @@ impl Interaction {
                 });
                 let mut remaining = self.mailbox.limits.solves;
                 for &(region, latest, count) in &self.regions {
-                    if fine && latest == 0 {
+                    if track_activity && latest == 0 {
                         continue;
                     }
                     let depths = window.depths[region as usize];
                     if depths.count_ones() > remaining {
+                        if track_activity {
+                            activity.latest[region as usize] = None;
+                        }
                         if let Some(fine) = fine_report.as_mut().filter(|_| fine) {
                             fine.refused_regions += count as u64;
-                            self.recorded_activity.latest[region as usize] = None;
                         } else {
                             report.refused_regions[level] += count as u64;
                         }
                         continue;
                     }
                     remaining -= depths.count_ones();
-                    if fine {
-                        self.recorded_activity.latest[region as usize] = Some(latest);
+                    if track_activity {
+                        activity.latest[region as usize] = Some(latest);
                     }
                     let source_first = self.patch_rows.len() as u32;
                     for source in self

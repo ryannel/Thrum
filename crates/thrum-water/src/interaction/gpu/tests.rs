@@ -39,7 +39,7 @@ fn interaction_records_match_the_shader_layout() {
                 seconds,
                 ticks,
             ),
-            record!(Cell, region, low, high, blend),
+            record!(Cell, region, low, high, blend, shore_loss),
             record!(Patch, place, axis, footprint, impulse, padding),
         ],
     );

@@ -1298,6 +1298,29 @@ def validate_rain_rings(data):
         assert all(entry in row['investigations'] for entry in investigations)
 
 
+def compare_footfall_cost(row, control, comparison, fine=False):
+    passes = row['passes_ms']
+    investigations = row['investigations']
+    row.setdefault('comparisons', {})[comparison] = {
+        'gpu_ms_delta': row['gpu_ms'] - control['gpu_ms'],
+        'completion_upper_ms_delta': row['completion_upper_ms'] - control['completion_upper_ms'],
+        'added_passes_ms': {name: duration for name, duration in passes.items()
+                            if name not in control['passes_ms']},
+    }
+    for name, old in control['passes_ms'].items():
+        new = passes.get(name, 0)
+        if old > 0 and new >= old * 1.25:
+            context = ({
+                'interaction waves': 'the same pass adds the fine region/depth solves listed above',
+                'water surface': 'the surface samples two extra endpoint planes inside the fine window',
+            }.get(name, 'the pass does not use fine state and runs under shared load') if fine else
+                'the paired arm measures the same opaque yard and walking marker under shared load')
+            investigations.append(f'{comparison}: {name} rose from {old:.4f} to {new:.4f} ms. {context}.')
+    if fine and row['tick_frame'] and row['labelling_cpu_ms'] > max(0.05, control['labelling_cpu_ms'] * 1.25):
+        investigations.append(f'{comparison}: labelling {row["labelling_cpu_ms"]:.3f} ms vs '
+                              f'{control["labelling_cpu_ms"]:.3f} ms adds a 256² window.')
+
+
 def rain_footfall_cost():
     output = ROOT / 'tmp/puddles-wp8/cost'
     output.mkdir(parents=True, exist_ok=True)
@@ -1320,15 +1343,22 @@ def rain_footfall_cost():
                                  'WP8 arms use 10 mm/h and the moving marker at eye height.'}
     assert data['target'] == 'mac-metal' and data['extent'] == [2560, 1440]
     assert data['capture'] is False and data['rate_mm_h'] == 10
-    controls = {}
-    for arm in data['arms']:
+    arms = {(arm['water'], arm['fine']): arm for arm in data['arms']}
+    assert list(arms) == [(False, False), (True, False), (True, True)]
+    assert len(arms) == len(data['arms'])
+    schedules = [[(frame['elapsed_s'], frame['tick_frame']) for frame in arm['frames']]
+                 for arm in arms.values()]
+    assert all(schedule == schedules[0] for schedule in schedules)
+    for arm in arms.values():
         arm['summary'] = []
         for tick_frame in (False, True):
             frames = [frame for frame in arm['frames'] if frame['tick_frame'] == tick_frame]
-            assert frames and all(frame['gpu_ms'] > 0 for frame in frames)
+            assert len(frames) == 24 and all(frame['gpu_ms'] > 0 for frame in frames)
             assert all((frame['fine'] is not None) == arm['fine'] for frame in frames)
-            assert all(any(name.endswith('rain bands') for name in frame['passes_ms'])
-                       for frame in frames)
+            for frame in frames:
+                labels = {name.split(': ')[-1] for name in frame['passes_ms']}
+                for label in ('rain bands', 'water gather', 'water surface'):
+                    assert (label in labels) == arm['water']
             names = set().union(*(frame['passes_ms'] for frame in frames))
             passes = {name.split(': ')[-1]: statistics.median(
                 frame['passes_ms'][name] for frame in frames if name in frame['passes_ms'])
@@ -1349,23 +1379,15 @@ def rain_footfall_cost():
                     f'Largest pass {largest} was {passes[largest]:.3f} ms. The GPU pass sum was '
                     f'{row["gpu_ms"]:.3f} ms and synchronous completion was '
                     f'{row["completion_upper_ms"]:.3f} ms, including polling and shared-device wait.')
-            if arm['fine']:
-                control = controls[tick_frame]
-                values = ((name, old, passes.get(name, 0)) for name, old in control['passes_ms'].items())
-                for name, old, new in values:
-                    if old > 0 and new >= old * 1.25:
-                        context = {
-                            'interaction waves': 'the same pass adds the fine region/depth solves listed above',
-                            'water surface': 'the water surface samples two extra endpoint planes inside the fine window',
-                        }.get(name, 'this pass does not use the fine state, and runs under shared load')
-                        investigations.append(f'{name} rose from {old:.4f} to {new:.4f} ms; {context}.')
-                if tick_frame and row['labelling_cpu_ms'] > max(0.05, control['labelling_cpu_ms'] * 1.25):
-                    investigations.append(f'Labelling {row["labelling_cpu_ms"]:.3f} ms vs '
-                                          f'{control["labelling_cpu_ms"]:.3f} ms adds a 256² window.')
-            else:
-                controls[tick_frame] = row
             arm['summary'].append(row)
-    assert [arm['fine'] for arm in data['arms']] == [False, True]
+    without_water, base_levels, fine_level = arms.values()
+    for candidate, control, comparison in [
+        (base_levels, without_water, 'water without the fine level versus water absent'),
+        (fine_level, base_levels, 'fine level enabled versus disabled'),
+        (fine_level, without_water, 'water with the fine level versus water absent'),
+    ]:
+        for row, baseline in zip(candidate['summary'], control['summary'], strict=True):
+            compare_footfall_cost(row, baseline, comparison, fine=(control is base_levels))
     evidence = RECORDS['rain-footfall']
     evidence.parent.mkdir(parents=True, exist_ok=True)
     evidence.write_text(json.dumps(data, indent=2) + '\n')

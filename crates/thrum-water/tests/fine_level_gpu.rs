@@ -4,11 +4,14 @@ mod interaction_fixture;
 
 use interaction_fixture::{Fixture, terrain};
 use std::f64::consts::TAU;
+use thrum_sea_model::Sample;
 use thrum_water::{
     interaction::{BodyPressure, Limits, Witness},
     query::{BodyQuery, QueryPoint},
 };
-use thrum_water_model::{Bed, Body, BodyKind, CAPILLARY_COEFFICIENT, Hollows, Impulse, Map, Stage};
+use thrum_water_model::{
+    Bed, Body, BodyKind, CAPILLARY_COEFFICIENT, Hollows, Impulse, Map, Stage, Surface,
+};
 
 const SIDE: usize = Witness::SIDE;
 const CELL: f64 = 0.02;
@@ -187,19 +190,20 @@ fn tick_query_includes_the_submitted_fine_height() {
     );
 }
 
-fn divided_puddles() -> Map {
+fn divided_puddles(offset: f64, spacing: f64, depth: f64) -> Map {
     let size = [100, 60];
-    let base = [-1.0, -0.6];
+    let base = [offset - 50.0 * spacing, -30.0 * spacing];
     let mut bed = Vec::new();
     let mut labels = Vec::new();
     for _ in 0..size[1] {
         for x in 0..size[0] {
             let sill = (47..53).contains(&x);
-            bed.push(if sill { 0.008 } else { -0.02 });
+            bed.push(if sill { 0.008 } else { -depth });
             labels.push(u32::from(x >= 50));
         }
     }
-    let hollows = Hollows::new(base, CELL, size, bed, labels, vec![0.0; 2]).expect("two puddles");
+    let hollows =
+        Hollows::new(base, spacing, size, bed, labels, vec![0.0; 2]).expect("two puddles");
     Map::prepare(
         Bed::new([-4.0; 2], 1.0, [9, 9], vec![1.0; 81]).expect("dry ground"),
         vec![Body {
@@ -222,9 +226,99 @@ fn divided_puddles() -> Map {
     .expect("prepared sill")
 }
 
+fn queried_surfaces(fixture: &mut Fixture, tick: u64, points: &[[f32; 2]]) -> Vec<Surface> {
+    fixture.query().post(
+        fixture.endpoint(tick - 1),
+        vec![BodyQuery {
+            id: 91,
+            generation: 1,
+            points: points
+                .iter()
+                .map(|&position| QueryPoint {
+                    position,
+                    radius: 0.0,
+                    use_tick: tick,
+                })
+                .collect(),
+        }],
+    );
+    fixture.ask_query();
+    let replies = fixture.query().drain(fixture.endpoint(tick), Fixture::STEP);
+    replies[0]
+        .points
+        .iter()
+        .map(|reply| {
+            assert!(reply.surface.wet);
+            reply.surface
+        })
+        .collect()
+}
+
+#[test]
+fn disconnected_puddles_stay_at_rest_on_every_level_and_in_the_query() {
+    for shift in [0.0_f32, 0.125] {
+        let offset = f64::from(shift);
+        let Some(mut fixture) = Fixture::new_fine(divided_puddles(offset, 0.025, 0.10)) else {
+            return;
+        };
+        step(&mut fixture, 0);
+        impact(&fixture, 1, -0.22, 0.6);
+        let points = [[-0.22, 0.0], [shift + 0.076, 0.0], [0.5, 0.0]];
+        for tick in 1..=4 {
+            step(&mut fixture, tick);
+            let surfaces = queried_surfaces(&mut fixture, tick, &points);
+            for surface in &surfaces[1..] {
+                assert_eq!(
+                    surface.sample,
+                    Sample::default(),
+                    "dry sill at {offset}, tick {tick}"
+                );
+            }
+            let field = fixture.read();
+            assert_eq!(field.height(points[2]), 0.0);
+            let endpoint = field.endpoint.endpoints[1];
+            let fine = endpoint.fine.unwrap();
+            for (origin, metres, states) in [
+                (endpoint.origins[0], Witness::CELL_METRES[0], field.level(0)),
+                (endpoint.origins[1], Witness::CELL_METRES[1], field.level(1)),
+                (fine.origin, Witness::FINE_CELL_METRES, field.fine()),
+            ] {
+                assert!(
+                    states.iter().enumerate().all(|(i, &state)| {
+                        let x = f64::from(origin[0]) + (i % SIDE) as f64 * f64::from(metres);
+                        x < offset + 0.075 || state.iter().all(|v| v.abs().to_bits() == 0)
+                    }),
+                    "dry sill at {offset}, tick {tick}, spacing {metres}"
+                );
+            }
+        }
+        assert!(fixture.read().height(points[0]).abs() > 1e-4);
+        fixture.set_levels(&[0.01, 0.01]);
+        let mut reached = false;
+        for tick in 5..=40 {
+            step(&mut fixture, tick);
+            if tick % 3 == 0 {
+                reached |= (queried_surfaces(&mut fixture, tick, &points)[2]
+                    .sample
+                    .height
+                    - 0.01)
+                    .abs()
+                    > 1e-5;
+            }
+        }
+        assert!(
+            reached,
+            "the original source never reached the receiving puddle after flooding at {offset}"
+        );
+        eprintln!(
+            "sill at {offset} m: exact rest in both state lanes and the public query until flooding, then transmission from the same source"
+        );
+    }
+}
+
 #[test]
 fn fine_regions_keep_state_when_the_sill_floods() {
-    let Some(mut fixture) = Fixture::new_fine(divided_puddles()) else {
+    let Some(mut fixture) = Fixture::new_fine(divided_puddles(0.0, CELL, 0.02)) else {
         return;
     };
     step(&mut fixture, 0);

@@ -27,9 +27,31 @@ pub(super) fn camera(index: usize) -> Camera {
         5 => Camera::look_at([148.8, 19.813, 65.0], [148.0, 18.113, 66.2], 72.0),
         6 => Camera::look_at([161.0, 41.2, 31.0], [187.0, 11.2, 0.0], 56.0),
         7 => super::CAMERAS[0],
-        8 => Camera::look_at([148.55, 19.74, 67.95], [148.37, 18.04, 66.23], 75.0),
+        8 => Camera::look_at([148.23, 19.74, 67.95], [148.23, 18.04, 66.15], 74.0),
+        9 | 10 => {
+            #[expect(
+                clippy::cast_possible_truncation,
+                reason = "camera positions use GPU metres"
+            )]
+            let [x, z] = STONES[index - 9].map(|coordinate| coordinate as f32);
+            Camera::look_at([x, 19.74, z + 1.73], [x, 18.04, z], 59.0)
+        }
         _ => Camera::look_at([149.0, 33.12, 64.94], [149.0, 18.12, 65.0], 45.0),
     }
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "the yard camera uses GPU metres"
+)]
+pub(super) fn walk_camera(marker: &crate::floating::YardFloat) -> Camera {
+    let position = marker.marker_position();
+    let x = if position.y > 0.0 {
+        position.x
+    } else {
+        PITS[0][0]
+    } as f32;
+    Camera::look_at([x, 19.74, 67.95], [x + 0.15, 18.04, 66.15], 74.0)
 }
 
 pub(super) fn placements() -> [MeshPlacement; 5] {
@@ -81,7 +103,9 @@ const BODY: usize = 3;
 const TRACK_ROWS: usize = 60;
 const PAVING: usize = 1;
 const PITS: [[f64; 2]; 2] = [[147.0, 66.18], [149.64, 66.32]];
-const STONES: [[f64; 2]; 2] = [[147.83, 66.23], PITS[1]];
+// Two drops have room to travel along each basin. The third starts
+// on the pothole side of the sill, at both fills.
+const STONES: [[f64; 2]; 3] = [[147.00, 66.14], [149.64, 65.52], [147.93, 66.23]];
 const WALK_SECONDS: f64 = 4.4;
 const STEP_SECONDS: f64 = 0.34;
 const FOOT_IMPULSE_PER_METRE: f64 = 20.0;
@@ -93,7 +117,7 @@ pub(super) struct Weather {
     rain: Rain,
     scale: f64,
     walking: bool,
-    stone: [bool; 2],
+    stone: [bool; STONES.len()],
 }
 
 impl Weather {
@@ -105,7 +129,7 @@ impl Weather {
             },
             scale: f64::from(scale),
             walking: false,
-            stone: [false; 2],
+            stone: [false; STONES.len()],
         }
     }
 }
@@ -135,48 +159,31 @@ pub(super) fn input_controls(
         .default(1.0)
         .step(1.0)
         .add()?;
-    let (walk, first, second) = if footfalls {
-        (
-            Some(
-                controls
-                    .slider("rain.walk", "Walk through the puddles", 0.0..=1.0)
-                    .step(1.0)
-                    .add()?,
-            ),
-            Some(
-                controls
-                    .slider(
-                        "rain.stone_left",
-                        "Drop a stone into the pothole",
-                        0.0..=1.0,
-                    )
-                    .step(1.0)
-                    .add()?,
-            ),
-            Some(
-                controls
-                    .slider(
-                        "rain.stone_right",
-                        "Drop a stone into the paving puddle",
-                        0.0..=1.0,
-                    )
-                    .step(1.0)
-                    .add()?,
-            ),
-        )
-    } else {
-        (None, None, None)
-    };
+    let mut walk = None;
+    let mut stones = [None; STONES.len()];
+    if footfalls {
+        walk = Some(
+            controls
+                .slider("rain.walk", "Walk through the puddles", 0.0..=1.0)
+                .step(1.0)
+                .add()?,
+        );
+        for (slot, (key, name)) in stones.iter_mut().zip([
+            ("rain.stone_left", "Drop a stone into the pothole"),
+            ("rain.stone_right", "Drop a stone into the paving puddle"),
+            ("rain.stone_sill", "Drop a stone beside the sill"),
+        ]) {
+            *slot = Some(controls.slider(key, name, 0.0..=1.0).step(1.0).add()?);
+        }
+    }
     Ok(move |controls: &Controls| {
         let mut weather = Weather::new(
             controls.get(rate),
             controls.get(drying),
             controls.get(scale),
         );
-        let [walking, left, right] =
-            [walk, first, second].map(|key| key.is_some_and(|key| controls.get(key) > 0.5));
-        weather.walking = walking;
-        weather.stone = [left, right];
+        weather.walking = walk.is_some_and(|key| controls.get(key) > 0.5);
+        weather.stone = stones.map(|key| key.is_some_and(|key| controls.get(key) > 0.5));
         weather
     })
 }
@@ -257,22 +264,25 @@ impl Yard {
         Arc::clone(&self.replies)
     }
 
+    pub(super) fn marker(&self) -> Option<crate::floating::YardFloat> {
+        self.footfalls
+            .is_some()
+            .then(|| crate::floating::YardFloat::new(PITS[0], 0.0))
+    }
+
     pub(super) fn install(
         mut self,
         game: SkyGame,
         water: &thrum_water::Water,
         map: crate::SharedMap,
         input: Arc<Mutex<Weather>>,
+        marker: Option<crate::floating::YardFloat>,
         mut readout: impl FnMut(&mut Controls, f64) + 'static,
     ) -> SkyGame {
         let float = self.float();
         let displayed_float = float.clone();
         let mailbox = water.query_mailbox();
         let interaction = water.interaction_mailbox();
-        let marker = self
-            .footfalls
-            .is_some()
-            .then(|| crate::floating::YardFloat::new(PITS[0], 0.0));
         let mut walk = Walk::default();
         #[cfg(target_arch = "wasm32")]
         let displayed_replies = self.replies();
@@ -543,7 +553,7 @@ impl Yard {
 struct Walk {
     elapsed: f64,
     next_step: f64,
-    stones: [bool; 2],
+    stones: [bool; STONES.len()],
     right_foot: bool,
 }
 
@@ -577,7 +587,7 @@ impl Walk {
             if drop && !*was_down {
                 let place = STONES[i];
                 if depth(place) > 0.0 {
-                    impulse(place, 0.42, 0.036, 1 + i as u64);
+                    impulse(place, 1.20, 0.075, 1 + i as u64);
                 }
             }
             *was_down = drop;

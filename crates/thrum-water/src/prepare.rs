@@ -847,7 +847,7 @@ fn shader_source(
             + if has_hollows && gather {
                 include_str!("map_gpu/hollows_contact.wgsl")
             } else {
-                ""
+                "    let hollow_surface = false;\n"
             }
             + if has_rivers {
                 "    let motion = river_surface_motion(input.rest, row);\n"

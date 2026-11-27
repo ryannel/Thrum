@@ -521,8 +521,12 @@ enum YardRoute {
 /// Build a matched cost arm for a moving marker and rain in the yard.
 /// # Errors
 /// Propagates scene construction errors.
-pub fn build_rain_footfall_cost(wind: Wind, fine: bool) -> Result<RainYardScene, Box<dyn Error>> {
-    build_yard(wind, true, YardRoute::FootfallCost { fine })
+pub fn build_rain_footfall_cost(
+    wind: Wind,
+    draw_water: bool,
+    fine: bool,
+) -> Result<RainYardScene, Box<dyn Error>> {
+    build_yard(wind, draw_water, YardRoute::FootfallCost { fine })
 }
 
 fn build_yard(
@@ -634,7 +638,7 @@ fn build_island(
     if let Some(levels) = rain.as_ref().and_then(|yard| yard.footfalls) {
         profile.interaction = Some(thrum_water::interaction::Limits {
             bodies: 1,
-            impulses: 3,
+            impulses: 4,
             solves: 16,
         });
         profile.fine_interaction = matches!(levels, rain_yard::FootfallLevels::WithFine);
@@ -665,6 +669,8 @@ fn build_island(
         .as_ref()
         .map(|_| Arc::new(Mutex::new(rain_yard::Weather::default())));
     let tick_weather = weather.clone();
+    let marker = rain.as_ref().and_then(rain_yard::Yard::marker);
+    let camera_marker = marker.clone();
     let camera = controls
         .slider(
             "camera.island",
@@ -677,7 +683,9 @@ fn build_island(
             } else {
                 "Island view"
             },
-            0.0..=if yard {
+            0.0..=if marker.is_some() {
+                11.0
+            } else if yard {
                 8.0
             } else if surf_route {
                 9.0
@@ -701,22 +709,23 @@ fn build_island(
         .step(0.01)
         .default(0.0)
         .add()?;
+    let yard_footfalls = marker.is_some();
     let sun = controls
         .slider("sun.elevation", "Sun elevation", -8.0..=80.0)
-        .default(if surf_route && wind == Wind::Trade {
+        .default(if yard_footfalls {
+            44.0
+        } else if surf_route && wind == Wind::Trade {
             38.0
         } else {
             60.0
         })
         .add()?;
-    let footfall_sun = rain
-        .as_ref()
-        .is_some_and(|yard| yard.footfalls.is_some())
+    let footfall_sun = yard_footfalls
         .then(|| {
             controls
                 .slider("sun.azimuth", "Sun azimuth", 0.0..=360.0)
                 .step(1.0)
-                .default(12.0)
+                .default(0.0)
                 .add()
         })
         .transpose()?;
@@ -756,7 +765,11 @@ fn build_island(
             reason = "bounded discrete camera control"
         )]
         let index = c.get(camera).round() as usize;
-        sky.camera = if yard {
+        sky.camera = if index == 11
+            && let Some(marker) = &camera_marker
+        {
+            rain_yard::walk_camera(marker)
+        } else if yard {
             rain_yard::camera(index)
         } else if surf_route {
             SURF_VIEWS[index]
@@ -775,7 +788,7 @@ fn build_island(
         sky.sun_azimuth_degrees = match (yard, index, surf_route && wind == Wind::Trade) {
             (true, 6, _) => 40.0,
             (true, 7, _) => 11.0,
-            (true, 8, _) => footfall_sun.map_or(12.0, |azimuth| c.get(azimuth)),
+            (true, 8..=11, _) => footfall_sun.map_or(12.0, |azimuth| c.get(azimuth)),
             (_, _, true) => 224.0,
             _ => 228.0,
         };
@@ -799,7 +812,7 @@ fn build_island(
     .with_tick_duration(Duration::from_secs_f64(1.0 / 60.0))?;
     let game = if let (Some(yard), Some(input), Some(readout)) = (rain, tick_weather, float_readout)
     {
-        yard.install(game, &water, Arc::clone(&map), input, readout)
+        yard.install(game, &water, Arc::clone(&map), input, marker, readout)
     } else {
         game
     };

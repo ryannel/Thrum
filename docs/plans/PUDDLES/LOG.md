@@ -282,3 +282,12 @@
   the joined take. Direct Chrome WebGPU readback and a paired 1440p at 10 mm/h are in the
   [WP8 evidence](../../../.orchestrate/evidence/PUDDLES/WP8/README.md). Depth-dependent speed is clearer in
   the gauges than in the images. Bright arcs sometimes remain visible up to the waterline.
+
+- 2026-11-27 WP8 review follow-up. Labelled the authored wet cells before admitting samples to each
+  interaction level. Unsupported coarse samples stay at rest where their interpolation could reach a
+  disconnected puddle. Metal verified exact rest on all submitted levels and in the public query across
+  a sill translated between near samples, then transmission from the original source after flooding.
+  The fine level absorbs crests at the bank. The yard now has a tracking view under one default Sun,
+  matched stone sites at about 64 and 20 mm, and the same drop on both sides of the flooding comparison.
+  The 1440p Metal cost record includes the walking yard with water absent, both water profiles, the
+  fine solve counts and WP4's record. [WP8 follow-up evidence](../../../.orchestrate/evidence/PUDDLES/WP8/revision.md)

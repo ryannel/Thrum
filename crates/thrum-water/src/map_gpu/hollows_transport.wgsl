@@ -1,5 +1,4 @@
-    let body_index = surface_body(input.body);
-    if map.bodies[body_index].layers.x == 3u {
+    if hollow_surface {
         let optics = hollows_optical_type(body_index, input.rest);
         let sediment = optics.sediment;
         let ray = refract(-v, n, 1.0 / 1.333);

@@ -42,7 +42,7 @@ fn fill_footfall_yard(
     runtime: &mut Offscreen<SkyGame>,
     device: &wgpu::Device,
     map: &water_scene::SharedMap,
-    joined: bool,
+    route: &str,
 ) -> f64 {
     let submit = |runtime: &mut Offscreen<SkyGame>, time| {
         runtime
@@ -61,6 +61,7 @@ fn fill_footfall_yard(
         .parameters(r#"{"rain.rate":100,"rain.time_scale":600}"#)
         .expect("fill the yard");
     let mut final_levels = [None; 2];
+    let joined = route == "yard-joined";
     for step in 1..=360 {
         submit(runtime, f64::from(step) / 60.0);
         final_levels = super::rain_cost::levels(&map.lock().expect("yard map"));
@@ -68,7 +69,7 @@ fn fill_footfall_yard(
             [Some(left), Some(right)] if joined => {
                 left.to_bits() == right.to_bits() && right > 18.08
             }
-            [Some(left), Some(right)] => left > right && right > 18.016,
+            [Some(left), Some(right)] => left > right && right > 18.015,
             _ => false,
         };
         if filled {
@@ -105,16 +106,17 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let whitewater = super::whitewater();
     let surf = super::surf_route();
     let route = std::env::var("THRUM_WATER_ROUTE").unwrap_or_default();
-    let walking = matches!(route.as_str(), "yard-walk" | "yard-walk-paving");
+    let walking = matches!(route.as_str(), "yard-walk" | "yard-walk-high-sun");
     let footfall = yard
         && (walking
             || matches!(
                 route.as_str(),
-                "yard-stone-left" | "yard-stone-right" | "yard-joined"
+                "yard-stone-left" | "yard-stone-right" | "yard-sill-dry" | "yard-joined"
             ));
     let footfall_edit = match route.as_str() {
-        "yard-walk" | "yard-walk-paving" => r#"{"rain.walk":1}"#,
+        "yard-walk" | "yard-walk-high-sun" => r#"{"rain.walk":1}"#,
         "yard-stone-right" => r#"{"rain.stone_right":1}"#,
+        "yard-sill-dry" | "yard-joined" => r#"{"rain.stone_sill":1}"#,
         _ => r#"{"rain.stone_left":1}"#,
     };
     let held_dive = dive_view(&route);
@@ -122,7 +124,16 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let river_stage = river && matches!(route.as_str(), "stage" | "lake-stage" | "spring-stage");
     let late_channel = channel && route == "late";
     let handoff_cut = surf && route == "handoff-cut";
-    let island_view = std::env::var("THRUM_WATER_ISLAND_CAMERA").unwrap_or_else(|_| "0".into());
+    let island_view = std::env::var("THRUM_WATER_ISLAND_CAMERA").unwrap_or_else(|_| {
+        match (yard, route.as_str()) {
+            (true, "yard-stone-left") => "9",
+            (true, "yard-stone-right") => "10",
+            (true, "yard-walk" | "yard-walk-high-sun") => "11",
+            (true, _) if footfall => "8",
+            _ => "0",
+        }
+        .into()
+    });
     if handoff_cut {
         assert_eq!(island_view, "7", "start at the foam handoff camera");
     }
@@ -143,7 +154,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let (extent, interval, opportunities, max_submissions) = if footfall {
         (
             [1280, 720],
-            if walking { 5.5 } else { 3.25 },
+            if walking { 5.5 } else { 5.0 },
             32.0,
             CHANNEL_SUBMISSIONS,
         )
@@ -191,24 +202,18 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             ))
             .expect("initial dive view");
     }
-    let footfall_sun = match route.as_str() {
-        "yard-stone-left" => Some([36, 338]),
-        "yard-stone-right" => Some([31, 22]),
-        "yard-joined" => Some([35, 350]),
-        "yard-walk" => Some([37, 328]),
-        "yard-walk-paving" => Some([39, 21]),
-        _ => None,
-    };
+    let footfall_sun = (route == "yard-walk-high-sun").then_some([60, 12]);
     if yard {
-        let lighting = footfall_sun.map_or_else(
-            || r#""sun.elevation":8"#.into(),
-            |[elevation, azimuth]| {
-                format!(r#""sun.elevation":{elevation},"sun.azimuth":{azimuth}"#)
-            },
-        );
+        let lighting = match footfall_sun {
+            Some([elevation, azimuth]) => {
+                format!(r#","sun.elevation":{elevation},"sun.azimuth":{azimuth}"#)
+            }
+            None if !footfall => r#","sun.elevation":8"#.into(),
+            None => String::new(),
+        };
         runtime
             .parameters(&format!(
-                r#"{{"camera.island":{island_view},{lighting},"rain.rate":0}}"#
+                r#"{{"camera.island":{island_view},"rain.rate":0{lighting}}}"#
             ))
             .expect("initial dry yard");
     }
@@ -264,7 +269,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             &mut runtime,
             &device,
             yard_map.as_ref().expect("yard"),
-            route == "yard-joined",
+            &route,
         )
     });
     runtime
@@ -296,7 +301,9 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let mut yard_levels = Vec::new();
     let mut footfall_steps = Vec::new();
     let yard_tick = Duration::from_secs_f64(1.0 / 60.0);
-    while begin.elapsed() < Duration::from_secs_f64(interval) && submitted < max_submissions {
+    let mut deadline = interval;
+    let mut footfall_edit_time = None;
+    while begin.elapsed() < Duration::from_secs_f64(deadline) && submitted < max_submissions {
         let elapsed = begin.elapsed().as_secs_f64();
         if let Some(start) = footfall_start {
             let target_tick =
@@ -320,6 +327,8 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
                     .expect("yard interaction control");
                 weather_edits.push(json!({"elapsed":elapsed,"parameters":serde_json::from_str::<Value>(footfall_edit).expect("footfall edit")}));
                 applied = footfall_edit;
+                footfall_edit_time = Some(elapsed);
+                deadline = interval + elapsed;
             }
         } else if yard {
             let change = match elapsed {
@@ -494,10 +503,13 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     assert_eq!(written.frames, frames.len() as u64);
     assert_eq!(runtime.omissions(), 0, "complete submitted interval");
     if footfall {
-        assert!(
-            !applied.is_empty(),
-            "the capture never reached a frame that could step the impulse"
-        );
+        let edit_time = footfall_edit_time.expect("a frame that could step the impulse");
+        if walking {
+            let end = frames.last().expect("walking frames")["elapsed"]
+                .as_f64()
+                .expect("submitted elapsed time");
+            assert!(end - edit_time >= 4.4, "capture the whole walk");
+        }
         assert!(
             footfall_steps
                 .iter()
