@@ -323,15 +323,11 @@ fn tick_stage_rules_enforce_device_storage_texture_support_per_pass() {
     );
 }
 
-#[test]
-fn simulate_draw_rules_validate_attachment_ranges_and_ownership() {
-    use super::draw::check_draw_format;
+fn layered_draw_graph() -> EffectGraph {
     use crate::graph::TextureKind;
     use AccessKind as A;
     use EffectCadence as C;
     use wgpu::{TextureFormat as F, TextureUsages as U};
-
-    type Edit = fn(&mut EffectGraph);
 
     let access = |kind, range| EffectAccess {
         resource: 0,
@@ -346,7 +342,7 @@ fn simulate_draw_rules_validate_attachment_ranges_and_ownership() {
         async_eligible: false,
         accesses,
     };
-    let graph = EffectGraph {
+    EffectGraph {
         resources: vec![(
             ResourceDescriptor::Texture {
                 dimension: TextureKind::D2,
@@ -384,7 +380,20 @@ fn simulate_draw_rules_validate_attachment_ranges_and_ownership() {
         ],
         opaque_reads: vec![access(A::SampledRead, 0..2)],
         ..EffectGraph::default()
-    };
+    }
+}
+
+#[test]
+fn simulate_draw_rules_validate_attachment_ranges_and_ownership() {
+    use super::draw::check_draw_format;
+    use crate::graph::TextureKind;
+    use AccessKind as A;
+    use EffectCadence as C;
+    use wgpu::TextureFormat as F;
+
+    type Edit = fn(&mut EffectGraph);
+
+    let graph = layered_draw_graph();
     graph.validate().expect("disjoint layers and mips");
     let mut frame = FrameGraph::default();
     let mut keys = BTreeSet::new();
