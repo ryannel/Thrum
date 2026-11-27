@@ -51,7 +51,11 @@ pub(super) fn wetness_grid(tree: &Tree) -> HollowsGround {
             // The authored skirt intersects the original floor. An
             // unlabelled cell uses the open store on both meshes, so the
             // separate film pass cannot paint the lattice's outer rectangle.
-            bed: if hollow == NO_HOLLOW { 0.0 } else { bed as f32 },
+            bed: if hollow == NO_HOLLOW {
+                bed as f32 - 1.0
+            } else {
+                bed as f32
+            },
             hollow,
             pit: if hollow == NO_HOLLOW {
                 bed

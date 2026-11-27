@@ -203,11 +203,14 @@ fn ground_wetness_footprint(point: vec3<f32>, normal: vec3<f32>, footprint: f32)
     let open = GroundWetness(pores, surface, cover, class_index, ground);
     if cell.y < 0.0 { return open; }
     let hollow = wet_load(39u + u32(cell.y));
-    if hollow.x > cell.w && point.y < hollow.x {
+    let datum = wet_load(10u).w;
+    let height = point.y - datum;
+    let pit = cell.w - datum;
+    if hollow.x > pit && height < hollow.x {
         return GroundWetness(1.0, 0.0, 0.0, class_index, ground);
     }
-    let margin = select(0.0, wet_band(point.y - hollow.x, hollow.z), hollow.z > 0.0);
-    if hollow.y > cell.w && point.y < hollow.y {
+    let margin = select(0.0, wet_band(height - hollow.x, hollow.z), hollow.z > 0.0);
+    if hollow.y > pit && height < hollow.y {
         return GroundWetness(max(hollow.w, margin), 0.0, 0.0, class_index, ground);
     }
     return GroundWetness(max(open.pores, margin), surface, cover, class_index, ground);

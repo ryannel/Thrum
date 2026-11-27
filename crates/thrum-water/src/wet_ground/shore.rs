@@ -40,6 +40,7 @@ impl WetGround {
             &[class],
             0,
             Some((map, crate::records::layer_heights(spectrum))),
+            0.0,
         )?;
         wet.publish_mapped_shore(map, &[0.0; BODY_LIMIT], class)
             .then_some(wet)

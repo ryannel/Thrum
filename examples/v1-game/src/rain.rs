@@ -55,6 +55,7 @@ impl RainSelection {
 
 const SHOWER_START: u64 = 60;
 const SHOWER_END: u64 = 420;
+const PATCH_DATUM: f32 = 240.0;
 const STEP: f64 = 1.0 / 60.0;
 const RAIN: f64 = 60.0 / 3600.0;
 const DRYING: f64 = 60.0 / 3600.0;
@@ -208,11 +209,12 @@ impl ValleyRain {
         .map_err(|error| format!("{error:?}"))?;
         map.set_rain(Some(bands));
         let mut surface = RainSurface {
-            ground: WetGround::new(
+            ground: WetGround::new_with_hollow_datum(
                 canopy.canopy_grid(),
-                Some(ground::wetness_grid(&world.tree)),
+                ground::wetness_grid(&world.tree),
                 &[wet_class()],
                 world.tree.hollow_count(),
+                PATCH_DATUM,
             )
             .ok_or("valley wetness field exceeds its render projection")?,
             map: Arc::new(Mutex::new(map)),
@@ -266,8 +268,8 @@ impl ValleyRain {
             .iter()
             .enumerate()
             .map(|(i, &level)| HollowWetness {
-                level: level as f32,
-                mark: self.state.marks()[i] as f32,
+                level: (level - f64::from(PATCH_DATUM)) as f32,
+                mark: (self.state.marks()[i] - f64::from(PATCH_DATUM)) as f32,
                 margin: self.state.bands()[i] as f32,
                 held_fill: self.state.held_fill(&self.tree, &CLASS, i) as f32,
             })

@@ -66,9 +66,9 @@ pub type Reaches = [[f32; 2]; 3];
 /// One hollow's wetness state at the current tick.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct HollowWetness {
-    /// Current holder's water level in world metres.
+    /// Current holder's water level in metres from the field's vertical datum.
     pub level: f32,
-    /// Height of the boundary between held and open ground.
+    /// Height of the boundary between held and open ground, from the same datum.
     pub mark: f32,
     /// Height of the damp band above the level.
     pub margin: f32,
@@ -125,6 +125,7 @@ pub struct WetGround {
     ground_classes: u8,
     relief_addresses: [u32; MAX_CLASSES],
     hollow_pits: Vec<f32>,
+    datum: f32,
     shore_layout: Option<ShoreLayout>,
     shore_revision: Option<u64>,
 }
@@ -139,7 +140,21 @@ impl WetGround {
         classes: &[GroundClass],
         hollow_count: usize,
     ) -> Option<Self> {
-        Self::prepare(canopy, ground, classes, hollow_count, None)
+        Self::prepare(canopy, ground, classes, hollow_count, None, 0.0)
+    }
+
+    /// Prepare hollows whose dynamic levels and marks are published relative
+    /// to a vertical datum. The static bed, pits and canopy remain in world
+    /// metres. This preserves sub-millimetre wetness changes on high ground.
+    #[must_use]
+    pub fn new_with_hollow_datum(
+        canopy: Option<CanopyGrid>,
+        ground: HollowsGround,
+        classes: &[GroundClass],
+        hollow_count: usize,
+        datum: f32,
+    ) -> Option<Self> {
+        Self::prepare(canopy, Some(ground), classes, hollow_count, None, datum)
     }
 
     #[expect(
@@ -152,9 +167,14 @@ impl WetGround {
         classes: &[GroundClass],
         hollow_count: usize,
         shore: Option<(&Map, [f32; 4])>,
+        datum: f32,
     ) -> Option<Self> {
         let width = ROW_WIDTH as usize;
-        if classes.is_empty() || classes.len() > MAX_CLASSES || hollow_count >= 1 << 24 {
+        if classes.is_empty()
+            || classes.len() > MAX_CLASSES
+            || hollow_count >= 1 << 24
+            || !datum.is_finite()
+        {
             return None;
         }
         let shore_layout = shore.map(|(map, wave_heights)| ShoreLayout {
@@ -224,7 +244,7 @@ impl WetGround {
                     -1.0
                 } else {
                     let pit = &mut hollow_pits[cell.hollow as usize];
-                    *pit = pit.min(cell.pit);
+                    *pit = pit.min(cell.pit - datum);
                     cell.hollow as f32
                 };
                 [cell.bed, label, f32::from(cell.class), cell.pit]
@@ -248,11 +268,19 @@ impl WetGround {
             ground_classes,
             relief_addresses,
             hollow_pits,
+            datum,
             shore_layout,
             shore_revision: None,
         };
         let dry = vec![[[0.0; 2]; 3]; classes.len()];
-        let hollows = vec![HollowWetness::default(); hollow_count];
+        let hollows = vec![
+            HollowWetness {
+                level: -datum,
+                mark: -datum,
+                ..HollowWetness::default()
+            };
+            hollow_count
+        ];
         wet.publish(classes, &dry, &hollows).then_some(wet)
     }
 
@@ -322,6 +350,7 @@ impl WetGround {
                         && reaches.iter().any(|reach| reach[0] > 0.0)
                 },
             )));
+        self.rows[ADMISSION_ROW][3] = self.datum;
         let active = self.rows[5][3] > 0.0
             || stores.iter().flatten().flatten().any(|&value| value > 0.0)
             || hollows.iter().zip(&self.hollow_pits).any(|(hollow, &pit)| {
