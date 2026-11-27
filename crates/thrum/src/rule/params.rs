@@ -332,7 +332,7 @@ impl ReadOnly for Tick {}
 /// A reproducible stream of draws for the current rule and tick.
 /// ```
 /// use thrum::{Num, Random};
-/// fn roll(mut random: Random) -> Num { random.unit() }
+/// fn roll(mut random: Random) -> Num { random.between(Num::ZERO, Num::ONE) }
 /// ```
 pub struct Random {
     seed: u64,

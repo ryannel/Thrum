@@ -121,7 +121,7 @@ pub struct TickNumber(pub(crate) u64);
 /// The game's time handed to a rule.
 /// ```
 /// use thrum::Tick;
-/// fn pace(tick: Tick) -> thrum::Seconds { tick.dt() }
+/// fn pace(tick: Tick) -> thrum::Num { tick.dt() }
 /// ```
 #[derive(Clone, Copy, Debug)]
 pub struct Tick {
