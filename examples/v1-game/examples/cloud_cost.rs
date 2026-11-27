@@ -286,6 +286,7 @@ fn prepare_mist_day(
     };
     let schedule = day_schedule(rate);
     host.set_time_of_day(16.5 / 24.0)?;
+    #[cfg(target_os = "macos")]
     if !clouds {
         let origin = host.world().tick() + 1;
         let duration = *schedule.last().expect("mist day schedule");
@@ -415,6 +416,7 @@ fn day_schedule(rate: f64) -> Vec<u32> {
         .collect()
 }
 
+#[cfg(target_os = "macos")]
 #[expect(
     clippy::cast_possible_truncation,
     reason = "the proof's end hour fits the presentation's solar phase"
