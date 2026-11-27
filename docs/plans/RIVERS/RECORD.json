@@ -1051,7 +1051,15 @@
         "by": "plan",
         "task": "The design review of RIVERS at .orchestrate/evidence/RIVERS/design-review.md asked for changes, with its 4 Must Fix find",
         "at": "2026-11-27T13:34:05Z"
-      }
+      },
+      "human_feedback": [
+        {
+          "asked": "The heavy-flood waterfall still reads as a curtain after three attempts (lighting, profile tuning, separating strands). Park the flood look in Rivers WP11 so WP6 can merge, or keep trying?",
+          "said": "keep trying, pass it to a planner and see if they can help.",
+          "items": [],
+          "at": "2026-11-27T20:49:45Z"
+        }
+      ]
     },
     "WP7": {
       "definitions": "5564818cdaac5059594c6cb316b2e28fa2d712226bad597330350b3418c1f867",
@@ -1791,6 +1799,16 @@
         "turns": 1
       },
       "at": "2026-11-27T13:37:52Z"
+    }
+  ],
+  "decisions": [
+    {
+      "action": "feedback",
+      "work_package": "WP6",
+      "words": "keep trying, pass it to a planner and see if they can help.",
+      "at": "2026-11-27T20:49:45Z",
+      "asked": "The heavy-flood waterfall still reads as a curtain after three attempts (lighting, profile tuning, separating strands). Park the flood look in Rivers WP11 so WP6 can merge, or keep trying?",
+      "items": []
     }
   ]
 }
