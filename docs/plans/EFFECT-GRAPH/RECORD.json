@@ -796,7 +796,7 @@
         {
           "verdict": "fail",
           "commit": "7940fc2c6d8a47620066bf69c713a0b7375e858b",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP7-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP7-review-4.md",
           "items": {
             "WP7.1": "pass",
             "WP7.2": "pass",
@@ -826,6 +826,34 @@
             "turns": 1
           },
           "at": "2026-11-27T13:34:43Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "cf983f06089a8b496ed5e777e0d641a10ebdb903",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP7-review.md",
+          "items": {
+            "WP7.1": "pass",
+            "WP7.2": "pass",
+            "WP7.3": "pass",
+            "WP7.4": "pass"
+          },
+          "summary": "All four WP7 items pass. On Metal and Chrome, forward shading sampled both layers at their scripted positions in the same submission that drew them. A five-frame Metal comparison resolved the previous sky-overlay finding by showing byte-identical lighting from draw and compute producers through writes, skips and a return to clear.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 125853,
+            "cached": 3690752,
+            "output": 10690,
+            "turns": 1
+          },
+          "at": "2026-11-27T14:23:55Z"
         }
       ],
       "authorised": {
@@ -859,6 +887,13 @@
           "output": 45486,
           "turns": 2
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "cf983f06089a8b496ed5e777e0d641a10ebdb903",
+        "review": ".orchestrate/evidence/EFFECT-GRAPH/WP7-review.md",
+        "checked": "ff86dccef5d073c4fdfa07091e9d3341226024dc",
+        "at": "2026-11-27T14:23:55Z"
       }
     }
   },
