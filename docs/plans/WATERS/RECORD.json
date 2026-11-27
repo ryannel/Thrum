@@ -2579,7 +2579,7 @@
         {
           "verdict": "fail",
           "commit": "0eb70b1058c903c5040d2172ec358638a294734d",
-          "review": ".orchestrate/evidence/WATERS/WP15-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP15-review-2.md",
           "items": {
             "WP15.1": "fail",
             "WP15.11": "pass",
@@ -2640,6 +2640,52 @@
             "turns": 1
           },
           "at": "2026-11-27T00:25:19Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "d02b3c007484e308cbda193b39bd22bcc6e1cd8b",
+          "review": ".orchestrate/evidence/WATERS/WP15-review.md",
+          "items": {
+            "WP15.1": "pass",
+            "WP15.11": "pass",
+            "WP15.3": "fail",
+            "WP15.4": "pass",
+            "WP15.5": "pass",
+            "WP15.6": "pass",
+            "WP15.7": "pass",
+            "WP15.8": "fail",
+            "WP15.9": "pass"
+          },
+          "findings": [
+            {
+              "name": "The bank is unreadable in the straight-up lake window",
+              "item": "WP15.3",
+              "different": "The registered air-panel leak from the last review is fixed. The first review\u2019s missing bank recurs at 1 m on the default calm lake. The raised-stage view shows the real bank.",
+              "repeat": true
+            },
+            {
+              "name": "Chrome loses the bank in the straight-up lake window",
+              "item": "WP15.8",
+              "different": "The registered-hull leak from the last review is fixed. In the ordinary 1 m Chrome lake view, lowering the real bank below the lake gives an identical overhead frame.",
+              "repeat": true
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 248885,
+            "cached": 14297472,
+            "output": 38158,
+            "turns": 1
+          },
+          "at": "2026-11-27T02:23:53Z"
         }
       ],
       "authorised": {
