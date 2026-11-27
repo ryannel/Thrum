@@ -692,7 +692,7 @@
         {
           "verdict": "fail",
           "commit": "b3f159930c3f57d7931d65c449a128add5a250bb",
-          "review": ".orchestrate/evidence/RIVERS/WP4-review.md",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review-7.md",
           "items": {
             "WP4.1": "pass",
             "WP4.2": "pass",
@@ -728,6 +728,44 @@
             "turns": 1
           },
           "at": "2026-11-27T00:57:44Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "ab3c269f0ec001625f0158411494c0b8d18849de",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review.md",
+          "items": {
+            "WP4.1": "pass",
+            "WP4.2": "pass",
+            "WP4.3": "pass",
+            "WP4.4": "pass",
+            "WP4.5": "pass",
+            "WP4.6": "pass",
+            "WP4.7": "pass",
+            "WP4.8": "pass",
+            "WP4.9": "pass"
+          },
+          "findings": [
+            {
+              "name": "A disconnected sampled river changes the drawn shoreline of an existing basin",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 183407,
+            "cached": 11652992,
+            "output": 34379,
+            "turns": 1
+          },
+          "at": "2026-11-27T01:55:33Z"
         }
       ],
       "authorised": {
