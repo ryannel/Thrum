@@ -30,11 +30,13 @@ pub(crate) struct Store {
 }
 
 impl Store {
-    pub(crate) fn cook() -> Self {
+    pub(crate) fn cook(rain: bool) -> Self {
         let scratch = Scratch::new("rain-valley");
         let source = scratch.join("source");
         fs::create_dir_all(&source).expect("exit source");
-        for folder in ["assets/showcase", "assets/exit"] {
+        let mut folders = vec!["assets/showcase", "assets/exit"];
+        folders.extend(rain.then_some("assets/rain/patch"));
+        for folder in folders {
             let assets = Path::new(env!("CARGO_MANIFEST_DIR")).join(folder);
             for file in fs::read_dir(assets).expect("authored products") {
                 let file = file.expect("authored file");

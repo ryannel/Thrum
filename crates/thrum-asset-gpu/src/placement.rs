@@ -58,6 +58,8 @@ pub struct MeshPlacement {
     /// cooked mesh's vertices, so it follows edits to the asset; a mesh of more than 65,536
     /// vertices uses its bounding box instead, which can leave a turned mesh slightly raised.
     pub rest_on_ground: bool,
+    /// Whether this placement casts direct-light shadows.
+    pub casts_shadows: bool,
     /// The first turn that named no rotation, kept for [`crate::CookedAssets::new`] to refuse by
     /// name; the transform is left as it was before that turn.
     refused_turn: Option<([f32; 3], f32)>,
@@ -73,6 +75,7 @@ impl MeshPlacement {
             transform: glam::Mat4::IDENTITY.to_cols_array_2d(),
             material: CookedMaterial::default(),
             rest_on_ground: false,
+            casts_shadows: true,
             refused_turn: None,
         }
     }

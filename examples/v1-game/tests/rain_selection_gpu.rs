@@ -14,7 +14,7 @@ fn exit_keeps_its_authority_graph_and_pixels_with_rain_off() {
     let Some(gpu) = rain::open("rain selection on Metal") else {
         return;
     };
-    let store = rain::Store::cook();
+    let store = rain::Store::cook(false);
     pollster::block_on(async {
         assert_eq!(GameSetup::default().rain, RainSelection::Off);
         let setup = GameSetup {
@@ -71,7 +71,7 @@ fn standard_exit_assets_submit_ground_and_hollows_with_rain_selected() {
     let Some(gpu) = rain::open("selected valley on Metal") else {
         return;
     };
-    let store = rain::Store::cook();
+    let store = rain::Store::cook(true);
     pollster::block_on(async {
         let mut original = exit_authority().expect("ordinary exit authority");
         let original_page = original.published_page().expect("ordinary endpoint");

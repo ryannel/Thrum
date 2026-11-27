@@ -64,7 +64,7 @@ impl Bound {
         for mesh in &self.meshes {
             if let Some(blas) = &mesh.ray_mesh {
                 let transform = std::array::from_fn(|index| mesh.model.row(index / 4)[index % 4]);
-                instances.offer(blas, transform, 0b11);
+                instances.offer(blas, transform, mesh.ray_mask);
             }
         }
     }
@@ -168,6 +168,7 @@ impl Bound {
 
 struct BoundMesh {
     ray_mesh: Option<wgpu::Blas>,
+    ray_mask: u8,
     #[cfg(feature = "draw-probe")]
     probe: Option<crate::draw_probe::Bound>,
     material: wgpu::BindGroup,
@@ -614,7 +615,8 @@ impl Pipelines {
                             .map(|record| self.bind_cull(mesh, &cull.layout, 5, record))
                     })
                     .collect();
-                let caster_bounds = if self.shadow.is_some()
+                let caster_bounds = if placement.casts_shadows
+                    && self.shadow.is_some()
                     && mesh.index_count != 0
                     && let Some((min, max)) = mesh.caster_box
                     && let Some(bounds) = world_caster_bounds(model, min, max)
@@ -626,6 +628,7 @@ impl Pipelines {
                 };
                 BoundMesh {
                     ray_mesh: mesh.ray_mesh.as_ref().map(|mesh| mesh.blas.clone()),
+                    ray_mask: if placement.casts_shadows { 0b11 } else { 0b10 },
                     #[cfg(feature = "draw-probe")]
                     probe: self.probe.as_ref().and_then(|probe| {
                         probe.bind(&self.device, &self.queue, placement_index, mesh.index_count)

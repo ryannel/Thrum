@@ -309,7 +309,7 @@ function encodePng(width, height, pixels, channels = 4) {
 }
 
 // Cook the valley into a fresh store under the run directory and serve it with the G5 dev server.
-async function serveCooked(args, output, temporalDefinition) {
+async function serveCooked(args, output, temporalDefinition, rain = false) {
   const log = await fs.open(path.join(output, 'cook.log'), 'a');
   // Watch a copy, so the live-edit step never touches repository sources.
   const source = path.join(output, 'source');
@@ -325,6 +325,12 @@ async function serveCooked(args, output, temporalDefinition) {
     const exit = path.join(repo, 'examples/v1-game/assets/exit');
     for (const name of await fs.readdir(exit)) {
       if (/^exit-.*\.(bin|gltf)$/.test(name)) await fs.copyFile(path.join(exit, name), path.join(source, name));
+    }
+  }
+  if (rain) {
+    const patch = path.join(repo, 'examples/v1-game/assets/rain/patch');
+    for (const name of await fs.readdir(patch)) {
+      if (/\.(bin|gltf)$/.test(name)) await fs.copyFile(path.join(patch, name), path.join(source, name));
     }
   }
   if (temporalDefinition) {
@@ -2810,10 +2816,29 @@ async function main() {
         cdp, origin: serving.origin, output, mode, timeout: args['timeout-ms'],
         wasm: files.get('/v1_game_bg.wasm'), existingGame, destroyActualDevice, waitFor,
       }));
-      else if (mode === 'rain') results.push(await qualifyRainValley({
-        cdp, origin: serving.origin, assetsOrigin, output, timeout: args['timeout-ms'],
-        waitFor, existingGame,
-      }));
+      else if (mode === 'rain') {
+        const rainOutput = path.join(output, 'selected-store');
+        await fs.mkdir(rainOutput);
+        const selected = await serveCooked(args, rainOutput, undefined, true);
+        try {
+          const route = JSON.parse(await fs.readFile(path.join(repo, 'examples/v1-game/routes/exit-flythrough.json'), 'utf8'));
+          const ordinaryHead = await cookedHead(output);
+          const selectedHead = await cookedHead(rainOutput);
+          if (ordinaryHead.root !== route.cooked_root || ordinaryHead.generation !== route.cooked_generation ||
+              selectedHead.root === ordinaryHead.root || selectedHead.generation !== 1) {
+            throw new Error(`Invalid exit stores: ordinary ${JSON.stringify(ordinaryHead)}, selected ${JSON.stringify(selectedHead)}`);
+          }
+          await fs.writeFile(path.join(output, 'rain-stores.json'), JSON.stringify({
+            ordinary: ordinaryHead, selected: selectedHead,
+          }, null, 2));
+          results.push(await qualifyRainValley({
+            cdp, origin: serving.origin, assetsOrigin, selectedAssetsOrigin: selected.origin,
+            output, timeout: args['timeout-ms'], waitFor, existingGame,
+          }));
+        } finally {
+          selected.cook.kill();
+        }
+      }
       else if (mode === 'lent-products') results.push(await lent.qualify(cdp, serving.origin, output, waitFor));
       else if (mode === 'mesh-rows') results.push(await rows.qualify(cdp, serving.origin, output, waitFor));
       else if (mode === 'temporal') results.push(await qualifyTemporal(cdp, serving.origin, output, args['timeout-ms'], assetsOrigin, waitFor, files, directory, temporalDefinition));

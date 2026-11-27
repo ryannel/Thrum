@@ -1371,6 +1371,37 @@ async fn record(
     }
     if scenario == "rain-cost" {
         result["forward_ground_wetness_bytes"] = json!(driver.host().wetness_bytes());
+        let graph = driver
+            .host()
+            .scene_graph()
+            .map_err(|error| error.to_string())?;
+        let targets = graph
+            .transient_textures_first_used_by(|name| name.ends_with(": water gather"))
+            .filter_map(|(slot, descriptor)| {
+                use thrum_render::graph::ResourceDescriptor::Texture;
+                let Texture {
+                    width,
+                    height,
+                    layers,
+                    mips,
+                    samples,
+                    format,
+                    ..
+                } = *descriptor
+                else {
+                    return None;
+                };
+                let bytes_per_texel = format.block_copy_size(None)?;
+                let nominal_bytes =
+                    u64::from(width) * u64::from(height) * u64::from(bytes_per_texel);
+                Some(json!({
+                    "extent": [width, height], "format": format!("{format:?}"),
+                    "layers": layers, "mips": mips, "samples": samples,
+                    "transient_slot": slot, "nominal_bytes": nominal_bytes,
+                }))
+            })
+            .collect::<Vec<_>>();
+        result["water_gather_targets"] = json!(targets);
     }
     if let Some(rain) = driver.host().source().rain_observation() {
         result["rain"] = rain;

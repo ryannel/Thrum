@@ -15,7 +15,7 @@ fn rain_exposure(point: vec2<f32>, level: f32) -> f32 {
     let half_width = 0.5 * rain.canopy.w / rain.canopy.z;
     if any(p < vec2(-half_width)) || any(p >= vec2<f32>(rain.grid.xy) + half_width) { return 1.0; }
     return canopy_exposure(rain_columns, vec3(point.x, level, point.y), rain.canopy,
-        vec2<i32>(rain.grid.xy), select(0u, 1u, code != 0.0), code, vec2<i32>(offset));
+        vec2<i32>(rain.grid.xy), select(0u, 1u, code != 0.0), code, vec2<i32>(offset), 0.0);
 }
 
 fn rain_response(index: u32) -> vec2<f32> {

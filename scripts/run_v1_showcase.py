@@ -51,6 +51,7 @@ REPO = Path(__file__).resolve().parent.parent
 PARAMS = REPO / 'examples/v1-game/params'
 SOURCE = REPO / 'examples/v1-game/assets/showcase'
 EXIT_SOURCE = SOURCE.with_name('exit')
+RAIN_SOURCE = SOURCE.with_name('rain') / 'patch'
 RUNS = REPO / 'tmp/g7-showcase/runs'
 COOK = REPO / 'target/release/thrum-cook'
 GAME = REPO / 'target/release/v1-game'
@@ -177,13 +178,17 @@ def identities(web, built, *, web_root=WEB):
     return found
 
 
-def copy_source(run, origin=SOURCE, exit_assets=None):
+def copy_source(run, origin=SOURCE, exit_assets=None, *, rain=None):
     source = run / 'source'
     shutil.copytree(origin, source)
     if exit_assets is not None:
         for mesh in sorted(exit_assets.glob('exit-*.*')):
             if mesh.suffix in ('.bin', '.gltf'):
                 shutil.copyfile(mesh, source / mesh.name)
+        if rain in ('shower', 'soaked', 'half-dry'):
+            for mesh in sorted(RAIN_SOURCE.iterdir()):
+                if mesh.suffix in ('.bin', '.gltf'):
+                    shutil.copyfile(mesh, source / mesh.name)
     return source
 
 
@@ -812,7 +817,9 @@ def mac(args):
               'builds': identities(web=False, built=not args.no_build), 'preset': stops[args.stop],
               'store': str(run / 'store'), 'scene': 'exit' if args.exit else 'valley'}
     write_json(run / 'run.json', record)
-    watcher, _ = watch(run, copy_source(run, exit_assets=EXIT_SOURCE if args.exit else None), serve=False)
+    source = copy_source(run, exit_assets=EXIT_SOURCE if args.exit else None,
+                         rain=os.environ.get('THRUM_RAIN'))
+    watcher, _ = watch(run, source, serve=False)
     env = dict(os.environ, THRUM_ASSET_STORE=str(run / 'store'), THRUM_SCENE=record['scene'],
                THRUM_PARAMS=str(PARAMS / f'showcase-{args.stop}.params.json'))
     if args.frames:
@@ -855,7 +862,9 @@ def chrome(args):
     web_presets(SHIPPING_WEB)
     watcher = server = None
     try:
-        watcher, assets = watch(run, copy_source(run, exit_assets=EXIT_SOURCE if args.exit else None), serve=True)
+        rain = os.environ.get('THRUM_RAIN')
+        source = copy_source(run, exit_assets=EXIT_SOURCE if args.exit else None, rain=rain)
+        watcher, assets = watch(run, source, serve=True)
         # build.sh copies the presets into the web root, so the page fetches them beside index.html.
         handler = type('Handler', (Logged,), {'log_path': run / 'requests.log'})
         server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), lambda *a: handler(*a, directory=str(SHIPPING_WEB)))
@@ -863,7 +872,7 @@ def chrome(args):
         inputs = {'assets': assets, 'params': f'showcase-{args.stop}.params.json'}
         if args.exit:
             inputs['scene'] = 'exit'
-            if rain := os.environ.get('THRUM_RAIN'):
+            if rain:
                 inputs['rain'] = rain
         query = urllib.parse.urlencode(inputs)
         url = f'http://127.0.0.1:{server.server_address[1]}/index.html?{query}'

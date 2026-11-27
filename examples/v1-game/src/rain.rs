@@ -56,6 +56,9 @@ impl RainSelection {
 const SHOWER_START: u64 = 60;
 const SHOWER_END: u64 = 420;
 const PATCH_DATUM: f32 = 240.0;
+// A steep rock can cross several roof heights within a canopy cell.
+// Filter that sampling uncertainty on the material without moving runoff.
+const CANOPY_HALF_WIDTH: f32 = 0.25;
 const STEP: f64 = 1.0 / 60.0;
 const RAIN: f64 = 60.0 / 3600.0;
 const DRYING: f64 = 60.0 / 3600.0;
@@ -154,6 +157,7 @@ impl ValleyRain {
                 &[wet_class()],
                 world.tree.hollow_count(),
                 PATCH_DATUM,
+                CANOPY_HALF_WIDTH,
             )
             .ok_or("valley wetness field exceeds its render projection")?,
             map: Arc::new(Mutex::new(map)),
@@ -455,6 +459,9 @@ pub fn prepare_rain_cooked_valley(
         .ok_or(RainValleyError::MissingTerrain)?
         .clone();
     "exit-rain-patch".clone_into(&mut ground.mesh);
+    // The patch is a thin relief over the existing terrain caster. It
+    // receives scene shadows without casting between the two ground layers.
+    ground.casts_shadows = false;
     config.meshes.push(ground);
     config.draw_path = path;
     let assets = thrum_asset_gpu::CookedAssets::new(config).map_err(RainValleyError::Cooked)?;

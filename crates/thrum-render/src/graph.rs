@@ -1148,6 +1148,21 @@ impl CompiledGraph {
             .map(|declared| declared.scope)
     }
 
+    /// Transient textures first used by matching live passes, with their allocation
+    /// slot and descriptor. Separate lifetimes can refer to a shared slot.
+    pub fn transient_textures_first_used_by(
+        &self,
+        matches: impl Fn(&str) -> bool,
+    ) -> impl Iterator<Item = (usize, &ResourceDescriptor)> {
+        self.lifetimes.iter().filter_map(move |life| {
+            let slot = life.transient_slot?;
+            let pass = &self.passes[life.first];
+            let descriptor = &self.resources[life.resource.index].descriptor;
+            (matches(&pass.name) && matches!(descriptor, ResourceDescriptor::Texture { .. }))
+                .then_some((slot, descriptor))
+        })
+    }
+
     /// Live diagnostic pass names in execution order.
     pub fn pass_names(&self) -> impl Iterator<Item = &str> {
         self.passes.iter().map(|pass| pass.name.as_ref())

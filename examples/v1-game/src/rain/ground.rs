@@ -10,7 +10,7 @@ const ORIGIN: [f64; 2] = [-4.0, 2.0];
 const SIZE: [usize; 2] = [144, 112];
 const SPACING: f64 = 0.0625;
 const OUTLETS: &[u8] = include_bytes!("../../assets/rain/outlets.bin");
-const PATCH: &[u8] = include_bytes!("../../assets/exit/exit-rain-patch.bin");
+const PATCH: &[u8] = include_bytes!("../../assets/rain/patch/exit-rain-patch.bin");
 
 // The centres lie on each cell's shared triangle edge. Read the same f32
 // heights the cooker gets from the patch mesh.

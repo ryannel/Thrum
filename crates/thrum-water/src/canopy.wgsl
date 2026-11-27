@@ -23,14 +23,21 @@ fn canopy_layers(atlas: texture_2d<f32>, cell: vec2<u32>, size: vec2<u32>, start
     return vec4(0.0, 1.0, 0.0, 1.0);
 }
 
-fn canopy_column(atlas: texture_2d<f32>, cell: vec2<i32>, height: f32, size: vec2<i32>, start: u32, code: f32) -> f32 {
+fn canopy_transmission(height: f32, roof: f32, share: f32, half_width: f32) -> f32 {
+    if half_width == 0.0 { return select(1.0, share, height < roof); }
+    let f = clamp(0.5 + (height - roof) / (2.0 * half_width), 0.0, 1.0);
+    return mix(share, 1.0, f * f * (3.0 - 2.0 * f));
+}
+
+fn canopy_column(atlas: texture_2d<f32>, cell: vec2<i32>, height: f32, size: vec2<i32>, start: u32, code: f32, vertical_half_width: f32) -> f32 {
     if any(cell < vec2(0)) || any(cell >= size) { return 1.0; }
     let layers = canopy_layers(atlas, vec2<u32>(cell), vec2<u32>(size), start, code);
-    return select(1.0, layers.y, height < layers.x) * select(1.0, layers.w, height < layers.z);
+    return canopy_transmission(height, layers.x, layers.y, vertical_half_width)
+        * canopy_transmission(height, layers.z, layers.w, vertical_half_width);
 }
 
 fn canopy_exposure(atlas: texture_2d<f32>, point: vec3<f32>, lattice: vec4<f32>,
-                   size: vec2<i32>, start: u32, code: f32, origin: vec2<i32>) -> f32 {
+                   size: vec2<i32>, start: u32, code: f32, origin: vec2<i32>, vertical_half_width: f32) -> f32 {
     // Apply the coarse origin in integer cells. Compute overlap on the
     // fractional part so the edge average stays precise far from that origin.
     let p = (point.xz - lattice.xy) / lattice.z;
@@ -38,7 +45,7 @@ fn canopy_exposure(atlas: texture_2d<f32>, point: vec3<f32>, lattice: vec4<f32>,
     let base = vec2<i32>(cell) - origin;
     let local = p - cell;
     let half_width = 0.5 * lattice.w / lattice.z;
-    if half_width == 0.0 { return canopy_column(atlas, base, point.y, size, start, code); }
+    if half_width == 0.0 { return canopy_column(atlas, base, point.y, size, start, code, vertical_half_width); }
     let lo = local - half_width;
     let hi = local + half_width;
     let first = vec2<i32>(floor(lo));
@@ -49,7 +56,7 @@ fn canopy_exposure(atlas: texture_2d<f32>, point: vec3<f32>, lattice: vec4<f32>,
             let offset = vec2(x, z);
             let area = max(vec2(0.0), min(vec2<f32>(offset) + 1.0, hi) - max(vec2<f32>(offset), lo));
             if area.x * area.y > 0.0 {
-                sum += area.x * area.y * canopy_column(atlas, base + offset, point.y, size, start, code);
+                sum += area.x * area.y * canopy_column(atlas, base + offset, point.y, size, start, code, vertical_half_width);
             }
         }
     }

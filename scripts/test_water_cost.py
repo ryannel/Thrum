@@ -6,6 +6,29 @@ import unittest
 from unittest.mock import patch
 
 import water_cost
+from rain_valley_cost import check_resources, resource_rows
+
+
+class ValleyGatherAllocations(unittest.TestCase):
+    def test_requires_both_graph_owned_targets(self):
+        rain = {'submitted_hollow_vertices': 3, 'resources': [['water gather regions', 3216]]}
+        forward_bytes = 4096
+        targets = [
+            dict(format='Rgba16Float', extent=[1920, 1080], layers=1, mips=1, samples=1,
+                 transient_slot=4, nominal_bytes=16_588_800),
+            dict(format='R32Float', extent=[1920, 1080], layers=1, mips=1, samples=1,
+                 transient_slot=5, nominal_bytes=8_294_400),
+        ]
+        resources = resource_rows(rain, forward_bytes, targets)
+        check_resources('soaked', rain, forward_bytes, targets, resources)
+        for target in targets:
+            with self.subTest(omitted=target['format']):
+                remaining = [other for other in targets if other != target]
+                with self.assertRaisesRegex(ValueError, 'both water gather textures'):
+                    check_resources('soaked', rain, forward_bytes, remaining,
+                                    resource_rows(rain, forward_bytes, remaining))
+        with self.assertRaisesRegex(ValueError, 'allocated in the off arm'):
+            check_resources('off', None, None, targets, resource_rows(None, None, targets))
 
 
 class DiveComparison(unittest.TestCase):

@@ -6,7 +6,7 @@ from pathlib import Path
 import struct
 
 HERE = Path(__file__).resolve().parent
-EXIT = HERE.with_name("exit")
+PATCH = HERE / "patch"
 ORIGIN = (-4, 2)
 SIZE = (144, 112)
 SPACING = 0.0625
@@ -122,7 +122,7 @@ def generate():
                b''.join(struct.pack('<2f', *v) for v in uv),
                struct.pack(f'<{len(indices)}H', *indices)]
     raw = b''.join(streams)
-    (EXIT / 'exit-rain-patch.bin').write_bytes(raw)
+    (PATCH / 'exit-rain-patch.bin').write_bytes(raw)
     fields = [
         {'buffer': 0, 'byteOffset': sum(map(len, streams[:i])), 'byteLength': len(data),
          'target': 34963 if i == 3 else 34962} for i, data in enumerate(streams)
@@ -134,7 +134,7 @@ def generate():
         {'bufferView': 2, 'componentType': 5126, 'count': len(positions), 'type': 'VEC2'},
         {'bufferView': 3, 'componentType': 5123, 'count': len(indices), 'type': 'SCALAR'},
     ]
-    (EXIT / 'exit-rain-patch.gltf').write_text(json.dumps({
+    (PATCH / 'exit-rain-patch.gltf').write_text(json.dumps({
         'asset': {'version': '2.0', 'generator': 'Thrum valley rain patch'},
         'scene': 0, 'scenes': [{'nodes': [0]}], 'nodes': [{'mesh': 0}],
         'meshes': [{'name': 'exit-rain-patch', 'primitives': [{

@@ -279,15 +279,23 @@ impl Canopy {
 
     /// Exposure of one column at a height: the product of the shares of the layers whose
     /// underside is above it, and 1 outside the grid.
-    fn column(&self, ix: i64, iz: i64, height: f64) -> f64 {
+    fn column(&self, ix: i64, iz: i64, height: f64, half_width: f64) -> f64 {
         let inside = |i: i64, n: usize| usize::try_from(i).ok().filter(|&i| i < n);
         let (Some(x), Some(z)) = (inside(ix, self.size[0]), inside(iz, self.size[1])) else {
             return 1.0;
         };
         self.layers(x, z)
             .iter()
-            .filter(|l| l.underside > height)
-            .map(|l| l.share)
+            .map(|layer| {
+                if half_width > 0.0 {
+                    let t = (0.5 + (height - layer.underside) / (2.0 * half_width)).clamp(0.0, 1.0);
+                    layer.share + (1.0 - layer.share) * t * t * (3.0 - 2.0 * t)
+                } else if height < layer.underside {
+                    layer.share
+                } else {
+                    1.0
+                }
+            })
             .product()
     }
 
@@ -341,6 +349,13 @@ impl Canopy {
     /// over a square of the profile's edge width centred on the point, so it passes from
     /// one shelter's share to the next over that width. The same function on any device.
     pub fn exposure(&self, point: [f64; 3]) -> f64 {
+        self.surface_exposure(point, 0.0)
+    }
+
+    /// Exposure averaged horizontally, with a smooth vertical transition over
+    /// each sampled roof. The half-width is in metres. A zero width uses the
+    /// exact transmission boundary used by rainfall and catchment queries.
+    pub fn surface_exposure(&self, point: [f64; 3], half_width: f64) -> f64 {
         if self.size.contains(&0) {
             return 1.0;
         }
@@ -355,7 +370,7 @@ impl Canopy {
         )]
         let index = |v: f64| v.floor() as i64;
         if self.edge_width == 0.0 {
-            return self.column(index(local[0]), index(local[1]), y);
+            return self.column(index(local[0]), index(local[1]), y, half_width);
         }
         let half = 0.5 * self.edge_width / self.cell;
         let span = |c: f64| (index(c - half), index(c + half));
@@ -370,7 +385,7 @@ impl Canopy {
             for ix in x0..=x1 {
                 let wx = overlap(ix, local[0]);
                 if wx > 0.0 {
-                    sum += wx * wz * self.column(ix, iz, y);
+                    sum += wx * wz * self.column(ix, iz, y, half_width);
                 }
             }
         }

@@ -142,7 +142,7 @@ fn compare_model(selection: RainSelection) {
     let Some(gpu) = rain::open("valley model on Metal") else {
         return;
     };
-    let store = rain::Store::cook();
+    let store = rain::Store::cook(true);
     pollster::block_on(async {
         let mut host = store
             .host(

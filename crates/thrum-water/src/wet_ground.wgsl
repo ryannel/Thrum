@@ -23,7 +23,7 @@ fn wet_exposure(point: vec3<f32>, header: vec4<f32>) -> f32 {
     let bounds = wet_load(6u);
     if any(p < bounds.xy) || any(p >= bounds.zw) { return 1.0; }
     let start = base + select(0u, 1u, sparse);
-    return canopy_exposure(wetness_field, point, canopy, size, start, projection.x, vec2<i32>(projection.yz));
+    return canopy_exposure(wetness_field, point, canopy, size, start, projection.x, vec2<i32>(projection.yz), projection.w);
 }
 
 fn wet_class_start(class_index: u32) -> u32 { return 7u + 4u * class_index; }

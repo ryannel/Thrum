@@ -51,7 +51,7 @@ function groundLuminance({ width, height, pixels }) {
   return sum / count;
 }
 
-export async function qualifyRainValley({ cdp, origin, assetsOrigin, output, timeout, waitFor, existingGame }) {
+export async function qualifyRainValley({ cdp, origin, assetsOrigin, selectedAssetsOrigin, output, timeout, waitFor, existingGame }) {
   async function run(selection, body) {
     const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
     const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });
@@ -76,7 +76,9 @@ export async function qualifyRainValley({ cdp, origin, assetsOrigin, output, tim
         })()` }, sessionId);
       }
       const query = new URLSearchParams({
-        scene: 'exit', assets: assetsOrigin, 'route-check': '', params: 'showcase-noon.params.json',
+        scene: 'exit',
+        assets: selection === 'shower' ? selectedAssetsOrigin : assetsOrigin,
+        'route-check': '', params: 'showcase-noon.params.json',
       });
       if (selection) query.set('rain', selection);
       await cdp.call('Page.navigate', { url: `${origin}/?${query}` }, sessionId);

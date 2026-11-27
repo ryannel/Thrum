@@ -3,15 +3,16 @@ from collections import defaultdict
 import json
 import os
 from pathlib import Path
-import shutil
 from statistics import median
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
 
+from run_v1_showcase import EXIT_SOURCE, copy_source
+
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURE = ROOT / 'tests/fixtures/puddles/valley-cost.json'
-EVIDENCE = ROOT / '.orchestrate/evidence/PUDDLES/WP6/after-review/valley-cost.json'
+EVIDENCE = ROOT / '.orchestrate/evidence/PUDDLES/WP6/review-2/valley-cost.json'
 EXTENT = [1920, 1080]
 REFRESH = 120
 
@@ -79,16 +80,35 @@ def investigations(arms):
     return results
 
 
+GATHER_FORMATS = {
+    'Rgba16Float': ('water gather colour', 8),
+    'R32Float': ('water gather depth', 4),
+}
 
-def resource_rows(rain, forward_bytes):
+
+def resource_rows(rain, forward_bytes, gather):
     resources = list(rain['resources']) if rain else []
     if forward_bytes is not None:
         resources.append(['forward ground wetness', forward_bytes])
+    resources.extend([GATHER_FORMATS[target['format']][0], target['nominal_bytes']] for target in gather)
     return resources
 
 
-def check_resources(arm, rain, forward_bytes, resources):
-    if resources != resource_rows(rain, forward_bytes):
+def check_resources(arm, rain, forward_bytes, gather, resources):
+    if arm == 'soaked':
+        if len(gather) != len(GATHER_FORMATS) or {target['format'] for target in gather} != GATHER_FORMATS.keys():
+            raise ValueError('soaked arm must contain both water gather textures')
+        slots = {target['transient_slot'] for target in gather}
+        if len(slots) != len(gather) or any(type(slot) is not int or slot < 0 for slot in slots):
+            raise ValueError('the two simultaneously live gather textures need distinct transient slots')
+        for target in gather:
+            _, bytes_per_texel = GATHER_FORMATS[target['format']]
+            if (target['extent'] != EXTENT or target['nominal_bytes'] != EXTENT[0] * EXTENT[1] * bytes_per_texel
+                    or any(target[key] != 1 for key in ('layers', 'mips', 'samples'))):
+                raise ValueError(f"invalid water gather allocation: {target}")
+    elif gather:
+        raise ValueError('water gather textures were allocated in the off arm')
+    if resources != resource_rows(rain, forward_bytes, gather):
         raise ValueError(f'{arm}: resource rows disagree with the prepared allocations')
     if arm == 'soaked':
         if not rain or not rain['submitted_hollow_vertices'] or not rain['resources']:
@@ -105,17 +125,13 @@ def measure_valley():
     scratch.mkdir(parents=True, exist_ok=True)
     with TemporaryDirectory(prefix='cost-', dir=scratch) as temporary:
         work = Path(temporary)
-        source = work / 'source'
-        source.mkdir()
-        for folder in ('showcase', 'exit'):
-            for asset in (ROOT / 'examples/v1-game/assets' / folder).iterdir():
-                if asset.suffix in ('.bin', '.gltf', '.png'):
-                    shutil.copyfile(asset, source / asset.name)
-        store = work / 'store'
-        run(['target/release/thrum-cook', 'cook', str(source), str(store)])
         arms = {}
         for arm in ('off', 'soaked'):
-            target = work / arm
+            arm_root = work / arm
+            source = copy_source(arm_root, exit_assets=EXIT_SOURCE, rain=arm)
+            store = arm_root / 'store'
+            run(['target/release/thrum-cook', 'cook', str(source), str(store)])
+            target = arm_root / 'capture'
             env = dict(os.environ, THRUM_RAIN=arm, THRUM_RAIN_VIEW='patch', THRUM_CULLING='frustum',
                        THRUM_GOVERNOR='off')
             run([sys.executable, 'scripts/capture_v1_runtime.py',
@@ -131,12 +147,14 @@ def measure_valley():
                 raise ValueError(f'{arm}: wrong showcase extent')
             rain = trace.get('rain')
             forward_bytes = trace['forward_ground_wetness_bytes']
-            resources = resource_rows(rain, forward_bytes)
-            check_resources(arm, rain, forward_bytes, resources)
+            gather = trace['water_gather_targets']
+            resources = resource_rows(rain, forward_bytes, gather)
+            check_resources(arm, rain, forward_bytes, gather, resources)
             arms[arm] = {
                 'adapter': trace['adapter'], 'recipe': trace['recipe'],
                 'timings': [summarise(trace, tick) for tick in (True, False)],
                 'rain': rain, 'resources': resources, 'forward_ground_wetness_bytes': forward_bytes,
+                'water_gather_targets': gather,
                 'system_load': manifest['system_load'],
                 'source_revision': manifest['source_revision'],
                 'build_source_digest': manifest['build_source_digest'],
@@ -156,11 +174,12 @@ def valley(action):
         if committed['extent'] != EXTENT or committed['refresh_hz'] != REFRESH:
             raise ValueError('incomplete valley extent or refresh record')
         for arm in ('off', 'soaked'):
-            for value in ('adapter', 'recipe', 'timings', 'rain', 'resources', 'forward_ground_wetness_bytes', 'system_load', 'source_revision', 'build_source_digest'):
+            for value in ('adapter', 'recipe', 'timings', 'rain', 'resources', 'forward_ground_wetness_bytes', 'water_gather_targets', 'system_load', 'source_revision', 'build_source_digest'):
                 if value not in committed['arms'][arm]:
                     raise ValueError(f'committed valley record is missing {arm}.{value}')
             record = committed['arms'][arm]
-            check_resources(arm, record['rain'], record['forward_ground_wetness_bytes'], record['resources'])
+            check_resources(arm, record['rain'], record['forward_ground_wetness_bytes'],
+                            record['water_gather_targets'], record['resources'])
             if {row['tick'] for row in committed['arms'][arm]['timings']} != {True, False}:
                 raise ValueError(f'committed valley record does not distinguish {arm} tick and repeat frames')
         recorded = {(row['wire'], row['selection'], row['tick'], row['measurement'].get('pass'))
