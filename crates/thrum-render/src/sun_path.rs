@@ -6,6 +6,7 @@ const FIELD: u32 = 27;
 const COLUMNS: u32 = 28;
 const SAMPLER: u32 = 29;
 const MAPPING: u32 = 30;
+const SHADOW_SAMPLER: u32 = 31;
 const MAPPING_BYTES: u64 = 48;
 
 pub(crate) const FIELD_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
@@ -47,6 +48,7 @@ pub struct SunPathTarget {
     field_view: wgpu::TextureView,
     column_view: wgpu::TextureView,
     sampler: wgpu::Sampler,
+    shadow_sampler: wgpu::Sampler,
 }
 
 impl SunPathTarget {
@@ -56,7 +58,7 @@ impl SunPathTarget {
             || provider.rungs == 0
             || provider.side > limits.max_texture_dimension_2d
             || provider.rungs > limits.max_texture_array_layers
-            || limits.max_bindings_per_bind_group <= MAPPING
+            || limits.max_bindings_per_bind_group <= SHADOW_SAMPLER
         {
             return Err(AbiError::DeviceLimits);
         }
@@ -102,6 +104,13 @@ impl SunPathTarget {
             mipmap_filter: wgpu::MipmapFilterMode::Linear,
             ..Default::default()
         });
+        let shadow_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("Sun-path shadow comparison"),
+            min_filter: wgpu::FilterMode::Linear,
+            mag_filter: wgpu::FilterMode::Linear,
+            compare: Some(wgpu::CompareFunction::GreaterEqual),
+            ..Default::default()
+        });
         let mapping = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Sun-path window mapping"),
             size: MAPPING_BYTES,
@@ -116,6 +125,7 @@ impl SunPathTarget {
             field_view,
             column_view,
             sampler,
+            shadow_sampler,
         })
     }
 
@@ -127,7 +137,13 @@ impl SunPathTarget {
         self.provider.source
     }
 
-    pub(crate) fn layouts() -> [wgpu::BindGroupLayoutEntry; 4] {
+    /// Shared reverse-depth comparison for the refracted Sun's visibility.
+    #[must_use]
+    pub fn shadow_sampler(&self) -> &wgpu::Sampler {
+        &self.shadow_sampler
+    }
+
+    pub(crate) fn layouts() -> [wgpu::BindGroupLayoutEntry; 5] {
         let stage = wgpu::ShaderStages::FRAGMENT;
         [
             binding::texture(
@@ -144,10 +160,11 @@ impl SunPathTarget {
             ),
             binding::sampler(SAMPLER, stage, wgpu::SamplerBindingType::Filtering),
             binding::uniform(MAPPING, stage, MAPPING_BYTES),
+            binding::sampler(SHADOW_SAMPLER, stage, wgpu::SamplerBindingType::Comparison),
         ]
     }
 
-    pub(crate) fn entries(&self) -> [wgpu::BindGroupEntry<'_>; 4] {
+    pub(crate) fn entries(&self) -> [wgpu::BindGroupEntry<'_>; 5] {
         [
             wgpu::BindGroupEntry {
                 binding: FIELD,
@@ -164,6 +181,10 @@ impl SunPathTarget {
             wgpu::BindGroupEntry {
                 binding: MAPPING,
                 resource: self.mapping.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: SHADOW_SAMPLER,
+                resource: wgpu::BindingResource::Sampler(&self.shadow_sampler),
             },
         ]
     }
@@ -183,6 +204,7 @@ pub(crate) fn compose(mut scene: String, provider: Option<&str>, shadowed: bool)
         "\n@group(1) @binding({FIELD}) var sun_path_field: texture_2d_array<f32>;
 @group(1) @binding({COLUMNS}) var sun_path_columns: texture_2d<f32>;
 @group(1) @binding({SAMPLER}) var sun_path_sampler: sampler;
+@group(1) @binding({SHADOW_SAMPLER}) var sun_path_shadow_sampler: sampler_comparison;
 struct SunPathSample {{ exit: vec3<f32>, factor: f32, weight: f32 }}
 struct SunPathMapping {{ window: vec4<f32>, sun: vec4<f32>, quality: vec4<u32> }}
 @group(1) @binding({MAPPING}) var<uniform> sun_path_mapping: SunPathMapping;

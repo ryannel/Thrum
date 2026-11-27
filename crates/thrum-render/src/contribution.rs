@@ -407,7 +407,7 @@ impl SceneSurface<'_> {
                 crate::shaders::wgsl!("synthetic/forward/point_sun.wgsl"),
             )
         } else {
-            "fn point_sun_visibility(_point: vec3<f32>, _filtered: sampler) -> f32 { return 1.0; }"
+            "fn point_sun_visibility(_point: vec3<f32>, _filtered: sampler_comparison) -> f32 { return 1.0; }"
         }
     }
 

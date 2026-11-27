@@ -17,6 +17,7 @@ const FIELD: u32 = 29;
 const SAMPLER: u32 = 30;
 const MAPPING: u32 = 31;
 const COLUMNS: u32 = 32;
+const SHADOW_SAMPLER: u32 = 33;
 const CAPACITY: [u32; 2] = [1280, 720];
 const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
 
@@ -138,6 +139,7 @@ impl Shafts {
                     wgpu::TextureSampleType::Float { filterable: false },
                     wgpu::TextureViewDimension::D2,
                 ),
+                binding::sampler(SHADOW_SAMPLER, stage, wgpu::SamplerBindingType::Comparison),
             ],
         });
         let field_view = field.field.create_view(&wgpu::TextureViewDescriptor {
@@ -166,6 +168,10 @@ impl Shafts {
                 texture(OUTPUT, &image.view),
                 texture(FIELD, &field_view),
                 texture(COLUMNS, &column_view),
+                wgpu::BindGroupEntry {
+                    binding: SHADOW_SAMPLER,
+                    resource: wgpu::BindingResource::Sampler(field.shadow_sampler()),
+                },
                 wgpu::BindGroupEntry {
                     binding: SAMPLER,
                     resource: wgpu::BindingResource::Sampler(&sampler),
