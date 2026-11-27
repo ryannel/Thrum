@@ -142,10 +142,16 @@ pub struct Case {
 }
 
 #[derive(Clone, Copy)]
-enum ShortAt {
-    Rest,
-    FootprintGain,
-    FootprintWeight,
+enum FootprintTerm {
+    Gain(f64),
+    Weight(f64),
+}
+
+#[derive(Clone, Copy)]
+struct LensVertex {
+    point: SheetPoint,
+    long_height: f64,
+    footprint_short_height: f64,
 }
 
 impl Case {
@@ -214,9 +220,17 @@ impl Case {
             let mut case = Self::new("carried-crest", datum);
             case.name = name;
             case.mapped = true;
+            let k = TAU / 80.0;
+            case.spectrum.long[0].amplitude = 0.42;
+            case.spectrum.long[0].phase = TAU / 4.0 - 1.68 * k;
+            case.field.layers[0] =
+                LongWaves::new(case.spectrum.long.clone(), 4.0).expect("long horizontal throw");
+            case.spectrum.cascades[0] =
+                Cascade::new(160.0, &[(0, 48, 0.32, -1.625 * 48.0 * TAU / 160.0)])
+                    .expect("short crest in deep water carried over the shallows");
             let sea = case.map.body(0).expect("sea").clone();
             let heights = (-24..=24).flat_map(|z| {
-                let depth = (0.08 + 0.6 * f64::from(z).max(0.0)).min(4.0);
+                let depth = (0.08 + 1.6 * f64::from(z).max(0.0)).min(8.0);
                 std::iter::repeat_n(datum - depth, 49)
             });
             let bed = Bed::new(
@@ -490,26 +504,97 @@ impl Case {
     }
 
     fn triangles(&self) -> Vec<[SheetPoint; 3]> {
-        self.triangles_at(ShortAt::Rest)
+        self.lens_faces(None)
+            .into_iter()
+            .map(|triangle| triangle.map(|vertex| vertex.point))
+            .collect()
     }
 
-    /// Difference in centre-column heights if only the chosen short-wave term
-    /// is evaluated on the lens footprint. Other terms retain their rest values.
+    /// A layer-by-layer ceiling with the named short-wave term bounded only
+    /// over the footprint. Face ownership still uses the actual displacement.
     /// # Panics
-    /// Panics when the case does not isolate a gain or weight.
+    /// Panics on a different fixture, or if the footprint crosses a bed cell.
     #[must_use]
-    pub fn footprint_short_error(&self) -> f64 {
-        let alternative = match self.name {
-            "carried-gain" => ShortAt::FootprintGain,
-            "carried-weight" => ShortAt::FootprintWeight,
+    pub fn footprint_short_ceiling(&self, half_width: f64) -> f64 {
+        let [x, z] = self.column;
+        let ends = [x - half_width, x + half_width];
+        let rows = ends.map(|x| self.map.sample([x, z]).expect("wet footprint"));
+        let mut variances = self.field.variances();
+        variances[1..].copy_from_slice(&self.spectrum.cascades.each_ref().map(Cascade::variance));
+        let caps = rows.map(|row| limit(row.row, row.depth, variances, self.map.profile()));
+        let term = match self.name {
+            "carried-gain" => FootprintTerm::Gain(caps[0].gains[1].max(caps[1].gains[1])),
+            "carried-weight" => {
+                let coverage = self.footprint_contour(ends);
+                let depth = rows[0].depth.max(rows[1].depth);
+                let swash = caps[0].swash_depth.min(caps[1].swash_depth);
+                let smooth = |v: f64| {
+                    let t = v.clamp(0.0, 1.0);
+                    t * t * (3.0 - 2.0 * t)
+                };
+                // The independent thickness factor cannot exceed one.
+                FootprintTerm::Weight(
+                    1.0 - smooth(coverage) * (1.0 - smooth((depth / swash - 0.85) / (1.3 - 0.85))),
+                )
+            }
             _ => panic!("expected a carried short-wave gain or weight fixture"),
         };
-        let cut =
-            |at| highest_triangle(self.column, self.triangles_at(at)).expect("covered lens column");
-        cut(ShortAt::Rest) - cut(alternative)
+        let mut long = f64::NEG_INFINITY;
+        let mut short = f64::NEG_INFINITY;
+        for face in self.lens_faces(Some(term)) {
+            let crosses = |axis: usize, [lo, hi]: [f64; 2]| {
+                let points = face.map(|vertex| vertex.point.world[axis]);
+                points.iter().any(|&p| p >= lo) && points.iter().any(|&p| p <= hi)
+            };
+            // Axis bounds include every triangle that intersects the lens.
+            // Include all its rest vertices, even those outside the footprint.
+            if crosses(0, ends) && crosses(1, [z - 0.000_01, z + 0.000_01]) {
+                for vertex in face {
+                    long = long.max(vertex.long_height);
+                    short = short.max(vertex.footprint_short_height);
+                }
+            }
+        }
+        assert!(
+            long.is_finite() && short.is_finite(),
+            "faces cover the footprint"
+        );
+        long + short
     }
 
-    fn triangles_at(&self, short_at: ShortAt) -> Vec<[SheetPoint; 3]> {
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "the fixed lens is inside the small authored bed lattice"
+    )]
+    fn footprint_contour(&self, ends: [f64; 2]) -> f64 {
+        let (origin, spacing, size) = self.map.bed().lattice();
+        let grid = |x| {
+            [
+                (x - origin[0]) / spacing,
+                (self.column[1] - origin[1]) / spacing,
+            ]
+        };
+        let low = grid(ends[0]);
+        let high = grid(ends[1]);
+        assert_eq!(low.map(f64::floor), high.map(f64::floor), "one bed cell");
+        let [i, j] = low.map(|axis| axis.floor() as usize);
+        let planes = self.map.shore_transform(0).expect("shore transform");
+        assert_eq!(planes.stages()[0], 0.0, "fixed stage");
+        let contour = planes.contour_planes().next().expect("stage zero");
+        let strength = |[x, z]: [f64; 2]| {
+            let column = j * size[0] + i;
+            let u = x.fract();
+            let v = z.fract();
+            let near = (1.0 - u) * contour[column][2] + u * contour[column + 1][2];
+            let far =
+                (1.0 - u) * contour[column + size[0]][2] + u * contour[column + size[0] + 1][2];
+            (1.0 - v) * near + v * far
+        };
+        strength(low).min(strength(high))
+    }
+
+    fn lens_faces(&self, term: Option<FootprintTerm>) -> Vec<[LensVertex; 3]> {
         let mut variances = self.field.variances();
         let short = self.spectrum.cascades.each_ref().map(Cascade::variance);
         let grids = self.spectrum.cascades.each_ref().map(|cascade| {
@@ -521,22 +606,6 @@ impl Case {
             .surf_sheet(&self.field, 0, 0.0)
             .ok()
             .map(|sheet| sheet.with_short_wave_variances(short));
-        let footprint = self.map.sample(self.column).expect("lens footprint row");
-        let footprint_gains = limit(
-            footprint.row,
-            footprint.depth,
-            variances,
-            self.map.profile(),
-        )
-        .gains;
-        let footprint_weight = surf.as_ref().map_or(1.0, |sheet| {
-            self.map.surf_short_wave_weight(
-                self.column,
-                footprint,
-                variances,
-                footprint.row.level + sheet.forward(self.column).height,
-            )
-        });
         // These witnesses are in the near grid, away from every ring seam.
         let spacing = if self.name == "lake" { 0.5 } else { 0.25 };
         let origin = self.column.map(f64::floor);
@@ -563,24 +632,20 @@ impl Case {
                 height: row.row.level + long.height,
                 ..long
             };
-            let weight = if matches!(short_at, ShortAt::FootprintWeight) {
-                footprint_weight
-            } else {
-                self.map
-                    .surf_short_wave_weight(rest, row, variances, point.height)
-            };
+            let long_height = point.height;
+            let mut footprint_short_height = 0.0;
+            let weight = self
+                .map
+                .surf_short_wave_weight(rest, row, variances, long_height);
             for (band, cascade) in self.spectrum.cascades.iter().enumerate() {
-                let local_gain = if matches!(short_at, ShortAt::FootprintGain) {
-                    footprint_gains[band + 1]
-                } else {
-                    gains[band + 1]
-                };
-                if local_gain == 0.0 || short[band] == 0.0 {
+                let local_gain = gains[band + 1];
+                if short[band] == 0.0 {
                     continue;
                 }
                 let length = cascade.length();
                 let blend = ((spacing - length / 128.0) / (3.0 * length / 128.0)).clamp(0.0, 1.0);
-                let gain = weight * local_gain * (1.0 - blend * blend * (3.0 - 2.0 * blend));
+                let lod = 1.0 - blend * blend * (3.0 - 2.0 * blend);
+                let gain = weight * local_gain * lod;
                 let step = length / 256.0;
                 let grid = grids[band].as_ref().expect("active cascade");
                 let [x, y, z] = texels(rest, step, |p| {
@@ -590,8 +655,18 @@ impl Case {
                 point.world[0] += gain * x;
                 point.world[1] += gain * z;
                 point.height += gain * y;
+                let footprint_gain = match term {
+                    Some(FootprintTerm::Gain(frozen)) => weight * frozen,
+                    Some(FootprintTerm::Weight(frozen)) => frozen * local_gain,
+                    None => 0.0,
+                };
+                footprint_short_height += (footprint_gain * lod * y).max(0.0);
             }
-            point
+            LensVertex {
+                point,
+                long_height,
+                footprint_short_height,
+            }
         };
         let reach = surf.as_ref().map_or(0.0, |sheet| sheet.reach(self.column));
         let radius = if self.name == "lake" {

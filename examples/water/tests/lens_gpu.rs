@@ -72,12 +72,16 @@ mod metal {
         }
     }
 
+    pub(super) fn check(case: &Case, gpu: &Gpu) {
+        check_at_fov(case, gpu, FOV);
+    }
+
     #[expect(
         clippy::cast_precision_loss,
         clippy::print_stderr,
         reason = "bounded lens fixture and its proof log"
     )]
-    pub(super) fn check(case: &Case, gpu: &Gpu) {
+    pub(super) fn check_at_fov(case: &Case, gpu: &Gpu, fov: f32) {
         let (extent, panel_gaps): (_, &[f32]) =
             if std::env::var_os("THRUM_WATER_LENS_1440P").is_some() {
                 (
@@ -103,7 +107,7 @@ mod metal {
                 "the whole lens must stand above the footprint bound"
             );
         }
-        let view = camera(eye, [eye[0], eye[1], eye[2] + 1.0], FOV, 1.0 / 32768.0);
+        let view = camera(eye, [eye[0], eye[1], eye[2] + 1.0], fov, 1.0 / 32768.0);
         let capture = |gap, underwater| {
             let panel = Panel {
                 centre: [eye[0], eye[1], (eye[2] + 0.11) + gap],
@@ -302,15 +306,18 @@ fn metal_admits_the_short_crest_carried_in_from_outside_the_footprint() {
 
 thrum_test_support::macos_gpu_test! {
 fn metal_uses_the_short_wave_gain_and_weight_at_the_reachable_rest_place() {
-    use water_scene::lens_probe::{Case, EXTENT, FOV};
+    use water_scene::lens_probe::{Case, FOV};
     let Some((_serial, gpu)) = metal::gpu("carried short-wave gain and weight") else { return };
-    let pixel_height = 0.2 * f64::from((FOV * 0.5).tan()) / f64::from(EXTENT[1]);
-    for name in ["carried-gain", "carried-weight"] {
+    // The weight witness needs a thinner vertical near plane to stand
+    // wholly above the bad roof while keeping a stable wet part.
+    for (name, fov) in [("carried-gain", FOV), ("carried-weight", 0.16)] {
         let case = Case::new(name, 0.0);
-        let error = case.footprint_short_error();
-        eprintln!("{name}: evaluating that term on the footprint shifts the line {:.2} rows", error / pixel_height);
-        assert!(error.abs() > 2.0 * pixel_height, "{name}: {error:.6} m");
-        metal::check(&case, &gpu);
+        let half_height = 0.1 * f64::from((fov * 0.5).tan());
+        let lowest = f64::from(case.eye()[1]) - half_height;
+        let roof = case.footprint_short_ceiling(half_height * 16.0 / 9.0);
+        eprintln!("{name}: footprint-only roof {roof:.6} m, lowest lens point {lowest:.6} m");
+        assert!(lowest > roof + 0.002, "{name}: a footprint-only bound must refuse this lens");
+        metal::check_at_fov(&case, &gpu, fov);
     }
 }
 }
