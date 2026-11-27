@@ -8,7 +8,10 @@
       ".orchestrate/evidence/ATMOSPHERE/design-review-3.md",
       ".orchestrate/evidence/ATMOSPHERE/design-review.md"
     ],
-    "at": "2026-11-27T07:15:46Z"
+    "at": "2026-11-27T07:15:46Z",
+    "items_owed": [
+      "WP13"
+    ]
   },
   "work_packages": {
     "WP5": {
@@ -1072,6 +1075,16 @@
         "checked": "ec4b096a90e729d611d92bb55deb318ed0893c61",
         "at": "2026-11-27T15:49:10Z"
       }
+    },
+    "WP13": {
+      "definitions": "0e4ec82a93de43176045177f56c241de578610454c0a92fbf5ab58180d0ebbe5",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Three owner reports on the V1 showcase Sun shadows, on the Mac. (1) \"I'm seeing some shadow flicker at times, for exampl",
+        "at": "2026-11-27T22:02:16Z"
+      },
+      "ends_stretch": true
     }
   },
   "tasks": [
@@ -1190,11 +1203,15 @@
     {
       "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 3 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
       "at": "2026-11-27T07:15:46Z"
+    },
+    {
+      "task": "Three owner reports on the V1 showcase Sun shadows, on the Mac. (1) \"I'm seeing some shadow flicker at times, for example when you fly towards this beige ballon, or the shadows from the rocks flickering in the scene with the squares.\" Screenshot tmp/owner-reports/2026-11-27-shadow-flicker-balloons.webp. (2) \"The shadows are only drawn for objects that are near by which means there is a very clear line where the shadows suddenly appear. It's a bit weird, but maybe it's correct for how games like this need to work\" Screenshot tmp/owner-reports/2026-11-27-shadow-distance-line.webp (rocks in the middle distance cast shadows, rocks beyond a clear line cast none). (3) \"The shadow flicker is very obvious here\" Screenshot tmp/owner-reports/2026-11-27-shadow-flicker-cubes.webp (the scene with the cubes: a large shadow from an object at top left crosses the ground; the lead also notes the cubes show no shadows or contact darkening of their own and read as floating; check whether that is right). ATMOSPHERE owns the Sun cascades and the caster height map that should shadow beyond them (shadow quality WP6, far ground under the balloons WP10, aloft casters). Reproduce all three with realtime Mac sequences on the routes named, and find each cause from the frames (e.g. cascade texel swimming without stable snapping, cascade transitions, no fade at the last cascade, small casters missing from or too coarse in the caster height map, depth bias or peter-panning, casters left out). Then plan the fix in ATMOSPHERE as its next work package, using the best modern technique for each cause, with inspection items on those routes judged against shipped high-end games: no visible shadow shimmer or popping while flying, no visible line where shadows end (distant casters keep plausible shadows or fade out invisibly), and objects on the ground look grounded. Mind the cost on the Mac at 120 Hz full screen (APPLE-PRESENTATION WP17 is fighting for frame time at 67%).",
+      "at": "2026-11-27T22:02:16Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T07:15:46Z"
+    "at": "2026-11-27T22:02:16Z"
   },
   "design_history": [
     {
