@@ -1901,7 +1901,7 @@
   blocker. Its east-lit box shadow darkened both the bed and the water just
   above it at the same stations. The unit and half-factor meter arms passed
   and the browser reported no validation faults.
-  [Chrome WebGPU proof](../../../.orchestrate/evidence/WATERS/WP16/separable-webgpu/run.json).
+  [Chrome WebGPU proof](../../../.orchestrate/evidence/WATERS/WP16/portable-shaded/under-light.json).
 
 ## WP16 visual inspection checkpoint
 
@@ -1932,5 +1932,13 @@
   surveyed terrain at maximum depth.
   [Matched captures](../../../.orchestrate/evidence/WATERS/WP16/inspection-round-3/)
   · [Metal tests](../../../.orchestrate/evidence/WATERS/WP16/continuous-caustic-rerun.log)
-  · [Hardware Chrome](../../../.orchestrate/evidence/WATERS/WP16/separable-webgpu/run.json)
+  · [Hardware Chrome](../../../.orchestrate/evidence/WATERS/WP16/portable-shaded/under-light.json)
   · [Paired cost](../../../.orchestrate/evidence/WATERS/WP16/under-light-cost-42bdfa59ef17.json).
+
+- Fixed capture in hardware Chrome now checks that each checkpoint has a
+  fresh submission before reading it. The shared shade route exposed
+  a thirteenth fragment uniform buffer. The optics record now carries the
+  shaft extent for both readers, bringing the layout within the portable
+  limit. At 1440p both shaded bodies submit without validation faults.
+  [Sea shade](../../../.orchestrate/evidence/WATERS/WP16/portable-shaded/sea.json)
+  · [Lake shade](../../../.orchestrate/evidence/WATERS/WP16/portable-shaded/lake.json).
