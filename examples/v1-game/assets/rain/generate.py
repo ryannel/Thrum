@@ -21,7 +21,7 @@ def radius(x, z, cx, cz, rx, rz):
 
 
 def relief(x, z, ground):
-    terrain, _ = ground(ORIGIN[0] + x, ORIGIN[1] + z)
+    terrain, _, _ = ground(ORIGIN[0] + x, ORIGIN[1] + z)
 
     def hollow(cx, cz, rx, rz, depth, bank):
         r = radius(x, z, cx, cz, rx, rz)
@@ -37,7 +37,7 @@ def relief(x, z, ground):
     t = min(1, max(0, edge / 0.45))
     boundary = t*t * (3 - 2*t)
     raise_by = max(hollow(*bowl) for bowl in HOLLOWS)
-    return terrain + boundary * raise_by - 0.0015
+    return boundary * raise_by
 
 
 def terrain_sample():
@@ -50,6 +50,7 @@ def terrain_sample():
         return list(struct.iter_unpack(layout, terrain[start:start + bounds['byteLength']]))
 
     positions = read(0, '<3f')
+    normals = read(1, '<3f')
     uv = read(2, '<2f')
     triangles = []
     for indices in read(3, '<3H'):
@@ -61,10 +62,10 @@ def terrain_sample():
         (ax, _, az), (bx, _, bz), (cx, _, cz) = vertices
         det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz)
         if abs(det) > 1e-9:
-            triangles.append((vertices, [uv[i] for i in indices], det))
+            triangles.append((vertices, [uv[i] for i in indices], [normals[i] for i in indices], det))
 
     def interpolate(x, z):
-        for ((ax, ay, az), (bx, by, bz), (cx, cy, cz)), texels, det in triangles:
+        for ((ax, ay, az), (bx, by, bz), (cx, cy, cz)), texels, normals, det in triangles:
             a = ((bz - cz) * (x - cx) + (cx - bx) * (z - cz)) / det
             b = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / det
             c = 1 - a - b
@@ -74,7 +75,8 @@ def terrain_sample():
                     continue
                 weights = (a, b, c)
                 texture = [sum(v * weight for v, weight in zip(axis, weights)) for axis in zip(*texels)]
-                return y, texture
+                normal = [sum(v * weight for v, weight in zip(axis, weights)) for axis in zip(*normals)]
+                return y, texture, normal
         raise ValueError(f'No terrain UV at {x}, {z}')
 
     return interpolate
@@ -87,13 +89,22 @@ def generate():
     for row in range(height + 1):
         for col in range(width + 1):
             x, z = col * SPACING, row * SPACING
-            position = [ORIGIN[0] + x, relief(x, z, ground), ORIGIN[1] + z]
+            world_x, world_z = ORIGIN[0] + x, ORIGIN[1] + z
+            terrain, texcoord, normal = ground(world_x, world_z)
+            distance = min(x, width * SPACING - x, z, height * SPACING - z)
+            t = min(1, distance / 0.24)
+            padding = -0.0015 + 0.0024 * t*t*(3 - 2*t)
+            position = [world_x, terrain + relief(x, z, ground) + padding, world_z]
             dx = (relief(x + SPACING, z, ground) - relief(x - SPACING, z, ground)) / (2 * SPACING)
             dz = (relief(x, z + SPACING, ground) - relief(x, z - SPACING, ground)) / (2 * SPACING)
-            scale = math.sqrt(1 + dx**2 + dz**2)
+            # Preserve the original interpolated terrain normal at the join.
+            # Add only the bank's slope; the millimetre skirt is buried.
+            nx, ny, nz = normal
+            perturbed = [nx - ny * dx, ny, nz - ny * dz]
+            scale = math.sqrt(sum(v*v for v in perturbed))
             positions.append(position)
-            normals.append([-dx / scale, 1 / scale, -dz / scale])
-            uv.append(ground(position[0], position[2])[1])
+            normals.append([v / scale for v in perturbed])
+            uv.append(texcoord)
             if row < height and col < width:
                 a = row * (width + 1) + col
                 b, c = a + 1, a + width + 1
