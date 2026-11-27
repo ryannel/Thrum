@@ -1259,3 +1259,11 @@ the sunlit lobe's gradient on portable and Apple Tile, and both also pass at 30�
 pan retains the cloud edge, the in-cloud mist toggle matches within one display code per channel,
 and the fixed portable Sky sample matches all starting RGBA bytes.
 [Metal inspection and byte comparison](../../../.orchestrate/evidence/CLOUDS/WP15/relief/PROOF.md)
+
+## WP15 World light compatibility
+
+The Ground profile explicitly requests the display adaptation with a view volume. The same declaration
+selects the exposure pipeline and the graph's exposure history. On portable Metal, World light without
+Ground matches the pre-WP15 control at 320×180 and 2560×1440 with a 60 km atmospheric view volume and a
+matched submitted warmup. The 30° and 35° Ground relief and exact Sky checkpoint pass again.
+[Metal and Chrome proof](../../../.orchestrate/evidence/CLOUDS/WP15/exposure-scope/PROOF.md)
