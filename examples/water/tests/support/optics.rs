@@ -207,6 +207,25 @@ impl Rig {
         })
     }
 
+    pub(crate) fn submitted_depth(&self) -> Vec<f32> {
+        use thrum_test_support::readback::{Mip, texture};
+
+        texture(
+            &self.device,
+            &self.queue,
+            self.witness
+                .as_ref()
+                .expect("submitted temporal attachment"),
+            Mip::level(0),
+            ..,
+        )
+        .as_chunks::<8>()
+        .0
+        .iter()
+        .map(|pixel| super::half_value(u16::from_le_bytes([pixel[2], pixel[3]])))
+        .collect()
+    }
+
     pub(crate) fn scene_colour(&mut self) -> (f32, Vec<[f32; 3]>) {
         let (_, scale, rgb) = self.scene_colour_with_sample();
         (scale, rgb)

@@ -3,7 +3,6 @@ mod optical_sources;
 
 #[cfg(target_os = "macos")]
 use crate::support::{
-    half_value,
     optics::{Panel, Rig, attach, camera, sun},
     river_store,
 };
@@ -13,8 +12,6 @@ use std::sync::{Arc, Mutex};
 use thrum_render::synthetic::{DisplayOverlay, SyntheticView};
 #[cfg(target_os = "macos")]
 use thrum_sea_model::{Cascade, Spectrum};
-#[cfg(target_os = "macos")]
-use thrum_test_support::readback::{Mip, texture};
 #[cfg(target_os = "macos")]
 use thrum_water::{Optics, Profile, Water};
 #[cfg(target_os = "macos")]
@@ -26,22 +23,6 @@ use thrum_water_model::{
 fn depth_view(view: &SyntheticView) -> SyntheticView {
     view.with_temporal_inputs(true)
         .with_display_overlay(DisplayOverlay::TemporalInputs)
-}
-
-#[cfg(target_os = "macos")]
-fn depth_pixels(rig: &Rig) -> Vec<f32> {
-    texture(
-        &rig.device,
-        &rig.queue,
-        rig.witness.as_ref().expect("submitted temporal attachment"),
-        Mip::level(0),
-        ..,
-    )
-    .as_chunks::<8>()
-    .0
-    .iter()
-    .map(|pixel| half_value(u16::from_le_bytes([pixel[2], pixel[3]])))
-    .collect()
 }
 
 #[cfg(target_os = "macos")]
@@ -118,7 +99,7 @@ fn metal_keeps_wind_displacement_in_the_shared_rain_array() {
         attach(&mut rig, rain_sea(rain, amplitude, false));
         rig.frame();
         inverse
-            .project_point3(glam::vec3(0.0, 0.0, depth_pixels(&rig)[centre]))
+            .project_point3(glam::vec3(0.0, 0.0, rig.submitted_depth()[centre]))
             .y
     };
     let ordinary = height(None, 0.25) - height(None, 0.0);
@@ -156,7 +137,7 @@ fn metal_admits_rain_rings_that_reach_a_dry_still_water_lens() {
         let report = water.report();
         attach(&mut rig, water);
         rig.frame();
-        let clipped = depth_pixels(&rig)
+        let clipped = rig.submitted_depth()
             .iter()
             .filter(|&&depth| depth == 0.0)
             .count();
@@ -252,7 +233,7 @@ fn check_river_depth([x, z]: [f64; 2]) {
     let mut rig = Rig::with_extent(&gpu, &view, sun(0.0, 0.0), &[], None, extent);
     attach(&mut rig, water(false));
     let sampled = rig.frame();
-    let depth = depth_pixels(&rig)[(height / 2 * width + width / 2) as usize];
+    let depth = rig.submitted_depth()[(height / 2 * width + width / 2) as usize];
     assert!(depth > 0.0, "drawn river at {x},{z}");
     let [x, y, z] = inverse
         .project_point3(glam::vec3(0.0, 0.0, depth))

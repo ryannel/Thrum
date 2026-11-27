@@ -123,3 +123,11 @@ fn unrelated_sampled_river_preserves_basin_shoreline() {
     river_proof::surface::compatibility::check_basin(&gpu);
 }
 }
+
+thrum_test_support::macos_gpu_test! {
+fn sampled_chart_beside_a_hollows_body_draws_both_on_metal() {
+    let Some(gpu) = thrum_test_support::gpu("river and hollows", Some(wgpu::Backend::Metal))
+    else { return };
+    river_proof::mixed_hollows::check(&gpu);
+}
+}
