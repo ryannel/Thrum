@@ -786,3 +786,7 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
 - 2026-11-27 The answer is stop. Thrum posts nothing upstream. U2 puts both local cache patches through
   independent review and Metal tests. U3 isolates their extensions, rehearses their removal and watches
   released wgpu for Metal support. WP11’s completed 60 Hz proof and V1 have no dependency on either package.
+- 2026-11-27 Planner, design review Must Fix 1. U3.1 now includes WP10's Metal build wrapper, whose compute
+  probe depended on WP12's archive constructor. The same proof must show a cooked stage used by a game
+  pipeline and a successful native library load before readiness on both sets of pins. This catches a
+  WGSL-only launch in the removal rehearsal.

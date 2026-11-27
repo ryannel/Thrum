@@ -1467,8 +1467,8 @@
       "items": [
         {
           "id": "U3.1",
-          "statement": "One private thrum-render archive implementation owns all use of patch-only cache types, functions, outcomes and encodings on the Thrum side. Its callers, including the game and tests, build in a scratch checkout with the two cache patches absent, stock wgpu-core and only WP10's HAL stage-record patch. Normal preparation reaches readiness via fallback there. With the patches present the WP12 public round trip, strict positive and negative controls, and repair cases still pass.",
-          "ask": "Inspect the caller signatures and trace archive use in the engine, game, tests and proof scripts. In the removal rehearsal, did all those callers compile untouched after switching only the private implementation and pins? Do the patched and fallback run records distinguish a verified warm hit from ordinary pipeline creation?",
+          "statement": "Thrum confines patch-only cache types, calls, outcomes and header layout to its private thrum-render archive implementation. With stock wgpu-core and only WP10's HAL stage-record patch, the same engine, game and test callers build. The same WP10 proof runs on both sets of pins and shows a game pipeline using a cooked Metal stage before readiness. The rehearsal reaches readiness with the archive unavailable. The patched build still passes WP12's public round trip, strict hit, deliberate miss and repair cases.",
+          "ask": "Inspect the rehearsal diff for changes limited to the private implementation and pins. Replay the same cooked-stage command with the same WP10 build wrapper on both builds. Does each run tie a cooked stage key used by a game pipeline to a successful native metallib_load before readiness, with zero loads failing the proof? Do the WP12 results establish the strict hit, miss, round trip and repair on the patched build, and does the rehearsal report ordinary pipeline creation without claiming a hit?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

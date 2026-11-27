@@ -122,6 +122,8 @@ maps the diffs. Use the independent work-package review for the code judgement.
 
 ## U3 Thrum isolates the local cache patches and flags the wgpu release that can replace them
 
-Start at thrum-render's archive preparation and its public round-trip test. Put the removal steps in
+Start at thrum-render's archive preparation, its public round-trip test and WP10's Metal build wrapper.
+Run the same cooked-stage load proof with both cache patches present and again with only the stage-record
+patch. Put the removal steps in
 [the pin provenance](../../provenance/APPLE-PRESENTATION.md). Exercise the release notice with a
 known-positive case while the live release is still outside Thrum's control.

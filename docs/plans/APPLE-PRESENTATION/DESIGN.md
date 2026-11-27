@@ -909,8 +909,16 @@ stage-record patch onto the matching HAL release while the metallib loader needs
 vendored sources, pin registrations, pin checks and provenance together. Verify the surviving HAL pin,
 offline metallib preparation, the public Metal cache round trip, the strict hit and miss controls, and
 stale, corrupt and partial-cache recovery before retiring the local implementation. If the released path
-fails those checks, retain the pins and record the failing case. U3 rehearses the boundary today by compiling the Mac callers and tests against stock core and HAL with only WP10's patch,
-using the existing cache-unavailable preparation path inside the boundary.
+fails those checks, retain the pins and record the failing case.
+
+U3 rehearses removal in a scratch checkout with stock wgpu-core and only WP10's stage-record patch on
+wgpu-hal. The Mac callers and tests build against the private implementation for an unavailable archive.
+Adapt WP10's build wrapper (`scripts/apple_metal_probe_rustc.py`) so its instrumentation works with either
+Metal compute pipeline constructor. The load proof in `scripts/apple_metallib_proof.py` must run with the
+same command and proof code on both sets of pins. On each, prepare a game pipeline from a cooked stage
+and reach readiness on Metal. The run must show the stage key used by that pipeline and a successful
+native `metallib_load` for its passthrough stage before readiness. A WGSL-only launch has zero such loads
+and fails the proof. The rehearsal uses ordinary pipeline creation with the archive unavailable.
 
 **Noticing a release.** While the patches are carried, a weekly read-only check looks for the latest stable
 wgpu release, independently of the version in Thrum's lockfile. For a new version it reads the features of
