@@ -209,9 +209,13 @@ impl Rig {
 
     pub(crate) fn frame(&mut self) -> FrameSample {
         self.submitted += 1;
+        self.frame_at(Duration::from_secs_f64(f64::from(self.submitted) / 60.0))
+    }
+
+    pub(crate) fn frame_at(&mut self, time: Duration) -> FrameSample {
         self.host
             .drive(
-                Duration::from_secs_f64(f64::from(self.submitted) / 60.0),
+                time,
                 Some(&SurfaceOutput {
                     view: &self.output,
                     extent: self.extent,
@@ -324,6 +328,20 @@ pub(crate) fn water_with_profile(
 }
 
 pub(crate) fn water_configured(bottom: Option<(f64, [f64; 2], f64)>, profile: Profile) -> Water {
+    let spectrum = thrum_sea_model::Spectrum {
+        long: Vec::new(),
+        cascades: [160.0, 37.0, 9.0]
+            .map(|length| thrum_sea_model::Cascade::new(length, &[]).expect("empty cascade")),
+        tail_slope_variance: 0.0,
+    };
+    water_with_spectrum(bottom, profile, spectrum)
+}
+
+pub(crate) fn water_with_spectrum(
+    bottom: Option<(f64, [f64; 2], f64)>,
+    profile: Profile,
+    spectrum: thrum_sea_model::Spectrum,
+) -> Water {
     let (depth, origin, step) = bottom.unwrap_or((-1000.0, [-2.0; 2], 4.0));
     let map = Map::prepare(
         Bed::new(origin, step, [2, 2], vec![depth; 4]).expect("bed"),
@@ -345,13 +363,6 @@ pub(crate) fn water_configured(bottom: Option<(f64, [f64; 2], f64)>, profile: Pr
         },
     )
     .expect("map");
-    let spectrum = thrum_sea_model::Spectrum {
-        long: Vec::new(),
-        cascades: std::array::from_fn(|i| {
-            thrum_sea_model::Cascade::new([160.0, 37.0, 9.0][i], &[]).expect("empty cascade")
-        }),
-        tail_slope_variance: 0.0,
-    };
     let map = Arc::new(Mutex::new(map));
     if bottom.is_some() {
         Water::mapped(map, spectrum, profile).expect("mapped fixture")

@@ -162,3 +162,6 @@ name = "clouds_ground_gpu"
 # WATERS WP16 samples the incident meter's submitted GPU words.
 [[test]]
 name = "under_meter_gpu"
+
+[[test]]
+name = "caustic_field_gpu"

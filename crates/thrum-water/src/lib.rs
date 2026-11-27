@@ -1,6 +1,7 @@
 //! Shared water, lit by the scene's lent environment. The host owns all clocks and submission.
 /// The render projection of ground stores.
 mod canopy;
+mod caustics;
 mod column;
 mod flow;
 pub mod foam;
@@ -18,6 +19,7 @@ mod sampling_tests;
 mod surf;
 mod underwater;
 pub mod wet_ground;
+pub use caustics::CausticTap;
 pub use optics::{BodyBounds, Optics, OpticsBodies};
 use std::sync::{Arc, Mutex};
 pub use surf::cache::{SurfTap, SurfWitness};
@@ -48,6 +50,8 @@ pub struct Profile {
     pub optics: Option<Optics>,
     /// Compose the view through water when some of the lens is submerged. Requires optics.
     pub underwater: bool,
+    /// Draw underwater Sun focusing when the scene prepares this capability.
+    pub caustics: bool,
     /// Optional body query capacity and age limits.
     pub query: Option<query::QueryLimits>,
     /// Optional interaction waves and their capacity.
@@ -153,6 +157,7 @@ pub struct Water {
     foam: Option<foam::Whitewater>,
     foam_tap: Option<foam::Tap>,
     surf_tap: Option<SurfTap>,
+    caustic_tap: Option<CausticTap>,
     foam_pattern: thrum_asset_gpu::ProductLease,
     opaque: OpticsBodies,
     underwater: Option<underwater::Underwater>,
@@ -340,6 +345,7 @@ impl Water {
             foam: None,
             foam_tap: None,
             surf_tap: None,
+            caustic_tap: None,
             foam_pattern: thrum_asset_gpu::ProductLease::default(),
             opaque: OpticsBodies::default(),
             prepared: None,
@@ -399,6 +405,12 @@ impl Water {
     pub fn tap_surf(&mut self) -> SurfTap {
         self.surf_tap.get_or_insert_with(Default::default).clone()
     }
+    /// Request access to the drawn caustic ladder for a submitted-output proof.
+    pub fn tap_caustics(&mut self) -> CausticTap {
+        self.caustic_tap
+            .get_or_insert_with(Default::default)
+            .clone()
+    }
     /// Count work in a diagnostic surf cache dispatch. Attach before preparation
     /// and read the counters after the witnessed frame finishes.
     pub fn tap_surf_work(&mut self) -> SurfTap {
@@ -437,6 +449,9 @@ impl Water {
             }
             if let Some(gather) = &p.gather {
                 resources.push(("water gather regions".into(), gather.bytes()));
+            }
+            if let Some(caustics) = &p.caustics {
+                resources.push(("water caustic field".into(), caustics.bytes()));
             }
             if let Some(map) = &p.map {
                 let size = map.texture.size();
@@ -656,6 +671,13 @@ impl SceneContribution for Water {
         if let Some(tap) = &self.surf_tap {
             *tap.0.lock().expect("surf witness") = None;
         }
+        if let Some(tap) = &self.caustic_tap {
+            *tap.0.lock().expect("caustic tap") = self
+                .prepared
+                .as_ref()
+                .and_then(|prepared| prepared.caustics.as_ref())
+                .map(|caustics| caustics.texture().clone());
+        }
         Ok(())
     }
     fn quality_knobs(&self) -> Vec<QualityKnob> {
@@ -861,10 +883,36 @@ impl SceneContribution for Water {
         }
         p.queue
             .write_buffer(&p.parameters, 0, bytemuck::bytes_of(&parameters));
+        if let Some(caustics) = &p.caustics {
+            caustics.record(&p.queue, frame);
+        }
+    }
+    fn effect_draw_target(
+        &self,
+        index: usize,
+    ) -> Option<&thrum_render::contribution::EffectDrawTarget> {
+        self.prepared.as_ref()?.caustics.as_ref()?.target(index)
+    }
+    fn draw_effect(
+        &mut self,
+        index: usize,
+        pass: &mut wgpu::RenderPass<'_>,
+        frame: &ContributionFrame,
+    ) {
+        if let Some(p) = &self.prepared
+            && let Some(caustics) = &p.caustics
+        {
+            caustics.draw(index, pass, frame, p.render_group());
+        }
     }
     fn effect_runs(&self, index: usize, _frame: &ContributionFrame) -> bool {
         self.prepared.as_ref().is_some_and(|p| {
-            if index < p.ambient_passes {
+            if p.caustics
+                .as_ref()
+                .is_some_and(|caustics| caustics.target(index).is_some())
+            {
+                true
+            } else if index < p.ambient_passes {
                 p.ambient
                     .flow_pass_start()
                     .is_none_or(|start| index < start)

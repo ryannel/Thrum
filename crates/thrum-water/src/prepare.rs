@@ -2,6 +2,7 @@ pub(crate) mod hollow_tiles;
 
 use super::{
     Profile, SURFACE_PASS,
+    caustics::Caustics,
     foam::{self, Foam},
     interaction::{self, Interaction},
     map_gpu::{self, MapGpu},
@@ -36,6 +37,7 @@ pub(crate) const SURF_FOUR_METRE_RING_HALF_WIDTH: i32 = 40;
 pub(crate) const SURF_EIGHT_METRE_RING_HALF_WIDTH: i32 = 40;
 
 pub(super) struct Prepared {
+    pub(super) caustics: Option<Caustics>,
     pub(super) ambient: thrum_sea::Ambient,
     pub(super) ambient_passes: usize,
     pub(super) rain: Option<Rain>,
@@ -79,6 +81,8 @@ struct SurfacePipelines {
     river: Option<wgpu::RenderPipeline>,
     film: Option<wgpu::RenderPipeline>,
     underwater: Option<UnderwaterPipelines>,
+    lens_shader: Option<thrum_render::runtime::PipelineInput<wgpu::ShaderModule>>,
+    caustics: Option<Caustics>,
 }
 
 struct Pattern {
@@ -219,6 +223,7 @@ impl Prepared {
         let mut surface = declaration(self.gather.as_ref().is_some_and(|gather| gather.surface));
         surface.accesses = self.ambient.filtered_accesses();
         surface.accesses.extend(wake);
+        let caustic_reads = self.caustics.as_ref().map(|_| surface.accesses.clone());
         let surf_cache = self
             .surf_cache
             .as_ref()
@@ -231,6 +236,9 @@ impl Prepared {
             surface.accesses.extend(rain.bands.declare(&mut graph));
         }
         graph.opaque_reads.clear();
+        if let Some((caustics, reads)) = self.caustics.as_ref().zip(caustic_reads.as_ref()) {
+            caustics.declare(&mut graph, reads);
+        }
         if self.gather.is_some() {
             graph.after_opaque.push(optics::declaration());
         }
@@ -530,7 +538,14 @@ pub(super) fn new(
         layout: &layout,
         entries: &bindings,
     });
-    let (pipelines, shader) = surface_pipelines(
+    let first_caustic = profile.caustics.then(|| {
+        ambient_passes
+            + usize::from(interaction.is_some())
+            + usize::from(surf_cache.is_some())
+            + usize::from(foam.is_some())
+            + rain.as_ref().map_or(0, |_| thrum_sea::rain::PASS_COUNT)
+    });
+    let pipelines = surface_pipelines(
         surface,
         &layout,
         &environment,
@@ -545,10 +560,11 @@ pub(super) fn new(
         rain.is_some(),
         flow,
         (wet_ground, standing_film),
-    );
+        first_caustic,
+    )?;
     let lens_cut = lens_buffers
         .as_ref()
-        .zip(shader.as_ref())
+        .zip(pipelines.lens_shader.as_ref())
         .map(|(buffers, shader)| Cut::new(surface, shader, buffers.clone(), &entries, &bindings));
     let pattern = foam.as_ref().map(|_| Pattern {
         device: device.clone(),
@@ -558,6 +574,7 @@ pub(super) fn new(
         submitted: None,
     });
     Ok(Prepared {
+        caustics: pipelines.caustics,
         ambient,
         ambient_passes,
         rain,
@@ -725,10 +742,8 @@ fn surface_pipelines(
     rain: bool,
     flow: Option<(thrum_water_model::FlowBandsProfile, u32)>,
     (wet_ground, standing_film): (Option<&thrum_render::wetness::PreparedWetness>, bool),
-) -> (
-    SurfacePipelines,
-    Option<thrum_render::runtime::PipelineInput<wgpu::ShaderModule>>,
-) {
+    first_caustic: Option<usize>,
+) -> Result<SurfacePipelines, String> {
     use std::fmt::Write;
 
     let under = gather.is_some_and(|gather| gather.underwater);
@@ -829,6 +844,9 @@ fn surface_pipelines(
         gather: surface_gather.is_some(),
     };
     let ordinary_source = source.clone() + UNUSED_UNDERSIDE;
+    let caustics = first_caustic
+        .map(|index| Caustics::new(surface, &ordinary_source, layout, index, map.is_some()))
+        .transpose()?;
     #[cfg(not(target_arch = "wasm32"))]
     let sampled_textures = rain.then(|| sampled_textures(&ordinary_source, "water_fragment"));
     #[cfg(target_arch = "wasm32")]
@@ -889,16 +907,15 @@ fn surface_pipelines(
         river: has_rivers.then(|| create_pipeline(surface, layout, environment, shader, river)),
         through_lens: create_pipeline(surface, layout, environment, shader, SurfaceDraw::Lens),
     });
-    (
-        SurfacePipelines {
-            sampled_textures,
-            sheet: pipeline,
-            river: river_pipeline,
-            film,
-            underwater,
-        },
-        shader,
-    )
+    Ok(SurfacePipelines {
+        sampled_textures,
+        sheet: pipeline,
+        river: river_pipeline,
+        film,
+        underwater,
+        lens_shader: shader,
+        caustics,
+    })
 }
 
 #[derive(Clone, Copy)]
