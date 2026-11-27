@@ -763,7 +763,63 @@
     },
     "WP8": {
       "definitions": "88625d3da4527a24f6463dec51693e822eedc6c0d0489b4214793d638ebeabaf",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "4efe8c0115cf61965f652943d680e28db7ba356e",
+          "review": ".orchestrate/evidence/PUDDLES/WP8-review.md",
+          "items": {
+            "WP8.3": "fail",
+            "WP8.9": "pass",
+            "WP8.4": "fail",
+            "WP8.6": "pass",
+            "WP8.7": "fail"
+          },
+          "findings": [
+            {
+              "name": "The near level carries a wave across a dry sill between its samples",
+              "item": "WP8.3",
+              "repeat": false
+            },
+            {
+              "name": "The walking trail is unreadable through both puddles under the yard\u2019s default Sun",
+              "item": "WP8.4",
+              "repeat": false
+            },
+            {
+              "name": "The stone drops do not show a discernibly slower ring in shallower water",
+              "item": "WP8.4",
+              "repeat": false
+            },
+            {
+              "name": "The pothole crest breaks into persistent bright flashes at the bank",
+              "item": "WP8.4",
+              "repeat": false
+            },
+            {
+              "name": "The paired cost record omits the walking yard with water absent",
+              "item": "WP8.7",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 169942,
+            "cached": 7714176,
+            "output": 21549,
+            "turns": 1
+          },
+          "at": "2026-11-27T00:35:17Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of PUDDLES at .orchestrate/evidence/PUDDLES/design-review.md asked for changes, with its Must Fix find",
