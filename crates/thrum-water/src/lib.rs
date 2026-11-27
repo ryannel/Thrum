@@ -1,7 +1,6 @@
 //! Shared water, lit by the scene's lent environment. The host owns all clocks and submission.
 /// The render projection of ground stores.
 mod canopy;
-mod caustics;
 mod column;
 mod flow;
 pub mod foam;
@@ -19,6 +18,9 @@ mod sampling_tests;
 mod surf;
 mod underwater;
 pub mod wet_ground;
+
+mod caustics;
+
 pub use caustics::{CausticTap, shafts::ShaftTap};
 pub use optics::{BodyBounds, Optics, OpticsBodies};
 use std::sync::{Arc, Mutex};
