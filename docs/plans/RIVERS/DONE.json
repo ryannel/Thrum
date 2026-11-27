@@ -615,7 +615,7 @@
     {
       "id": "WP6",
       "name": "A waterfall pours over its lip in a smooth tongue, breaks into white strands as it gathers speed and plunges into its pool, which boils, foams and sends out rings",
-      "status": "not_started",
+      "status": "blocked",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -745,7 +745,17 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_context",
+        "what": "Should the next pass replace the flood\u2019s fixed ribbon geometry with strands that separate as they fall and meet the pool at their own contact points?",
+        "work": {
+          "commit": "1849cb3a8845ee799f1b08b35c3cd259e660c68b",
+          "branch": "build/rivers",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/RIVERS/WP6-handoff.md"
+      }
     },
     {
       "id": "WP7",
