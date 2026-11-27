@@ -69,6 +69,7 @@ pub(super) struct WorldCapture {
 }
 
 pub(super) struct WorldUndo {
+    pub(super) rule_boundaries: bool,
     slots: Vec<(u32, Slot)>,
     structural_ticks: Vec<u64>,
     columns: Vec<Box<dyn UndoColumn>>,
@@ -229,6 +230,17 @@ impl WorldUndo {
         }
     }
 
+    pub(super) fn record_spawn(&mut self, world: &RegisteredWorld, slot: u32) {
+        self.record_structural(world, slot);
+        if self.rule_boundaries {
+            // A subsequent rule may edit this life or retire it and reuse its
+            // slot. Record absence in the same sequence as component writes.
+            for (component, column) in self.columns.iter_mut().enumerate() {
+                column.record_absent(slot, world.change_tick_at(component, slot));
+            }
+        }
+    }
+
     pub(super) fn restore(
         &mut self,
         world: &mut RegisteredWorld,
@@ -257,9 +269,11 @@ impl WorldUndo {
                     let slot = handle.slot as usize;
                     let id = world.slots[slot].stable.expect("committed spawned ID");
                     world.ids.remove(id);
-                    let row = world.row_of_slot(handle.slot);
-                    for column in &mut world.columns {
-                        column.clear_slot(row);
+                    if !self.rule_boundaries {
+                        let row = world.row_of_slot(handle.slot);
+                        for column in &mut world.columns {
+                            column.clear_slot(row);
+                        }
                     }
                     world.slots[slot].stable = None;
                     world.live -= 1;
@@ -790,6 +804,7 @@ impl RegisteredWorld {
 
     pub(super) fn empty_undo(&self) -> WorldUndo {
         WorldUndo {
+            rule_boundaries: false,
             slots: Vec::new(),
             structural_ticks: Vec::new(),
             layout_swaps: Vec::with_capacity(256),
@@ -1313,6 +1328,13 @@ impl RegisteredWorld {
             .get(self.row_of_slot(handle.slot))
             .ok_or(RegisteredWorldError::MissingComponent)?;
         Ok(read(value))
+    }
+
+    pub(super) fn has_component(&self, handle: Handle, key: ComponentKey) -> bool {
+        self.entity(handle).is_ok()
+            && self
+                .component_index(key)
+                .is_some_and(|index| self.columns[index].present(self.row_of_slot(handle.slot)))
     }
 
     pub(super) fn present_at<T: Send + Sync + 'static>(&self, component: usize, slot: u32) -> bool {

@@ -10,6 +10,7 @@ pub(super) trait StorageColumn: Send + Sync {
     fn as_any(&self) -> &dyn Any;
     fn as_any_mut(&mut self) -> &mut dyn Any;
     fn active_presence(&self) -> Option<&[u64]>;
+    fn present(&self, row: usize) -> bool;
     fn swap_rows(&mut self, first: usize, second: usize);
     fn clear_slot(&mut self, slot: usize);
     fn clear_all(&mut self);
@@ -143,6 +144,10 @@ impl<T> TypedStore<T> {
 }
 
 impl<T: Send + Sync + 'static> StorageColumn for TypedStore<T> {
+    fn present(&self, row: usize) -> bool {
+        self.get(row).is_some()
+    }
+
     fn as_any(&self) -> &dyn Any {
         self
     }

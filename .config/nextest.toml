@@ -105,3 +105,8 @@ threads-required = 8
 # The exempt list: each test over ten seconds alone on the test build `./dev check` uses, as
 # GATE-TIME M8 measured it. It is empty: GATE-TIME M2, M9 and M3 made each test fast or moved it to
 # the main tier. No landing adds a name (the rule `limit-exempt`).
+
+[[profile.default.overrides]]
+# Exercises the native executor's pool on independent query rows.
+filter = 'package(thrum) & test(=rules::parallel_query_matches_the_serial_loop)'
+threads-required = 4

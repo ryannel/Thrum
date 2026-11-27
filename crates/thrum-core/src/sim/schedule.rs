@@ -98,6 +98,23 @@ impl ComponentRegistry {
         Ok(key)
     }
 
+    /// Register owned portable data that is copied into publication and undo
+    /// with its `Clone` implementation.
+    ///
+    /// # Errors
+    /// The type or schema is already registered.
+    pub fn register_cloned_profile<
+        T: Clone + Send + Sync + crate::profile::StateDecode + 'static,
+    >(
+        &mut self,
+        schema: ComponentSchemaId,
+        nested_bytes: fn(&T) -> usize,
+    ) -> Result<ComponentKey, RegistrationError> {
+        let key = self.register_with_snapshot(schema, T::clone, nested_bytes)?;
+        self.attach_profile::<T>();
+        Ok(key)
+    }
+
     /// Register a portable component with a maintained activity predicate.
     ///
     /// # Errors
@@ -114,7 +131,7 @@ impl ComponentRegistry {
         Ok(key)
     }
 
-    fn attach_profile<T: Copy + Send + Sync + crate::profile::StateDecode + 'static>(&mut self) {
+    fn attach_profile<T: Send + Sync + crate::profile::StateDecode + 'static>(&mut self) {
         self.entries.last_mut().expect("new entry").profile = Some(ProfileComponent {
             valid: |value| {
                 value

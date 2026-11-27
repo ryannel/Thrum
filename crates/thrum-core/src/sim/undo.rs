@@ -10,6 +10,7 @@ use super::column_store::{StorageColumn, TypedStore};
 use super::dense_directory::DenseDirectory;
 
 pub(super) trait UndoColumn: Send + Sync {
+    fn record_absent(&mut self, slot: u32, tick: u64);
     fn as_any(&self) -> &dyn Any;
     fn as_any_mut(&mut self) -> &mut dyn Any;
     fn restore_into(
@@ -82,6 +83,10 @@ impl<T> TypedUndo<T> {
 }
 
 impl<T: Send + Sync + 'static> UndoColumn for TypedUndo<T> {
+    fn record_absent(&mut self, slot: u32, tick: u64) {
+        self.push_component(slot, None, tick);
+    }
+
     fn as_any(&self) -> &dyn Any {
         self
     }

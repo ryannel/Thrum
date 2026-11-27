@@ -600,3 +600,20 @@
   Planner's choices in this revision, each for the owner to overturn: two moves followed in one tick run
   together and are not taken one after the other; `approach_speed` is in units a second; and the overlap
   queries do not use the tolerance.
+
+## WP1 build
+
+- Implemented the headless SDK over the registered simulation. The opt-in rule boundary applies staged
+  structural edits within the engine transaction. The legacy schedule retains its tick-end edit timing.
+  The SDK uses the runtime's revision, digest and history for rules, scene values, phases and their clocks.
+- Mac verification covered written order, access diagnostics, transition requests, clock resume, allocation
+  reuse, replay, and both returned errors and unwinding panics. The Rockfall and Swarm headless examples are
+  compiled in the SDK integration tests. The public-surface guard uses resolved Rustdoc signatures and seven
+  controls, and the repository check runs the guard and SDK doc tests.
+- The worked examples' headless substitutes are tuples, a plain `Position`, and integer constructors for
+  portable positions and speeds. Rockfall's headless finish rule uses a dodged rock in place of the later
+  collision query. Its cadence and score transfer retain the design's form. The phase methods remain
+  chainable after `then`, as in Swarm. Integration tests spell parameter lifetimes as `'_` for the workspace
+  lint. `TestSetup::seed` provides the seeded harness path in R6 for the WP1 replay check.
+- The evidence is under [WP1](../../../.orchestrate/evidence/GAME-SDK/WP1/). The allocation probe covers two
+  small warmed CPU fixtures. Crowd-scale cost and cross-target rule parity are scheduled for WP2.

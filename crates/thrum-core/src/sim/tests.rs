@@ -9,3 +9,5 @@ impl std::fmt::Display for TestError {
 }
 
 impl std::error::Error for TestError {}
+
+mod rule_boundaries;

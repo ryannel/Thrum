@@ -3213,6 +3213,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "thrum"
+version = "0.1.0"
+dependencies = [
+ "thrum-core",
+ "thrum-derive",
+]
+
+[[package]]
 name = "thrum-app"
 version = "0.1.0"
 dependencies = [
@@ -3339,6 +3347,15 @@ dependencies = [
  "smallvec",
  "thrum-test-support",
  "web-time",
+]
+
+[[package]]
+name = "thrum-derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
 ]
 
 [[package]]

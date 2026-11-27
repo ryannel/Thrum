@@ -583,6 +583,7 @@ impl EditScratch {
         journal: &mut Vec<StructuralChange>,
         mut undo: Option<&mut WorldUndo>,
     ) {
+        let at_boundary = undo.as_ref().is_some_and(|undo| undo.rule_boundaries);
         if let Some(undo) = undo.as_deref_mut() {
             self.undo_counts.fill(0);
             let mut structural = 0;
@@ -605,14 +606,20 @@ impl EditScratch {
                     EditKind::Spawn { .. } => structural += 1,
                 }
             }
-            undo.reserve_for(&self.undo_counts, structural, despawns);
+            undo.reserve_for(
+                &self.undo_counts,
+                structural,
+                if at_boundary { structural } else { despawns },
+            );
         }
-        journal.clear();
-        world.begin_tick();
-        if let Some(undo) = undo.as_ref() {
-            undo.visit_changed_components(|component, slot| {
-                world.mark_changed(component, world.handle_at(slot), tick);
-            });
+        if !at_boundary {
+            journal.clear();
+            world.begin_tick();
+            if let Some(undo) = undo.as_ref() {
+                undo.visit_changed_components(|component, slot| {
+                    world.mark_changed(component, world.handle_at(slot), tick);
+                });
+            }
         }
         for edit in edits {
             match &edit.inner {
@@ -661,7 +668,7 @@ impl EditScratch {
         for edit in edits {
             if let EditKind::Spawn { id, .. } = &edit.inner {
                 if let Some(undo) = undo.as_deref_mut() {
-                    undo.record_structural(world, world.next_free_slot());
+                    undo.record_spawn(world, world.next_free_slot());
                 }
                 let handle = world
                     .spawn_prepared(*id, &mut self.builders[spawn], tick)

@@ -14,6 +14,14 @@ allowed_workspace_dependencies = ["thrum-render"]
 manifest = "crates/thrum-core/Cargo.toml"
 allowed_workspace_dependencies = ["thrum-test-support"]
 
+[packages.thrum]
+manifest = "crates/thrum/Cargo.toml"
+allowed_workspace_dependencies = ["thrum-core", "thrum-derive"]
+
+[packages.thrum-derive]
+manifest = "crates/thrum-derive/Cargo.toml"
+allowed_workspace_dependencies = []
+
 [packages.thrum-sim2d]
 manifest = "crates/thrum-sim2d/Cargo.toml"
 allowed_workspace_dependencies = ["thrum-core", "thrum-test-support"]
@@ -512,3 +520,21 @@ release = "vendor/releases/wgpu-core-30.0.1.crate"
 sha256 = "14c018fce9b6270aa203c2fdd56f3cce996713534bd757e4ea58c8560b121f14"
 license = "MIT OR Apache-2.0"
 purpose = "Validate Metal pipeline cache headers through the public wgpu cache API"
+
+[external_dependencies.proc-macro2]
+requirement = "=1.0.107"
+license = "MIT OR Apache-2.0"
+purpose = "Parse and generate the game SDK's deterministic world-data and parameter derives"
+target_cost = "Host-only procedural macro dependency, with no game runtime cost"
+
+[external_dependencies.quote]
+requirement = "=1.0.47"
+license = "MIT OR Apache-2.0"
+purpose = "Parse and generate the game SDK's deterministic world-data and parameter derives"
+target_cost = "Host-only procedural macro dependency, with no game runtime cost"
+
+[external_dependencies.syn]
+requirement = "=2.0.119"
+license = "MIT OR Apache-2.0"
+purpose = "Parse and generate the game SDK's deterministic world-data and parameter derives"
+target_cost = "Host-only procedural macro dependency, with no game runtime cost"

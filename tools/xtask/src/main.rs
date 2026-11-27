@@ -787,6 +787,10 @@ fn check_steps(
         python(&["scripts/sim2d_profile.py", "check"])?;
         python(&["scripts/sim2d_profile.py", "controls"])
     })?;
+    record.step("game SDK surface guard", |_| {
+        python(&["scripts/sdk_surface.py", "check"])?;
+        python(&["scripts/sdk_surface.py", "controls"])
+    })?;
     record.step("exact-baseline reference guard", |_| {
         python(&["scripts/exact_baselines.py", "guard"])
     })?;
