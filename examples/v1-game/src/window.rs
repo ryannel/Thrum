@@ -243,7 +243,7 @@ pub fn run_window(
     #[cfg(feature = "proving")]
     let chart_extent = governor
         .chart_jump
-        .and_then(|_| governor.route.as_deref())
+        .and(governor.route.as_deref())
         .and_then(|route| crate::CameraRoute::declared(route).ok())
         .map(|(extent, _)| extent);
     let config = Config {
