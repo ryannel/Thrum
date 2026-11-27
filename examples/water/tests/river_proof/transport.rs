@@ -174,8 +174,16 @@ fn query(gpu: &thrum_test_support::Gpu) {
             actual.surface.current
         );
     }
-    assert!(!answers[3].surface.wet, "under the falling sheet");
-    assert!(answers[4].surface.wet, "plunge pool");
+    let (cliff, pool) = (&answers[3].surface, &answers[4].surface);
+    assert!(
+        cliff.wet && pool.wet,
+        "the plunge pool stands against the cliff"
+    );
+    assert_eq!(
+        cliff.body, pool.body,
+        "the reach owns the water beneath the fall"
+    );
+    assert!((cliff.sample.height - pool.sample.height).abs() < 0.000_04);
     for pair in answers[5..11].as_chunks::<2>().0 {
         assert!(pair.iter().all(|row| row.surface.wet));
         assert_ne!(pair[0].surface.body, pair[1].surface.body);
