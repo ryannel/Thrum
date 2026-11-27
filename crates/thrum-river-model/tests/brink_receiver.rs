@@ -2,7 +2,10 @@
 #[path = "../../../tests/fixtures/rivers/brink_receiver.rs"]
 mod setup;
 
-use thrum_water_model::{Below, BodyKind, Fall, FallSegment, Map, PathPoint};
+use thrum_water_model::{
+    Below, BodyKind, ChartSamples, Fall, FallSegment, FlowSample, Gauge, Map, PathPoint, River,
+    Stage,
+};
 
 #[test]
 fn basin_and_reach_wet_and_support_the_rock_below_narrow_and_wide_brinks() {
@@ -91,6 +94,43 @@ fn a_fall_is_refused_at_an_interior_maximum_of_the_receiving_rows_range() {
         assert_eq!(levels[1] >= lip, drowned, "{levels:?}");
         verdict(&map, &fall(lip, 1, false), drowned);
     }
+}
+
+#[test]
+fn the_receiving_reachs_middle_gauge_sample_can_drown_a_fall() {
+    let (mut map, receiver) = unjoined(false, 0.0);
+    let BodyKind::Chart(chart) = &map.body(receiver).expect("receiver").kind else {
+        panic!("receiving chart");
+    };
+    let count = chart.levels.len();
+    let sample = |level: f64| FlowSample {
+        levels: vec![level; count],
+        currents: vec![[0.0; 2]; count],
+        loss: vec![0.0; count],
+        gains: vec![[0.0; 2]; count],
+    };
+    map.add_river(River {
+        name: "Variable receiving reach".into(),
+        gauges: vec![0.0, 1.0, 2.0],
+        gauge: Gauge::Stage(Stage {
+            min: 0.0,
+            max: 2.0,
+            value: 0.0,
+        }),
+        charts: vec![ChartSamples {
+            body: receiver,
+            samples: vec![sample(0.0), sample(3.8), sample(1.0)],
+            wetting: vec![vec![None; count]; 2],
+        }],
+    })
+    .expect("receiving flow samples");
+    let fall = fall(3.5, 1, false);
+    let foot = fall.segments[0].path[1].place;
+    for (gauge, level) in [(0.0, 0.0), (1.0, 3.8), (2.0, 1.0)] {
+        map.set_gauge(0, gauge).expect("test gauge");
+        close(map.sample(foot).expect("receiving row").row.level, level);
+    }
+    verdict(&map, &fall, true);
 }
 
 fn unjoined(basin: bool, rise: f64) -> (Map, usize) {
