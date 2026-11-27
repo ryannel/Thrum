@@ -17,6 +17,8 @@ use thrum_render::runtime::{CaptureLimits, FrameSample};
 // Keep ordinary elapsed-time stepping and pan speed; bound the observer, not time.
 const MAX_SUBMISSIONS: usize = 120;
 const CHANNEL_SUBMISSIONS: usize = 180;
+const RIVER_SUBMISSIONS: usize = 240;
+const RIVER_CAPTURE_LEASES: usize = 256;
 const WRITER_QUEUE: usize = 192;
 const CPU_LEASES: usize = 200;
 const PIXEL_ALLOWANCE: u64 = 3 * 1024 * 1024 * 1024;
@@ -24,6 +26,8 @@ const _: () = assert!(MAX_SUBMISSIONS < WRITER_QUEUE);
 const _: () = assert!(MAX_SUBMISSIONS < CPU_LEASES);
 const _: () = assert!(CHANNEL_SUBMISSIONS < WRITER_QUEUE);
 const _: () = assert!(CHANNEL_SUBMISSIONS < CPU_LEASES);
+const _: () = assert!(RIVER_SUBMISSIONS < RIVER_CAPTURE_LEASES);
+const _: () = assert!(RIVER_SUBMISSIONS as u64 * 960 * 540 * 4 < PIXEL_ALLOWANCE);
 const _: () = assert!(CHANNEL_SUBMISSIONS as u64 * 1280 * 720 * 4 < PIXEL_ALLOWANCE);
 const _: () = assert!(MAX_SUBMISSIONS as u64 * 2560 * 1440 * 4 < PIXEL_ALLOWANCE);
 
@@ -136,6 +140,16 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         &[]
     };
     let shot_seconds = 4.0;
+    let cpu_leases = if river_sequence {
+        RIVER_CAPTURE_LEASES
+    } else {
+        CPU_LEASES
+    };
+    let writer_queue = if river_sequence {
+        RIVER_CAPTURE_LEASES
+    } else {
+        WRITER_QUEUE
+    };
     let river_stage = river && matches!(route.as_str(), "stage" | "lake-stage" | "spring-stage");
     let late_channel = channel && route == "late";
     let handoff_cut = surf && route == "handoff-cut";
@@ -181,7 +195,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     } else if surf && island_view == "9" {
         ([2560, 1440], 18.0, 6.5, MAX_SUBMISSIONS)
     } else if river_sequence {
-        ([960, 540], 8.0 * shot_seconds, 7.0, CHANNEL_SUBMISSIONS)
+        ([960, 540], 8.0 * shot_seconds, 7.0, RIVER_SUBMISSIONS)
     } else if river_gauges {
         ([960, 540], 2.0 * shot_seconds, 16.0, CHANNEL_SUBMISSIONS)
     } else if river_stage {
@@ -309,7 +323,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             3,
             CaptureLimits {
                 staging_slots: 6,
-                cpu_buffers: CPU_LEASES,
+                cpu_buffers: cpu_leases,
                 byte_allowance: PIXEL_ALLOWANCE,
             },
         )
@@ -321,7 +335,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     };
     let output = std::fs::File::create(directory.join(file)).expect("spool");
     let writer =
-        ImageWriter::start(output, WRITER_QUEUE, 6 * 1024 * 1024 * 1024, encoding).expect("writer");
+        ImageWriter::start(output, writer_queue, 6 * 1024 * 1024 * 1024, encoding).expect("writer");
     let begin = Instant::now();
     let mut submitted = 0;
     let mut frames = Vec::new();
@@ -618,7 +632,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         !handoff_cut || cut.is_some(),
         "capture reached the camera change"
     );
-    json!({"schema":1,"target":"mac-metal","mode":"realtime","commit":std::env::var("THRUM_WATER_COMMIT").unwrap_or_else(|_|"working tree diagnostic".into()),"extent":extent,"vertices":prepared.vertices,"resources":prepared.resources,"wind":island.or(floating.map(|f| f.wind)).or(dive_site.map(|(wind,_)| wind)).map(|w| format!("{w:?}")),"dive_site":dive_site.map(|(_,site)|site.name()),"dive_camera":dive_site.map(|(_,site)| held_dive.map_or_else(|| json!({"sweep_depth":site.crossing_depth(),"pitch":0}), |(depth,pitch)| json!({"depth":depth,"pitch":pitch}))),"island_view":(yard || island.is_some()).then_some(&island_view),"weather_edits":weather_edits,"footfall_route":footfall.then_some(&route),"footfall_sun":footfall_sun,"footfall_steps":footfall_steps,"yard_levels":yard_levels,"camera_cut":cut,"channel_view":channel.then_some(channel_view),"channel_route":channel.then_some(&route),"river_view":river.then_some(river_view),"river_inspection":river_inspection.map(|shot| json!({"name":shot.name,"start":shot.start,"position":shot.camera.position,"target":shot.camera.target})),"river_route":river.then_some(&route),"floating_view":floating.map(|f| f.wake.map_or_else(|| if f.chase {"chase".into()} else {String::new()}, |wake| format!("{:?}", wake.view).to_lowercase())),"craft_speed":floating.map(|f| f.speed),"clock":if late_channel {"ordinary submits at 60 seconds plus actual elapsed time"} else if footfall {"ordinary submits on monotonic elapsed time after the dry yard preroll"} else {"ordinary Offscreen::step on actual monotonic world time; asynchronous in-flight frames"},"opportunities_hz":opportunities,"frames":frames,"hashes":written.frame_hashes,"encoding":format!("{encoding:?}"),"omissions":runtime.omissions(),"capture_limits":{"interval_seconds":interval,"max_submissions":max_submissions,"gpu_staging_slots":6,"cpu_image_leases":CPU_LEASES,"pixel_byte_allowance":PIXEL_ALLOWANCE,"writer_queue":WRITER_QUEUE,"raw_spool_allowance":6_u64*1024*1024*1024},"writer_seconds":written.write_time.as_secs_f64(),"body_tick_poses":poses,"query":fleet.map(|(_,mailbox)|format!("{:?}",mailbox.stats())), "wake_route": (wake || whitewater).then_some(route), "interaction":prepared.interaction.map(|wake| format!("{wake:?}")), "foam":prepared.foam.map(|foam| format!("{foam:?}")), "foam_pattern":prepared.foam_pattern})
+    json!({"schema":1,"target":"mac-metal","mode":"realtime","commit":std::env::var("THRUM_WATER_COMMIT").unwrap_or_else(|_|"working tree diagnostic".into()),"extent":extent,"vertices":prepared.vertices,"resources":prepared.resources,"wind":island.or(floating.map(|f| f.wind)).or(dive_site.map(|(wind,_)| wind)).map(|w| format!("{w:?}")),"dive_site":dive_site.map(|(_,site)|site.name()),"dive_camera":dive_site.map(|(_,site)| held_dive.map_or_else(|| json!({"sweep_depth":site.crossing_depth(),"pitch":0}), |(depth,pitch)| json!({"depth":depth,"pitch":pitch}))),"island_view":(yard || island.is_some()).then_some(&island_view),"weather_edits":weather_edits,"footfall_route":footfall.then_some(&route),"footfall_sun":footfall_sun,"footfall_steps":footfall_steps,"yard_levels":yard_levels,"camera_cut":cut,"channel_view":channel.then_some(channel_view),"channel_route":channel.then_some(&route),"river_view":river.then_some(river_view),"river_inspection":river_inspection.map(|shot| json!({"name":shot.name,"start":shot.start,"position":shot.camera.position,"target":shot.camera.target})),"river_route":river.then_some(&route),"floating_view":floating.map(|f| f.wake.map_or_else(|| if f.chase {"chase".into()} else {String::new()}, |wake| format!("{:?}", wake.view).to_lowercase())),"craft_speed":floating.map(|f| f.speed),"clock":if late_channel {"ordinary submits at 60 seconds plus actual elapsed time"} else if footfall {"ordinary submits on monotonic elapsed time after the dry yard preroll"} else {"ordinary Offscreen::step on actual monotonic world time; asynchronous in-flight frames"},"opportunities_hz":opportunities,"frames":frames,"hashes":written.frame_hashes,"encoding":format!("{encoding:?}"),"omissions":runtime.omissions(),"capture_limits":{"interval_seconds":interval,"max_submissions":max_submissions,"gpu_staging_slots":6,"cpu_image_leases":cpu_leases,"pixel_byte_allowance":PIXEL_ALLOWANCE,"writer_queue":writer_queue,"raw_spool_allowance":6_u64*1024*1024*1024},"writer_seconds":written.write_time.as_secs_f64(),"body_tick_poses":poses,"query":fleet.map(|(_,mailbox)|format!("{:?}",mailbox.stats())), "wake_route": (wake || whitewater).then_some(route), "interaction":prepared.interaction.map(|wake| format!("{wake:?}")), "foam":prepared.foam.map(|foam| format!("{foam:?}")), "foam_pattern":prepared.foam_pattern})
 }
 fn drain(
     runtime: &mut Offscreen<SkyGame>,

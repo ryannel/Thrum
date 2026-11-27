@@ -15,7 +15,7 @@ mod river_foam {
 
     use super::support::{Fixture, foam_buffer, foam_stocks};
 
-    const STEP: Duration = Duration::from_nanos(16_666_667);
+    const STEP: Duration = Duration::from_nanos(33_333_333);
     const STATIONS: [(&str, f64); 8] = [
         ("riffle", -84.0),
         ("headwater transition", -75.0),
@@ -122,7 +122,7 @@ mod river_foam {
         scene.host.set_quality_knob(&knob, 4).expect("cadence");
         let mut frame = |seconds: f64| drop(scene.frame_without_timings(seconds));
         frame(0.0);
-        for tick in (4..=48).step_by(4) {
+        for tick in (4..=24).step_by(4) {
             frame(f64::from(tick) * STEP.as_secs_f64());
         }
         let current = measure(
@@ -132,7 +132,7 @@ mod river_foam {
             true,
         );
         control.set_chart_loss_births(false);
-        for tick in (52..=136).step_by(4) {
+        for tick in (28..=68).step_by(4) {
             scene.frame_without_timings(f64::from(tick) * STEP.as_secs_f64());
         }
         let fading = measure(
@@ -146,7 +146,7 @@ mod river_foam {
             .expect("valley")
             .set_gauge(0, lower)
             .expect("low gauge");
-        for tick in (140..=164).step_by(4) {
+        for tick in (72..=84).step_by(4) {
             scene.frame_without_timings(f64::from(tick) * STEP.as_secs_f64());
         }
         let low = measure(
@@ -159,7 +159,7 @@ mod river_foam {
             .expect("valley")
             .set_gauge(0, upper)
             .expect("high gauge");
-        for tick in (168..=200).step_by(4) {
+        for tick in (88..=100).step_by(4) {
             scene.frame_without_timings(f64::from(tick) * STEP.as_secs_f64());
         }
         let high = measure(
@@ -189,6 +189,15 @@ mod river_foam {
         }
         assert!(current[4].births > 0.05 && current[5].births > 0.05 && current[6].births > 0.05);
         assert!(fading.iter().all(|station| station.births == 0.0));
+        assert!(current.iter().all(|station| station.cells > 0));
+        assert!(
+            current[2].cover < 0.014 && current[3].cover < 0.014,
+            "the pool and glide do not locally build visible foam"
+        );
+        assert!(
+            fading[1].cover >= current[1].cover,
+            "the transition receives transported foam even though births are off"
+        );
         assert!(fading[4].cover < current[4].cover && fading[5].cover < current[5].cover);
         assert!(low[4].cover < high[4].cover);
     }

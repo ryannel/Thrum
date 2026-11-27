@@ -266,6 +266,8 @@ pub fn build(wind: Wind, draw_water: bool, store: Option<&Path>) -> Result<Scene
 /// Build the river selection with a switch for comparing its original chart surface.
 /// # Errors
 /// Returns invalid assets, water or controls.
+/// # Panics
+/// Panics if the water map lock is poisoned or its bounded controls fail.
 pub fn build_with_flow(
     wind: Wind,
     draw_water: bool,

@@ -49,6 +49,28 @@ const lensObserver = `
   watchLensPipeline(GPURenderPassEncoder.prototype,'water through lens','composition');
   watchLensPipeline(GPUComputePassEncoder.prototype,'water lens cut','cut');
 `;
+function riverLook(rgba, station) {
+  // Windows stay within the submitted water for the three fixed river lenses.
+  const windows={
+    riffle:[[0.53,0.64,0.50,0.55]],
+    pool:[[0.56,0.64,0.66,0.78]],
+    ledge:[[0.24,0.40,0.47,0.60],[0.62,0.75,0.66,0.76]],
+  };
+  return windows[station].map(([x0,x1,y0,y1])=>{
+    let edge=0,bright=0,count=0;
+    for(let y=Math.floor(y0*height);y<y1*height;y+=2){
+      for(let x=Math.floor(x0*width);x<x1*width;x+=2){
+        const at=(y*width+x)*4;
+        const [r,g,b]=rgba.subarray(at,at+3);
+        const delta=(r+g+b-rgba[at+8]-rgba[at+9]-rgba[at+10])/3;
+        edge+=delta*delta;
+        if(Math.min(r,g,b)>145&&Math.max(r,g,b)-Math.min(r,g,b)<55)bright++;
+        count++;
+      }
+    }
+    return {edge_rms:Math.sqrt(edge/count),bright_cover:bright/count};
+  });
+}
 const frameInfo = text => Object.fromEntries(
   text.split(' ').map(pair => pair.split('=')).map(([key, value]) => [key, Number(value)]),
 );
@@ -628,6 +650,7 @@ try {
     }
     assert(submitted.generation===Number(/device=(\d+)/.exec(image.identity)[1]),`${name}: frame report generation differs`);
     const record={name,file,...image,...info,frame_report:submitted,sha256_rgba:hash(rgba)};
+    if(mode==='river-calm')record.water=riverLook(rgba,name);
     if(probe){
       const [params,long,cascades]=await evaluate('__readFields()');
       const anchor=await evaluate('JSON.parse(game.controls_json()).controls.filter(c=>c.key.startsWith("camera.")).map(c=>[c.key,c.value])');
@@ -898,7 +921,7 @@ try {
     })()`);
     for(const [camera,name] of [[2,'riffle'],[0,'pool'],[3,'ledge']]){
       await evaluate(`game.edit_control('camera.river',${camera})`);
-      for(let tick=0;tick<16;tick++){
+      for(let tick=0;tick<(name==='ledge'?72:16);tick++){
         await until(()=>evaluate('game.frame_ready()'),'calm river frame slot');
         await drive(1000/30);
       }
@@ -908,6 +931,9 @@ try {
     const specialized=await evaluate('__island.source.includes("fn surface_flow(") && __island.source.includes("fn foam_surface(")');
     assert(specialized&&submitted.flow>flowPasses.flow&&submitted.foam>flowPasses.foam,'calm river flow and whitewater must submit');
     assert(result.frames.length===3&&new Set(result.frames.map(frame=>frame.sha256_rgba)).size===3,'three calm river cameras must submit distinct output');
+    const [riffle,pool,ledge]=result.frames.map(frame=>frame.water);
+    assert(riffle[0].edge_rms>3*pool[0].edge_rms && riffle[0].edge_rms>4,'riffle must glitter while the pool stays smooth');
+    assert(ledge[0].bright_cover>0.001 && ledge[0].bright_cover>2*ledge[1].bright_cover,'bright foam cover must thin below the ledge');
     result.river_calm={passes:submitted};
   } else if(mode==='river'){
     const floats=()=>evaluate('(game.report(),globalThis.waterRiverFloats)');
