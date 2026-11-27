@@ -35,7 +35,9 @@ fn dry_wetness_provider_is_pixel_exact() {
         };
         let ordinary = capture(&mut absent);
         let registered = capture(&mut dry);
-        let changed = ordinary.chunks_exact(4).zip(registered.chunks_exact(4))
+        let (ordinary, _) = ordinary.as_chunks::<4>();
+        let (registered, _) = registered.as_chunks::<4>();
+        let changed = ordinary.iter().zip(registered)
             .filter(|(left, right)| left != right).count();
         assert_eq!(changed, 0, "the dry provider changed submitted pixels");
     });
