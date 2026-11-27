@@ -366,7 +366,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- One command runs the same showcase on the Mac's Apple recipe, on its portable recipe and in Chrome, and each run says exactly what it ran (SHOWCASE WP7): In Progress · [plan](SHOWCASE/PLAN.md) · [latest review](../../.orchestrate/evidence/SHOWCASE/WP7-review.md)
+- One command runs the same showcase on the Mac's Apple recipe, on its portable recipe and in Chrome, and each run says exactly what it ran (SHOWCASE WP7): Ready for Review · [plan](SHOWCASE/PLAN.md) · [latest review](../../.orchestrate/evidence/SHOWCASE/WP7-review.md)
 - The camera goes under water: the waterline crosses the lens, and the surface overhead shows the sky through a bright window (WATERS WP15): In Progress · [plan](WATERS/PLAN.md) · [latest review](../../.orchestrate/evidence/WATERS/WP15-review.md)
 - Mist and fog banks reach the horizon, low cloud hides the hilltops, and a climbing camera passes into the cloud and out above it (CLOUDS WP15): In Progress · [plan](CLOUDS/PLAN.md) · [latest review](../../.orchestrate/evidence/CLOUDS/WP15-review.md)
 - On the island a stream runs from a spring through a pool and a narrows to the lake, and a river runs from the lake to the sea; raise the lake and the river swells, and a float rides from the spring to the sea (RIVERS WP4): In Progress · [plan](RIVERS/PLAN.md) · [latest review](../../.orchestrate/evidence/RIVERS/WP4-review.md)
@@ -376,31 +376,31 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Recently done
 
-- Rain rings every water it falls on, the puddles, the lake and the sea, more and rougher as it grows and not at all under the roof, and the rings run out when the rain stops (PUDDLES WP4), 26 Nov · [review](../../.orchestrate/evidence/PUDDLES/WP4-review.md)
+- Rain rings every water it falls on, the puddles, the lake and the sea, more and rougher as it grows and not at all under the roof, and the rings run out when the rain stops (PUDDLES WP4), 26 Nov · review `.orchestrate/evidence/PUDDLES/WP4-review.md` (cleared)
 - A running game can say exactly which cooked content it is drawing, so two stores at the same generation cannot be mistaken for each other (CONTENT-LOOP WP6), 26 Nov · [review](../../.orchestrate/evidence/CONTENT-LOOP/WP6-review.md)
-- Mist lies in the valley's hollows and fades the land near the camera, in the land's own light (CLOUDS WP14), 26 Nov · [review](../../.orchestrate/evidence/CLOUDS/WP14-review.md)
+- Mist lies in the valley's hollows and fades the land near the camera, in the land's own light (CLOUDS WP14), 26 Nov · review `.orchestrate/evidence/CLOUDS/WP14-review.md` (cleared)
 - The owner can read, in one reviewed document, what Thrum's Metal pipeline cache would offer wgpu and what to settle there first (APPLE-PRESENTATION U1), 26 Nov · review `.orchestrate/evidence/APPLE-PRESENTATION/U1-review.md` (cleared)
 - Apple tile with MetalFX and EDR is compared with portable TAAU on the route, and each clause of G4 is proved (APPLE-PRESENTATION WP11), 26 Nov · review `.orchestrate/evidence/APPLE-PRESENTATION/WP11-review.md` (cleared)
-- The check that a river file keeps each sample's own gains runs on a small reach (RIVERS WP10), 26 Nov · [review](../../.orchestrate/evidence/RIVERS/WP10-review.md)
+- The check that a river file keeps each sample's own gains runs on a small reach (RIVERS WP10), 26 Nov · review `.orchestrate/evidence/RIVERS/WP10-review.md` (cleared)
 - A second game, the crowd view with a status display, runs on the Mac, in Chrome and as its own app on the iPhone simulator, through the shells the V1 game uses (GAME-UI WP6), 26 Nov · review `.orchestrate/evidence/GAME-UI/WP6-review.md` (cleared)
-- A few stations check the Metal surf query against the model (WATERS WP25), 26 Nov · [review](../../.orchestrate/evidence/WATERS/WP25-review.md)
-- The twelve accepted cloud volumes and the growing congestus each read as themselves in the finished sky (CLOUDS WP10), 26 Nov · [review](../../.orchestrate/evidence/CLOUDS/WP10-review.md)
+- A few stations check the Metal surf query against the model (WATERS WP25), 26 Nov · review `.orchestrate/evidence/WATERS/WP25-review.md` (cleared)
+- The twelve accepted cloud volumes and the growing congestus each read as themselves in the finished sky (CLOUDS WP10), 26 Nov · review `.orchestrate/evidence/CLOUDS/WP10-review.md` (cleared)
 - A warm launch compiles no pipeline: the local pipeline archive is proved by a strict fresh-process run (APPLE-PRESENTATION WP12), 26 Nov · review `.orchestrate/evidence/APPLE-PRESENTATION/WP12-review.md` (cleared)
-- Water runs down a channel from the lake to the sea: its surface follows the slope, its ripples and foam travel with the current, and a float is carried down to the sea (WATERS WP9), 26 Nov · [review](../../.orchestrate/evidence/WATERS/WP9-review.md)
-- On the island, rain fills the hollows of a yard: puddles lie level in the ground, grow, join and shrink with a clean waterline, show the ground through them and mirror the sky, and a float sits in one (PUDDLES WP3), 26 Nov · [review](../../.orchestrate/evidence/PUDDLES/WP3-review.md)
+- Water runs down a channel from the lake to the sea: its surface follows the slope, its ripples and foam travel with the current, and a float is carried down to the sea (WATERS WP9), 26 Nov · review `.orchestrate/evidence/WATERS/WP9-review.md` (cleared)
+- On the island, rain fills the hollows of a yard: puddles lie level in the ground, grow, join and shrink with a clean waterline, show the ground through them and mirror the sky, and a float sits in one (PUDDLES WP3), 26 Nov · review `.orchestrate/evidence/PUDDLES/WP3-review.md` (cleared)
 - The status display, the modal choice and the join screen work on the iPhone simulator, and a game maker can build an interface from the guide (GAME-UI WP5), 26 Nov · review `.orchestrate/evidence/GAME-UI/WP5-review.md` (cleared)
-- A visitor changes coverage, cloud type, wind and time of day with the controls, and the sky holds up in motion, on the Mac and in Chrome (CLOUDS WP9), 26 Nov · [review](../../.orchestrate/evidence/CLOUDS/WP9-review.md)
+- A visitor changes coverage, cloud type, wind and time of day with the controls, and the sky holds up in motion, on the Mac and in Chrome (CLOUDS WP9), 26 Nov · review `.orchestrate/evidence/CLOUDS/WP9-review.md` (cleared)
 - A modal choice and a join screen are worked by key, pointer and touch, and nothing the interface consumes reaches the game (GAME-UI WP4), 26 Nov · review `.orchestrate/evidence/GAME-UI/WP4-review.md` (cleared)
-- Calm chart water reflects the scene, and rough chart water copies only its shallows (WATERS WP24), 26 Nov · [review](../../.orchestrate/evidence/WATERS/WP24-review.md)
+- Calm chart water reflects the scene, and rough chart water copies only its shallows (WATERS WP24), 26 Nov · review `.orchestrate/evidence/WATERS/WP24-review.md` (cleared)
 - A status display of a health bar, a timer and counters stays readable and in place at every window size, density and safe area (GAME-UI WP3), 26 Nov · review `.orchestrate/evidence/GAME-UI/WP3-review.md` (cleared)
-- Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night (WATERS WP8), 26 Nov · [review](../../.orchestrate/evidence/WATERS/WP8-review.md)
+- Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night (WATERS WP8), 26 Nov · review `.orchestrate/evidence/WATERS/WP8-review.md` (cleared)
 - The water's reflection and shade tests compile for Linux and Windows too (WATERS WP23), 26 Nov
 - Shaders compiled ahead of time load at launch with no WGSL translation, and pipelines are prepared in parallel (APPLE-PRESENTATION WP10), 26 Nov · review `.orchestrate/evidence/APPLE-PRESENTATION/WP10-review.md` (cleared)
-- Under a clouded sky the land is lit by the clouds: an overcast valley is grey and soft, haze dims with it, and polished surfaces reflect the clouds (CLOUDS WP8), 26 Nov · [review](../../.orchestrate/evidence/CLOUDS/WP8-review.md)
+- Under a clouded sky the land is lit by the clouds: an overcast valley is grey and soft, haze dims with it, and polished surfaces reflect the clouds (CLOUDS WP8), 26 Nov · review `.orchestrate/evidence/CLOUDS/WP8-review.md` (cleared)
 - Text is drawn from a cooked font, every glyph crisp at 1×, 2× and 3×, and an edited font shows in the running game (GAME-UI WP2), 26 Nov · review `.orchestrate/evidence/GAME-UI/WP2-review.md` (cleared)
 - Surface, device and display changes create nothing during play, and launch-to-ready time is on record (APPLE-PRESENTATION WP9), 26 Nov · review `.orchestrate/evidence/APPLE-PRESENTATION/WP9-review.md` (cleared)
-- With clouds drifting, the player sees a new frame as steadily as in the same game without them, in its ordinary window on the Mac (CLOUDS WP20), 25 Nov · [review](../../.orchestrate/evidence/CLOUDS/WP20-review.md)
-- While clouds drift, the game can say where each lost refresh went, and the losses the clouds cause are fixed (CLOUDS WP19), 25 Nov · [review](../../.orchestrate/evidence/CLOUDS/WP19-review.md)
+- With clouds drifting, the player sees a new frame as steadily as in the same game without them, in its ordinary window on the Mac (CLOUDS WP20), 25 Nov · review `.orchestrate/evidence/CLOUDS/WP20-review.md` (cleared)
+- While clouds drift, the game can say where each lost refresh went, and the losses the clouds cause are fixed (CLOUDS WP19), 25 Nov · review `.orchestrate/evidence/CLOUDS/WP19-review.md` (cleared)
 - MetalFX reconstructs the valley on Apple tile, with TAAU as its prepared fallback (APPLE-PRESENTATION WP8), 25 Nov · review `.orchestrate/evidence/APPLE-PRESENTATION/WP8-review.md` (cleared)
 - Panels and marks a game draws appear over its own frame, exact to the pixel, on the Mac and in Chrome, and a game with no interface pays nothing (GAME-UI WP1), 25 Nov · review `.orchestrate/evidence/GAME-UI/WP1-review.md` (cleared)
 - The reference crowd is played in a window by a host and by clients on the Mac and in Chrome, each world stepped by its match (SESSION WP7), 25 Nov · review `.orchestrate/evidence/SESSION/WP7-review.md` (cleared)
@@ -414,7 +414,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - The long tests pass again, and running out of GPU timers is a named error, not a lost device (APPLE-PRESENTATION WP16), 25 Nov
 - The governor holds the display rate under forced load, then recovers step by step (APPLE-PRESENTATION WP7), 25 Nov · review `.orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md` (cleared)
 - A passing exact-image record names the Wasm file that Chrome ran, and a run whose capture ran another fails (BASELINE-GUARD WP3), 25 Nov · review `.orchestrate/evidence/BASELINE-GUARD/WP3-review.md` (cleared)
-- The sky runs from clear through fair and broken to overcast and back, and its clouds drift, form, grow and thin (CLOUDS WP7), 25 Nov · [review](../../.orchestrate/evidence/CLOUDS/WP7-review.md)
+- The sky runs from clear through fair and broken to overcast and back, and its clouds drift, form, grow and thin (CLOUDS WP7), 25 Nov · review `.orchestrate/evidence/CLOUDS/WP7-review.md` (cleared)
 - Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome (WATERS WP13), 25 Nov · review `.orchestrate/evidence/WATERS/WP13-review.md` (cleared)
 - The reference crowd of 10,000 is drawn on the Mac and in Chrome, the sprite scene works on the iPhone simulator, and a game maker can start a 2D scene from the guide (RENDER-2D WP5), 25 Nov · review `.orchestrate/evidence/RENDER-2D/WP5-review.md` (cleared)
 - Merge verification reuses a bounded local Cargo cache (GATE-TIME WP15), 25 Nov · review `.orchestrate/evidence/GATE-TIME/WP15-review.md` (cleared)
@@ -437,7 +437,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A completed Chrome capture survives slow shutdown and leaves no browser or profile (T2-CAPTURE WP4), 24 Nov · review `.orchestrate/evidence/T2-CAPTURE/WP4-review.md` (cleared)
 - A frame's GPU timing is valid, belongs to its frame and allocates nothing, and a resize compiles one graph (REVIEW-RENDER WP5), 24 Nov · review `.orchestrate/evidence/REVIEW-RENDER/WP5-review.md` (cleared)
 - The full workspace check passes when a fast test needs more time on a busy Mac (GATE-TIME WP14), 24 Nov · review `.orchestrate/evidence/GATE-TIME/WP14-review.md` (cleared)
-- A cloud made as content stands in the sky where the weather or the game puts it, lit and shading like the clouds around it, and one grows through its staged keys (CLOUDS WP6), 24 Nov · [review](../../.orchestrate/evidence/CLOUDS/WP6-review.md)
+- A cloud made as content stands in the sky where the weather or the game puts it, lit and shading like the clouds around it, and one grows through its staged keys (CLOUDS WP6), 24 Nov · review `.orchestrate/evidence/CLOUDS/WP6-review.md` (cleared)
 - The submitted craft trail is checked through a minute of ageing in the fast suite (WATERS WP18), 24 Nov · review `.orchestrate/evidence/WATERS/WP18-review.md` (cleared)
 - Corrected replay stays fast and the 100,000-entity run stays covered (REVIEW-ENGINE WP6), 24 Nov · review `.orchestrate/evidence/REVIEW-ENGINE/WP6-review.md` (cleared)
 - Small water checks leave the full sea grids to the long tier (WATERS WP17), 24 Nov · review `.orchestrate/evidence/WATERS/WP17-review.md` (cleared)
@@ -449,7 +449,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A small scene catches wrong secondary-view air and shade (SCENE-VIEWS WP4), 23 Nov · review `.orchestrate/evidence/SCENE-VIEWS/WP4-review.md` (cleared)
 - Chrome's SDR valley matches the retained frames again (APPLE-PRESENTATION WP15), 23 Nov · review `.orchestrate/evidence/APPLE-PRESENTATION/WP15-review.md` (cleared)
 - Small cooked publications prove supersession and safe reuse (CONTENT-LOOP WP5), 23 Nov · review `.orchestrate/evidence/CONTENT-LOOP/WP5-review.md` (cleared)
-- Small cloud products check Metal and portable limits with headroom (CLOUDS WP18), 23 Nov · [review](../../.orchestrate/evidence/CLOUDS/WP18-review.md)
+- Small cloud products check Metal and portable limits with headroom (CLOUDS WP18), 23 Nov · review `.orchestrate/evidence/CLOUDS/WP18-review.md` (cleared)
 - The atmosphere stage registry is checked on a small fixture (REVIEW-RENDER WP6), 23 Nov · review `.orchestrate/evidence/REVIEW-RENDER/WP6-review.md` (cleared)
 - The valley's sky and sunlight pass the route in motion on Mac and Chrome, and G3s closes (ATMOSPHERE WP6), 23 Nov · review `.orchestrate/evidence/ATMOSPHERE/WP6-review.md` (cleared)
 - A small exposure check catches a twilight brightness rebound (APPLE-PRESENTATION WP13), 23 Nov · review `.orchestrate/evidence/APPLE-PRESENTATION/WP13-review.md` (cleared)
@@ -490,13 +490,13 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A merge's check no longer runs the ten-minute gale, the stepped hour, the field flythroughs or the shore-blend solve, and they pass on main after each merge (GATE-TIME WP1), 20 Nov · review `.orchestrate/evidence/GATE-TIME/WP1-review.md` (cleared)
 - Each module's record of what it copied, from where and under what licence is tracked in Git, where a clone gets it (DEAD-TOOLS WP5), 20 Nov · review `.orchestrate/evidence/DEAD-TOOLS/WP5-review.md` (cleared)
 - Pausing, overload, a lost surface and a lost device behave the same in the Mac window, the browser page and the iPhone app (HOST WP2), 20 Nov · review `.orchestrate/evidence/HOST/WP2-review.md` (cleared)
-- Clouds are lit through the whole day: bright sides and shadowed bases at noon, a silver lining against the Sun, sunset colour, and dark shapes against the stars (CLOUDS WP5), 20 Nov · [review](../../.orchestrate/evidence/CLOUDS/WP5-review.md)
+- Clouds are lit through the whole day: bright sides and shadowed bases at noon, a silver lining against the Sun, sunset colour, and dark shapes against the stars (CLOUDS WP5), 20 Nov · review `.orchestrate/evidence/CLOUDS/WP5-review.md` (cleared)
 - Every record a renderer shader reads is one Rust struct and one WGSL declaration, held equal by a test (REVIEW-RENDER WP2), 20 Nov · review `.orchestrate/evidence/REVIEW-RENDER/WP2-review.md` (cleared)
 - From the lookout at sunset the ground runs to its rim with no bright band along it, and at the sunrise stop the sphere and the rock cast long shadows (SHOWCASE WP9), 20 Nov · review `.orchestrate/evidence/SHOWCASE/WP9-review.md` (cleared)
 - Ten thousand sprites follow the simulation, gliding between ticks in an overlap order that holds still (RENDER-2D WP2), 20 Nov · review `.orchestrate/evidence/RENDER-2D/WP2-review.md` (cleared)
 - The valley fills the window at any size, and keeps presenting while the window is resized (APPLE-PRESENTATION WP4), 20 Nov · review `.orchestrate/evidence/APPLE-PRESENTATION/WP4-review.md` (cleared)
 - A player's own character answers at once, while the crowd stays exact (SESSION WP4), 20 Nov · review `.orchestrate/evidence/SESSION/WP4-review.md` (cleared)
-- The same sky and the same shade draw in Chrome (CLOUDS WP4), 20 Nov · [review](../../.orchestrate/evidence/CLOUDS/WP4-review.md)
+- The same sky and the same shade draw in Chrome (CLOUDS WP4), 20 Nov · review `.orchestrate/evidence/CLOUDS/WP4-review.md` (cleared)
 - The craft leaves a wake that spreads behind it, outlives it and lifts a float it crosses, and a stone dropped in the lake sends rings that slow in the shallows and die at the shore (WATERS WP6), 20 Nov · review `.orchestrate/evidence/WATERS/WP6-review.md` (cleared)
 - A player joins mid-game, another drops and returns, a copy that has gone wrong is repaired, and a stuck player never holds the others up (SESSION WP3), 20 Nov · review `.orchestrate/evidence/SESSION/WP3-review.md` (cleared)
 
@@ -516,7 +516,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 | Done 17 Nov |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame, and answer a game's questions every tick even when a frame is skipped | APPLE-TILE WP2 and WP3, APPLE-PRESENTATION WP2, BASELINE-GUARD WP1 | Done 25 Nov |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | Nothing for its WP4; APPLE-PRESENTATION WP2 and WP3, EFFECT-GRAPH WP2, CULLING WP3 | Done 26 Nov |
-| 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP WP2 and CULLING WP3 to start; ATMOSPHERE WP10 for the populated valley's motion review; APPLE-TILE WP12, APPLE-PRESENTATION WP11, ATMOSPHERE WP6 (which closes G3s) and CONTENT-LOOP WP3 and WP6 for the three rows from one command; PLATFORM-RUNTIME-MAC WP3, CREATOR WP3 and APPLE-PRESENTATION WP17 as well to close | WP7 of 5 · In Progress |
+| 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP WP2 and CULLING WP3 to start; ATMOSPHERE WP10 for the populated valley's motion review; APPLE-TILE WP12, APPLE-PRESENTATION WP11, ATMOSPHERE WP6 (which closes G3s) and CONTENT-LOOP WP3 and WP6 for the three rows from one command; PLATFORM-RUNTIME-MAC WP3, CREATOR WP3 and APPLE-PRESENTATION WP17 as well to close | WP7 of 5 · Ready for Review |
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH WP2 for the field on the GPU | Done 14 Nov |
 | 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA WP1 to start; SEA WP2, EFFECT-GRAPH WP3, ATMOSPHERE WP5 and WP9 and CREATOR WP1 for its first frame; CONTENT-LOOP WP1 for foam; APPLE-PRESENTATION WP3 for the whole range in motion; SCENE-VIEWS WP3 for mirrored scenery; EFFECT-GRAPH WP6 for floats in the surf with the game running; APPLE-PRESENTATION's governor and MetalFX work packages to close | WP15 of 25 · In Progress |
 | 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING WP1, ATMOSPHERE WP5 and EFFECT-GRAPH WP3 | Done 23 Nov |
