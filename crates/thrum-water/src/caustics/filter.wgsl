@@ -1,6 +1,7 @@
 @group(0) @binding(0) var source_rungs: texture_2d_array<f32>;
 @group(0) @binding(1) var caustic_sampler: sampler;
 @group(0) @binding(2) var filtered_rungs: texture_storage_2d_array<rgba16float, write>;
+@group(0) @binding(3) var<storage, read> rung_mean: array<f32>;
 
 @compute @workgroup_size(8, 8, 1)
 fn blur(@builtin(global_invocation_id) slot: vec3<u32>) {
@@ -19,7 +20,9 @@ fn blur(@builtin(global_invocation_id) slot: vec3<u32>) {
                 textureSampleLevel(source_rungs, caustic_sampler, uv + offset, i32(slot.z), 0.0).r;
         }
     }
-    textureStore(filtered_rungs, vec2<i32>(slot.xy), i32(slot.z), vec4(irradiance, 0.0, 0.0, 0.0));
+    let mean = rung_mean[slot.z];
+    let balanced = select(1.0, irradiance / max(mean, 0.001), mean > 0.001);
+    textureStore(filtered_rungs, vec2<i32>(slot.xy), i32(slot.z), vec4(balanced, 0.0, 0.0, 0.0));
 }
 
 @compute @workgroup_size(8, 8, 1)

@@ -3,7 +3,6 @@
 mod support;
 
 thrum_test_support::macos_gpu_test! {
-#[expect(clippy::print_stderr, reason = "retain the two submitted shadow centroids")]
 fn the_bed_and_signed_march_share_the_refracted_shadow() {
     use support::optics::{EXTENT, Panel, Rig, attach, camera, water_configured};
     use thrum_render::{atmosphere::AtmosphereFrame, synthetic::FrameLighting};

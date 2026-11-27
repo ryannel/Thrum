@@ -1872,8 +1872,8 @@
           "ask": "Would multiplying the panel's whole colour, sky light included, fail it?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP16/metal-checks.md",
           "verdict": "",
           "review": ""
         },
@@ -1980,8 +1980,8 @@
           "check": "python3 scripts/water_cost.py check --scene under-light",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP16/under-light-cost-3da0f7adfa4b.json",
           "verdict": "",
           "review": ""
         }

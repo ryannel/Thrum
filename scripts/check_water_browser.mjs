@@ -220,7 +220,7 @@ const underLightObserver = `
     if(label==='underwater Sun shafts'){
       const field=values[0];
       return {negative:field.filter(x=>x<0).length,positive:field.filter(x=>x>0).length,
-        peak:field.reduce((a,b)=>Math.max(a,Math.abs(b)),0)};
+        peak:field.reduce((a,b)=>Math.max(a,Math.abs(b)),0), center:field[Math.floor(height/2)*width+Math.floor(width/2)]};
     }
     const difference=(a,b)=>a.reduce((n,x,i)=>n+Math.abs(x-b[i]),0)/a.length;
     let temporal=null;
@@ -823,7 +823,7 @@ try {
     await evaluate('game.begin_capture()');if(probe)await evaluate('__probeNext=true');
     now+=delta;
     const submitted=frameInfo(await evaluate(`game.frame(${now});game.frame_info()`));
-    const image=await until(()=>evaluate('(()=>{const v=game.capture();if(!v)return null;globalThis.__capturePixels=v.rgba;return {identity:v.identity,frame:v.frame};})()'),'submitted image');
+    const image=await until(()=>evaluate('(()=>{const v=game.capture();if(!v)return null;globalThis.__capturePixels=v.rgba;return {identity:v.identity,frame:v.frame,exposure_words:v.exposure_words?Array.from(v.exposure_words):null};})()'),'submitted image');
     await evaluate('game.end_capture()');
     const rgba=await pixels('__capturePixels');
     assert(image.identity.includes('presented=true'),'checkpoint was not the submitted surface frame');
@@ -985,6 +985,7 @@ try {
     const flat=await field();
     assert(flat.rungs.every(row=>row.deviation===0),'a flat field must be exactly one on each rung');
     const calmMarch=await shafts();
+    assert(calmMarch.peak===0,'an unblocked calm march must write zero');
     const trade='?dive=trade&location=sea';
     await sample('trade-bed',trade,lookingDown);
     const initial=await field();
@@ -996,11 +997,71 @@ try {
     const later=frameInfo(await evaluate('game.frame_info()'));
     assert(later.tick>0,'the trade field never advanced its fixed tick');
     const moved=await field();
-    assert(moved.rungs.every(row=>Math.abs(row.mean-1)<0.08),'caustics must conserve light on each trade rung');
+    result.under_light={flat,calmMarch,initial,moved,tradeMarch,later};
+    assert(moved.rungs.every(row=>Math.abs(row.mean-1)<0.08),
+      `caustics must conserve light on each trade rung: ${JSON.stringify(moved.rungs)}`);
     assert(initial.depthDifference>0.01&&moved.temporal.some(d=>d>0.01),'trade ladder must change over depth and time');
     assert(tradeMarch.positive>0&&tradeMarch.negative>0,'a rippled view must retain both signs of scattered light');
     await sample('lake-low-sun','?dive=breeze&location=lake',{'camera.depth':1,'camera.pitch':65,'sun.elevation':15});
-    result.under_light={flat,calmMarch,initial,moved,tradeMarch,lakeMarch:await shafts()};
+    result.under_light.lakeMarch=await shafts();
+    const stations=[-9,-8.5,-8,-7.5,-7,-6.5,-6,-5.5,-5,-4.5,-4,-17];
+    const readBed=async()=>evaluate(`(()=>{
+      const center=(Math.floor(${height}/2)*${width}+Math.floor(${width}/2))*4;
+      return __capturePixels[center+1];
+    })()`);
+    const shadowArms={};
+    for(const [name,isWater] of [['clear-bed',false],['shadowed-bed',false],['clear-water',true],['shadowed-water',true]]){
+      const search='?under-light-probe='+name;
+      await sample(name+'-start',search,{'camera.station':stations[0]});
+      const values=[];
+      for(const [i,x] of stations.entries()){
+        await evaluate(`game.edit_control('camera.station',${x})`);
+        await until(()=>evaluate('game.frame_ready()'),'free Sun path frame',30000);
+        if(isWater){
+          await drive(1000/60);
+          values.push((await shafts()).center);
+        }else{
+          await capture(name+'-'+i,1000/60);
+          values.push(await readBed());
+        }
+      }
+      shadowArms[name]=values;
+    }
+    const shadowCentre=(clear,blocked)=>{
+      const loss=clear.map((value,i)=>value-blocked[i]);
+      const peak=Math.max(...loss);
+      assert(peak>0.000008&&Math.abs(loss.at(-1))<0.1*peak,`no usable refracted shadow: ${loss}`);
+      const weight=loss.map(x=>x>0.5*peak?x:0);
+      const sum=weight.reduce((a,b)=>a+b,0);
+      assert(sum>1.5*peak,`too few dark shadow stations: ${loss}`);
+      return {centre:weight.reduce((a,b,i)=>a+b*stations[i],0)/sum,loss};
+    };
+    result.under_light.shadowArms=shadowArms;
+    const bed=shadowCentre(shadowArms['clear-bed'],shadowArms['shadowed-bed']);
+    const water=shadowCentre(shadowArms['clear-water'],shadowArms['shadowed-water']);
+    result.under_light.shadows={stations,bed,water,tolerance:0.45};
+    assert(Math.abs(bed.centre-water.centre)<0.45,`bed and volume shadow centres differ: ${bed.centre}, ${water.centre}`);
+    await sample('ripple-with-net','?under-light-probe=ripple-with-net',{'camera.station':-6.5});
+    const net=await pixels('__capturePixels');
+    await sample('ripple-without-net','?under-light-probe=ripple-without-net',{'camera.station':-6.5});
+    const even=await pixels('__capturePixels');
+    let brighter=0,darker=0;
+    for(let i=1;i<net.length;i+=4){
+      brighter+=Number(net[i]>even[i]+2);
+      darker+=Number(net[i]+2<even[i]);
+    }
+    result.under_light.receiver={brighter,darker};
+    assert(brighter>100&&darker>100,'the shallow receiver must carry the alternating Sun net');
+    const full=await sample('meter-default','?under-light-probe=meter',{'camera.station':-6.5});
+    const unit=await sample('meter-unit','?under-light-probe=meter-unit',{'camera.station':-6.5});
+    const half=await sample('meter-half','?under-light-probe=meter-half',{'camera.station':-6.5});
+    const incident=words=>new Float32Array(Uint32Array.of(words[3]).buffer)[0];
+    result.under_light.meter={full:full.exposure_words,unit:unit.exposure_words,half:half.exposure_words};
+    assert(full.exposure_words&&unit.exposure_words&&half.exposure_words,'missing camera incident-light words');
+    assert(full.exposure_words.slice(0,4).every((word,i)=>word===unit.exposure_words[i]),
+      'the default and an explicit unit factor must have identical meter words');
+    assert(incident(half.exposure_words)===Math.fround(incident(full.exposure_words)*0.5),
+      'the physical incident meter must halve the measured light with a half factor');
     result.extent=[width,height];
   }else if(mode==='under'){
     const rustc=execFileSync('rustup',['which','--toolchain','stable','rustc'],{encoding:'utf8'}).trim();
@@ -1613,7 +1674,20 @@ try {
       },'optics content drawn');
     }
     let checkpoints;
-    if(routeParams.has('dive')){
+    if(routeParams.has('dive')&&process.env.THRUM_WATER_ROUTE==='under-light'){
+      const site=routeParams.get('location')??'lake';
+      const shallow=['swash','pond'].includes(site);
+      const openSea=['sea','deep-sea'].includes(site);
+      const views=shallow?[['through-shallows',-2,-73,90]]:[
+        ['bed-0.5m',0.5,-45,90],['bed-3m',3,-45,90],['level-0.5m',0.5,0,90],['level-3m',3,0,90],
+        ['shaft-1m',1,67,228],['away-1m',1,67,273],
+        ...(openSea?[['shaft-3m',3,67,228],['away-3m',3,67,273],['shaft-10m',10,67,228],['away-10m',10,67,273]]:[]),
+        ...(site==='deep-sea'?[['bed-20m',20,-35,90],['level-20m',20,0,90]]:[]),
+      ];
+      checkpoints=views.map(([name,depth,pitch,bearing])=>[name,{
+        'camera.depth':depth,'camera.pitch':pitch,'camera.bearing':bearing,'sun.elevation':60,
+      }]);
+    }else if(routeParams.has('dive')){
       checkpoints=[
         ['up-1m',{'camera.depth':1,'camera.pitch':89.99}],
         ['inclined-1m',{'camera.depth':1,'camera.pitch':45}],

@@ -89,3 +89,45 @@ fn sun_visibility_and_orientation_gate_the_net() {
     }
 }
 }
+
+thrum_test_support::macos_gpu_test! {
+fn gathered_panel_carries_the_same_direct_light_modulation_from_both_sides() {
+    use support::optics::{EXTENT, Panel, Rig, attach, camera, sun, water_with_spectrum};
+    use thrum_sea_model::{Cascade, Spectrum};
+    use thrum_water::{Optics, Profile};
+
+    let Some(gpu) = thrum_test_support::gpu("gathered caustic receiver", Some(wgpu::Backend::Metal)) else {
+        return;
+    };
+    let panel = Panel { centre: [0.0, -0.95, 0.0], half_size: [2.5, 0.01, 2.5], radiant: false };
+    let render = |eye_height, caustics| {
+        let view = camera([0.0, eye_height, 0.0], [0.0, -0.95, 0.01], 0.7, 1.0);
+        let spectrum = Spectrum {
+            long: Vec::new(),
+            cascades: [
+                Cascade::new(160.0, &[]).unwrap(),
+                Cascade::new(37.0, &[]).unwrap(),
+                Cascade::new(9.0, &[(5, 0, 0.005, 0.0), (0, 4, 0.004, 0.7)]).unwrap(),
+            ],
+            tail_slope_variance: 0.0,
+        };
+        let water = water_with_spectrum(Some((-1.17, [-6.0; 2], 12.0)),
+            Profile { caustics, underwater: true, optics: Some(Optics::default()), ..Profile::default() }, spectrum);
+        let mut rig = Rig::with_scene(
+            support::device(&gpu.fresh_adapter()), &view, sun(1.0, 0.0), &[panel], None, EXTENT,
+            |scene| scene.sun_path = water.sun_path_provider(),
+        );
+        let bounds = attach(&mut rig, water);
+        assert!(bounds.publish(&[panel.bounds()]));
+        rig.scene_colour().1
+    };
+    for eye_height in [0.55, -0.38] {
+        let with = render(eye_height, true);
+        let without = render(eye_height, false);
+        let (brighter, darker) = with.iter().zip(without).fold((0, 0), |(more, less), (a, b)| {
+            (more + usize::from(a[1] > b[1] * 1.01), less + usize::from(a[1] < b[1] * 0.99))
+        });
+        assert!(brighter > 100 && darker > 100, "lens at {eye_height} m: {brighter} brighter and {darker} darker");
+    }
+}
+}

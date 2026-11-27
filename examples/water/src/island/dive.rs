@@ -315,27 +315,8 @@ fn build(
     } else {
         game
     };
-    let mut meshes = placements(&map, lake, vertical_offset);
+    let meshes = dive_meshes(&map, site, eye_at_surface, vertical_offset, draw_craft);
     let [x, level, z] = eye_at_surface;
-    if !surf && site != DiveSite::Pond {
-        meshes.push(
-            MeshPlacement::new("meshes/float", "textures/white")
-                .at([x + 2.5, level - 1.8, z])
-                .scale(0.38),
-        );
-    }
-    if site == DiveSite::Sea && !draw_craft {
-        meshes.push(
-            MeshPlacement::new("meshes/float", "textures/white")
-                .at([x + 2.5, level, z + 0.7])
-                .scale(1.8)
-                .material(CookedMaterial {
-                    base_colour: [0.76, 0.48, 0.13, 1.0],
-                    roughness: 0.68,
-                    metalness: 0.0,
-                }),
-        );
-    }
     let (game, _) = game.with_meshes_and_texture_lease(
         meshes,
         Some(("water island", &island_material(vertical_offset))),
@@ -359,6 +340,41 @@ fn build(
         game
     };
     Ok((game, report))
+}
+
+fn dive_meshes(
+    map: &Arc<Mutex<thrum_water_model::Map>>,
+    site: DiveSite,
+    eye_at_surface: [f32; 3],
+    vertical_offset: f32,
+    draw_craft: bool,
+) -> Vec<MeshPlacement> {
+    let mut meshes = placements(
+        map,
+        matches!(site, DiveSite::Lake | DiveSite::HighLake),
+        vertical_offset,
+    );
+    let [x, level, z] = eye_at_surface;
+    if !matches!(site, DiveSite::Swash | DiveSite::Pond) {
+        meshes.push(
+            MeshPlacement::new("meshes/float", "textures/white")
+                .at([x + 2.5, level - 1.8, z])
+                .scale(0.38),
+        );
+    }
+    if site == DiveSite::Sea && !draw_craft {
+        meshes.push(
+            MeshPlacement::new("meshes/float", "textures/white")
+                .at([x + 2.5, level, z + 0.7])
+                .scale(1.8)
+                .material(CookedMaterial {
+                    base_colour: [0.76, 0.48, 0.13, 1.0],
+                    roughness: 0.68,
+                    metalness: 0.0,
+                }),
+        );
+    }
+    meshes
 }
 
 #[expect(

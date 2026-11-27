@@ -1889,3 +1889,10 @@
   remainder, the low-Sun alignment of the bed and volume shadows, and live
   changes to all six quality controls without pipeline creation.
   [Target checks](../../../.orchestrate/evidence/WATERS/WP16/metal-checks.md).
+- Metal compared the caustic receiver with both lens sides, in a shadow and
+  with the panel facing down or above the level. The 1440p cost record paired
+  the sea, lake and beach with the WP15 rendering path at the same camera poses.
+  Shared-load GPU sums exceeded one refresh in both arms and each tripwire
+  has its matching pass comparison in the record.
+  [Receiver checks](../../../.orchestrate/evidence/WATERS/WP16/metal-checks.md) ·
+  [Paired cost](../../../.orchestrate/evidence/WATERS/WP16/under-light-cost-3da0f7adfa4b.json).

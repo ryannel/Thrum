@@ -1,5 +1,7 @@
 //! Water example on the engine's normal window and controls.
 use water_scene::settings::Settings;
+#[cfg(target_arch = "wasm32")]
+mod under_light_probe;
 fn main() {
     #[cfg(not(target_arch = "wasm32"))]
     if std::env::args_os()
@@ -8,6 +10,19 @@ fn main() {
     {
         let path = std::env::args_os().nth(2).expect("river output directory");
         prepare_rivers(std::path::Path::new(&path));
+        return;
+    }
+    #[cfg(target_arch = "wasm32")]
+    if let Some(probe) = page_query()
+        .trim_start_matches('?')
+        .split('&')
+        .find_map(|part| part.strip_prefix("under-light-probe="))
+        .and_then(under_light_probe::Probe::named)
+    {
+        thrum_app::sky::run(
+            thrum_app::Config::new("water-scene", "Thrum underwater Sun check"),
+            move || probe.game().map_err(thrum_app::sky::SkyBuildError::Scene),
+        );
         return;
     }
     #[cfg(target_arch = "wasm32")]

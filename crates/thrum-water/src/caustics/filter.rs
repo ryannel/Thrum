@@ -1,6 +1,6 @@
 //! Final caustic irradiance at each depth and progressively larger footprints.
 
-use super::{RUNGS, SIDE};
+use super::{RUNGS, SIDE, mean::Mean};
 use thrum_render::{
     binding,
     contribution::{EffectAccess, EffectCadence, EffectGraph, EffectPass},
@@ -9,11 +9,14 @@ use thrum_render::{
 };
 
 const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
-pub(super) const MIPS: u32 = SIDE.ilog2() + 1;
+const MIPS: u32 = SIDE.ilog2() + 1;
+const MEAN_PASSES: u32 = 2;
+pub(super) const PASSES: u32 = MIPS + MEAN_PASSES;
 const WORKGROUP: u32 = 8;
 
 pub(super) struct Filter {
     pub(super) texture: wgpu::Texture,
+    mean: Mean,
     blur: wgpu::ComputePipeline,
     reduce: wgpu::ComputePipeline,
     bindings: Vec<wgpu::BindGroup>,
@@ -40,6 +43,7 @@ impl Filter {
                 view_formats: &[],
             })
         });
+        let mean = Mean::new(device, drawn);
         let stages = wgpu::ShaderStages::COMPUTE;
         let dimension = wgpu::TextureViewDimension::D2Array;
         let images = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -59,6 +63,7 @@ impl Filter {
                     FORMAT,
                     dimension,
                 ),
+                binding::storage(3, stages, true, mean.values.size()),
             ],
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -125,12 +130,17 @@ impl Filter {
                             binding: 2,
                             resource: wgpu::BindingResource::TextureView(&output),
                         },
+                        wgpu::BindGroupEntry {
+                            binding: 3,
+                            resource: mean.values.as_entire_binding(),
+                        },
                     ],
                 })
             })
             .collect();
         Self {
             texture,
+            mean,
             blur: pipeline("blur"),
             reduce: pipeline("reduce"),
             bindings,
@@ -154,12 +164,22 @@ impl Filter {
             view: Some(wgpu::TextureViewDimension::D2Array),
             history: None,
         };
+        let means = self
+            .mean
+            .declare(graph, access(drawn, 0, AccessKind::SampledRead));
         for mip in 0..MIPS {
             let input = if mip == 0 {
                 (drawn, 0)
             } else {
                 (resource, mip - 1)
             };
+            let mut accesses = vec![
+                access(input.0, input.1, AccessKind::SampledRead),
+                access(resource, mip, AccessKind::StorageWrite),
+            ];
+            if mip == 0 {
+                accesses.push(means.clone());
+            }
             graph.passes.push(EffectPass {
                 name: if mip == 0 {
                     "blur water caustics".into()
@@ -168,10 +188,7 @@ impl Filter {
                 },
                 cadence: EffectCadence::Skippable,
                 async_eligible: false,
-                accesses: vec![
-                    access(input.0, input.1, AccessKind::SampledRead),
-                    access(resource, mip, AccessKind::StorageWrite),
-                ],
+                accesses,
             });
         }
         EffectAccess {
@@ -185,11 +202,16 @@ impl Filter {
 
     pub(super) fn encode(
         &self,
-        mip: u32,
+        step: u32,
         pass: &mut wgpu::ComputePass<'_>,
         frame: &wgpu::BindGroup,
         rungs: u32,
     ) {
+        if step < MEAN_PASSES {
+            self.mean.encode(step, pass, rungs);
+            return;
+        }
+        let mip = step - MEAN_PASSES;
         pass.set_pipeline(if mip == 0 { &self.blur } else { &self.reduce });
         pass.set_bind_group(0, &self.bindings[mip as usize], &[]);
         pass.set_bind_group(1, frame, &[]);
@@ -197,11 +219,12 @@ impl Filter {
         pass.dispatch_workgroups(groups, groups, rungs);
     }
 
-    pub(super) fn bytes() -> u64 {
+    pub(super) fn bytes(&self) -> u64 {
         (0..MIPS)
             .map(|mip| u64::from(SIDE >> mip).pow(2))
             .sum::<u64>()
             * u64::from(RUNGS)
             * 8
+            + self.mean.bytes()
     }
 }

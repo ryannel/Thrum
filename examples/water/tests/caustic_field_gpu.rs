@@ -32,7 +32,6 @@ fn a_flat_surface_draws_a_unit_value_at_every_rung() {
 }
 
 thrum_test_support::macos_gpu_test! {
-#[expect(clippy::print_stderr, reason = "record the submitted rung means")]
 fn a_ripple_moves_light_between_places_and_depths() {
     use std::time::Duration;
     use support::optics::{Rig, attach, camera, sun, water_with_spectrum};
@@ -40,6 +39,9 @@ fn a_ripple_moves_light_between_places_and_depths() {
     use thrum_sea_model::{Cascade, Spectrum};
     use thrum_test_support::readback::{Mip, texture};
     use thrum_water::Profile;
+
+    const RUNG_PIXELS: usize = 512 * 512;
+    const RUNG_COUNT: usize = 13;
 
     let Some(gpu) = thrum_test_support::gpu("caustic ripple", Some(wgpu::Backend::Metal)) else {
         return;
@@ -73,15 +75,13 @@ fn a_ripple_moves_light_between_places_and_depths() {
     assert!(last.tick > first.tick);
     let moved = read(&rig);
 
-    const RUNG_PIXELS: usize = 512 * 512;
-    const RUNG_COUNT: usize = 13;
     assert_eq!(initial.len(), RUNG_COUNT * RUNG_PIXELS);
     let scale = f64::from(u32::try_from(RUNG_PIXELS).unwrap()).recip();
     let difference = |a: &[f64], b: &[f64]| {
         a.iter().zip(b).map(|(x, y)| (x-y).abs()).sum::<f64>() * scale
     };
     for data in [&initial, &moved] {
-        for (rung, values) in data.chunks_exact(RUNG_PIXELS).enumerate() {
+        for (rung, values) in data.as_chunks::<RUNG_PIXELS>().0.iter().enumerate() {
             let mean = values.iter().sum::<f64>() * scale;
             let contrast = values.iter().map(|v| (v-1.0).abs()).sum::<f64>() * scale;
             eprintln!("Rung {rung}: mean {mean:.6}, mean deviation from unity {contrast:.6}");

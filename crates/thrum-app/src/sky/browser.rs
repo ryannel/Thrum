@@ -236,6 +236,13 @@ impl BrowserScene {
             &js("rgba"),
             &js_sys::Uint8Array::from(image.rgba.as_slice()),
         )?;
+        if let Some(words) = image.exposure_gpu_words {
+            js_sys::Reflect::set(
+                &value,
+                &js("exposure_words"),
+                &js_sys::Uint32Array::from(words.as_slice()),
+            )?;
+        }
         js_sys::Reflect::set(
             &value,
             &js("identity"),

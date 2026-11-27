@@ -1,6 +1,7 @@
 //! Draw each refracted sheet into its own caustic depth rung.
 
 mod filter;
+mod mean;
 pub(crate) mod quality;
 pub(crate) mod shafts;
 
@@ -354,14 +355,14 @@ impl Caustics {
 
     pub(super) fn target(&self, index: usize) -> Option<&EffectDrawTarget> {
         let pass = index.checked_sub(self.first)?;
-        if pass == (RUNGS + filter::MIPS) as usize {
+        if pass == (RUNGS + filter::PASSES) as usize {
             return self.columns.as_ref().map(|columns| &columns.target);
         }
         self.targets.get(pass)
     }
 
     pub(super) fn contains(&self, index: usize) -> bool {
-        let count = (RUNGS + filter::MIPS) as usize + usize::from(self.columns.is_some());
+        let count = (RUNGS + filter::PASSES) as usize + usize::from(self.columns.is_some());
         (self.first..self.first + count).contains(&index)
     }
 
@@ -383,7 +384,7 @@ impl Caustics {
         field: &wgpu::BindGroup,
     ) {
         let rung = u32::try_from(index - self.first).expect("caustic draw index");
-        if rung == RUNGS + filter::MIPS {
+        if rung == RUNGS + filter::PASSES {
             if let Some(columns) = &self.columns {
                 pass.set_pipeline(&columns.pipeline);
                 pass.set_bind_group(1, &self.frame, &[]);
@@ -409,7 +410,7 @@ impl Caustics {
     pub(super) fn bytes(&self) -> u64 {
         2 * u64::from(SIDE) * u64::from(SIDE) * u64::from(RUNGS)
             + self.uniform.size()
-            + filter::Filter::bytes()
+            + self.filter.bytes()
             + self
                 .columns
                 .as_ref()
