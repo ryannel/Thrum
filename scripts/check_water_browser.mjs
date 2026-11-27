@@ -793,7 +793,7 @@ try {
   await cdp.call('Page.enable',{},sid);await cdp.call('Runtime.enable',{},sid);
   await installWasmReceipt(cdp,sid);
   const surfRoute=mode==='surf'||surfInspection;
-  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(cloudControls?cloudObserver:'')+(cloudReflection?reflectionObserver:'')+(mode==='under'?lensObserver:'')+(mode==='under-light'?underLightObserver:'')+(['island','surf','channel','river','river-calm','rain-puddles','rain-rings','rain-footfall','rain-ground'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
+  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(cloudControls?cloudObserver:'')+(cloudReflection?reflectionObserver:'')+(['under','under-light'].includes(mode)?lensObserver:'')+(mode==='under-light'?underLightObserver:'')+(['island','surf','channel','river','river-calm','rain-puddles','rain-rings','rain-footfall','rain-ground'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
   const route=cloudRoute??diveRoute??opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='river-calm'?'?river=calm':mode==='river'?'?river=trade':['rain-puddles','rain-rings','rain-footfall','rain-ground'].includes(mode)?'?rain=calm':mode==='under'?lensRoute('sea','baseline'):mode==='under-light'?'?dive=calm&location=sea':mode==='clouds'?'?clouds=fair':'');
   result.route=route;
   const navigate=async search=>{
@@ -816,7 +816,7 @@ try {
     },'the lens page clock origin');
     return origin;
   };
-  let now=mode==='under'?await lensClockOrigin():(fixedSurf||mode==='rain-ground')?await evaluate('performance.now()'):0;
+  let now=['under','under-light'].includes(mode)?await lensClockOrigin():(fixedSurf||mode==='rain-ground')?await evaluate('performance.now()'):0;
   const drive=async delta=>{now+=delta;await evaluate(`game.frame(${now})`);};
   const capture=async(name,delta=1000/120,probe=false)=>{
     await until(()=>evaluate('game.frame_ready()'),'free frame slot');
@@ -964,7 +964,7 @@ try {
     const sample=async(name,search,parameters)=>{
       if(search!==locationRoute){
         result.instantiated_wasm=await navigate(search);
-        now=0;
+        now=await lensClockOrigin();
         locationRoute=search;
       }
       await evaluate(`game.apply_params(${JSON.stringify(JSON.stringify(parameters))})`);
@@ -993,7 +993,8 @@ try {
       await until(()=>evaluate('game.frame_ready()'),'free trade frame',30000);
       await drive(1000/30);
     }
-    await capture('trade-bed-later',1000/60);
+    const later=frameInfo(await evaluate('game.frame_info()'));
+    assert(later.tick>0,'the trade field never advanced its fixed tick');
     const moved=await field();
     assert(moved.rungs.every(row=>Math.abs(row.mean-1)<0.08),'caustics must conserve light on each trade rung');
     assert(initial.depthDifference>0.01&&moved.temporal.some(d=>d>0.01),'trade ladder must change over depth and time');

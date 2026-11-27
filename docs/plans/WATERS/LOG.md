@@ -1882,3 +1882,10 @@
 - The `deep-sea` route submitted Metal frames at 20 m with the eye 6 m
   above the sky datum. The noon bed has very low contrast in this baseline.
   [Route record](../../../.orchestrate/evidence/WATERS/WP16/deep-sea-fixed.json).
+
+- 2026-11-27 The forward pass samples the caustic field on direct Sun at
+  opaque receivers. The signed shaft pass uses the same refracted exit and
+  the scene's lent point visibility. Metal proved the unchanged calm
+  remainder, the low-Sun alignment of the bed and volume shadows, and live
+  changes to all six quality controls without pipeline creation.
+  [Target checks](../../../.orchestrate/evidence/WATERS/WP16/metal-checks.md).

@@ -1883,8 +1883,8 @@
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test shafts_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP16/metal-checks.md",
           "verdict": "",
           "review": ""
         },
@@ -1895,8 +1895,8 @@
           "ask": "Would it fail if the bed read its shadow along the Sun's direction above the water while the shafts read theirs where the refracted ray leaves the water, or the other way round? Would a march that adds no light under the box, and takes none away, fail?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP16/metal-checks.md",
           "verdict": "",
           "review": ""
         },
@@ -1948,8 +1948,8 @@
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test under_light_capability_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP16/metal-checks.md",
           "verdict": "",
           "review": ""
         },
