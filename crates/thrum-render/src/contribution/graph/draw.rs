@@ -115,6 +115,18 @@ impl EffectGraph {
             let Some(attachment) = attachments.next() else {
                 continue;
             };
+            // Keep the established refusal for declarations that violate the shared
+            // async or loaded-cadence rules before checking the draw-specific rules.
+            if pass.async_eligible {
+                return Err(EffectGraphError::AsyncRequiresCompute(pass.name.clone()));
+            }
+            if attachment.kind == AccessKind::AttachmentLoad
+                && pass.cadence != EffectCadence::EveryFrame
+            {
+                return Err(EffectGraphError::CadenceRequiresRetainedOutput(
+                    pass.name.clone(),
+                ));
+            }
             let reject = |reason| draw_error(&pass.name, reason);
             if attachments.next().is_some() || attachment.kind != AccessKind::AttachmentClear {
                 return Err(reject("requires one cleared colour attachment"));
