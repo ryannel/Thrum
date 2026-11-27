@@ -2099,7 +2099,7 @@
         {
           "verdict": "fail",
           "commit": "40a92b358bea9f9e23152e7adc7bde3b07b5d5ee",
-          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review-5.md",
           "items": {
             "WP15.1": "pass",
             "WP15.14": "pass",
@@ -2140,6 +2140,50 @@
             "turns": 1
           },
           "at": "2026-11-27T04:18:50Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "45d10f20b3f15e59111836789136177aad312cdd",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md",
+          "items": {
+            "WP15.1": "pass",
+            "WP15.14": "pass",
+            "WP15.15": "pass",
+            "WP15.16": "pass",
+            "WP15.17": "pass",
+            "WP15.4": "pass",
+            "WP15.13": "pass",
+            "WP15.5": "pass",
+            "WP15.6": "pass",
+            "WP15.7": "pass",
+            "WP15.18": "pass",
+            "WP15.8": "pass",
+            "WP15.9": "pass",
+            "WP15.10": "pass",
+            "WP15.11": "pass"
+          },
+          "findings": [
+            {
+              "name": "World light with a view volume changes exposure without Ground",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 195285,
+            "cached": 12522496,
+            "output": 27638,
+            "turns": 1
+          },
+          "at": "2026-11-27T05:11:23Z"
         }
       ],
       "authorised": {
