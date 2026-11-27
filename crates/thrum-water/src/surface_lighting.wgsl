@@ -75,7 +75,7 @@
         // Interaction waves displace vertically and do not contribute to
         // the horizontal Jacobian. Use their resolved positive relief for
         // the shallow crest's broad in-scatter at grazing light.
-        crest += 0.28 * low_sun * smoothstep(0.0003, 0.003, wake.x);
+        crest += 0.42 * low_sun * smoothstep(0.0003, 0.003, wake.x);
     }
     light+=(1.0-fresnel)*incident*water.scatter.rgb*crest;
     if OPTICS_ENABLED {
@@ -103,7 +103,7 @@
         }
         // The unresolved solar lobe keeps a graded peak even on glassy water.
         // Limit its response before lent irradiance so cloud shade stays linear.
-        let peak = select(0.55, mix(0.25, 0.012, low_sun), hollow_surface);
+        let peak = select(0.55, mix(0.25, 0.0065, low_sun), hollow_surface);
         light += sunlight * (glint / (1.0 + glint / peak));
     } else {
         light+=sunlight*d*gv*gl*fh/(4.0*nv+0.00001);
