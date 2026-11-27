@@ -2057,3 +2057,18 @@
 - WP16.8 retains its Metal pass. The eight executable WP16 target
   checks passed again. WP16.11 still depends on the open visual cues.
   [Target checks](../../../.orchestrate/evidence/WATERS/WP16/resume/target-checks.json).
+
+## WP16 bed and keel follow-up
+
+- 2026-11-27 The three Metal bed looks against the revised question covered
+  the ordinary build, the finest caustic grid at every rung and a window
+  aimed toward the refracted exit. The independent inspection could not
+  trace joined bright lines in the lake or sea. Both trials were reverted.
+- The moored craft's keel reaches 1.37 m below mean water. Ordinary Metal
+  captures at that depth still show the silhouette and shifting surface
+  as the clearest boundaries. The matched caster comparison establishes
+  glow attenuation, while the adjacent water contrast remains unproved.
+- WP16.6, WP16.7 and WP16.11 remain open. The prior target checks and Metal
+  depth inspection retain their passes. The work package remains unmerged.
+  [Frame comparisons and receipts](../../../.orchestrate/evidence/WATERS/WP16/continuation/README.md)
+  · [Handoff](../../../.orchestrate/evidence/WATERS/WP16-handoff.md).
