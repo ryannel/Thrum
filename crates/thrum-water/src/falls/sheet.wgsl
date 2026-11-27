@@ -9,7 +9,6 @@ struct SheetVertex {
     @location(4) edge: f32,
     @location(5) receiving: vec3<f32>,
     @location(6) foam: vec2<f32>,
-    @location(7) strand_motion: vec3<f32>,
 }
 
 fn sheet_age(age: f32) -> f32 { return age - floor(age / FALL_LOOP) * FALL_LOOP; }
@@ -65,7 +64,7 @@ fn splash_vertex(world_time: vec4<f32>, velocity_along: vec4<f32>, discharge: ve
     let world = vec4(point, phase);
     return SheetVertex(view.view_proj * vec4(point, 1.0), world, velocity_along,
         vec4(random, kick, strength, select(0.0, 1.0, impact)),
-        vec4(corner.x, -1.0, corner.y, phase), 0.0, vec3(0.0), foam, vec3(0.0));
+        vec4(corner.x, -1.0, corner.y, phase), 0.0, vec3(0.0), foam);
 }
 
 fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<f32>,
@@ -87,7 +86,7 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
     @location(1) velocity_along: vec4<f32>,
     @location(2) discharge: vec4<f32>,
     @location(3) across_fraction: vec4<f32>,
-    @location(4) edge_receiver: vec4<f32>,
+    @location(4) edge_receiver: vec3<f32>,
 ) -> SheetVertex {
     let is_splash = across_fraction.y < 0.0 && across_fraction.y > -1.5;
     if is_splash { return splash_vertex(world_time, velocity_along, discharge, across_fraction); }
@@ -96,25 +95,7 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
     let weight = fold_weight(across_fraction.w) * select(1.0, 0.18, is_filament);
     let fold = sheet_fold(velocity_along.w, birth, across_fraction.xz) * weight;
     var position = world_time.xyz + fold;
-    var strand_motion = vec3(0.0);
-    if is_filament {
-        position += strand_swelling(birth, velocity_along, across_fraction, edge_receiver.x);
-    } else if across_fraction.w > 0.33 {
-        let span = edge_receiver.w;
-        let edge = edge_receiver.x;
-        let across = vec3(across_fraction.x, 0.0, across_fraction.z);
-        let outward = vec3(-across.z, 0.0, across.x);
-        let centre = velocity_along.w - edge * span;
-        let packet = sheet_noise(vec2(centre, birth), FALL_LOOP, vec2(4.5, 5.3), vec2(18.0));
-        let squeeze = span * edge * mix(-0.68, 0.13, packet);
-        let swell = 0.24 * (packet - 0.5) * (1.0 - 0.78 * abs(edge));
-        let flex = squeeze * across + swell * outward;
-        let fraction = across_fraction.w;
-        let previous = fraction - length(velocity_along.xyz) * sheet_clock.y / max(0.001, across_fraction.y);
-        let spread = smoothstep(0.33, 0.92, fraction);
-        position += spread * flex;
-        strand_motion = (spread - smoothstep(0.33, 0.92, previous)) * flex;
-    }
+    if is_filament { position += strand_swelling(birth, velocity_along, across_fraction, edge_receiver.x); }
     var receiving_motion = 0.0;
     var receiving_level = edge_receiver.y;
     var foam = vec2(0.0);
@@ -131,8 +112,7 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
     }
     let world = vec4(position, world_time.w);
     return SheetVertex(view.view_proj * vec4(world.xyz, 1.0), world, velocity_along, discharge,
-        across_fraction, abs(edge_receiver.x),
-        vec3(receiving_motion, position.y - receiving_level, edge_receiver.z), foam, strand_motion);
+        across_fraction, edge_receiver.x, vec3(receiving_motion, position.y - receiving_level, edge_receiver.z), foam);
 }
 
 struct FallOutput {
@@ -270,8 +250,7 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let fold_delta = (fold_weight(input.across_fraction.w) - fold_weight(last_fraction))
         * select(1.0, 0.18, is_filament);
     let displacement = input.velocity_along.xyz * sheet_clock.y
-        + fold_delta * sheet_fold(lip, birth, across) + vec3(0.0, input.receiving.x, 0.0)
-        + input.strand_motion;
+        + fold_delta * sheet_fold(lip, birth, across) + vec3(0.0, input.receiving.x, 0.0);
     let previous = view.previous_view_proj * vec4(point - displacement, 1.0);
     let current = view.unjittered_view_proj * vec4(point, 1.0);
     let motion = (previous.xy / previous.w - current.xy / current.w)
