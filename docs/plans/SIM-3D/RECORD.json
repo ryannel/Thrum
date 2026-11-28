@@ -1,45 +1,32 @@
 {
   "module": "SIM-3D",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/SIM-3D/design-review.md",
-    "commit": "05291fd6a30d15658d7574edd03af166e8439844",
-    "hash": "0c0dfcbdcc7405b1e9b04a6f4170303ec53a15ce68b246154007f4e5810098b5",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.171.0-alpha.13.2",
-    "path": "headless",
-    "usage": {
-      "input": 90328,
-      "cached": 1715456,
-      "output": 13271,
-      "turns": 1
-    },
-    "at": "2026-11-28T03:18:19Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "1a83348dab112c01c046c0fbc894140b730b535dcfc8a469fa670692986d747c",
+    "after": [
+      ".orchestrate/evidence/SIM-3D/design-review-1.md",
+      ".orchestrate/evidence/SIM-3D/design-review.md"
+    ],
+    "at": "2026-11-28T03:34:37Z"
   },
   "work_packages": {
     "WP1": {
-      "definitions": "b22fb9f4f2eee3e5ea4b2e5833362fba417871157d4cfb3da49d9a515c462394",
+      "definitions": "104c3eef5cd625d803ba12147d8b90ab7d2d0e83d56d4d21d11d355785e8670f",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of SIM-3D at .orchestrate/evidence/SIM-3D/design-review.md asked for changes, with its 8 Must Fix find",
-        "at": "2026-11-28T03:08:38Z"
+        "task": "The design review of SIM-3D at .orchestrate/evidence/SIM-3D/design-review.md asked for changes, with its 6 Must Fix find",
+        "at": "2026-11-28T03:34:37Z"
       }
     },
     "WP2": {
-      "definitions": "d478d275a1f51acb4f3a97cfaacfc5e733f98d9f46f6a30349ab04b934338410",
+      "definitions": "c5ca65c1d08e9ea62a4431c7f032d0724d03ccee583143c03c12c3390b29dddf",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of SIM-3D at .orchestrate/evidence/SIM-3D/design-review.md asked for changes, with its 8 Must Fix find",
-        "at": "2026-11-28T03:08:38Z"
+        "task": "The design review of SIM-3D at .orchestrate/evidence/SIM-3D/design-review.md asked for changes, with its 6 Must Fix find",
+        "at": "2026-11-28T03:34:37Z"
       },
       "ends_stretch": true
     }
@@ -52,11 +39,15 @@
     {
       "task": "The design review of SIM-3D at .orchestrate/evidence/SIM-3D/design-review.md asked for changes, with its 8 Must Fix findings.",
       "at": "2026-11-28T03:08:38Z"
+    },
+    {
+      "task": "The design review of SIM-3D at .orchestrate/evidence/SIM-3D/design-review.md asked for changes, with its 6 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
+      "at": "2026-11-28T03:34:37Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-28T03:08:38Z"
+    "at": "2026-11-28T03:34:37Z"
   },
   "design_history": [
     {
@@ -81,6 +72,29 @@
         "turns": 1
       },
       "at": "2026-11-28T02:39:50Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/SIM-3D/design-review.md",
+      "commit": "05291fd6a30d15658d7574edd03af166e8439844",
+      "hash": "0c0dfcbdcc7405b1e9b04a6f4170303ec53a15ce68b246154007f4e5810098b5",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13.2",
+      "path": "headless",
+      "usage": {
+        "input": 90328,
+        "cached": 1715456,
+        "output": 13271,
+        "turns": 1
+      },
+      "at": "2026-11-28T03:18:19Z"
     }
   ]
 }
