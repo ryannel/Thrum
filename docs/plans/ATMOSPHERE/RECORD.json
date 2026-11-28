@@ -1083,12 +1083,12 @@
       }
     },
     "WP14": {
-      "definitions": "f14ac1660648f5bfabaa8c8baf2c604da1214f7e2459cdf1894ebaba356954d5",
+      "definitions": "d53beb11acbecd00d65ff56ce572dbdf40ccf8ef5700d4c17dc53bd03df50378",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner decision change, 27 Nov 2026. I told the owner the shadow diagnosis (ATMOSPHERE WP13, .orchestrate/evidence/ATMOSP",
-        "at": "2026-11-27T23:02:39Z"
+        "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 13 Must",
+        "at": "2026-11-28T00:40:17Z"
       },
       "ends_stretch": true
     }
@@ -1221,11 +1221,15 @@
     {
       "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 7 Must Fix findings.",
       "at": "2026-11-27T23:20:18Z"
+    },
+    {
+      "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 13 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
+      "at": "2026-11-28T00:40:17Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T23:20:18Z"
+    "at": "2026-11-28T00:40:17Z"
   },
   "design_history": [
     {
