@@ -306,6 +306,172 @@
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0
+    },
+    {
+      "id": "WP3",
+      "name": "A game's sound comes out of the Mac's output and the iPhone simulator's, and stops and starts with the app",
+      "status": "not_started",
+      "quality_bar": "The Mac and simulator deliver WP2's reference mix bit for bit at the audio unit's channel buffers. An ordinary game's play reaches those buffers and C11's interruption policy holds across a stop. The simulator proves function.",
+      "items": [
+        {
+          "id": "WP3.1",
+          "statement": "The default output audio unit runs a silenced output. Read back the client format as 48 kHz stereo float and report the actual device format, pull sizes and reported latency where available. Through the public handle, play a cooked stereo sound with distinguishable channels below the clip knee, unplaced at unit volume and pitch. The tap contains its expected samples bit for bit, in channel order, exactly once with silence on either side. The returned play number has one started outcome. Omitting the play yields a nonempty tap of zeros. In a separate run, apply WP2's reference script at its command frames inside the pull and fold the full script interval from the tap. Its digest equals the kept buffer digest. Record: the Mac callback's channel samples, outcome, digest and time from play call to first rendered frame, with the commit and machine load.",
+          "check": "python3 .orchestrate/evidence/AUDIO/WP3/check.py mac-output",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP3.2",
+          "statement": "The owner of the Mac output can suspend and resume it. A play already queued but unapplied when pulling stops has one interrupted outcome in its original epoch. A sounding one-shot is counted as cut and contributes no resumed frames. A play during suspension gets nothing pulling. Match outcomes by returned play number and verify event identity, tick and epoch. The clock stands still while suspended. The first resumed pull uses the incremented epoch, and the tap shows the continuing loop and music at their stopped positions with current settings, rising from silence over one ramp. With an emitter change deferred by a full queue, end the emitter while stopped and submit a competing play before the first resumed update. Once the ramp has settled, the tap contains no contribution from the ended loop and its voice is free. Record: Mac output states, frame counts, epochs, outcomes and tapped samples across suspension.",
+          "check": "python3 .orchestrate/evidence/AUDIO/WP3/check.py mac-lifecycle",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP3.3",
+          "statement": "A running app in the iPhone simulator opens the Remote I/O unit silenced and reads back its 48 kHz stereo float client format. Through the public handle, play a cooked stereo sound with distinguishable channels below the clip knee, unplaced at unit volume and pitch. The tap contains its expected samples bit for bit, in channel order, exactly once with silence on either side. The returned play number has one started outcome. Omitting the play yields a nonempty tap of zeros. In a separate run, apply WP2's reference script at its command frames inside the pull and fold the full script interval from the tap. Its digest equals the kept buffer digest. Background the app and return it to the foreground through the shell's lifecycle. A play already queued but unapplied when pulling stops has one interrupted outcome in its original epoch. A sounding one-shot is counted as cut and contributes no resumed frames. A play during suspension gets nothing pulling. Match outcomes by returned play number and verify event identity, tick and epoch. The clock stands still while suspended. The first resumed pull uses the incremented epoch, and the tap shows the continuing loop and music at their stopped positions with current settings, rising from silence over one ramp. Record: simulator and OS identity, client format, pulls, outcomes, tap and digest from the app at the claimed revision.",
+          "check": "python3 .orchestrate/evidence/AUDIO/WP3/check.py simulator",
+          "lock": "simulator",
+          "target": "ios-sim",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP3.4",
+          "statement": "With an unavailable Apple output, opening returns a typed error. The handle remains usable, updates return, and a play gets nothing pulling. Losing a running device closes its epoch once. When a working output opens again, it restores the current emitter and music, and a one-shot pending at device loss expires under its old play number. Guard: device-free tests exercising the adapter's failed-open, device-loss and recovery paths through the audio integration suite.",
+          "check": "cargo nextest run --locked --offline -p thrum-audio --test it -E 'test(/^output_open::/)' --no-tests=fail",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP3.5",
+          "statement": "The Apple adapters share the ordinary mix and keep the device callback independent of frame progress. A silenced opening exercises the same channel writes as an audible opening.",
+          "ask": "Trace the two audio-unit render callbacks through the channel write, tap and return. Do they pull the shared mix, copy the device's filled channels into storage reserved at open and only then zero those channels in silenced mode? Can either callback wait, allocate, free or do I/O, or a frame call wait for it? Does the Mac follow the system's default output and leave its nominal rate alone? Where do loss of the device and closing the unit stop pulls and advance the epoch before a replacement can pull? On iOS, does the ambient audio session route interruption and recovery through the output epoch used by suspend and resume?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
+      "id": "WP4",
+      "name": "A game's sound comes out of a Chrome tab, keeps playing through a stalled frame, and the same script gives the same sound on all three targets",
+      "status": "not_started",
+      "quality_bar": "In a normally configured Chrome tab, real worklet pulls carry the same stereo samples as the Mac and simulator. A stalled page and a large transfer leave the mix running. The references are WP2's buffer digest, the three output taps and the measured 500 ms planning probe. Listening acceptance belongs to GAME-SDK WP19.",
+      "items": [
+        {
+          "id": "WP4.1",
+          "statement": "In headed Chrome on a non-isolated page, transfer a cooked music track of minutes while a ready sound is played and the listener is moved each frame. Measure the longest time a message occupies the worklet, including a data piece, against the observed duration of a render quantum, and the longest time from a started play's call to its first rendered frame. Use measured trials to select the piece size and maximum unanswered messages for the port. Record: transfer sizes, settings tried and chosen, timings, context rate, pull size, reported base and output latency where available, commit and machine load. Compare the reported output latency with the planning probe's headless reading of 32 ms.",
+          "check": "python3 .orchestrate/evidence/AUDIO/WP4/check.py measure-port",
+          "lock": "chrome",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP4.2",
+          "statement": "On a page with crossOriginIsolated false, a 48 kHz AudioContext feeds its stereo destination through a real AudioWorkletNode. The processor runs its own instance of the import-free mix module built by the documented command. Through the public handle, play a cooked stereo sound with distinguishable channels below the clip knee, unplaced at unit volume and pitch. The tap contains its expected samples bit for bit, in channel order, exactly once with silence on either side. The returned play number has one started outcome. Omitting the play yields a nonempty tap of zeros. In a separate run, apply WP2's reference script at its command frames inside the pull and fold the full script interval from the tap. Its digest equals the kept buffer digest. Record: the context's read-back format, worklet pull sizes, handle outcomes, tapped output channels and the digest matched by the two Apple routes.",
+          "check": "python3 .orchestrate/evidence/AUDIO/WP4/check.py chrome-output",
+          "lock": "chrome",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "ask": "Trace the shipped worklet from its game-side post to the mix, both channel writes, the optional tap and silencing. Does an audible opening use the same mix and channel writes? Are frames independent of replies, and pulls free of waits and allocations without shared memory or cross-origin isolation?"
+        },
+        {
+          "id": "WP4.3",
+          "statement": "In a fresh Chrome session with the ordinary autoplay policy and no gesture, game frames advance while the output stays waiting for a press. Frames pulled stay at zero, a play gets nothing pulling, and the requested title music is retained. A first trusted key press, and in a fresh run a first trusted pointer press, starts pulling and the tap contains the requested music without the old play. During a measured 500 ms stall of the page thread, a previously started changing loop continues at the context rate. The worklet's render-quantum frame ranges are contiguous through the stall and its tapped samples carry the loop across it. Record: input and context transitions and frames rendered over the measured stall, with callback positions and the expected loop sequence.",
+          "check": "python3 .orchestrate/evidence/AUDIO/WP4/check.py chrome-activation-stall",
+          "lock": "chrome",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP4.4",
+          "statement": "When the tab is hidden and shown, the holder forwards suspend and resume. A play already queued but unapplied when pulling stops has one interrupted outcome in its original epoch. A sounding one-shot is counted as cut and contributes no resumed frames. A play during suspension gets nothing pulling. Match outcomes by returned play number and verify event identity, tick and epoch. The clock stands still while suspended. The first resumed pull uses the incremented epoch, and the tap shows the continuing loop and music at their stopped positions with current settings, rising from silence over one ramp. With an emitter change deferred by a full queue, end the emitter while stopped and submit a competing play before the first resumed update. Once the ramp has settled, the tap contains no contribution from the ended loop and its voice is free. A context suspended while the page is still visible also closes the running epoch. A delayed message carrying an old play cannot sound in the next epoch. Record: visibility, context and output states, epochs, numbered outcomes and tapped frames from the worklet.",
+          "check": "python3 .orchestrate/evidence/AUDIO/WP4/check.py chrome-lifecycle",
+          "lock": "chrome",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP4.5",
+          "statement": "At the selected settings, a track of minutes reaches the worklet in full while the page plays identifiable short sounds and moves a listener each frame. A play succeeds during the transfer. For each returned play number there is one matching outcome, and each started play has its marker in the tap. Force the sender to exhaust its credit while frames keep updating. Excess plays receive queue full, the last listener change takes effect when credit returns (verified by channel levels of a placed sound), and the completed track renders its expected samples. From posts and acknowledgements, the peak outstanding command count fits the queue, at most one data piece awaits acknowledgement and unanswered messages stay within the selected limit. When commands and the next piece are both ready, a command batch goes first. The recorded high-water marks agree with the trace and the worklet frame ranges have no skipped pull throughout. Record: the silenced live transfer, its pressure interval, tap, outcomes and port counts.",
+          "check": "python3 .orchestrate/evidence/AUDIO/WP4/check.py chrome-transfer",
+          "lock": "chrome",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP4.6",
+          "statement": "A developer can follow the engine's guide to build the mix module and run the listening room on the Mac. Its controls play real one-shots, move a looping emitter past the listener and switch between two cooked music tracks with a cross-fade. The example uses the public engine API. The automated run exercises those controls with a silenced output and verifies the corresponding samples, channel movement and track change. Record: the documented Mac example run and its tap.",
+          "check": "python3 .orchestrate/evidence/AUDIO/WP4/check.py room-mac",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP4.7",
+          "statement": "The guide's Chrome launch serves the listening room and its mix module on an ordinary page. After a press, the same example controls produce the one-shots, change of side and music transition in the silenced worklet tap. A person launching the listening room normally can use the audible output on either platform. Record: the documented Chrome example run and its tap.",
+          "check": "python3 .orchestrate/evidence/AUDIO/WP4/check.py room-chrome",
+          "lock": "chrome",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP4.8",
+          "statement": "The listening room's shipped sounds and tracks can be traced to permissive sources in docs/provenance/AUDIO.md. The audio maturity entry identifies implementation, buffer correctness and the device evidence for each target, and describes what the simulator demonstrated. It leaves how the game sounds for the owner's sitting in GAME-SDK WP19. Record: the example asset inventory checked against its provenance and the audio maturity entry.",
+          "check": "python3 .orchestrate/evidence/AUDIO/WP4/check.py inventory",
+          "ask": "Match the example's loaded sounds and both tracks to their origins and licences. Do the maturity claims match the device taps and tripwire runs, and reserve experienced sound quality for the owner's sitting?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP4.9",
+          "statement": "The documented mix-module build remains usable from a game's web build step after cleanup. Code and data used only to make the work packages' one-time records are retained in the working folder or removed from the tracked tools. The reference digest, regression guards and the listening room still run. Record: a fresh module build and inventory of the retained audio tools.",
+          "check": "python3 .orchestrate/evidence/AUDIO/WP4/check.py closeout",
+          "ask": "In scripts/audio.py and its helpers, which entries still serve the build or a lasting guard after the record-only code is removed?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
     }
   ]
 }

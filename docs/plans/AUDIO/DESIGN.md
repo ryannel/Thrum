@@ -733,8 +733,7 @@ These hold in every work package.
 
 ## The work packages
 
-Four, in the order they are built. [The plan](PLAN.md) names each and [the done-when file](DONE.json) holds the
-items of the first two.
+Four, in the order they are built. [The plan](PLAN.md) names each and [the done-when file](DONE.json) holds its items.
 
 | Work package | Builds | Waits for |
 |---|---|---|

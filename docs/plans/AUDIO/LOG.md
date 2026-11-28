@@ -54,3 +54,4 @@
   silence when a restored emitter ended, 0.125 when it released, and 0.0625 after a volume change during
   queue pressure. Node matched `cf7b0128f410d7db` at both pull sizes.
   [Target proof, cost and source audit](../../../.orchestrate/evidence/AUDIO/WP1/resume-repair/README.md)
+- 2026-11-28 Planned WP3 and WP4 against the approved device interfaces and WP1 reviews. The Mac and Chrome lifecycle runs carry the repeated ended-emitter case through the output tap. WP4 measures transfer bounds in headed Chrome and closes the engine work with the listening room. The owner's listening judgment stays in GAME-SDK WP19.

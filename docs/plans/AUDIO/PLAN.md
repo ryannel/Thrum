@@ -60,4 +60,18 @@ says so.
 
 ## WP3 A game's sound comes out of the Mac's output and the iPhone simulator's, and stops and starts with the app
 
+WP2 supplies the reference script with cooked music and the digest both Apple outputs must match.
+The [last WP1 review](../../../.orchestrate/evidence/AUDIO/WP1-review.md) gives the queue and resume
+sequence that twice left an ended emitter sounding. Its public-handle probe and the existing
+`interruption` tests show how to distinguish the loop from a competing play. Run the simulator proof
+in an app that forwards its lifecycle to the output. HOST supplies the lifecycle and GAME-SDK WP18
+wires it into games.
+
 ## WP4 A game's sound comes out of a Chrome tab, keeps playing through a stalled frame, and the same script gives the same sound on all three targets
+
+`python3 scripts/audio.py module` builds the import-free mix. WP1's exports drive the reference
+script, and the game-facing worklet also needs to accept the public handle's commands and return
+outcomes. Measure the port first so the transfer run uses bounds established on the real worklet.
+The [planning probe](../../../.orchestrate/evidence/AUDIO/planning-probe.md) gives the headless latency
+and the frame trace through a stalled page. Keep the device record drivers in the working folder so
+the checks can run from a clean worktree after the tracked proof tools are cleaned up.
