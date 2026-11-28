@@ -123,14 +123,16 @@ fn falling_packet_vertex(origin: vec4<f32>, linear: vec4<f32>, curve: vec4<f32>,
     let velocity = (linear.xyz + 2.0 * path_time * curve.xyz) / origin.w;
     let along = normalize(velocity + vec3(1e-6, 0.0, 0.0));
     let look = normalize(view.camera_xyz_time.xyz - centre);
-    let side = normalize(cross(along, look) + vec3(1e-6, 0.0, 0.0));
+    let projected_axis = cross(along, look);
+    let side = normalize(projected_axis + vec3(1e-6, 0.0, 0.0));
+    let footprint = mix(0.32, 1.0, smoothstep(0.12, 0.80, length(projected_axis)));
     let width = curve.w * mix(0.37, 0.89, random);
     let streak_length = length(velocity) * mix(0.058, 0.109, noise_hash(event + vec2(17.0, 0.0)));
     let point = centre + side * (corners.x * width) + along * (corners.z * streak_length);
     let life = smoothstep(0.0, 0.15, path_time) * (1.0 - smoothstep(0.73, 1.0, path_time));
     let world = vec4(point, path_time);
     return SheetVertex(view.view_proj * vec4(point, 1.0), world, vec4(velocity, seed),
-        vec4(cover * life, random, 0.0, 0.0), corners, 0.0, vec3(0.0), vec2(0.0),
+        vec4(cover * life * footprint, random, 0.0, 0.0), corners, 0.0, vec3(0.0), vec2(0.0),
         centre - old, 0u, vec3(0.0), 0.0, 0.0);
 }
 
@@ -267,7 +269,7 @@ fn falling_packet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let profile = exp(-3.2 * radius) * (1.0 - smoothstep(0.52, 1.0, radius));
     let grain = 0.63 + 0.37 * sheet_noise(corner, 2.0, vec2(3.0, 2.4), vec2(input.discharge.y * 19.0, 0.0));
     let alpha = input.discharge.x * profile * grain;
-    if alpha < 0.021 || (alpha > 0.37) != solid { discard; }
+    if alpha < 0.021 || (alpha > 0.5) != solid { discard; }
     let point = input.world_time.xyz;
     let up = vec3(0.0, 1.0, 0.0);
     let sunlight = sun_irradiance(point) * fall_cloud(point) * max(0.0, environment_sun_direction().y);
@@ -346,7 +348,7 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let wet_pockets = max(packet, air_breaks * (0.42 + 0.58 * chord));
     let middle_cover = mix(1.0, 0.075 + 0.925 * wet_pockets, dispersed * mixed_air);
     let filament_cover = mix(0.09, 1.0, smoothstep(0.05, 0.59, packet + 0.13 * pulse));
-    let leaving_sheet = 1.0 - smoothstep(0.24, 0.58, fraction)
+    let leaving_sheet = 1.0 - smoothstep(0.16, 0.43, fraction)
         * smoothstep(0.0, 0.55, input.strand_strength);
     let passing_cover = middle_cover * leaving_sheet * select(1.0, 0.12 * filament_cover, is_filament);
     let filament_white = smoothstep(0.06, 0.48, input.across_fraction.w)
@@ -419,7 +421,7 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     // Faint water must not occlude the pool. The dense sheet keeps its
     // original depth rule, and the transparent pass tests that depth.
     let sheet_depth = presence > 0.5 && foot > 0.35;
-    let writes_depth = select(sheet_depth, opacity > 0.37, rounded || is_filament);
+    let writes_depth = select(sheet_depth, opacity > 0.5, rounded || is_filament);
     if writes_depth != solid || opacity < 0.012 { discard; }
     let roughness = mix(0.12, mix(0.055, 0.39, white), below_tongue);
     let mirror = environment_reflection(reflect(-look, face), roughness, nv).radiance;
