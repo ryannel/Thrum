@@ -2266,13 +2266,30 @@ the takes from before and the grounding lists of WP13, which WP14 is judged besi
 - **Resolution.** One function resolves it before anything is allocated. A radius resolves to the
   **screen-space** method on every recipe and device. A preference for **traced** resolves to traced where
   `RAY-TRACING`'s admission passes, and otherwise to screen-space at the same radius with the admission's
-  reason. A scene resolved to one method declares no pass, texture or pipeline of the other. Where the forward
-  stage would bind more sampled textures than the device allows, or the device lacks a format the pass
-  needs, occlusion resolves off with that reason and the scene is not refused (C08).
-- **The showcase asks.** The valley, with or without the proof overlay, and the exit scene ask for the
-  screen-space method at the game's radius, 1 m to start, in every launch: the Mac's two recipes, Chrome and
-  the iPhone simulator. A proving build's launch value can turn it off, set the radius or prefer traced.
-  `RAY-TRACING`'s launches that ask for traced occlusion resolve as they do today where rays run.
+  reason. A scene resolved to one method declares no pass, texture or pipeline of the other.
+- **A radius never resolves to off.** The screen-space method is there on every recipe and device, as C08
+  and the module list's row say, so a caller that asks for a radius gets occlusion or no scene. Two things
+  make that true. The pass's textures use only formats and usages WebGPU requires of every device, so no
+  device lacks one. And either method binds the same one sampled texture in the forward stage, so the
+  device's sampled-texture limit never chooses between them: a scene whose forward stage is over the
+  device's limits with that texture is refused with the device-limits error it gets today
+  (`synthetic/preparation.rs` already counts the occlusion texture), whichever method it preferred.
+- **The showcase asks, from one place.** The valley, with or without the proof overlay, and the exit scene ask
+  for the screen-space method at the game's radius, 1 m to start, in every launch: the Mac's two recipes,
+  Chrome and the iPhone simulator. One function of the game gives that request, and every launch that
+  builds the game's setup takes it from there: the Mac's window and capture launches, the browser's
+  ordinary page (`create_browser_game`), which is what a player opens, and the browser's route page
+  (`create_route_game`), which is what the T2 capture opens. The two browser constructors build their setup
+  separately today, so a request made in one alone would show in the captures and not in the game, or the
+  reverse. WP14.10 holds the one place and WP14.5 reads the ordinary page.
+- **A proving value replaces it.** A proving build can turn occlusion off, set the radius or prefer traced,
+  by the Mac's launch value (`THRUM_AMBIENT_OCCLUSION`, which the capture scripts pass through from the
+  environment) or by a field of a route's `start`. The route is the value's way into Chrome: the T2
+  launcher takes a fixed set of options and writes the page's address from them, and it takes any route
+  with `--route-file`, so a route that carries the value needs no new option and no change to a script.
+  One route file then gives the same arm on the Mac and in Chrome. A route that carries none launches as
+  the game does, and a build without `proving` admits none. `RAY-TRACING`'s launches that ask for traced
+  occlusion resolve as they do today where rays run.
 - **Report.** The report that names the Sun's shadow method names occlusion too: what was asked, the method
   resolved and why they differ.
 
@@ -2297,15 +2314,38 @@ motion target, which every view of a 3D scene publishes (C07), and nothing else 
 5. **Over space.** One edge-stopping filter, guided by depth and the rebuilt normal, so darkening does not
    leak across a silhouette.
 
-The result is **the occlusion history**: at half extent, the visibility and the depth it belongs to. The
-traced method's filtered result has the same two values, so shading reads either without knowing which
-method wrote it.
+The result is **the occlusion history**, this method's own texture, written at half the render extent.
+
+**What the two methods share is a convention, not a texture or an extent.** It is the one `RAY-TRACING` WP5's
+read already follows (`synthetic/raytrace/ambient_forward.wgsl`), and the screen-space method writes to it:
+
+- **Two values a texel.** The visibility, 0 to 1, and the depth it belongs to, in the form the read compares:
+  the device depth of the surface in the frame that wrote it, which the read sets against the fragment's
+  previous clip depth. The gather's linear depth and its mips stay inside the screen-space pass.
+- **A record beside it**, the frame uniform in the light group, which the writing method fills each frame:
+  whether the history is valid, the drawn extent it was written at, its **stride** (render pixels to a
+  history texel each way), the jitter between the two frames, and the previous view's transform.
+- **The read takes the stride and the extent from the record and assumes neither.** The screen-space method
+  always writes a stride of 2. The traced method writes 2 or 1 as its extent value says, half or full, and
+  that value and its off setting stay runtime values exactly as `RAY-TRACING` WP5 built them. A read fixed to
+  half extent would sample the wrong place when traced occlusion runs at full extent, so nothing in the
+  shared function is fixed to it.
+- **Each method keeps its own history and its own reset rules.** A scene resolves to one method, so one
+  history is bound at the light group's two occlusion bindings. The traced method's history is the one it
+  has: its own texture, written by the same dispatch that traces soft Sun visibility when both are on, with
+  the soft Sun's history a separate texture, invalid after a change of drawn extent or target and after its
+  extent or settle value changes. None of that changes.
+
+The module list's row gives the history at half the render extent. That is the screen-space method's extent
+and the traced method's default; where traced occlusion is set to full extent, the stride in the record is
+what holds.
 
 **What a fragment reads.** The forward pass reads last frame's occlusion history at the fragment's previous
-position, which it already has for its motion vector: the four nearest half-extent texels, each weighted by
-how well its stored depth matches the fragment's. That is the bilateral upsample. With no matching history
-the value is 1. This is the read `RAY-TRACING` WP5 built, and from WP14 both methods use the one function.
-Fragments drawn after opaque geometry, such as water, read nothing and are as they were.
+position, which it already has for its motion vector: the four nearest history texels at the record's
+stride, each weighted by how well its stored depth matches the fragment's. That is the bilateral upsample.
+With no matching history the value is 1. This is the read `RAY-TRACING` WP5 built, and from WP14 both methods
+use the one function. Fragments drawn after opaque geometry, such as water, read nothing and are as they
+were.
 
 **What it multiplies.** Indirect light only (C08): the diffuse sky light, and the reflected sky light through
 Lagarde's specular occlusion. It multiplies the material's own occlusion and does not replace it. It never
@@ -2316,13 +2356,13 @@ atmosphere-lit and the fixed-light variants of the shader, and both methods use 
 After a thing arrives or leaves, its darkening follows within the settle length and one frame. Occlusion is
 broad and faint and the display is at 120 Hz. A darkening still visible after that is a trail, and fails.
 
-**History.** The occlusion history is committed only with a submitted frame, and reset on a camera cut and a
-replaced device, by `APPLE-PRESENTATION`'s history rules. Its textures are sized once for a generation, from
-the output extent, as the forward attachments are, and the pass fills half the drawn rectangle. A step of the
-render scale does not reset it: the pass and the fragment's read address the history by the drawn extent it
-was written at, so the first frame at a new scale reads the frame before it and nothing is created. The
-governor steps the scale during play, and a reset there would blink every contact in view. The traced
-method's history resets at a step today and keeps doing so.
+**History.** The screen-space method's occlusion history is committed only with a submitted frame, and reset
+on a camera cut and a replaced device, by `APPLE-PRESENTATION`'s history rules. Its textures are sized once
+for a generation, from the output extent, as the forward attachments are, and the pass fills half the drawn
+rectangle. A step of the render scale does not reset it: the record carries the drawn extent the history
+was written at, and the read addresses the history by it, so the first frame at a new scale reads the frame
+before it and nothing is created. The governor steps the scale during play, and a reset there would blink
+every contact in view. The traced method's history resets at a step today and keeps doing so.
 
 **Quality.** One quality value, the gather's slices and steps, declared through the contribution seam's
 quality knobs with three tier values and no history invalidation, for the governor. The policy's order is
@@ -2331,11 +2371,34 @@ unchanged: scale first, then tiers. No tier turns occlusion off.
 | What a neighbour relies on | What it sees |
 |---|---|
 | `RAY-TRACING`: a scene that asked for traced occlusion, where rays run, traces it and draws what it drew | The same. The request now names the method, and such a scene declares no screen-space pass. Where its admission fails, the scene shows screen-space occlusion where it showed none |
-| `RAY-TRACING`: with soft Sun shadows and traced occlusion both on, one history texture carries both | Unchanged |
+| `RAY-TRACING`: with soft Sun shadows and traced occlusion both on, one dispatch traces both and each writes its own history; traced occlusion is off, half extent or full extent as its runtime value says | Unchanged, with the same reset rules. The shared read takes the stride from the record |
+| `RAY-TRACING`: its tests of a traced request where rays cannot run expect no occlusion | Superseded by the seam ruling's own words, and restated by WP14's builder: [below](#ray-tracings-tests-of-the-old-fallback) |
 | A scene that asks for no occlusion, which is every scene but the showcase's | Its bytes, passes and bindings are today's. `SCENE-VIEWS`', `CULLING`'s, `WATERS`' and `CLOUDS`' tests are of such scenes |
 | `SCENE-VIEWS`: a secondary view's picture | A view has no history key and reads no occlusion, in any scene. A mirror shows the scene without it |
 | `APPLE-PRESENTATION`: history rules, the knob registry, `SceneSurface`'s three colour formats | Followed as found. The forward pass gains one sampled texture and one uniform in the light group, and no colour target |
 | The frame contract's guide buffers (C07) | Not selected. If a later module builds the prepass, the pass can take its normals and the read does not change |
+
+<a id="ray-tracings-tests-of-the-old-fallback"></a>
+
+**`RAY-TRACING`'s tests of the old fallback.** [The seam ruling](../ARCHITECTURE.md#seam-ruling-for-atmosphere-wp14)
+keeps `RAY-TRACING`'s claims where rays run and itself changes the one where they cannot: "where rays cannot
+run, a traced request now resolves to the screen-space method where it resolved to off". Tests that assert
+the old result would fail a correct build, so WP14's builder restates them to the new one. In
+`crates/thrum-render/tests/ray_ambient_knob_gpu.rs` they are two:
+
+| Today's assertion | Restated |
+|---|---|
+| On a device without ray queries the resolved radius is absent and the quality list is empty | The request resolves to the screen-space method at the radius asked, with the reason `MissingRayQuery`, and the quality list is the screen-space method's |
+| On the portable recipe the forward shader equals that of a scene that never asked and holds no occlusion read | The request resolves to the screen-space method with the reason `UnsupportedRecipe`, and the forward shader holds the shared read |
+
+Any other assertion in the workspace that a request for occlusion resolves to none where rays cannot run is
+restated the same way, and the builder lists each in this module's log. Every other assertion of those tests
+stands as written: where rays run the scene traces what it traced, with one shared dispatch, the samples at
+the chosen extent and no allocation when the extent changes; no ray is longer than the radius; and the
+traced method set to off restores the frame from before to the byte. `RAY-TRACING` WP5.6's last sentence,
+"Where rays cannot run, a scene that asks for ambient occlusion is ready without it and reports why", is
+the claim the ruling replaced. WP14.2 proves the new one on the device: such a scene prepares and draws the
+screen-space method and reports the reason.
 
 ### Alternatives considered
 
@@ -2358,6 +2421,9 @@ unchanged: scale first, then tiers. No tier turns occlusion off.
   tree and passed `RAY-TRACING` WP5's review on Metal. In Chrome the same WGSL is one more sampled texture in
   the forward stage: by the count `synthetic/preparation.rs` makes, the valley's fullest composition is 15 of
   WebGPU's 16 with it.
+- **Nothing a device can lack.** The half-extent depth chain, the history and its previous copy need a
+  single-channel and a two-channel float format that can be drawn to and loaded from, which WebGPU requires
+  of every device. The pass needs no filtering of 32-bit floats and no optional feature.
 - **Texels against things.** A pixel covers 1.18 mm for each metre of distance at 720 rows, so a half-extent
   texel covers 2.4 mm. At 3 m a 0.36 m cube is about 50 texels and a 1 m radius is capped. At 100 m a texel is
   24 cm: a 1 m rock is four texels and still gets a contact. By about 400 m the radius is a texel and
@@ -2382,6 +2448,19 @@ that move are on surfaces within about the radius of another surface: the foot o
 cubes, and creases in the terrain. The sky, the stars and the bars do not move. Scenes of other modules ask
 for no occlusion, so no other exact test is expected to move.
 
+**What shows that occlusion alone moved them.** A scene resolved off draws the bytes of a scene that never
+asked, so the claimed commit with the showcase's occlusion turned off must draw the references the landing
+replaces. WP14.8 has the builder run the registered comparisons that way, against the old references: the
+Mac's with the launch value in the environment, and Chrome's with `--route-file` and a copy of the
+registered route whose `start` turns occlusion off. If they are equal, nothing but occlusion moved a
+reference, and the difference between an old reference and its replacement is what occlusion adds on one
+commit, which the reviewer then judges against the list. A change to the material's own occlusion, or to
+anything else in the shader, would fail the first step.
+
+The ruling's "the comparisons, their sampling and every script" are the files each baseline lists under
+`comparisons`, `comparison` and `comparison_files`. WP14.7 holds those and every field of the registry but
+`pin` and `refresh`. The off value needs none of them changed.
+
 <a id="cost-of-wp14"></a>
 
 ### Cost
@@ -2404,6 +2483,18 @@ When one trips, the builder pulls these levers in order and records what each bo
 2. A shorter mip chain or a narrower spatial filter.
 3. The gather at a quarter of the render extent each way, with the history and the read kept at half.
 
+<a id="wp14-hand-off-to-wp17"></a>**The hand-off to WP17.** As for [WP13](#wp13-hand-off-to-wp17), the
+verdict on 120 Hz at full screen is `APPLE-PRESENTATION` WP17's, its closing sitting qualifies the frame it
+was taken on, and WP17 does not wait for WP14 in the plan. WP14's record therefore ends with the timed-pass
+span on the two Apple rows with occlusion on and off, the spread between its own repeats, and the commit of
+WP17's closing sitting if one has been taken. It then says which of three holds. The sitting has not been taken, and is then taken on a frame with occlusion on. Or it was
+taken on a commit without occlusion and the span with occlusion on is no higher than with it off, beyond
+the spread between the record's own repeats: it stands. Or it was taken without occlusion and the span is
+higher: WP17's sitting is to be taken again, and the builder's handoff asks the lead for it in those
+words. WP14.6 fails without that section. WP13's hand-off covers the Sun's shadows and this one covers
+occlusion, so a sitting taken between the two landings is asked again only if this record shows the frame
+slower.
+
 The occlusion history, its previous copy and the depth chain are about 20 bytes for each half-extent texel:
 17 MB at the full screen's output extent and 5 MB at 1280 × 720.
 
@@ -2411,23 +2502,40 @@ The occlusion history, its previous copy and the depth chain are about 20 bytes 
 
 - **WP14.1**, tests on the CPU, for the request, its resolution, the composed shader and the quality value,
   with a reviewer's question on the one read and the one application.
-- **WP14.2**, small tests on Metal, for what only the drawn depth, the pass and the forward read can show.
+- **WP14.2**, small tests on Metal, for what only the drawn depth, the pass and the forward read can show:
+  among them that the reach follows the radius asked, that a traced request rays cannot serve draws the
+  screen-space method, and that the shared read follows the traced method's extent.
 - **WP14.3**, a reviewer's inspection of stills on the Mac: grounded in shade, and sunlight unchanged.
 - **WP14.4**, the same takes in motion: no halo, shimmer, trail or blink.
-- **WP14.5**, both lists in Chrome.
-- **WP14.6**, the cost record.
-- **WP14.7 and WP14.8**, the planned refresh of the exact baselines and a look at what moved.
+- **WP14.5**, both lists in Chrome, and the page a player opens.
+- **WP14.6**, the cost record and the hand-off to WP17.
+- **WP14.7 and WP14.8**, the planned refresh of the exact baselines, and that occlusion alone moved them.
 - **WP14.9**, the maturity ledger and the creator's page.
+- **WP14.10**, a test on the CPU and a reviewer's question: every launch of the game takes the request from
+  one place.
 
-Every inspection sets a take beside the same route with occlusion turned off, which is the "before". The
-routes are WP13's, in [the diagnosis folder](../../../.orchestrate/evidence/ATMOSPHERE/WP13-diagnosis/routes/),
-and three copies that differ from their originals only in `start`, which the builder keeps in
-`.orchestrate/evidence/ATMOSPHERE/WP14/routes/`:
+**What occlusion adds, and what it may do in motion.** The valley's ground already varies in colour and in
+Sun shadow, so a frame alone cannot show what occlusion did. Every inspection sets a frame beside its
+**pair**: the frame of the same tick, eye, heading and solar hour from the same route with occlusion off.
+What occlusion adds is the difference between the two, and the lists judge that. Within the radius of a
+prop the method may darken the ground behind it a little, as the prop does hide some sky from it: what
+fails is a hard patch in the prop's shape, or any outline on ground or hills farther behind a silhouette
+than the radius, where nothing of the prop can reach. In motion a darkening may change continuously: it
+grows on screen as the camera nears it, changes as things come into view or are hidden, and follows the
+light. What fails is grain, sparkle, an abrupt change between frames, an outline and a trail. No item holds
+the darkening to a computed fraction: that belongs in a diagnosis, by the owner's decision of 17 November
+on proof that is plausible and not accurate.
+
+The routes are WP13's, in [the diagnosis folder](../../../.orchestrate/evidence/ATMOSPHERE/WP13-diagnosis/routes/),
+and copies the builder keeps in `.orchestrate/evidence/ATMOSPHERE/WP14/routes/`. Three copies differ from
+their originals only in the hour of `start`, one is a held pose cut for the rock, and each route judged has
+an **off copy** beside it, which differs only in that its `start` turns occlusion off:
 
 | Route | Scene | What it is for |
 |---|---|---|
 | `c2-moving-sunheld.json` | valley, `proof` overlay | Round the cubes with the Sun held at 15.3 h: cubes inside the sphere's shadow, and cubes in sunlight beside them |
-| `c2-dusk.json`, a copy with the Sun held 4° below the horizon (18.3 h as planned) | valley, `proof` overlay | The cubes, the sphere and the rock lit by the sky alone |
+| `c2-dusk.json`, a copy with the Sun held 4° below the horizon (18.3 h as planned) | valley, `proof` overlay | The cubes and the sphere lit by the sky alone |
+| `rock-dusk.json`, a held pose the builder cuts at the same hour | valley, `proof` overlay | The rock's contact with the ground, which the moving part of the cube routes never shows: it lies past the frame's right edge there. The valley's opening pose shows it |
 | `valley-floor-dusk.json`, a copy held at the same hour | exit | Down to the valley floor and level across it at dusk: every prop is in shade |
 | `valley-floor-low-sun.json`, a copy held at 17.3 h | exit | The same flight with long shadows: props inside a ridge's or a mesa's shadow beside props in sunlight |
 | `balloons.json` | exit | Flying at 17 m/s over rocks and cacti toward the balloons, clock running from 16 h: sunlight, and motion |
@@ -2448,6 +2556,10 @@ If 18.3 h does not put the Sun about 4° down in the scene, the builder sets the
 | A blink at a scale step | Contacts flash on the Apple row when the governor moves | Judging only takes in which the scale never stepped |
 | Cost carried by the governor | The Apple row keeps its rate because the render scale fell | Recording the frame rate and not the pass times and the scale |
 | A second kind of occlusion | A scene on the traced method also runs the screen-space pass, or the two are multiplied | Judging the traced launch by eye alone: WP14.2 counts the passes |
+| A gather fixed to the showcase's radius | Asking for another radius changes the report and not the picture | Testing every case at 1 m |
+| The captures show it and the game does not | The route page asks for occlusion and the ordinary page does not, or the reverse | Judging Chrome from T2 takes alone: WP14.5 reads the ordinary page and WP14.10 the code |
+| The read fixed to half extent | Traced occlusion at full extent darkens the wrong places | Testing the shared read with the screen-space method alone |
+| Something else moved the baselines | The claimed commit with occlusion off does not draw the old references | Comparing old and new references without the off step |
 
 <a id="not-built-by-wp14"></a>
 

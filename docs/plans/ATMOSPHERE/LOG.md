@@ -927,3 +927,58 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   [fixed authored-spur screen](DESIGN.md#fixed-witness-and-motion) as the evidence for a later in-game verdict,
   WP4 ran the [bounded CPU trial](DESIGN.md#wp4-finite-disk-shadow-diagnostic), and WP8.2 started from the
   [WP7 probe](../../../.orchestrate/evidence/ATMOSPHERE/WP7-review-2.md#suggestion--verified-scheduled-for-m82).
+- 2026-11-28 Design review 2 asked for changes, with thirteen Must Fix findings: review 1's seven on WP13,
+  repeated because the reviewer read the commit from before their fixes landed, and six new ones on WP14. No
+  reviewer reads this round. [Review](../../../.orchestrate/evidence/ATMOSPHERE/design-review.md) ·
+  [review 1](../../../.orchestrate/evidence/ATMOSPHERE/design-review-1.md)
+- 2026-11-28 Findings 1 to 5 and 7, on WP13. Each was checked against the design and the items as the entries
+  above left them, and none still holds: the cast width and its coverage case (1), a receiver's distance from
+  the eye with the 5° case (2), the two-part read with the 260 m box beside a post (3), the four faults of a
+  moving shadow with stillness claimed of still casters alone (4), the T2 capture of `cubes.json` and
+  `balloons.json` in Chrome (5) and the half-disc test named a check of the offline reference (7). WP13 is
+  being built, and no item of it changed.
+- 2026-11-28 Finding 6, the cost handed to WP17. WP13's part stands: the full-screen row at 67%, the caster
+  cull and the hand-off. The finding also asked the same of WP14 if it lands after WP17's sitting, so the
+  design gained [WP14's hand-off](DESIGN.md#wp14-hand-off-to-wp17) and WP14.6 fails without it. Making WP17
+  wait for either is `APPLE-PRESENTATION`'s plan and stays with the lead.
+- 2026-11-28 Finding 8, the old fallback tests against the new contract. The design names the two assertions
+  of `ray_ambient_knob_gpu` that expect no occlusion where rays cannot run, says how each is restated and
+  which assertions stand, and rests that on the seam ruling's own words. WP14.2 gained a case in which a
+  traced request rays cannot serve prepares and draws the screen-space method with the reason. For a caller
+  with neither method, the design now agrees with C08 and the module list's row: a radius never resolves to
+  off, the pass uses only formats every device has, and a scene over a device's binding limits is refused
+  as it is today. WP14.1 lost the case that resolved such a scene off.
+- 2026-11-28 Finding 9, the shared history. The design no longer says one texture or one extent serves both
+  methods. It gives the convention the two share: two values a texel, and a record with the written extent
+  and the stride, which the read takes and never assumes. The traced method keeps its own history, its off,
+  half and full extents and its reset rules. WP14.1's question asks for the read's stride, and WP14.2 gained
+  a case that draws traced occlusion at half and at full extent through the shared read.
+- 2026-11-28 Finding 10, the Chrome proof and the player's page. One function of the game gives the request
+  and every launch takes it from there, held by the new WP14.10 with a test and a question, and WP14.5 reads
+  the resolved method from the ordinary page. The off value travels in a route's `start`, so the T2 launcher
+  gains no option, and WP14.7 names the files that stay as they were: those a baseline lists as its
+  comparisons. WP14.5 names its four routes and pairs each with its off copy.
+- 2026-11-28 Finding 11, lists that failed good contact darkening. WP14.4 and WP14.5 judge what occlusion
+  adds, the difference between a frame and its pair with occlusion off, allow a soft darkening within the
+  radius and continuous change with perspective, visibility and light, and fail outlines beyond the prop's
+  reach, grain, abrupt change and trails. WP14.4 gained off pairs of its three routes. WP14.2's thin post is
+  set against a block that fills the depth behind it, and no item holds a computed fraction.
+- 2026-11-28 Finding 12, a gather fixed to one radius. WP14.2 gained a case with a receiver inside one radius
+  asked and outside another, on the same geometry.
+- 2026-11-28 Finding 13, what moved the baselines. WP14.8 first has the claimed commit's code, with occlusion
+  off, draw the references the landing replaces, by the five registered comparisons. The reviewer then judges
+  the difference between old and new references as what occlusion adds on one commit.
+- 2026-11-28 Suggestion taken: the rock's contact is judged in a held pose, `rock-dusk.json`, because the
+  moving part of the cube routes never shows it. Not taken, as before: the fixed cascade ratio is already
+  named, and `SHOWCASE`'s thresholded baselines are `SHOWCASE`'s plan.
+- 2026-11-28 Left for the lead, in the module list, which this planner may not change. The ambient occlusion
+  row says the history is "at half the render extent"; that is the screen-space method's and the traced
+  method's default, and the design's stride holds at traced full extent. `RAY-TRACING` WP5.6's last
+  sentence, on a scene that is ready without occlusion where rays cannot run, is the claim the seam ruling
+  replaced.
+- 2026-11-28 The plan file was shortened to what is still open, and the two cost assumptions became one.
+  What left it: the planner chose WP12.3's three quarters, and the first build's fixed spread covered about
+  94%; the diagnosis's capture line reproduces its frames, and its routes are written for a 1280 × 720 grid;
+  the Chrome arm of `scripts/run_v1_showcase.py moving` keeps images at its five checkpoint holds alone, which
+  is why WP13.7 takes the T2 capture. The rest is in the design: the hours the charts take the knob's full
+  value, WP3's later proposal, and how WP14's off copies and shared read work.
