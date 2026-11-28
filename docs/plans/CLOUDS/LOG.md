@@ -1405,3 +1405,8 @@ The replacement command and validator exercised the same comparison with a fresh
   joins the deck by density, and still scales by the strength after the erosion, which WP23.1's tenth
   behaviour turns away. One sentence of the design changed for finding 2: the band between the volume and
   the column form blends two densities, as the two keys do. No item changed.
+- 2026-11-28 Planner, after the design review of that revision asked for changes (one Must Fix finding, the
+  last round). Each part of the weather volume now keeps an apron, its neighbours' nearest voxels at its
+  own key ticks, and a reader filters within its own part alone, so a neighbour's write no longer shows
+  early beside a face. WP24.1 and WP24.6 written again. No interface with another module changed.
+  [What changed, the cost, the new assumption and the calculation](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-28-4/README.md)

@@ -25,11 +25,12 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 - Assumption: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item (brief decision 3), except in WP20 and WP25, by [their rule](DESIGN.md#holding-the-displays-refresh-while-clouds-drift-wp19-and-wp20).
 - Assumption: what the game loses with clouds absent stops nothing here; it is listed for `PLATFORM-RUNTIME-MAC` and the performance phase.
 - Assumption: only the fair preset's sky is held to the refresh. The broken and overcast skies' cost and the finished sky's presented cadence are recorded and investigated (WP12.5, WP12.6), and the rest is the performance phase's.
-- Assumption: "each cloud holds up on its own" is met by a new form for the weather's own clouds (heaps held in a 3D volume, about 72 MiB more), not by library shapes filling the fair sky. Until WP17 passes, main shows it unjudged.
-- Assumption: near heaps are drawn half a second of play behind the weather a query answers (30 seconds of weather at 60×), and past about 25 km a heap loses its overhangs.
-- Assumption: through a preset change a query can call a column clear for up to a second of play while its cloud is still drawn and still shades. A game's simulation gets no query that lags with the picture ([what a game may rely on](DESIGN.md#the-weather-volume)).
+- Assumption: "each cloud holds up on its own" is met by a new form for the weather's own clouds (heaps in a 3D volume of about 80 MiB), not by library shapes. Until WP17 passes, main shows it unjudged.
+- Assumption: near heaps are drawn half a second of play behind a query's weather, and past about 25 km a heap loses its overhangs.
+- Assumption: through a preset change a query can call a column clear for up to a second of play while its cloud still draws and shades. No query lags with the picture ([what a game may rely on](DESIGN.md#the-weather-volume)).
+- Assumption: no item inspects a preset change at 60× under the new form, where near clouds may thin part by part with straight edges ([risk 2](DESIGN.md#risks)).
 - Assumption: the weather volume's fill cadence is no governor knob, though the brief asks that every cadence be one, because moving it would freeze or jump the near clouds.
-- Assumption: WP25 measures the release V1 game in its 1920×1080 window, on the Apple recipe with TAAU under the fair preset, in one more sitting with no other agent working.
+- Assumption: WP25 measures the release V1 game in its 1920×1080 window, on the Apple recipe with TAAU under the fair preset, in one more sitting alone.
 - Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX work packages.
 - Assumption: the finished sky closes at WP12 with weak noon relief on broad lobes of library shapes as a listed weakness ([risk 14](DESIGN.md#risks)); [the noon-relief follow-up](DESIGN.md#the-noon-relief-follow-up) is no work package and waits for the lead.
 - Assumption: WP14 to WP12 pass without a shaft of sunlight followed inside mist below broken cloud ([risk 15](DESIGN.md#risks)); WP22, last, takes it up.
@@ -111,7 +112,7 @@ Go on from `build/clouds` at `aa8d61a8d` and
 [the revision's switches](../../../.orchestrate/evidence/CLOUDS/WP23-unblock/README.md): puffs inside
 [the three bounds](DESIGN.md#one-weather-field-in-the-air-frame), density
 [one function of the heaped profile](DESIGN.md#one-density-in-m¹), the cluster cache keyed by the fade
-length, the stills again. [Risk 2](DESIGN.md#risks) says when to end `BLOCKED`.
+length. [Risk 2](DESIGN.md#risks): when to end `BLOCKED`.
 
 ## WP24 The engine draws, shades and answers for the new cloud form on the Mac and in Chrome, and the old form is gone
 

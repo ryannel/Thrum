@@ -106,6 +106,12 @@ erodes it, so [the heaped profile](#one-weather-field-in-the-air-frame) is all a
 And [a reader](#the-weather-volume) filters that profile, makes a density from each key and blends the two
 densities ([part XXIV](#check-that-it-can-work)). WP23.1, WP24.1, WP24.3 and WP24.6 are written again. No
 interface with another module changed.
+Revised once more that day after the review of that revision (one finding, the last round): a filter that
+crossed the face between two parts of the volume read two parts' keys under one part's weight, so a
+neighbour's write showed a key interval early in a strip beside the face.
+[Each part now keeps an apron](#the-weather-volume), its neighbours' nearest voxels at its own key ticks, and
+no filter reaches into another part ([part XXV](#check-that-it-can-work)). WP24.1 and WP24.6 are written
+again. No interface with another module changed.
 
 ## The request
 
@@ -860,8 +866,8 @@ every skip is bounded by the product the march draws from. For the deck, a heape
 placed column that is the map: a coarse level holds the tallest top among a region's texels and the texels
 its filter reaches from them, and the region is empty of those where that top is no higher than the base.
 For heaped cloud inside the weather volume it is the volume: a coarse level of the volume holds the greatest
-profile among a block's voxels, the voxels the filter reaches from them and both keys, and the block is
-empty where that is zero. Inside the volume's reach a ray skips a region only where both call it empty, and
+profile among a block's voxels, the voxels the filter reaches from them, as each part's
+[apron](#the-weather-volume) holds them, and both keys, and the block is empty where that is zero. Inside the volume's reach a ray skips a region only where both call it empty, and
 no reader asks the map's column whether to read the volume. The map cannot answer that. At 15 km the first
 profile has 320 m map texels and 100 m voxels, and a heap of 150 m radius centred between four map centres
 is 226 m from each: every one of them is clear, which is the query's right answer there, and the heap holds
@@ -928,7 +934,8 @@ in the air frame, so wind costs nothing.
 - **Two keys, and a part a tick.** The first profile's volume is 37.7 million voxels, and the map's bound
   would have all of them written on every tick of a 60× time-lapse, which no frame holds
   ([the cost account](#cost-account)). So a voxel holds the profile at two states, its **keys**, and the
-  volume is filled a part a tick. A level is cut into parts fixed in the air frame. Each key of each part
+  volume is filled a part a tick. A level is cut into parts fixed in the air frame, each a set of whole
+  columns of the level, so a column has one pair of keys and one weight. Each key of each part
   has a **key tick**: the committed tick of the weather state it was written from. The effect keeps that
   tick with the state's weather time and parameters, which are all a heaped profile takes from a state,
   because travel is the air frame's. A part's **turn** comes once in every **key interval** `K`, a count
@@ -964,6 +971,46 @@ in the air frame, so wind costs nothing.
   a 0.6 power of the blended profile makes it 0.66: 32% over the blend of the two keys' optical depths, at
   voxel centres, with nothing eroded and no deck ([part XXIV](#check-that-it-can-work)). The order costs
   the function's arithmetic twice a sample and no read more.
+- **A part keeps an apron, and no filter reaches into another part.** Two parts that meet hold different
+  key ticks. A filter that took a voxel from each would mix two states in one key, and would lay its own
+  part's weight on a neighbour's newer key that the shown tick has not reached: the neighbour's write
+  would show a key interval early, for one tick, in a strip a voxel wide along the face. So each part
+  holds an **apron**: every voxel of its neighbours that the filter reaches from a point inside the part,
+  which is one ring of columns round its footprint. An apron voxel holds what any voxel holds, the model's
+  heaped profile at its own centre, in both keys, at the key ticks of the part that keeps it and never at
+  those of the part it lies in. It is written whenever its keeper is: on the keeper's turn, on a reset and
+  as it enters the level's reach. A point belongs to the part whose voxel it lies in. A reader there takes
+  each key through the filter from that part's voxels and apron alone, and blends by that part's weight.
+  So at every point of the volume, a face between two parts included, each key's filtered profile is of
+  one state, the density is a straight line between that part's two keys' densities, and a part's write
+  changes nothing that a point of another part reads.
+
+  With `K` at 30, take two voxels side by side in a full core, one each side of a face, where the model
+  clears both between ticks 31 and 45. The left part's turns fall at ticks 1, 31 and 61, and the right's
+  at 30 and 60. At committed tick 60 `S` is 30. The left part holds ticks 1 and 31, both full, at a
+  weight of 29/30. The right part, written on this tick, holds 30 and 60, full and clear, at a weight
+  of 0. Both centres show the full core. At a point in the left part with 0.51 of the filter on its own
+  voxel, a filter that took the right voxel from the right part's keys reads profiles of 1 and 0.51 and,
+  at the left part's weight, 0.68 of the core's density, or 0.38 under a threshold of 0.4. It read the
+  full core on the tick before and reads it again on the tick after. From the left part's apron the right
+  voxel is full at ticks 1 and 31, and the point reads the full core on all three ticks
+  ([part XXV](#check-that-it-can-work)).
+
+  What the rule gives up is a filter across a face while the weather changes. In still weather every key
+  of every part holds one state, an apron voxel holds what its own part holds for it, and the density is
+  continuous across a face, as if the filter crossed it. Through a change two parts draw two lines, as
+  the voxel centres on either side of their face already do, and the density steps at the face by the
+  difference between them, where a filter would spread that step over one voxel. In the case above the
+  step is 1/30 of the core's density from tick 61. [Risk 2](#risks) gives its largest, and what to do if
+  a face shows.
+
+  A level has no apron at its own outer edge, because a reader leaves a level before its filter would pass
+  that edge. Two levels are different parts. Where a reader passes from one level to the next it makes
+  each level's density by this rule, and a band between them blends the two densities with a weight that
+  is one number up the column, as the band between the volume and the column form does. How an apron is
+  stored and addressed is the builder's. It costs a sample no read: a reader already finds its part for
+  the weight, and reads that part's two keys. It costs the ring's share of the footprint, to hold and to fill:
+  about 6% round a footprint 64 columns square, and 13% round one 32 columns square or a slab 16 wide.
 - **A reset.** On a cut, a weather seek, a backward tick, a new timeline, a replaced device and the first
   frame, the states the keys held are gone or no longer lead to the committed one. Both keys of every part
   are written at the committed tick in that frame, and `R` is that tick. The volume then shows the
@@ -980,9 +1027,10 @@ in the air frame, so wind costs nothing.
   is then never past a part's newer key. Where a late write leaves `S` before the older key, the older key
   shows whole until `S` reaches it, a wait of fewer ticks than the frame crossed. After a hitch of a key
   interval or more every part is due: each takes one new key in that frame, and none is reset.
-- **What stays exact.** Each key holds the model at its key tick's state, at every voxel of its part. A
-  voxel that enters a level's reach as the camera moves through the air is written in both keys in that
-  tick, each from its own key's state, which the effect kept.
+- **What stays exact.** Each key holds the model at its key tick's state, at every voxel of its part and
+  of its part's apron. A voxel that enters a level's reach as the camera moves through the air is written
+  in both keys in that tick, each from its own key's state, which the effect kept, in its own part and in
+  each apron that keeps it.
 - **How far a cloud moves between keys.** In 30 seconds of weather an envelope moves by up to 0.13 of its
   range, the steepest of a 12-minute life. In the valley's fair sky the cell at site (−1, 6) of seed 39
   has a 755 s life and an authored depth of 3.74 km, and rises 465 m in its steepest 30 seconds: more than
@@ -1022,7 +1070,8 @@ in the air frame, so wind costs nothing.
   that state for long. A part of the map holds the state it was last written from, `M`, which
   [its age](#the-weather-map) bounds. A part of the volume holds its two keys' states, `A` and `B`, with
   the part's weight `w` between them. So over a point the deck, a placed shape and a heaped cell's column
-  form are drawn at `M`, and heaped cloud inside the volume at `A` and `B`. They are joined as the model
+  form are drawn at `M`, and heaped cloud inside the volume at `A` and `B`: those of the one part the
+  point lies in, at a face too, because no filter reaches into another part. They are joined as the model
   joins them: the deck's density and the heaped one by the greater at each point, whichever form or blend
   gives the heaped one, and a shape's coefficient added. Every reader draws from those products alone. None
   scales or gates what it reads by the committed state or by the map's column, so the view, the Sun's
@@ -1038,8 +1087,10 @@ in the air frame, so wind costs nothing.
   filtering that the test states:
   - past the volume, `τ(M, M)`, and exactly it where the column holds heaped cloud alone or with a placed
     shape;
-  - inside the volume, `(1 − w) · τ(M, A) + w · τ(M, B)`, because the reader blends densities, and the
-    greater of the deck's density and a blend of two is no more than the same blend of the two greaters;
+  - inside the volume, `(1 − w) · τ(M, A) + w · τ(M, B)`, with `A`, `B` and `w` those of the column's
+    part, which are one up the column because a part is whole columns. It holds because the reader blends
+    densities, each key's from one state at every height, and the greater of the deck's density and a
+    blend of two is no more than the same blend of the two greaters;
   - in the band, the band's blend of those two, because its weight is one number up the column.
 - **Through a preset change.** While the weather stands still `M`, `A` and `B` give one column, and the
   bound is the query's at the committed tick. While a preset ramps they differ, and the picture follows
@@ -1060,14 +1111,19 @@ in the air frame, so wind costs nothing.
   interval more. So a column the query has answered clear at every tick of that span is drawn clear, and
   the query at the committed tick is what the picture reaches by the end of it. Code that must match the
   picture at a tick asks the effect, which reports for a world point the states `M`, `A` and `B` and the
-  weight its parts hold there, and evaluates the model at them. That report is for presentation code and
+  weight its parts hold there, and evaluates the model at them. The volume's part is the one whose voxel
+  the point lies in. A reader there takes nothing from another part's keys, so the report is whole at a
+  face between two parts as it is at a voxel's centre, and in a band between two levels it gives each
+  level's part with the band's weight. That report is for presentation code and
   tests. A simulation never reads the effect, because its answers must not depend on a renderer.
 - **It belongs to the weather, not to the sky.** The Sun's path integrates it. A scene with Shade and no
   visible sky holds it, and its ground field is the same bytes as with the sky drawn.
 - **Its size.** Its reach, its voxels and its key interval are profile constants, and none is a
   [knob](#recipes-limits-and-knobs). The first profile starts
   from 50 m voxels to about 12 km and 100 m voxels to about 25 km, over the heaped type's depth: about
-  72 MiB at one byte a key. A byte holds the heaped profile in steps of 1/255. The curve is steepest just
+  72 MiB at one byte a key, and no more than 82 with the parts' aprons. The first profile keeps its
+  aprons to 13% of the voxels, which a footprint 32 columns square or a slab 16 wide meets. A byte holds
+  the heaped profile in steps of 1/255. The curve is steepest just
   inside an eroded surface, so there half a step is up to 0.07 of the type's extinction under the deepest
   threshold, 0.85, and 0.03 under one of 0.4. A test that compares eroded densities at voxel centres
   states a tolerance that allows for it, or takes its centres clear of an eroded surface.
@@ -1075,7 +1131,7 @@ in the air frame, so wind costs nothing.
   so the filter draws the cluster and the noise draws everything finer. Past 25 km a heap is a few layer
   texels wide, which the column form holds.
 - **What fills it.** Compute passes in `simulate` evaluate the model's rule at the voxel centres of the
-  parts whose turn it is. Whether a pass makes a cell's puffs from the hash or reads a list the model made
+  parts whose turn it is, their aprons included. Whether a pass makes a cell's puffs from the hash or reads a list the model made
   for each live cell, and how it passes over a part no live cell stands in, are the builder's choice. The
   check is each key's voxel centres against the model's heaped profile at that key's key tick, at a
   tolerance the test states.
@@ -1740,13 +1796,16 @@ The owner's bar of 17 November 2026 ([the request](#the-request), and
   what a server reads. So the GPU's weather map and ground condensate are tested against the query, at a
   tolerance the test states: cloud and mist stand where the query has them and not where it is clear (WP2, WP4.1,
   WP6.2, WP6.9, WP7.6, WP14.2), and [the weather volume](#the-weather-volume)'s voxels hold the model's
-  heaped profile at their centres, each key at its key tick, and its reader shows one shown tick (WP24.1).
-  WP24.6 holds the six places where a column, one state or the uneroded density alone misleads a reader:
+  heaped profile at their centres, each key at its key tick, a part's apron at that part's key ticks, and
+  its reader shows one shown tick (WP24.1).
+  WP24.6 holds the seven places where a column, one state, one part or the uneroded density alone misleads a reader:
   an overhang in its volume form, its column form and their blend; a puff over a shallow deck; a heap that
   every map centre misses; a preset ramp with the two keys at different ticks, held to the blend of the
   model's densities at the two keys and to [the column of two states](#the-weather-volume); a directed
-  shape under a clear sky, drawn once on both sides of the volume's edge; and the eroded density at voxel
-  centres in a part-strength cell, where two cells overlap and in a fade. Presence is not enough. A GPU that draws twice the query's extinction puts mist at
+  shape under a clear sky, drawn once on both sides of the volume's edge; the eroded density at voxel
+  centres in a part-strength cell, where two cells overlap and in a fade; and a point beside the face
+  between two parts on the tick the neighbour is written through a ramp, where a filter across the face
+  shows the write early. Presence is not enough. A GPU that draws twice the query's extinction puts mist at
   every probe the query does, and a player loses sight of a thing at half the range the game works with. So
   the test of each GPU path that WP2's map test does not reach also compares the amount, at a point inside the
   condensate: through ground condensate, the optical depth along a sight line, summed from the GPU's coarse
@@ -2329,11 +2388,31 @@ is a toy. It shows outline and relief, and nothing of the engine's light, map or
   revision drew a pale rounded mass. One cell through twelve ages frays into tufts toward both ends of
   its life with no cap at any age. *Not shown:* the planner read these alone, and no still here is from
   a volume or a blend of two keys.
+- **XXV, a face between two parts of the volume**, 28 November, from the review of part XXIV's revision
+  ([what changed, and the calculation](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-28-4/README.md)).
+  Calculated, in units of a core's density with the firm edge a 0.6 power. Two voxels side by side in a
+  full core, one each side of a face. The model holds both full through tick 31 and clear from tick 45.
+  `K` is 30, the left part's turns fall at ticks 1, 31 and 61 and the right's at 30 and 60. *A filter
+  across the face.* A point in the left part with 0.51 of the filter on its own voxel, each key filtered
+  across the face and blended by the left part's weight: 1 through tick 59, 0.679 at tick 60 (0.383 under
+  a threshold of 0.4), and 1 at tick 61. The dip is the right part's write, of a key the shown tick
+  reaches 30 ticks later. Over 340 ticks that reader is up to 0.32 from its own part's line. *From the
+  part's apron.* The same point reads 1 through tick 61 and then the left part's line, 0.967 at tick 62
+  and clear at tick 91. A point as far inside the right part reads the right part's line, one tick ahead.
+  The step at the face is never more than 0.033, which is what the two voxel centres differ by under
+  either reader. *How large a step can be.* Two parts' lines through a change that is over in four ticks,
+  as fair to clear is at 60×, differ by up to 0.42 of a core where the parts' turns fall one tick apart,
+  0.83 at five ticks and 0.50 at fifteen. *WP24.6's seventh case at its limits:* a weight of a half, 0.4
+  of the filter on the neighbour's voxel, and profiles of 0.25 and 0.35 at the two centres. The rule
+  gives 0.476, a reader that takes the neighbour's voxel from the neighbour's keys 0.398, and one that
+  stops its filter at the face 0.435. Over four such pairs the first is 0.05 or more from the rule and
+  the second 0.02 or more, against the 0.002 that half a byte's step moves the density there. *Not
+  shown:* nothing here is drawn, and no GPU ran.
 - **Unrun:** the engine's light and its noise on the form; the weather volume's filter at 50 and 100 m
   voxels, where the toy's grid is 25 m; the column form past the volume and the band between them; a dying
   cloud, in motion; the blend of two keys 30 seconds of weather apart, where a fast cloud's two surfaces
-  stand further apart than its fade; a preset change at 60× with the near heaps a second behind; cost, and
-  the refresh under it.
+  stand further apart than its fade; a preset change at 60× with the near heaps a second behind, and the
+  parts of the volume thinning on different ticks through it; cost, and the refresh under it.
   WP23's stills from the model, WP24's tests and records, WP17's inspections and WP25's wind series take
   those up, in that order.
 
@@ -2439,7 +2518,7 @@ there, not here.
 | Weather step | Tick, CPU | One record and at most 16 directed shapes | Microseconds | |
 | Phases | Frame, once a ray; the tables at preparation | One table read and one closed form; a table for each row of the type table, about 4 KiB each at 1,025 entries, with the Sun term's four numbers | None in the march | |
 | Weather map | Half a second of weather, in parts: 2 Hz at 1× | 4 levels × 256², two textures, or three where the deck's own column needs one. A heaped texel integrates its column between the heights the puffs enter and leave it | Under 0.1 ms a frame at 1× under turrets; WP24.5 records it under puffs | 2 ms an update |
-| Weather volume | A part a tick, the whole in one key interval of 30 ticks, at every time scale | 2 levels of 512² columns, 96 and 48 voxels deep, two keys a voxel, one byte a key: 37.7 M voxels. A whole fill on each tick, which the map's bound would ask at 60×, cannot fit: at the 1 to 2 ns a texel the map's pass measured (262 k texels a tick at 60× in 0.23 ms a frame, WP2.9's record) it is 40 to 75 ms. A tick writes 1.26 M voxels, and the voxels that enter the reach: 49 k in a 40 m/s wind at 60×. A reset (a cut, a seek, a replaced device and the first frame) writes both keys whole, once, as a Sun-path jump refills its product. A frame that receives several ticks writes a part for each, and after a hitch of a key interval one key of every part. A voxel under a live cell measures its distance to that cell's puffs: 94 to 321 a cell, median 187, in part XXIII, about twice part XX's 46 to 136 and the first build's 28 to 214. Any other costs its cells' footprint tests | Unmeasured. About five times the map's texels a tick: 1 to 3 ms on a tick's frame if a voxel costs what a map texel does, less where a part no live cell stands in is passed over, and more as a voxel measures more puffs: a pass that measures every puff of a cell at every voxel under it is the costly way, and a thermal's bound or a list a column is the builder's to add if WP24.5's record asks for it. WP24.5 records the pass and the largest fill in one frame in each of its runs at 1×, 8× and 60×, and WP25 decides whether the sky still holds the refresh | |
+| Weather volume | A part a tick, the whole in one key interval of 30 ticks, at every time scale | 2 levels of 512² columns, 96 and 48 voxels deep, two keys a voxel, one byte a key: 37.7 M voxels, and up to 13% more in the parts' [aprons](#the-weather-volume). A whole fill on each tick, which the map's bound would ask at 60×, cannot fit: at the 1 to 2 ns a texel the map's pass measured (262 k texels a tick at 60× in 0.23 ms a frame, WP2.9's record) it is 40 to 75 ms. A tick writes 1.26 M voxels and their part's apron, up to 1.42 M in all, and the voxels that enter the reach: 49 k in a 40 m/s wind at 60×. A reset (a cut, a seek, a replaced device and the first frame) writes both keys whole, once, as a Sun-path jump refills its product. A frame that receives several ticks writes a part for each, and after a hitch of a key interval one key of every part. A voxel under a live cell measures its distance to that cell's puffs: 94 to 321 a cell, median 187, in part XXIII, about twice part XX's 46 to 136 and the first build's 28 to 214. Any other costs its cells' footprint tests | Unmeasured. About five times the map's texels a tick: 1 to 3 ms on a tick's frame if a voxel costs what a map texel does, less where a part no live cell stands in is passed over, and more as a voxel measures more puffs: a pass that measures every puff of a cell at every voxel under it is the costly way, and a thermal's bound or a list a column is the builder's to add if WP24.5's record asks for it. WP24.5 records the pass and the largest fill in one frame in each of its runs at 1×, 8× and 60×, and WP25 decides whether the sky still holds the refresh | |
 | Noise | Preparation | 128³ and 32³ | None in a frame | |
 | Sun's path | At 1×, near level over 8 frames, mid 32, far 128 | 3 × 256² columns (80 m, 320 m and 1.6 km wide, the last reaching the horizon), 48, 32 and 16 slices of the coarse density, which reads the map, the weather volume and the shape noise, and a placed cell's slab where its volume form has weight: 6.3 M stored slices to fill, about 0.5 M a frame. A stored slice is one or more density reads: part H's accuracy figures took four | 0.1–0.2 ms | 2.2 ms shadow |
 | Ground field and far value | With the Sun's path; the far value each frame | 1024², and a mean over the outermost level's ground slice | Under 0.05 ms | |
@@ -2452,7 +2531,7 @@ there, not here.
 | Ground band of the Sun's path | With the Sun's path | 3 levels × 256² columns × 8 to 12 heights, with one visibility bit a node | As the cloud band, about a quarter of its samples | |
 | Medium coefficients | Frame | One sample for each view-volume cell inside the handover (about 0.7 M of 0.9 to 1.4 M cells): the map, the shape noise, the Sun's path | Unmeasured; Frostbite's write and lighting of a like grid took 2.5 ms on a PlayStation 4. WP14 records it | |
 | Far condensate in the trace | Frame | The same rays, longer where mist lies between the handover and the land; a stop for each pixel of a texel, kept as the ray passes its depth; one lent aerial read for each part of a ray that holds condensate, one for a ray through a cloud and up to tens through thin mist in thick haze; and the texels traced out of turn where no carried stop passes | Unmeasured; WP15 records it beside WP9's, with the rays traced out of turn | |
-| Memory | | Weather 4 MiB, the weather volume about 72, noise 2, Sun's path 13, ground 2, layer history and trace 25, footprints about 1, library 27 MiB as R8 or 14 as BC4, growth track the same again; the library is held by every scene that declares Shapes, shadow-only included. With Ground: the surface field and datum about 2 MiB, the ground band about 4, the medium coefficients about 8 at 160×90×72, and four stops a texel in the layer and its history where there was one, about 52 | About 119 MiB plus the library, and about 66 more with Ground | 62 MiB plus history |
+| Memory | | Weather 4 MiB, the weather volume about 72 and up to 9 more for its aprons, noise 2, Sun's path 13, ground 2, layer history and trace 25, footprints about 1, library 27 MiB as R8 or 14 as BC4, growth track the same again; the library is held by every scene that declares Shapes, shadow-only included. With Ground: the surface field and datum about 2 MiB, the ground band about 4, the medium coefficients about 8 at 160×90×72, and four stops a texel in the layer and its history where there was one, about 52 | About 128 MiB plus the library, and about 66 more with Ground | 62 MiB plus history |
 
 **Records and tripwires, never gates** ([brief](../VISION.md), decision 3). `scripts/cloud_cost.py`, created in
 WP2, takes a paired record of one scene at one view, capture off: the scene with clouds and with them absent,
@@ -2592,6 +2671,19 @@ with no largest fill, is turned away too (WP24.5).
    against 300 m. If WP17.4's 60× sequence shows a cloud's edge soften or double as it rises, the fix is a
    shorter key interval, at the cost WP24.5 records. A model whose own heaped cloud is keyed, so that the
    query lags with the picture, is a planner's change and no builder's.
+
+   **Two parts through a fast change.** Each part of the volume follows the line between its own two keys,
+   and two parts' keys fall on different ticks. At 1× a control's ramp spans ten key intervals and the
+   lines agree. At 60× a preset change is over between two turns, so for up to a key interval one part
+   has thinned and its neighbour has not: their voxel centres differ by up to 0.83 of a core's density
+   where their turns fall five ticks apart ([part XXV](#check-that-it-can-work)). At the face between them
+   that difference is a step, because [no filter crosses a face](#the-weather-volume). Nothing here shows
+   whether half a second of it is seen, and no item inspects a preset change at 60× under the puff form:
+   WP7.3 judged minute-long changes at 1×, where the lines agree. If a sequence shows the parts or their
+   faces, the fixes in order: a shorter key interval, at the cost WP24.5 records; then
+   one pair of key ticks for the whole volume, each new key filled over an interval before it is shown,
+   which costs a third key's memory or twice the lag and is a planner's change. Never a filter that reads
+   two parts' keys under one weight.
 
    **Who judges it.** WP17 judges the clouds that failed. The fair preset places library shapes among its
    procedural clouds, and at a placed share of 1 it holds no procedural heap at all, so a sky judged with
@@ -3008,6 +3100,7 @@ water scene, WP11.5 uses `scripts/check_water_browser.mjs`.
 | Does a cluster that rises through its base read as a cloud growing, and does a dying one fray before it subsides? | WP23's life strip from the model, then WP17.4's time-lapse |
 | Do puffs hold up from the ground in the engine's own density and noise, as part XX's toy has them? | WP23's stills, before any GPU work ([risk 2](#risks)) |
 | Does a cluster read from 50 m and 100 m voxels keep its heaps, and does the edge of the weather volume show? | WP17.1's crops and WP17.3's horizon |
+| Do the parts of the weather volume, or the faces between them, show through a preset change at 60×? | No item inspects it; [risk 2](#risks) gives the fixes if a sequence shows them |
 | What does filling the weather volume cost a tick, and does the sky still hold the display's refresh with it? | WP24.5 records the pass and its largest fill in one frame at 1×, 8× and 60×; WP25's wind series decides |
 | Does heaped cloud read between two keys 30 seconds of weather apart keep a clean edge as it rises at 60×, where a fast cloud rises further than its fade length between them? | WP17.4's sequences |
 | What brings out the creases of a broad lobe under a high Sun, when a finer Sun march, a broader diffuse column and density probes do not? | [The noon-relief follow-up](#the-noon-relief-follow-up), after WP12, finds the cause by a control before any look |

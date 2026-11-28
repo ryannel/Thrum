@@ -417,6 +417,17 @@ ticks** and blends them by where the shown tick lies between them. Defined in
 
 Proposed: the planner chose the names.
 
+### Apron
+
+The ring of a neighbour's voxels that a part of the weather volume keeps beside its own, at its own key
+ticks, so that a filter at any point inside the part reads one part's keys and never two. Defined in
+[CLOUDS' design](CLOUDS/DESIGN.md#the-weather-volume).
+
+- **Source** — the apron voxels a sparse voxel grid keeps round each brick so that filtering stays inside
+  it. Parallel solvers call the same thing ghost cells or a halo.
+
+Proposed: the planner chose "apron" over "halo", "ghost cells" and "border".
+
 ### Cast width
 
 How wide a thing is for casting a shadow: the diameter of the largest ball that fits inside its mesh, scaled
