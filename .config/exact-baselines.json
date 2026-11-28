@@ -35,11 +35,11 @@
         "scripts/compare_v1_pixels.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-the-wasm-a-chrome-capture-runs",
-        "module": "BASELINE-GUARD",
-        "milestone": "WP3"
+        "anchor": "ruling-on-atmosphere-wp13",
+        "module": "ATMOSPHERE",
+        "milestone": "WP13"
       },
-      "pin": "07d0bc1b5c839f2cda6cc5745282c4f533e34b8e38ae75d4efac48c3642f787d"
+      "pin": "cdcebe63cc6560a258adda88a20b99c83171a8ca707e8c6930ad7d03e19b5983"
     },
     {
       "id": "chrome-day-sdr",
@@ -55,11 +55,11 @@
         "scripts/apple_tile_m1_compare_browser.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-the-wasm-a-chrome-capture-runs",
-        "module": "BASELINE-GUARD",
-        "milestone": "WP3"
+        "anchor": "ruling-on-atmosphere-wp13",
+        "module": "ATMOSPHERE",
+        "milestone": "WP13"
       },
-      "pin": "31a08bd6c5f8fc40f357b480963a472efd35f55eb7a1a242e36ba42f26d4ebb1"
+      "pin": "d8b60ad3f9b916fcad00387a1aed29dcaded683a105884f3d7fc304cfdfbb209"
     },
     {
       "id": "chrome-day-scene-linear",
@@ -75,11 +75,11 @@
         "scripts/apple_tile_m1_compare_browser.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-the-wasm-a-chrome-capture-runs",
-        "module": "BASELINE-GUARD",
-        "milestone": "WP3"
+        "anchor": "ruling-on-atmosphere-wp13",
+        "module": "ATMOSPHERE",
+        "milestone": "WP13"
       },
-      "pin": "a784685fa4924fece559835cec70d8cdfb9cda24bfedcff2d4bf35ff30f023c4"
+      "pin": "e1f57e34422d35101703bd630b140bccd41fe64b02398416270c3de3259c283c"
     },
     {
       "id": "chrome-night-sdr",
