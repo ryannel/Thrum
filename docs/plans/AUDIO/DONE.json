@@ -4,7 +4,7 @@
     {
       "id": "WP1",
       "name": "A program plays sounds into a buffer with no device, placed, pitched, looped and limited, and a test reads exactly what would be heard",
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "A mixer as dependable as a shipped game's: a crowded moment degrades by dropping its quietest sounds, and never by crackling, clicking or stalling a frame. Correctness held as `SIM-2D` holds it: one script, one digest, the same on every target. No reference game is named, because no item here is judged by ear or by eye: how it sounds is the owner's to judge, in `GAME-SDK` WP19.",
       "items": [
         {
@@ -49,7 +49,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/AUDIO/WP1/WP1.3.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
         {
@@ -62,8 +62,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/AUDIO/WP1/WP1.4.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
@@ -77,8 +77,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/AUDIO/WP1/WP1.5.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
@@ -94,7 +94,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/AUDIO/WP1/WP1.6.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
         {
@@ -107,8 +107,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/AUDIO/WP1/WP1.11.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
@@ -166,64 +166,33 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/AUDIO/WP1/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         }
       ],
-      "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
+      "failed_reviews": 2,
+      "failed_reviews_with_repeat": 1,
       "findings": [
         {
-          "name": "An emitter restored on resume can keep sounding after it ends",
-          "item": "WP1.6",
-          "repeat": false
-        },
-        {
-          "name": "Repeated listener writes can starve an emitter indefinitely",
+          "name": "Repeated plays can keep a pending master mute from reaching the mix",
           "item": "WP1.11",
+          "different": "The previous listener-write case now delivers its emitter. Play bypasses the retry priority and repeatedly takes the free slot ahead of an already pending volume change.",
           "repeat": false
         },
         {
-          "name": "Dropping the pulling half strands play outcomes",
-          "item": "WP1.6",
-          "repeat": false
-        },
-        {
-          "name": "Stopping or displacing a short sound cuts its ramp at the last sample",
-          "item": "WP1.5",
-          "repeat": false
-        },
-        {
-          "name": "Changing a stereo emitter's place switches its channel gains in one frame",
-          "item": "WP1.10",
-          "repeat": false
-        },
-        {
-          "name": "A panned emitter can exceed the glide step on leaving its radius",
+          "name": "Holding a fading-in emitter makes it grow louder",
           "item": "WP1.4",
+          "different": "The earlier emitter findings concerned a radius exit, stereo routing and ending a restored emitter. This hold interrupts the entry glide of an unplaced mono loop.",
           "repeat": false
         },
         {
-          "name": "An emitter started while stopped takes two simultaneous fades on resume",
-          "item": "WP1.6",
+          "name": "Holding during a volume reduction exceeds the ramp step",
+          "item": "WP1.5",
+          "different": "The previous stop and displacement defect at PCM exhaustion is fixed. This is a continuing loop whose volume glide and hold envelope both fall during the same frames.",
           "repeat": false
         },
         {
-          "name": "A play limit ignores a sounding emitter of the same sound",
-          "item": "WP1.3",
-          "repeat": false
-        },
-        {
-          "name": "The record excludes voices still sounding during their ramp",
-          "item": "WP1.11",
-          "repeat": false
-        },
-        {
-          "name": "A silent pull scans every reserved voice slot per frame",
-          "repeat": false
-        },
-        {
-          "name": "Nonfinite input omits the specified debug assertion",
+          "name": "Fully held emitters still incur per-frame rendering work",
           "repeat": false
         }
       ]

@@ -17,7 +17,7 @@
         {
           "verdict": "fail",
           "commit": "34cdf9d695b1e9e3065fdbd732fb3f13e00781dc",
-          "review": ".orchestrate/evidence/AUDIO/WP1-review.md",
+          "review": ".orchestrate/evidence/AUDIO/WP1-review-1.md",
           "items": {
             "WP1.1": "pass",
             "WP1.2": "pass",
@@ -103,6 +103,65 @@
             "turns": 1
           },
           "at": "2026-11-28T04:39:29Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "12e5b571d593801d56a57ef3732ce10414f7a1fa",
+          "review": ".orchestrate/evidence/AUDIO/WP1-review.md",
+          "items": {
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "fail",
+            "WP1.5": "fail",
+            "WP1.6": "pass",
+            "WP1.11": "fail",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "Repeated plays can keep a pending master mute from reaching the mix",
+              "item": "WP1.11",
+              "different": "The previous listener-write case now delivers its emitter. Play bypasses the retry priority and repeatedly takes the free slot ahead of an already pending volume change.",
+              "repeat": false
+            },
+            {
+              "name": "Holding a fading-in emitter makes it grow louder",
+              "item": "WP1.4",
+              "different": "The earlier emitter findings concerned a radius exit, stereo routing and ending a restored emitter. This hold interrupts the entry glide of an unplaced mono loop.",
+              "repeat": false
+            },
+            {
+              "name": "Holding during a volume reduction exceeds the ramp step",
+              "item": "WP1.5",
+              "different": "The previous stop and displacement defect at PCM exhaustion is fixed. This is a continuing loop whose volume glide and hold envelope both fall during the same frames.",
+              "repeat": false
+            },
+            {
+              "name": "Fully held emitters still incur per-frame rendering work",
+              "repeat": false
+            }
+          ],
+          "summary": "WP1 fails three of its eleven items. A master mute stayed pending for three seconds while the mix accepted every play, and holding a loop during a gain change broke its fade to silence. The eleven findings in the previous review are fixed in their reported cases. A separate per-frame cost remains for emitters held at silence.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 121468,
+            "cached": 2751744,
+            "output": 13728,
+            "turns": 1
+          },
+          "at": "2026-11-28T05:53:54Z"
         }
       ],
       "authorised": {
