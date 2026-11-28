@@ -1,27 +1,14 @@
 {
   "module": "CLOUDS",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/CLOUDS/design-review.md",
-    "commit": "cf48f88d75149088c209d368381fb69069aae22a",
-    "hash": "f9199c74779dac50b3517e76d6a7d1173e86c730cbc05fe614d435d5af0e0b72",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.171.0-alpha.13.2",
-    "path": "headless",
-    "usage": {
-      "input": 95324,
-      "cached": 1612160,
-      "output": 7887,
-      "turns": 1
-    },
-    "at": "2026-11-28T05:24:01Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "311a56606fb31036a228b98d2d40fabc537eeeba5bcaafbbafc9d039d57d728b",
+    "after": [
+      ".orchestrate/evidence/CLOUDS/design-review-36.md",
+      ".orchestrate/evidence/CLOUDS/design-review.md"
+    ],
+    "at": "2026-11-28T06:31:15Z"
   },
   "work_packages": {
     "WP1": {
@@ -1795,12 +1782,12 @@
       }
     },
     "WP12": {
-      "definitions": "e7b51eb7d533f7ecbe405444679f1fda78e71121a938f5c28cfdff925a43bbeb",
+      "definitions": "f79736bafb48882183070a75da5c256c48bcdd7bbda3af7de46168b674958223",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 4 Must Fix find",
-        "at": "2026-11-28T05:19:49Z"
+        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asks for changes: resolve its four must-fix",
+        "at": "2026-11-28T06:31:15Z"
       }
     },
     "WP13": {
@@ -2722,12 +2709,12 @@
       }
     },
     "WP17": {
-      "definitions": "f4f6cc08f35a9787f1cb75b9df8049f11de5437fdd758f558b25bd84cc64cd68",
+      "definitions": "ccea3d474dc3868d3a23f87619a76ec0e57eec57bbc428fe07ca691286d65282",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 4 Must Fix find",
-        "at": "2026-11-28T05:19:49Z"
+        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asks for changes: resolve its four must-fix",
+        "at": "2026-11-28T06:31:15Z"
       }
     },
     "WP18": {
@@ -3033,7 +3020,7 @@
       "ends_stretch": true
     },
     "WP23": {
-      "definitions": "b33a7a1947e03292ee9d1b0fb5dff1c5e3f033439d1d9bb8e99c73ba0dbff56c",
+      "definitions": "746b312cab8e95315d3209c4ec077747184803da034f59a369dbb4771981cd9d",
       "reviews": [
         {
           "verdict": "fail",
@@ -3074,17 +3061,17 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 4 Must Fix find",
-        "at": "2026-11-28T05:19:49Z"
+        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asks for changes: resolve its four must-fix",
+        "at": "2026-11-28T06:31:15Z"
       }
     },
     "WP24": {
-      "definitions": "1322eb4f8a12266447c0f9096ae3eeb8062c5c374c5bded08d4f240862ab9077",
+      "definitions": "cb38d44e021c051343a9db629c6c4645938dab73baa07522671a77a276cd76a4",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 4 Must Fix find",
-        "at": "2026-11-28T05:19:49Z"
+        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asks for changes: resolve its four must-fix",
+        "at": "2026-11-28T06:31:15Z"
       }
     },
     "WP25": {
@@ -3289,11 +3276,15 @@
     {
       "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 4 Must Fix findings. WP23's build now passes both its items (the CPU stills show distinct billowed heaps rising, thinning and breaking apart) and its review (.orchestrate/evidence/CLOUDS/WP23-review.md) failed only on two design requirements: selecting puffs removes existing erosion from broken decks, and clusters extend beyond their cells' radius and depth. Settle the design findings with the smallest change, keep WP23's passing form, and leave the builder a clear path to merge WP23.",
       "at": "2026-11-28T05:19:49Z"
+    },
+    {
+      "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asks for changes: resolve its four must-fix findings in docs/plans/CLOUDS/DESIGN.md (and PLAN.md/DONE.json where items follow). Also fold in the two design requirements the WP23 unblock recorded in .orchestrate/evidence/CLOUDS/WP23-unblock/README.md. An earlier Fable planner started this and stopped at its usage limit; its partial DESIGN.md is in the git stash named \"planner: The design review of CLOUDS at .orchestrate/evidence/CLOUDS/...\" \u2014 read it with git stash show -p as evidence, judge it, and do not pop it. Change only what the findings and requirements call for.",
+      "at": "2026-11-28T06:31:15Z"
     }
   ],
   "planner": {
-    "host": "claude",
-    "at": "2026-11-28T05:19:49Z"
+    "host": "codex",
+    "at": "2026-11-28T06:31:15Z"
   },
   "design_history": [
     {
@@ -4201,6 +4192,29 @@
         "turns": 1
       },
       "at": "2026-11-28T05:04:07Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/CLOUDS/design-review.md",
+      "commit": "cf48f88d75149088c209d368381fb69069aae22a",
+      "hash": "f9199c74779dac50b3517e76d6a7d1173e86c730cbc05fe614d435d5af0e0b72",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13.2",
+      "path": "headless",
+      "usage": {
+        "input": 95324,
+        "cached": 1612160,
+        "output": 7887,
+        "turns": 1
+      },
+      "at": "2026-11-28T05:24:01Z"
     }
   ]
 }
