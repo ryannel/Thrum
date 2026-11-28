@@ -211,21 +211,23 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let is_filament = input.across_fraction.y <= -2.0;
     let normal = normalize(cross(vec3(across.x, 0.0, across.y), tangent));
     let geometric = select(-geometry_normal, geometry_normal, dot(geometry_normal, normal) > 0.0);
-    let contour = normalize(select(mix(normal, geometric,
-        select(0.38 * smoothstep(0.34, 0.76, input.across_fraction.w), 1.0, is_filament)),
-        input.strand_normal, input.closed_strand != 0u));
+    let fraction = input.across_fraction.w;
+    let sheet_normal = mix(normal, geometric,
+        select(0.38 * smoothstep(0.34, 0.76, fraction), 1.0, is_filament));
+    // At the root the strand's section is still flat and shares the tongue's normal.
+    let rounding_in = select(0.0, smoothstep(0.28, 0.65, fraction), input.closed_strand != 0u);
+    let contour = normalize(mix(sheet_normal, input.strand_normal, rounding_in));
     var face = select(-contour, contour, dot(contour, look) >= 0.0);
     let breakout = input.discharge.y;
     let breakup = select(strand_breakup(input.discharge.w), 0.0, is_filament);
-    let fraction = input.across_fraction.w;
     let below_tongue = smoothstep(0.02, 0.23, fraction);
     let broken = smoothstep(rank - 0.24 - width, rank + 0.09 + width, breakout);
-    let filament_white = smoothstep(0.06, 0.48, input.across_fraction.w)
-        * smoothstep(0.08, 0.58, 0.72 * coarse + 0.28 * fine);
-    let streak_white = smoothstep(0.42, 0.89, input.across_fraction.w)
-        * smoothstep(0.23, 0.78, 0.65 * coarse + 0.35 * fine);
     let parcel = sheet_noise(vec2(lip, birth), FALL_LOOP, vec2(2.1, 5.25), vec2(117.0, 0.0));
     let pulse = smoothstep(0.40, 0.72, 0.86 * parcel + 0.14 * fine);
+    let filament_white = smoothstep(0.06, 0.48, input.across_fraction.w)
+        * mix(0.25, 1.0, pulse);
+    let streak_white = smoothstep(0.42, 0.89, input.across_fraction.w)
+        * smoothstep(0.23, 0.78, 0.65 * coarse + 0.35 * fine);
     let parcel_foam = breakup * below_tongue * (0.12 + 0.53 * pulse);
     let sheet_white = max(max(mix(pow(breakout, 1.18), broken, 0.74), 0.63 * streak_white), parcel_foam);
     let white = select(sheet_white * below_tongue, filament_white, is_filament);
@@ -302,8 +304,9 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let streak_cover = mix(1.0, mix(0.48, 1.0, pulse),
         breakup * smoothstep(0.20, 0.72, input.across_fraction.w));
     let glass_alpha = min(mix(0.46, 0.88, below_tongue), fresnel + 0.07 + 1.7 * input.discharge.w + 0.35 * breakout);
+    let trickle_film = select(1.0, mix(0.14, 1.0, smoothstep(0.0, 0.19, fraction)), is_filament);
     let opacity = (clear * glass_alpha + white * (0.90 + 0.18 * grain))
-        * presence * mix(0.62, 1.0, seam) * contact_cover * streak_cover;
+        * presence * mix(0.62, 1.0, seam) * contact_cover * streak_cover * trickle_film;
     let path_distance = select(input.across_fraction.y, -input.across_fraction.y - 2.0, is_filament);
     let last_fraction = input.across_fraction.w - length(input.velocity_along.xyz) * sheet_clock.y
         / max(0.001, path_distance);
