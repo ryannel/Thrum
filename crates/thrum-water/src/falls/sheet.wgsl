@@ -253,8 +253,10 @@ fn tongue_shade(input: SheetVertex, look: vec3<f32>, normal: vec3<f32>) -> FallO
     let roll = smoothstep(-0.17, 0.05, fraction) * (1.0 - smoothstep(0.13, 0.25, fraction));
     let clear = mix(diffuse * 0.18, reflection, 0.42 + 0.30 * grazing)
         + roll * diffuse * vec3(0.07, 0.14, 0.17);
-    let wet = smoothstep(-1.0, -0.42, fraction) * (1.0 - smoothstep(0.07, 0.25, fraction));
-    let edge = 1.0 - smoothstep(0.57, 1.0, input.edge);
+    let rim = input.edge * input.edge;
+    let wet = smoothstep(-1.0 + 0.32 * rim, -0.42 + 0.23 * rim, fraction)
+        * (1.0 - smoothstep(0.07 - 0.04 * rim, 0.25 - 0.10 * rim, fraction));
+    let edge = 1.0 - smoothstep(0.38, 1.0, input.edge);
     let alpha = (0.31 + 0.15 * grazing + 0.09 * roll) * wet * edge;
     let air = environment_aerial(input.world_time.xyz, input.clip.xy * view_aux.viewport_inv_viewport.zw);
     let colour = (clear * air.transmission + air.scatter) * environment_storage_scale();

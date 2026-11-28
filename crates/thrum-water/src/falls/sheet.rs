@@ -487,7 +487,12 @@ fn mesh(
                     across.y as f32,
                     fraction as f32,
                 ],
-                edge_receiver: [f32::from(edge), level as f32, contact, 0.0],
+                edge_receiver: [
+                    f32::from(edge),
+                    level as f32,
+                    contact,
+                    f32::from(joined.is_some()),
+                ],
             }
         };
         let strip = |t| [at(t, 0), at(t, 1), at(t, 2)];
@@ -501,7 +506,10 @@ fn mesh(
         if half.discharge[2] < 0.53 {
             let tongue = |fraction| {
                 strip(fraction).map(|mut vertex| {
-                    vertex.edge_receiver[0] = TONGUE_EDGE + 0.25 * vertex.edge_receiver[0];
+                    // Joined paths share one film. Feather only where it
+                    // meets the rock at the actual outer edge of the lip.
+                    let edge = vertex.edge_receiver[0] * (1.0 - vertex.edge_receiver[3]);
+                    vertex.edge_receiver[0] = TONGUE_EDGE + 0.25 * edge;
                     let forward =
                         Vec3::from_slice(&vertex.velocity_along) * Vec3::new(1.0, 0.0, 1.0);
                     let roll = (fraction as f32 / 0.19).clamp(0.0, 1.0);
