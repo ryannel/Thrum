@@ -1,27 +1,14 @@
 {
   "module": "ATMOSPHERE",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/ATMOSPHERE/design-review.md",
-    "commit": "476a653c8fd20179290ec8bba91b4da6f07e3b28",
-    "hash": "8ed20a0664e0b9247f0220cd477ada7227e3da75a80fea32b161c4a2c0a01204",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.171.0-alpha.13.2",
-    "path": "headless",
-    "usage": {
-      "input": 88267,
-      "cached": 1327488,
-      "output": 9272,
-      "turns": 1
-    },
-    "at": "2026-11-28T02:19:02Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "322e6ac76c485e4712caf35a8b827a2d5135fb9c107db8aa42c5fdb8328adc4c",
+    "after": [
+      ".orchestrate/evidence/ATMOSPHERE/design-review-3.md",
+      ".orchestrate/evidence/ATMOSPHERE/design-review.md"
+    ],
+    "at": "2026-11-28T02:52:42Z"
   },
   "work_packages": {
     "WP5": {
@@ -1087,21 +1074,21 @@
       }
     },
     "WP13": {
-      "definitions": "abe5d83fb2aabfd79ee18687f9418b28a86038c8d3465a08cfd67bfae4772d8a",
+      "definitions": "4ec81e85c68281c3f259992fff0e8aaf40413a55bf18968d398bebf3ecef7c0a",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Unblock ATMOSPHERE WP13. The builder wrote: WP13.6 needs a planner-approved design response to the residual sphere-shado",
-        "at": "2026-11-28T02:14:19Z"
+        "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 7 Must ",
+        "at": "2026-11-28T02:52:42Z"
       }
     },
     "WP14": {
-      "definitions": "d53beb11acbecd00d65ff56ce572dbdf40ccf8ef5700d4c17dc53bd03df50378",
+      "definitions": "14cd18eb5dcaf873f419e24f9c5d10567131daec9adf4242c194649a6dfce753",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 13 Must",
-        "at": "2026-11-28T00:40:17Z"
+        "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 7 Must ",
+        "at": "2026-11-28T02:52:42Z"
       },
       "ends_stretch": true
     }
@@ -1242,11 +1229,15 @@
     {
       "task": "Unblock ATMOSPHERE WP13. The builder wrote: WP13.6 needs a planner-approved design response to the residual sphere-shadow step. Ten of eleven items pass on build/atmosphere at 6a49b48dffca (unmerged; read it with git show). The handoff, .orchestrate/evidence/ATMOSPHERE/WP13-handoff.md, and .orchestrate/evidence/ATMOSPHERE/WP13/c1-edge-witness/README.md show the C1 sphere's ground-shadow edge advancing about two source pixels and then retreating across submissions 403-418 with the camera held and reconstruction off; the same crawl is on main, and its cause is open. This back-and-forth crawl is the flicker the owner reported, so WP13 should not merge without addressing it, but don't make the builder guess: find the cause first (diagnose from the retained frames and the shader, not by more tuning), research how current shipped engines keep a moving Sun's cascaded shadow edges stable frame to frame (modern techniques only), and give WP13.6 a design response the builder can build and prove. Keep the design's exclusions unless the cause shows one is wrong, and say so if you change one. Keep WP13's ten passing items. Note: WP14's design revision of 28 Nov still owes a design review, which the lead will run after this plan lands.",
       "at": "2026-11-28T02:14:19Z"
+    },
+    {
+      "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 7 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
+      "at": "2026-11-28T02:52:42Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-28T02:14:19Z"
+    "at": "2026-11-28T02:52:42Z"
   },
   "design_history": [
     {
@@ -1890,6 +1881,29 @@
         "turns": 1
       },
       "at": "2026-11-28T01:56:58Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/ATMOSPHERE/design-review.md",
+      "commit": "476a653c8fd20179290ec8bba91b4da6f07e3b28",
+      "hash": "8ed20a0664e0b9247f0220cd477ada7227e3da75a80fea32b161c4a2c0a01204",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13.2",
+      "path": "headless",
+      "usage": {
+        "input": 88267,
+        "cached": 1327488,
+        "output": 9272,
+        "turns": 1
+      },
+      "at": "2026-11-28T02:19:02Z"
     }
   ]
 }
