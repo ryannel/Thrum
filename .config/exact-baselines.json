@@ -39,7 +39,7 @@
         "module": "ATMOSPHERE",
         "milestone": "WP13"
       },
-      "pin": "cdcebe63cc6560a258adda88a20b99c83171a8ca707e8c6930ad7d03e19b5983"
+      "pin": "ec30e86602e365223e62238a709653e9c49d3757f628ca85f09a5c26da13c4fc"
     },
     {
       "id": "chrome-day-sdr",
@@ -59,7 +59,7 @@
         "module": "ATMOSPHERE",
         "milestone": "WP13"
       },
-      "pin": "d8b60ad3f9b916fcad00387a1aed29dcaded683a105884f3d7fc304cfdfbb209"
+      "pin": "9059a5bf66685e0f1705fed7c87fceec5fd96b82c2756ea8eae7af62ae13b57c"
     },
     {
       "id": "chrome-day-scene-linear",
@@ -79,7 +79,7 @@
         "module": "ATMOSPHERE",
         "milestone": "WP13"
       },
-      "pin": "e1f57e34422d35101703bd630b140bccd41fe64b02398416270c3de3259c283c"
+      "pin": "09bf3733dff5ff80b966b01e75f34688426ad19d4afc142398af17b24aced18a"
     },
     {
       "id": "chrome-night-sdr",

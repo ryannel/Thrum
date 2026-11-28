@@ -627,3 +627,36 @@
   | `native/sdr-1/pre-cut.surface-bgra8.gz` | `ae18d5691db5b72eb767d80dd2daa395176961a3a3e8715df9b69bc9a7a09244` | `f35cb08a483444a169dfee5f3fa09d5400e3188e26a2a92d64d5fa4287d11952` |
   | `native/sun-linear/checkpoint-0.rgba16f.gz` | `073c6ac95ed8952597cc97a483e399ed2898b68357dd65782ef6d0e0430e1254` | `3fa34613503d249b7505582da669ca9fc735aa0537e09e04b1bb0483f804cce8` |
   | `native/sun-sdr/checkpoint-0.png` | `3a69a89679180afe8d8045b917cbf5408a1c41d9d2b7667bbfd494b263f9e005` | `d8f049d12c8e4525f6b109ac744cf215b7a3f4d20b14ed3819b8737a955e3cb9` |
+
+
+- 2026-11-28 ATMOSPHERE WP13 regenerated the following native and Chrome day references after
+  [rule 7](../ATMOSPHERE/DESIGN.md#rule-7) split the near-cascade outline across four drawings.
+  The native night stills and the route identities matched the starting references. Each Chrome night
+  set matched all 481 submitted hashes. The near-plane checkpoint remained byte-identical.
+
+  | Reference under `examples/v1-game/tests/fixtures/exact-images/` | Old SHA-256 | New SHA-256 |
+  |---|---|---|
+  | `chrome/chrome-prechange-linear-3/manifest.json.gz` | `3d01ea3580e614c5deb4ea0bf3a2cc13e792e7c1b674c5029ad93dae9002d7f0` | `4a56e7e89df014d3ab6341c9e8b2307367a1dd6730be99732db3e6edd107eb35` |
+  | `chrome/prechange-chrome-fixed-manifest.json.gz` | `19f75ffb486246f29554120f8ce8fa5b5abaa4132ff32139d114e8757b2fcbe9` | `c153440f0a585f599881362da9252bba0e02992c9e47dd381046b7f7db70b7bf` |
+  | `native/letterbox-bgra8-1/mirror-light-present.png` | `08b0b381e68cce570a833a9992eea0c05178db243589b3666aacb8840d427e83` | `c3feb47ef866af81177833f0367ed34a3fdf78bef572d6030844c5e5874e9655` |
+  | `native/letterbox-bgra8-1/mirror-light.surface-bgra8.gz` | `b887390b59751882b5d790c6c0b93e8a67b09c875bf2bfd02a37cc72a1cc9c45` | `ccbf5a2579fa2552c87b60e91c2af47593526af9b737d84d318316c72ef49984` |
+  | `native/letterbox-bgra8-srgb-1/mirror-light-present.png` | `08b0b381e68cce570a833a9992eea0c05178db243589b3666aacb8840d427e83` | `c3feb47ef866af81177833f0367ed34a3fdf78bef572d6030844c5e5874e9655` |
+  | `native/letterbox-bgra8-srgb-1/mirror-light.surface-bgra8.gz` | `b887390b59751882b5d790c6c0b93e8a67b09c875bf2bfd02a37cc72a1cc9c45` | `ccbf5a2579fa2552c87b60e91c2af47593526af9b737d84d318316c72ef49984` |
+  | `native/scene-linear-1/approach.rgba16f.gz` | `e6457ff07fab60120d441e0fae3a7e60d98205c267c28487f6cf5359f4db6db5` | `055b142042a08833505c55a9dc7baf7219d5f1a0ddf833cc6d6adb5618be9d15` |
+  | `native/scene-linear-1/approach.surface-bgra8.gz` | `2cd35faec952bdba77acdc888c28aede78898a1a96853652e3710ad1c55e0807` | `9739130d0162976f8b14a4bc9170f433970f407e019023db316cdc8fa07976ef` |
+  | `native/scene-linear-1/mirror-light.rgba16f.gz` | `51f01a26fd9a10f7c656b3f4cfa451abf783a03bcbc55e18ba5dccb847d8f89b` | `de6def4d39251582be71002b38d251a6a1f0667994b48f712e255d8e65f1ec6c` |
+  | `native/scene-linear-1/mirror-light.surface-bgra8.gz` | `934a6bdbd6e9c09126ccaf6bad03c13ba91d9483fb5e782b490d2981ce46eef5` | `68847b54ffbf1d32622d37b2ce1abf71c2c7d25daae461466e3597f0a7f60738` |
+  | `native/scene-linear-1/post-cut.rgba16f.gz` | `b448b7f6efe8b0c793c97d07022ab28f04f077ab2c5ba1e4d11018fd03e2d942` | `098e3b88b1cb85ea836a9017f48dfbf369ab94a3390d0ae55b4e203364870d05` |
+  | `native/scene-linear-1/post-cut.surface-bgra8.gz` | `cd59002d914d1eff1b724dd56658ef6de7409cd15a51cdbacffae73019cd2642` | `c82158730c9df38b6bc72b4da3642d5967480d29eb78d7e609006c1e4eb06ceb` |
+  | `native/scene-linear-1/pre-cut.rgba16f.gz` | `5bb15f54aabe4d76cbe0554836a63a8ae9fbcf464e7031071772f625390e0577` | `3d6ffa4b03dfb8045bfddd670a6de87f0787ddaaf1539a31f0a18f8fad4e60c4` |
+  | `native/scene-linear-1/pre-cut.surface-bgra8.gz` | `ae18d5691db5b72eb767d80dd2daa395176961a3a3e8715df9b69bc9a7a09244` | `1e4ed70e066847cc47dbdeab0ce4662176d6c59a926f03c01e019146fe596c46` |
+  | `native/sdr-1/approach.png` | `809ba76fc94bb1a2b46293c5643e4d860336d44638d182af7dcbbbca989411a1` | `06af6b3a119e1f68787135b6d3783932e2b35d7d9e7fa7444ce7ee8606cdafb4` |
+  | `native/sdr-1/approach.surface-bgra8.gz` | `2cd35faec952bdba77acdc888c28aede78898a1a96853652e3710ad1c55e0807` | `9739130d0162976f8b14a4bc9170f433970f407e019023db316cdc8fa07976ef` |
+  | `native/sdr-1/mirror-light.png` | `74215dfbe907701675d76a0a9fd78bcc62867a5cc558420ba9863ac25163b9eb` | `3c580eb5d03cff9ca5dcc18a3a51156b7e039f4ffe69ef13080560c382f9c8db` |
+  | `native/sdr-1/mirror-light.surface-bgra8.gz` | `934a6bdbd6e9c09126ccaf6bad03c13ba91d9483fb5e782b490d2981ce46eef5` | `68847b54ffbf1d32622d37b2ce1abf71c2c7d25daae461466e3597f0a7f60738` |
+  | `native/sdr-1/post-cut.png` | `8b4b7ae010bec957b64079f98ca5afbfe8a3e02b952a581e2d5d908574a28bca` | `497401f4e8dfbc8fc5c0ef4f10c0d6da5bec3c1bd018faa0baf50ef7a315d324` |
+  | `native/sdr-1/post-cut.surface-bgra8.gz` | `cd59002d914d1eff1b724dd56658ef6de7409cd15a51cdbacffae73019cd2642` | `c82158730c9df38b6bc72b4da3642d5967480d29eb78d7e609006c1e4eb06ceb` |
+  | `native/sdr-1/pre-cut.png` | `2b5c8522e79a38c663bcfe3a6da0bbadbe3575d9179ee6e6111c558b808b14c2` | `d8810ec42cc1998030e3db996110a2b1b502356d3ea52f2a16844e57ff402bc2` |
+  | `native/sdr-1/pre-cut.surface-bgra8.gz` | `ae18d5691db5b72eb767d80dd2daa395176961a3a3e8715df9b69bc9a7a09244` | `1e4ed70e066847cc47dbdeab0ce4662176d6c59a926f03c01e019146fe596c46` |
+  | `native/sun-linear/checkpoint-0.rgba16f.gz` | `073c6ac95ed8952597cc97a483e399ed2898b68357dd65782ef6d0e0430e1254` | `4c0fb8e370a7e9b383fef5ba367874a61bcef8a83acabadd4f87e51832512044` |
+  | `native/sun-sdr/checkpoint-0.png` | `3a69a89679180afe8d8045b917cbf5408a1c41d9d2b7667bbfd494b263f9e005` | `0f21144e1ac1d4241a83bef2e2e86a7bedb4a37b8a9f5ef6e26aff22fe966174` |
