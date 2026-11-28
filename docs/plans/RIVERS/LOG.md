@@ -488,3 +488,9 @@
   `--no-tests=fail`. WP7.12 selects its own cases by the name `heavy_fall`, so it fails if they are missing.
 - 2026-11-27 Planner, design review 17, suggestion taken. WP11 is named for the stream in flood and not the
   lake at its highest, and its note names the control, `spring.stage` at 1.
+
+- 2026-11-28 Planner, design review 18, Must Fix 1. WP11.1 asked for one plunge for the sources and the drawn
+  foot, but WP6 reads two maps. [The plunge](DESIGN.md#the-plunge) now makes one calculation at each reader's
+  time: the drawn foot at the display's time, births and impulses at the committed tick, a clump's motion from
+  the last presentation. WP11.1 is written again, and WP11.4 gained two proofs on a pool rising through one
+  tick ([each change](../../../.orchestrate/evidence/RIVERS/WP11/design-review-18-changes.md)).

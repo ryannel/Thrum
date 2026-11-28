@@ -551,7 +551,8 @@ a function of time, so a pause holds it and a capture shows it at the capture's 
 
 ### The plunge
 
-Each tick, for each segment of a fall whose path meets water, at the place it meets the level:
+Each tick, for each segment of a fall whose path meets water, at the place it meets the level the water map
+has at that committed tick:
 
 - **Births.** Foam and submerged air, at the rate the fall's power gives: `ρ g q z` for each metre of lip, over a
   footprint as wide as the sheet is thick there and never under the foam's cell. The air's share is the
@@ -570,6 +571,23 @@ Each tick, for each segment of a fall whose path meets water, at the place it me
 
 Rings exist where the interaction windows are, which is round the body the game names
 ([`WATERS`' reach](../WATERS/DESIGN.md#interaction-waves)). A path that lands on bare ground gives neither.
+
+**One calculation, made at each reader's time.** Where a segment's path meets the receiving water is one
+calculation: the fall record mixed at a gauge, and the level the water map has under the path (WP6 built it in
+`thrum-water`'s `Segment::new`). The map is content. Its stages and gauges are set with the tick and
+interpolated to the display's time ([`WATERS`' time](../WATERS/DESIGN.md#time-content-functions-and-state)),
+so in a frame between two ticks the map has two readings and the path meets each at a different place. Every
+reader uses the one calculation, on the reading its own time is:
+
+| Reader | The map it reads | Why |
+|---|---|---|
+| The births and impulses | As the tick committed it | Foam and interaction waves are state and advance on the tick. Sources placed from the map at the display's time would move with the fraction of the tick a frame happened to present, and differ with the display's cadence |
+| What a frame draws of the fall: [the sheet](#the-falls-sheet) and its cut, and the foot of [the heavy fall](#the-heavy-fall-at-the-highest-gauge) | At the display's time `t` | The pool's surface is drawn at that level. A foot placed from the tick's level stands off the pool the frame shows while the pool moves |
+| Where drawn water was at the last presentation, for the motion a frame writes | At that presentation's display time, which is the history sample of [C07](../../design/CONTRACTS.md#c07-render-scene-views-and-temporal-data--v2-with-p4v3v4) | Motion is the shift between two frames as they were drawn |
+
+Where two of these are the same reading, as over settled water, the result is the same and may be used for
+both. WP6 built the first two so: its sheet takes the map at the display's time and its plunge sources the
+committed map.
 
 ### The heavy fall at the highest gauge
 
@@ -600,11 +618,13 @@ that shows the rock behind it (WP6.4), and no item judges its look below the lip
    or dark water under them, and nothing stands in front of the ends.
 
 **What draws a heavy fall.** Four changes, each the answer to one of those three, and each a function of
-three things: [the fall record](#what-a-solve-writes), the time and the plunge line. The **plunge line** is
-where the paths of a fall's segments meet the receiving water. [The plunge](#the-plunge) finds it as the game
-runs, from the level the water map has there, with the drop to it and the water's speed into the surface. The
-fall record cannot give it: the record's path runs to the ground, and the receiving water rises and falls with
-its own stage and gauge.
+three things: [the fall record](#what-a-solve-writes), the display's time and the plunge line. The **plunge
+line** is where the paths of a fall's segments meet the receiving water. [The plunge](#the-plunge)'s
+calculation finds it as the game runs, from the level the water map has there, with the drop to it and the
+water's speed into the surface. The fall record cannot give it: the record's path runs to the ground, and the
+receiving water rises and falls with its own stage and gauge. A frame draws from the plunge line at the
+display's time, where the pool's surface is drawn. The births and impulses keep the committed tick's
+([one calculation, made at each reader's time](#the-plunge)).
 
 - **Layers.** The sheet stays, as the fall's core. About it stand outer layers: on both faces where the water
   falls free, and on the outer face alone where the rock holds it. An outer layer follows the record's paths as
@@ -624,17 +644,18 @@ its own stage and gauge.
   thinned to tips above it. Each runs on below that level, where the pool's surface covers it, with the cover
   it has just above. Over a short height at the receiving level, no more than the pool's own waves stand
   there, its cover thins into the boil's foam. The two are lit by the same functions, so white meets white
-  with no line. The receiving level is the plunge line's, as it stands in that frame.
+  with no line. The receiving level is the plunge line's at the display's time, the level the frame shows
+  the pool at.
 - **Spray at the foot.** Along the plunge line the fall throws up spray: clumps of white water that leave the
   line upward and outward, rise and fall back, and larger, slower, softer ones that stand over the foot. A
-  clump is a function of its index, the time and the plunge line as it stands in that frame. It is born on
+  clump is a function of its index, the display's time and the plunge line at that time. It is born on
   the pattern's loop, at the place where its segment's path meets the receiving water and on that water's
-  level, and flies a ballistic arc from there, from a launch its index gives. Nothing is stored and nothing is
-  stepped. So when the receiving water rises or falls the spray's foot moves with it, and no clump starts
-  under the pool or in the air over it. Their number and their launch speed follow the fall's power for each
-  metre of lip, the `ρ g q z` that drives [the plunge](#the-plunge)'s births, with `z` the drop to the
-  receiving level as the plunge has it, so a dry lip throws none and the flood the most. Every clump lives and
-  dies within the spray
+  level, and flies a ballistic arc from there, from a launch its index gives. Nothing is stepped. So when
+  the receiving water rises or falls the spray's foot moves with it, between two ticks as on them, and no
+  clump starts under the pool the frame shows or in the air over it. Their number and their launch speed
+  follow the fall's power for each metre of lip, the `ρ g q z` that drives [the plunge](#the-plunge)'s
+  births, with `z` the drop to the receiving level as that plunge line has it, so a dry lip throws none and
+  the flood the most. Every clump lives and dies within the spray
   reach of the plunge line, a length the profile gives, on the island no more than half the fall's height.
   Nothing drifts off or hangs, which would be [mist](#purpose-and-scope). The spray stands on both sides of the
   layers' feet and higher than the fade at the receiving level, so from the bank, from beside and from above it
@@ -676,18 +697,32 @@ draws the heavy fall on the Mac and in Chrome.
 
 **What holds, however it is tuned.**
 
-- *One source.* [The fall record](#what-a-solve-writes) still says where the water goes, how fast, how thick and
-  how much, and [the plunge](#the-plunge) says where it meets the receiving water. The engine finds that
-  meeting once, against the level the water map has there (WP6 built it in `thrum-water`'s `Segment::new`),
-  and the one finding serves both the plunge's births
-  and impulses and the foot of the drawn fall: the fade at the receiving level, and the spray's origin, drop
-  and amount. The drawing finds no landing place of its own and fixes none on the stored path, which would
-  leave the spray under a pool that has risen or in the air over one that has dropped. What is drawn is made
-  from the fall record, the time and that plunge. It may also read the height of the receiving surface as the
-  water draws it, as WP6's sheet does where it meets the pool. It keeps no state of its own from one frame to
-  the next. Nothing drawn is a body or answers a query.
+- *One source, read at each reader's time.* [The fall record](#what-a-solve-writes) still says where the
+  water goes, how fast, how thick and how much, and [the plunge](#the-plunge)'s calculation says where it
+  meets the receiving water. That calculation is one, and the drawing and the plunge's sources share it (WP6
+  built it in `thrum-water`'s `Segment::new`). The drawing has no second way of finding where the water lands
+  and fixes no place or level on the stored path, which would leave the spray under a pool that has risen or
+  in the air over one that has dropped. Each reader makes the calculation on the reading of the water map its
+  own time is ([the plunge](#the-plunge)'s table):
+  - The foot of the drawn fall, which is the fade at the receiving level and the spray's origin, drop and
+    amount, takes the plunge line at the display's time, from the stage and the gauge the frame shows.
+  - The births and impulses keep the plunge line of the committed tick.
+  - The motion written on a clump takes the clump's place at the last presentation, from the plunge line as
+    that presentation had it (the frame contract, below).
+
+  They differ whenever a game moves the receiving level. On WP6's small fall at its highest gauge, a pool
+  raised from 0 m to 0.33 m in one tick is shown at 0.165 m halfway through it. The path meets the pool shown
+  about 1.519 m out from the lip, and the committed pool, at 0.33 m, about 1.474 m out. One plunge line for
+  both readers is wrong either way: the tick's would start the spray 0.165 m above the pool the frame shows,
+  and the displayed one would move the foam's and the rings' sources with the fraction of the tick that was
+  presented. Where two readings are the same the result is used for both. What is drawn is made from the fall
+  record, the display's time and the plunge line. It may also read the height of the receiving surface as the
+  water draws it, as WP6's sheet does where it meets the pool. It steps no state of its own from one frame to
+  the next. What it may keep from the last presentation is what motion needs and no more, its time and the
+  plunge line found at it, as the sheet keeps that time today. Nothing drawn is a body or answers a query.
 - *What a game reads does not move.* The plunge's births and impulses stay the fall record's, at the same places
-  and amounts whatever the camera sees and whichever recipe draws the fall, on every machine ([the plunge](#the-plunge)).
+  and amounts whatever the camera sees, whichever recipe draws the fall and wherever within its tick a frame
+  is presented, on every machine ([the plunge](#the-plunge)).
   They are the ones the engine gave before the drawing changed. The spray is drawn and gives no birth, no
   impulse and no ring.
 - *The frame contract.* Whatever is drawn writes depth, motion from unjittered positions and reactive coverage,
@@ -702,7 +737,12 @@ draws the heavy fall on the Mac and in Chrome.
   seen in front of a ledge has written a depth in front of it, because
   [the water's gather](../WATERS/DESIGN.md#optics) and the reconstructor read that depth. The spray's motion
   is each clump's own, from where that clump was at the last presentation. It is neither nothing nor the
-  motion of the falling water behind the clump.
+  motion of the falling water behind the clump. Where the clump was is its function at that presentation's
+  display time, on the plunge line as that presentation had it, which the fall keeps from then or finds again
+  from the map as it was shown then
+  ([C07](../../design/CONTRACTS.md#c07-render-scene-views-and-temporal-data--v2-with-p4v3v4)). So while the
+  pool rises the motion written carries the rise. A frame with no such presentation behind it, the first, one
+  after a reset, or a capture, writes the fall's motion as the sheet does on that frame.
 - *Light.* Whatever is drawn is lit by the water's own functions and has no light of its own: the direct Sun
   on it takes the scene's Sun visibility ([ruling 7](../ARCHITECTURE.md#seam-rulings-for-rivers)) once WP7 has
   built that for the sheet and for foam, and its white follows the sky to dusk and night. Ruling 7 takes only
@@ -1094,8 +1134,10 @@ dependencies. In addition:
   through the tongue was never one of the two parked cues, and WP11.2 holds it on the layered fall. WP11's
   inspections of the fall and its foot are written from what the three attempts left on screen, and they pass
   whatever removes it: neither says how the fall is drawn. WP11.1 asks that separately, and only of what the
-  design rests on: that everything drawn is made from the fall record, the time and the plunge the engine
-  finds, with nothing of the fall's own stored, that the foot of the drawn fall takes that plunge, that
+  design rests on: that one calculation says where the water lands, for the drawing and for the plunge's
+  sources; that the foot of the drawn fall takes it at the display's time, the births and impulses at the
+  committed tick, and a clump's motion at the last presentation; that everything drawn is made from the fall
+  record, the display's time and the plunge line, with no state of the fall's own stepped; that
   ruling 7's pass draws it, and that it is more than one surface with spray at its foot and not a fourth
   tuning of the sheet. A count of layers or of clumps is the builder's and no item names one. Its other proofs
   are written so that the layered fall can pass them and the sheet alone cannot:
@@ -1142,6 +1184,18 @@ dependencies. In addition:
     profile keeps its spray low enough that this loss is small beside the rise. So the highest place spray is
     drawn, over one run of ticks as long as a clump's flight, must rise by at least 0.11 m, a third of the
     pool's rise.
+  - *Between two ticks (WP11.4).* The two settled levels cannot tell which reading of the map the foot was
+    drawn from, since over settled water the readings are the same. So the pool is also raised from 0 m to
+    0.33 m in one tick, and a frame is presented halfway through it, which shows the pool at 0.165 m. A second
+    scene holds its pool at 0.165 m and presents a frame of the same tick and time. The spray is a function of
+    the display's time and the plunge line at it, so the two frames draw the same spray, and the highest place
+    spray is drawn must agree within 0.03 m. A foot drawn from the tick's plunge line stands that place about
+    0.165 m higher, less the little loft the shorter drop costs, and fails. The other mistake is caught in
+    the pool's case: the frame of the rising tick is presented a quarter of the way through it in one run and
+    three quarters in another, and the plunge sources and impulse records submitted must be the same to the
+    bit. Sources placed from the displayed pool differ between the runs, by 0.165 m of level. The motion
+    through a rise is not measured: WP11.1's question holds it, and the settled case above measures that a
+    clump writes its own motion.
   - *The pool (WP11.4).* One camera and least amounts of foam and rings cannot tell the fall record's sources
     from sources that follow the camera, or from sources the spray has added to. The sources the engine
     submits are compared to the bit across two cameras that both hold the foot in view and one turned away,
