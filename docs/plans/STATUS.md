@@ -398,6 +398,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A name in the glossary waits for your agreement: Extension map (the planner chose the names, in place of "reserved shapes")
 - A name in the glossary waits for your agreement: Output scale (the planner chose the name)
 - A name in the glossary waits for your agreement: Puff (the planner chose "puff" over "sphere", "lobe" and "turret", which the design used for the form)
+- A name in the glossary waits for your agreement: Heaped profile (the planner chose the name, to keep "profile" for one cell's and for the deck's)
 - A name in the glossary waits for your agreement: Weather volume (the planner chose the name, after the weather map)
 - A name in the glossary waits for your agreement: Shown tick (the planner chose the names)
 - A name in the glossary waits for your agreement: Cast width (the planner chose the name)
