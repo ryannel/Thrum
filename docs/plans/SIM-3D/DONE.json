@@ -4,7 +4,7 @@
     {
       "id": "WP1",
       "name": "A rule asks whether two 3D shapes touch, where a ray meets one and where a moving one is stopped, and gets the same answer on the Mac, in Chrome and on the iPhone simulator",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "depends_on": [
         "SIM-2D:WP3"
       ],
