@@ -816,7 +816,7 @@
           "ask": "Read the tests. Do they compare matrices from the production fit at different camera orientations, fields of view and positions, and call the production membership rule, the production cast width and the production bias terms, not a copy of any of them in the test? Is each shape's expected cast width worked out from the shape, and not taken from the engine's own answer? Would the membership case of design review 1 fail a rule that measured a caster by its bounds?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP13/rule7-render-tests-v2.log",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP13/rule7-layout-check.log",
           "verdict": "",
           "review": ""
         },
