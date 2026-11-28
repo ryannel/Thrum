@@ -20,9 +20,10 @@ const STRANDS_PER_SEGMENT: usize = 8;
 const STRAND_SIDES: usize = 8;
 const STRAND_EDGE: f32 = 4.0;
 const TONGUE_EDGE: f32 = 3.625;
+const PACKET_SLOTS: usize = 4;
 const STRAND_ROLL_START: f32 = 0.18;
 const VERTICES_PER_SEGMENT: usize =
-    STRANDS_PER_SEGMENT * 6 * STRAND_SIDES * (ROWS + 3) + 6 * SPLASHES_PER_SEGMENT;
+    STRANDS_PER_SEGMENT * 6 * (STRAND_SIDES * (ROWS + 3) + PACKET_SLOTS) + 6 * SPLASHES_PER_SEGMENT;
 const ATTRIBUTES: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4, 4 => Float32x4];
 
 #[repr(C)]
@@ -491,6 +492,12 @@ fn mesh(
                 top = bottom;
             }
             filament(vertices, |fraction| at(fraction, 1), stations());
+            fall_packets(
+                vertices,
+                [at(0.09, 1), at(0.49, 1), at(0.98, 1)],
+                0.029,
+                0.85,
+            );
         } else {
             let thickness = f64::from(foot[1].discharge[3]) / sheet.tear;
             let spread = ((2.48 - thickness) / 0.73).clamp(0.0, 1.0) as f32;
@@ -511,9 +518,56 @@ fn mesh(
                 }
                 top = bottom;
             }
+            if spread > 0.0 {
+                let paths = [0.15, 0.53, 0.98].map(|t| ribbons(strip(t), spread, count));
+                for lane in 0..count {
+                    let radius = 0.044 + 0.032 * (lane as f32 * 12.316).sin().abs();
+                    fall_packets(vertices, paths.map(|row| row[lane][1]), radius, spread);
+                }
+            }
         }
         if segment.plunge.is_some() {
             splash(vertices, foot);
+        }
+    }
+}
+
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "the number of packet slots is fixed"
+)]
+fn fall_packets(
+    vertices: &mut Vec<Vertex>,
+    [start, middle, end]: [Vertex; 3],
+    radius: f32,
+    cover: f32,
+) {
+    let p0 = Vec3::from_slice(&start.world_time);
+    let pm = Vec3::from_slice(&middle.world_time);
+    let p1 = Vec3::from_slice(&end.world_time);
+    let duration = (end.world_time[3] - start.world_time[3]).max(0.001);
+    let t = ((middle.world_time[3] - start.world_time[3]) / duration).clamp(0.05, 0.95);
+    // A quadratic in flight time shares three points of the prepared path.
+    let quadratic = (pm - p0 - (p1 - p0) * t) / (t * (t - 1.0));
+    let linear = p1 - p0 - quadratic;
+    let seed = start.velocity_along[3];
+    for slot in 0..PACKET_SLOTS {
+        let phase = slot as f32 / PACKET_SLOTS as f32;
+        for [x, y] in [
+            [-1.0, -1.0],
+            [1.0, -1.0],
+            [-1.0, 1.0],
+            [-1.0, 1.0],
+            [1.0, -1.0],
+            [1.0, 1.0],
+        ] {
+            vertices.push(Vertex {
+                world_time: p0.extend(duration).to_array(),
+                velocity_along: linear.extend(seed).to_array(),
+                discharge: quadratic.extend(radius).to_array(),
+                across_fraction: [x, -1.75, y, phase],
+                edge_receiver: [cover, 0.0, 0.0, 0.0],
+            });
         }
     }
 }
