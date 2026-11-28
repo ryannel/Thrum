@@ -1,45 +1,32 @@
 {
   "module": "AUDIO",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/AUDIO/design-review.md",
-    "commit": "bc40fc1a61bf4e5051192bb1eb3561782cbe54d6",
-    "hash": "164d57c43448a1b3ab16380e6eb675da3c0b71804b20018809c4a88661f52196",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.171.0-alpha.13.2",
-    "path": "headless",
-    "usage": {
-      "input": 87824,
-      "cached": 1132928,
-      "output": 8349,
-      "turns": 1
-    },
-    "at": "2026-11-28T03:01:13Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "0925b5090793f2bbd08faa5703e7563c7d6f3517501a1a19d1053a89a703106a",
+    "after": [
+      ".orchestrate/evidence/AUDIO/design-review-1.md",
+      ".orchestrate/evidence/AUDIO/design-review.md"
+    ],
+    "at": "2026-11-28T03:10:30Z"
   },
   "work_packages": {
     "WP1": {
-      "definitions": "6c145e64d5a13b4a38a7fc7780359c7b752574d2f0937106d421db7e2126b4e9",
+      "definitions": "22ee954c0259a86219c9c4123ef96e09484e29404486abfd095e15a21fc8513b",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of AUDIO at .orchestrate/evidence/AUDIO/design-review.md asked for changes, with its 11 Must Fix findi",
-        "at": "2026-11-28T02:56:09Z"
+        "task": "The design review of AUDIO at .orchestrate/evidence/AUDIO/design-review.md asked for changes, with its 4 Must Fix findin",
+        "at": "2026-11-28T03:10:30Z"
       }
     },
     "WP2": {
-      "definitions": "3bdf81a7a50d56a20d3608e37e610494760226397d2e0690434ed153e129367e",
+      "definitions": "f1c9af21962f206e8e75dd270861d3fa987c56b4b41e382fe7f0cf121a440503",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of AUDIO at .orchestrate/evidence/AUDIO/design-review.md asked for changes, with its 11 Must Fix findi",
-        "at": "2026-11-28T02:56:09Z"
+        "task": "The design review of AUDIO at .orchestrate/evidence/AUDIO/design-review.md asked for changes, with its 4 Must Fix findin",
+        "at": "2026-11-28T03:10:30Z"
       },
       "ends_stretch": true
     }
@@ -52,11 +39,15 @@
     {
       "task": "The design review of AUDIO at .orchestrate/evidence/AUDIO/design-review.md asked for changes, with its 11 Must Fix findings.",
       "at": "2026-11-28T02:56:09Z"
+    },
+    {
+      "task": "The design review of AUDIO at .orchestrate/evidence/AUDIO/design-review.md asked for changes, with its 4 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
+      "at": "2026-11-28T03:10:30Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-28T02:56:09Z"
+    "at": "2026-11-28T03:10:30Z"
   },
   "design_history": [
     {
@@ -81,6 +72,29 @@
         "turns": 1
       },
       "at": "2026-11-28T02:40:26Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/AUDIO/design-review.md",
+      "commit": "bc40fc1a61bf4e5051192bb1eb3561782cbe54d6",
+      "hash": "164d57c43448a1b3ab16380e6eb675da3c0b71804b20018809c4a88661f52196",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13.2",
+      "path": "headless",
+      "usage": {
+        "input": 87824,
+        "cached": 1132928,
+        "output": 8349,
+        "turns": 1
+      },
+      "at": "2026-11-28T03:01:13Z"
     }
   ]
 }
