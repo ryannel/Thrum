@@ -12,7 +12,7 @@
   },
   "work_packages": {
     "WP1": {
-      "definitions": "6ed860efc93d9cc765f238919487b8870e95b0ab3aa1c070a885b6c1ddbd5cdd",
+      "definitions": "0e7ba9d75267431daa4972103cfebde878938211efdeb0894018d7d0957fa23a",
       "reviews": [
         {
           "verdict": "fail",
@@ -268,41 +268,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 11 Must Fix",
-        "at": "2026-11-27T08:12:40Z"
-      },
-      "ready_for_review": {
-        "commit": "bf17b178787e4206b2b588d67ab040f2859a8ee4",
-        "checked": "bf17b178787e4206b2b588d67ab040f2859a8ee4",
-        "at": "2026-11-28T03:30:23Z",
-        "reused": [
-          "WP1.1",
-          "WP1.2",
-          "WP1.3",
-          "WP1.4",
-          "WP1.5"
-        ],
-        "host": "codex",
-        "model": "gpt-6.2-sol",
-        "effort": "medium",
-        "observed": {
-          "model": "gpt-6.2-sol",
-          "effort": "medium"
-        },
-        "cli": "codex-cli 0.171.0-alpha.13.2",
-        "path": "headless",
-        "usage": {
-          "input": 150224,
-          "cached": 7164672,
-          "output": 27264,
-          "turns": 1
-        },
-        "session_usage": {
-          "input": 150224,
-          "cached": 7164672,
-          "output": 27264,
-          "turns": 1
-        }
+        "task": "Diagnose GAME-SDK WP1. It has failed three reviews (.orchestrate/evidence/GAME-SDK/WP1-review-1.md, -2.md and WP1-review",
+        "at": "2026-11-28T03:32:10Z"
       }
     },
     "WP2": {
@@ -385,11 +352,15 @@
     {
       "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 5 Must Fix findings (and one suggestion). That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it. Settle every finding; none needs an owner decision.",
       "at": "2026-11-27T23:12:49Z"
+    },
+    {
+      "task": "Diagnose GAME-SDK WP1. It has failed three reviews (.orchestrate/evidence/GAME-SDK/WP1-review-1.md, -2.md and WP1-review.md in the game-sdk worktree), and WP1.1, WP1.2, WP1.3 and WP1.6 failed the last two. Each round finds real new bugs, but one finding repeats: different rule functions share a random stream, because a rule's stream is keyed on its Rust type name, which a function-pointer array or a closure called through game.run does not distinguish; and rewound manual rule registrations change later draws. That points at the design, not the builder: decide how a rule gets a stable identity for its random stream (and for rewind and replay) that every supported way of registering or calling a rule preserves, and say it in the design and the items. Also settle the phase-resume findings (a resumed phase restarting its rule cadence, and an elapsed-time threshold landing a tick late at 60 Hz): what resume must restore. The builder's work is on build/game-sdk; keep what passes.",
+      "at": "2026-11-28T03:32:10Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T23:12:49Z"
+    "at": "2026-11-28T03:32:10Z"
   },
   "design_history": [
     {
