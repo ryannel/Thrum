@@ -1947,7 +1947,7 @@
     {
       "id": "WP23",
       "name": "The weather's own clouds take a new form, a cluster of rounded heaps, in what a game reads and in stills drawn from it on the CPU",
-      "status": "not_started",
+      "status": "in_progress",
       "depends_on": [],
       "quality_bar": "The outline and relief of fair-weather cumulus as in Red Dead Redemption 2 or Horizon Forbidden West, looked at one cloud at a time from the ground: rounded heaps of different heights on one level base, crowns in billows, no two clouds alike. These stills are judged for form alone; the engine's light, colour and motion are WP17's.",
       "items": [
@@ -1957,8 +1957,8 @@
           "check": "sh -c 'cargo test --locked --offline -p thrum-cloud-model --test it puff 2>&1 | tee /dev/stderr | grep -Eq \"test result: ok. [1-9][0-9]* passed\"'",
           "ask": "Do the tests whose names contain `puff` assert each of the ten behaviours on a profile that names the puff form? Does the switched cell of the third fail its assertion? Does the fifth take its own sum from point densities, and show the column summed from samples 50 m apart failing on the grazing column? Do the ninth and the tenth form their expected values from the cells' puffs and strengths, and does each show its wrong version failing?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP23/fit/model-tests.log",
           "verdict": "",
           "review": ""
         },
@@ -1967,8 +1967,8 @@
           "statement": "Marched on the CPU through the model's own full density, with no weather map and no graphics device, a fair sky of the puff form holds up from the ground one cloud at a time. The stills are of the fair weather the valley's game has, with the puff form named and no placed or directed shape, from 2 m over the ground under the noon Sun, toward, across and away from it, each as opacity and under one simple light the record states. Beside each is the same weather in the turret form from the same tool, and it shows at least one of the flaws the puff stills must not: a tool that draws both forms well, or both badly, proves nothing. A strip follows one cell at six ages from its birth to its death. Record: the stills, the tool and its inputs, in the work package's evidence.",
           "inspect": "Look at the six puff stills whole and at full size, at the six turret stills beside them, and at the life strip. In the puff stills: 1. the larger clouds are clusters of rounded heaps of different heights, and their crowns are in billows; 2. each cloud's base is level and ragged, and its rim is a rounded underside, with no thin skirt, lip or level band standing out from it; 3. no cloud is a smooth dome, lens or cap, and none has a level terrace on its side or a fold or squared break in its outline; 4. no face is a vertical curtain or a cylinder, with or without streaks down it; 5. where a far cloud shows below or behind a near one, they read as two clouds at two distances, and not as a shelf of one; 6. outlines differ from cloud to cloud, and no dome, lens, cap, cone or tower repeats across the frame. 7. the turret stills show at least one flaw of points 2 to 4 where the puff stills show none; 8. in the life strip the cloud first shows as tufts on its base and grows by rising, and each age up to the grown cloud reads as a smaller cloud of the same kind; 9. past its grown age it frays and thins, and at no age does it read as a solid shape sunk into its base.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP23/fit/README.md",
           "verdict": "",
           "review": ""
         },
@@ -1977,8 +1977,8 @@
           "statement": "Naming the puff form leaves the deck as it was, in three behaviours. They are taken on the broken sky of WP23's review, which the test builds from its own constants: seed 39, coverage 0.726 and a type axis of 0.42 between a layered type and a type of deck and cells, at tick zero with no travel. Both columns tested hold no heaped cloud, which the test asserts. 1. A gap: at X/Z (\u22126400, \u22125600), 332.8 m over the base, the uneroded density of a field that names the puff form is above zero, and its full and its coarse density are exactly zero. 2. A bank: in a second column, which the test names, the full and the coarse density of that field are each above zero at one height or more. 3. One deck under either form: up both columns, from the base to the deck's top at steps of 25 m or less, the full and the coarse density of the field that names the puff form are those of the same field naming the turret form, within the tolerance the test states. The build reviewed at `9c2708105` gave 0.0252 m\u207b\u00b9 for the full and the coarse density at the first point. Guard: CPU tests of the model on a small world, in `./dev check`. The third behaviour lasts as long as the turret form does, and WP24 keeps the first two.",
           "check": "sh -c 'cargo test --locked --offline -p thrum-cloud-model --test it broken_deck 2>&1 | tee /dev/stderr | grep -Eq \"test result: ok. [1-9][0-9]* passed\"'",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP23/fit/model-tests.log",
           "verdict": "",
           "review": ""
         },
@@ -1987,8 +1987,8 @@
           "statement": "A cluster stands inside its cell, in two behaviours on the fair sky of WP23's review, which the test builds from its own constants: the puff form, seed 39, a lattice pitch of 4,600 m, a fade length of 300 m and a type of cells alone. 1. Under a depth range the test states, for the cell of generation 0 at each of the 121 sites of a square 11 lattice sites across about the origin, with the cluster standing whole: no puff's surface is farther from the cell's centre, measured level, than the cell's radius, and none is higher over the base than the cell's depth. The test takes each extreme from the puffs' own centres and radii, and not from a bound the cluster carries. 2. With the type's least and greatest depth both 1,600 m, at the half life of the cell at site (\u22125, \u22125) of generation 0: the query at X/Z (\u221220939.81, \u221219242.98) returns a top no more than 1,600 m over its base, and 1,651.37 m over the base in that column the uneroded, the full and the coarse density are exactly zero. The build reviewed at `9c2708105` returned a top 1,702.75 m over the base and an uneroded density of 0.01387 m\u207b\u00b9 there, and at site (\u22124, \u22122) had cloud 1,669.86 m from the centre of a cell of 1,380.62 m radius. Guard: CPU tests of the model on a small world, in `./dev check`.",
           "check": "bash -o pipefail -c 'cargo test --locked --offline -p thrum-cloud-model --lib --test it cluster_extent | tee /dev/stderr | grep -Ec \"^test result: ok[.] [1-9][0-9]* passed\" | grep -qx 2'",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP23/fit/model-tests.log",
           "verdict": "",
           "review": ""
         }

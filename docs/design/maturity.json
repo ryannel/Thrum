@@ -3170,6 +3170,13 @@
       "functional_validation": "partial",
       "experienced_quality": "not_reviewed",
       "platform_performance": "not_run",
+      "puff_form_evidence": {
+        "implementation": "CLOUDS WP23 lets a CPU field opt in to clusters of puffs. It fits the whole cluster within the cell radius and depth and uses the deck's own thickness for broken-bank erosion.",
+        "correctness": "The Mac CPU checks cover the ten puff-query behaviours, matching eroded deck samples under both forms, and bounded puff surfaces in 121 cells plus the public column and density witness.",
+        "visuals": "CPU fair-weather stills and six ages of one cell record the cloud form in full density with paired turret controls.",
+        "device": "Apple M3 Max, CPU-only proof. The GPU path and its frame cost are assessed in later work packages.",
+        "record": "../../.orchestrate/evidence/CLOUDS/WP23/fit/README.md"
+      },
       "weather_shade_evidence": {
         "implementation": "CLOUDS M1/M13 CPU model and M2 Weather/Shade contribution",
         "correctness": "Mac Metal weather, integer cell, Sun-path, continuity and game integration probes; display-phase prediction through ramps matches real ticks, and submitted GPU mapping follows consumed targets without repeated-tick product writes; measured approximation limits are recorded separately",

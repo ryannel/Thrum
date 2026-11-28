@@ -1440,3 +1440,9 @@ builder's inspection and a fresh visual read. [Tests, captures and inspection](.
   extents privately and through the public query. WP17.6 inspects a heap spanning a staggered update
   face. WP12.8 documents the clear-air guarantee for each contributing product.
   [Findings, changes and WP23 handoff](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-28-7.md)
+
+- 2026-11-28 WP23 repair. The CPU model fits each whole puff cluster inside its cell’s radius
+  and depth. The deck uses its own thickness and preserves the existing broken-bank erosion.
+  The Mac query checks pass, including the original gap, the 121-cell bounds and the public extent
+  witness. The builder and a fresh reader passed the final matched CPU stills and six-age strip
+  under noon Sun and overhead sky fill. [Proof](../../../.orchestrate/evidence/CLOUDS/WP23/fit/README.md)
