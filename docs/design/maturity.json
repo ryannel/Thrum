@@ -568,7 +568,7 @@
     "M2_sun_cascades": {
       "implementation": "Nine camera-centred 2048-square D32 reverse-Z Sun cascades use snapped, nested radii, with a separate caster height layer. Caster admission uses mesh cast width at the instance scale. Surfaces and the view volume share distance-based selection, blending and reach fade.",
       "functional_validation": "WP13 CPU and Metal checks cover fitting, cast-width coverage, reverse-Z depth, adjacent blends, off-camera and aloft casters, secondary views and history independence.",
-      "experienced_quality": "Mac Metal and Chrome WebGPU submitted-motion crops show grounded sunlit cubes and continuous rock and balloon shadow edges in the inspected ranges. Fixed image differences follow Sun shadows and contact.",
+      "experienced_quality": "Mac Metal and Chrome WebGPU submitted-motion crops show grounded sunlit cubes and continuous rock and balloon shadow edges in the inspected ranges. The held-camera C1 sphere shadow still steps about two source pixels. Fixed image differences follow Sun shadows and contact.",
       "platform_performance": {
         "mac": "paired_capture_off_timing_under_shared_load",
         "windows": "not_run",
@@ -5634,7 +5634,7 @@
       "technique": "Cascaded Sun shadows with finite-disk PCSS and receiver-plane PCF",
       "source": "https://learn.microsoft.com/en-us/windows/win32/dxtecharts/cascaded-shadow-maps",
       "owner": "thrum-render portable",
-      "status": "Implementation uses camera-centred nested cascades and paired near and broad blocker searches. CPU and Metal tests verify caster admission, blend and reach, contact bias, off-camera casters and history independence. Mac and Chrome have submitted motion captures and fixed image comparisons. Paired exit timings are recorded under shared load. Contact darkening in shade on the default path, the moving edge on the west-lookout spur, the exact finite-disk match and prop shadows past the cascade reach remain open.",
+      "status": "Implementation uses camera-centred nested cascades and paired near and broad blocker searches. CPU and Metal tests verify caster admission, blend and reach, contact bias, off-camera casters and history independence. Mac and Chrome have submitted motion captures and fixed image comparisons. The C1 sphere edge still steps on Metal. Paired exit timings are recorded under shared load. Contact darkening in shade on the default path, the moving edge on the west-lookout spur, the exact finite-disk match and prop shadows past the cascade reach remain open.",
       "evidence": "../../.orchestrate/evidence/ATMOSPHERE/WP13/cost.md"
     },
     {
