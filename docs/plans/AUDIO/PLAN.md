@@ -11,25 +11,27 @@ what was measured before the design was written. Its code was thrown away on pur
 ## Open for the user
 
 - Assumption: "audio in its small form" is sounds that happen, with a limit on how many of one play at once; looping sounds heard from a place; music that streams, loops and cross-fades; and three volumes. It is stereo, with no effects and no mixing graph.
-- Assumption: you listen to the engine's own sound once, in WP5, with a small listening program on the Mac and in Chrome, and it can be the same sitting as `GAME-SDK` WP19. It is the only item in this module that waits for you, and nothing else waits for it. Agents prove what was mixed and that the operating system took it, with the output silenced so builds make no noise on your Mac. They cannot prove what a speaker played.
-- Assumption: music is kept in a light compressed form, QOA, at about 2.3 MB a minute in stereo, because its small decoder runs the same way on every target. It is lossy. If you hear hiss or grit in music at the listening, the codec is changed inside this module and no game changes.
+- Assumption: you judge how the engine sounds once, in `GAME-SDK` WP19, with the games built on the SDK. Nothing in this module waits for you. If you hear a fault there, its fix is planned here from your words. A small listening program on the Mac and in Chrome comes with the engine's guide, for telling an engine fault from a game's, and nobody has to run it. Agents prove what was mixed and what the operating system was handed, with the output silenced so builds make no noise on your Mac. They cannot prove what a speaker played.
+- Assumption: music is kept in a light compressed form, QOA, at about 2.3 MB a minute in stereo, because its small decoder runs the same way on every target. It is lossy. If you hear hiss or grit in music at that sitting, the codec is changed inside this module and no game changes.
 - Assumption: the targets are the Mac, Chrome and the iPhone simulator, which proves function only. A physical iPhone, Safari, Firefox, Windows and Linux are designed for and not run.
 - Assumption: in Chrome a game is silent until the player's first key press or click, because browsers start sound that way. Showing a player that is the game SDK's.
+- Assumption: "streamed music" means a track is played from its compressed form and never held decoded. In Chrome the game still downloads the whole compressed track before it can start, about 2.3 MB for each minute of stereo, so a track's first play waits for that download. Music that starts while it is still downloading is left out.
 
 ## WP1 A program plays sounds into a buffer with no device, placed, pitched, looped and limited, and a test reads exactly what would be heard
 
-Criteria: WP1.1–WP1.10 in the done-when file.
+Criteria: WP1.1–WP1.11 in the done-when file.
 
 Nothing exists yet: `thrum-audio` is a new crate, registered in `.config/architecture.toml` with each outside
 dependency at an exact version, and its integration tests are one target, `it`. It builds on Linux and Windows
 too, where `scripts/check_cross_target.sh` type-checks tests, so nothing in this work package may need a
-device. `thrum-test-support` has the counting allocator WP1.7 uses. The mix module of WP1.8 is the same
+device. `thrum-test-support` has the counting allocator WP1.7 uses. It counts allocations and not frees, and is
+`TEST-SUPPORT`'s, so WP1.4(7) watches a replaced sound's release by owning its storage. The mix module of WP1.8 is the same
 source built a second way; a mix core that is `no_std` makes "imports nothing" hold by construction, and
 whether that core is a crate of its own is yours to choose. `scripts/audio.py` is new, and its `module`
 command is the documented build a web game's build step will call, so keep what it builds stable.
 
-The order matters in two places. Write the reference script and keep its digest once WP1.1 to WP1.6 hold,
-then make the module reproduce it. Choose the defaults WP1.9 records before recording, and record at the
+The order matters in two places. Write the reference script and keep its digest once WP1.1 to WP1.6 and
+WP1.11 hold, then make the module reproduce it. Choose the defaults WP1.9 records before recording, and record at the
 commit being claimed.
 
 ## WP2 A .wav or .ogg is cooked into a sound or a music track, and music plays from its compressed form, loops from its loop point and cross-fades
@@ -49,11 +51,10 @@ SDK's own spelling, `Music(..)`, and the asset catalog are `GAME-SDK` WP18's.
 second or less, track them beside the tests, and list each in `docs/provenance/AUDIO.md` with the command
 that made it. The QOA reference is a single C header; pin its revision, confirm its licence is permissive
 before using it, and use it to write the fixture streams and the kept digest of WP2.3. If its licence is not
-permissive, stop and end `BLOCKED`. The digest of the reference script changes here on purpose, and the log
+permissive, stop and end `BLOCKED`. The cook's encoder may choose any valid stream: no item compares its
+error with the reference encoder's. The digest of the reference script changes here on purpose, and the log
 says so.
 
 ## WP3 A game's sound comes out of the Mac's output and the iPhone simulator's, and stops and starts with the app
 
 ## WP4 A game's sound comes out of a Chrome tab, keeps playing through a stalled frame, and the same script gives the same sound on all three targets
-
-## WP5 The owner hears the listening room on the Mac and in Chrome, and says what is wrong

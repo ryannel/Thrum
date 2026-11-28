@@ -150,6 +150,34 @@ in Chrome. A mix with no sound output is pulled into a buffer by a test.
 
 Proposed: the planner chose the name.
 
+### Output epoch
+
+One stretch of a sound output pulling. The count goes up each time pulling stops: a suspend, a hidden tab, an
+interruption, a lost device. A sound that happens is heard only in the epoch its play was called in.
+
+- **Source** — [C11](../design/CONTRACTS.md#c11-input-audio-and-ui-lifecycle--p1a1u1-with-f1)'s "audio-device epoch".
+
+Proposed: the planner chose it for AUDIO.
+
+### Outcome
+
+What became of one play of a sound: its event identity, its tick, its output epoch and its fate, which is
+started or the one cause it never started. A game reads outcomes from the mix's handle.
+
+- **Source** — coined for AUDIO, for C11's "rendered-or-expired" bookkeeping.
+
+Proposed: the planner chose the name.
+
+### Output tap
+
+A copy of the frames a silenced sound output wrote into its device's own buffers, taken before they are
+zeroed. A check reads it to prove what the device was handed without making a sound. It is not T2's engine
+capture, which reads pictures.
+
+- **Source** — the field's term (an audio tap).
+
+Proposed: the planner chose it for AUDIO.
+
 ### Placement
 
 In a 3D game written on the game SDK, a model a scene stands somewhere once, with no entity, such as a valley or

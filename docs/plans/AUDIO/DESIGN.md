@@ -1,6 +1,6 @@
 # AUDIO: a game's sounds and music are heard on the Mac, in Chrome and on the iPhone simulator
 
-27 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
+27 November 2026, revised 28 November 2026 after [design review 1](../../../.orchestrate/evidence/AUDIO/design-review.md). [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-7-the-game-sdk) · [the vision and scope document](../VISION.md).
 [C11 in CONTRACTS](../../design/CONTRACTS.md#c11-input-audio-and-ui-lifecycle--p1a1u1-with-f1) governs, and
 [the Game SDK's audio entry](../GAME-SDK/DESIGN.md#audio) is what the first consumer expects.
@@ -62,15 +62,15 @@ Each behaviour has its range, and the wrong substitute that would look right to 
 
 | Behaviour | Range it must hold over | Plausible wrong substitute, and what rejects it |
 |---|---|---|
-| **B1 A sound that happens** plays once, from its first frame to its last | Any cooked sound, mono or stereo, from one frame long to longer than many pulls; volume 0 to 1; pitch 0.5 to 2; forty plays a second of one sound (the SDK's example) | One voice a sound, so a new play cuts the last. Rejected by two plays that overlap and must sum |
-| **B2 A limit** keeps at most `n` voices of one sound | `n` from 1 up; forty plays a second under a limit of 4 | Counting plays, not voices that are still sounding. Rejected by plays spread over longer than the sound lasts |
+| **B1 A sound that happens** plays once, from its first frame to its last | Any cooked sound, mono or stereo, from one frame long to longer than many pulls; volume 0 to 1; pitch 0.5 to 2; forty plays a second of one sound (the SDK's example) | One voice a sound, so a new play cuts the last. Rejected by two plays that overlap and must sum. A pitch snapped to a few ratios. Rejected by a ratio inside the SDK's 0.9 to 1.1, whose frames are stated |
+| **B2 A limit** keeps at most `n` voices of one sound | `n` from 1 up; forty plays a second under a limit of 4 | Counting plays, not voices that are still sounding. Rejected by plays spread over longer than the sound lasts. A cap that ignores `n`. Rejected by naming exactly which of the forty plays start, for three lengths of sound |
 | **B3 A sound a thing makes** loops while the thing exists, follows it, and is turned up, down, held and stopped | 10,000 things with a sound of which 1,000 to 2,000 move each frame, the representative scene of decision 1; a loop from one frame long; updates every frame | Restarting the loop on each update. Rejected by position continuity across an update. A loop with a gap or a repeated frame at its wrap. Rejected by an exact comparison across three wraps |
 | **B4 A place** makes a sound quieter with distance and puts it on the side it stands | From the listener's own position to the sound's radius and beyond; the place, the listener and the listener's facing all moving between pulls; a place passing through the listener | Gains worked out once, when the sound starts. Rejected by a moving thing and a turning listener. Left and right swapped. Rejected by a place on the listener's left that must be louder in the first channel |
-| **B5 Music** plays from its compressed form, loops from its loop point for ever, and cross-fades to the next track | Tracks of minutes; a loop point anywhere in the track; a change made part-way through a fade; the same track asked for again; no track | The whole track decoded when it is added. Rejected by what adding a long track allocates. A cut, or a fade to silence and back. Rejected by both tracks present at once with constant power. A restart when the same track is said again. Rejected by position continuity |
+| **B5 Music** plays from its compressed form, loops from its loop point for ever, and cross-fades to the next track | Tracks of minutes; a loop point anywhere in the track; a change made part-way through a fade; the same track asked for again; no track | The whole track decoded when it is added. Rejected by what adding a long track allocates. A cut, a fade to silence and back, or a fade squeezed into a few frames. Rejected by each track's gain at five points across the fade. A restart when the same track is said again. Rejected by position continuity |
 | **B6 Three volumes**, master, music and effects, each move what they govern | 0 to 1, changed at any moment | A volume applied when a voice starts. Rejected by a change while a loop sounds |
-| **B7 Nothing waits.** A call from a frame returns at once, and a pull never blocks | A pull with every voice sounding; a page held for half a second; a sound added while others play | Mixing on the page's own thread in Chrome, which is what the usual Rust device crate does. Rejected by a held page during which the mix must keep its rate |
-| **B8 The same sound everywhere, and with no device** | The Mac, Chrome and the simulator; a pull split into any sizes; no device at all | A second mixer for the browser built from Web Audio nodes. Rejected because Chrome must render [the reference script](#12-the-reference-script) to the same digest |
-| **B9 Quiet when it should be** | Before a browser's first key or pointer press; a hidden tab; an app in the background; no device; a device that goes away | Queued sounds that all burst out when the output starts. Rejected by a count of sounds dropped while nothing was pulling |
+| **B7 Nothing waits.** A call from a frame returns at once, and a pull never blocks | A pull with every voice sounding; a page held for half a second; a sound added while others play; a track of minutes arriving in Chrome while a menu clicks | Mixing on the page's own thread in Chrome, which is what the usual Rust device crate does. Rejected by a held page during which the mix must keep its rate |
+| **B8 The same sound everywhere, and with no device** | The Mac, Chrome and the simulator; a pull split into any sizes; no device at all | A second mixer for the browser built from Web Audio nodes. Rejected because Chrome must render [the reference script](#12-the-reference-script-and-the-handle-run) to the same digest. An output that ignores a game's calls, or hands the device silence. Rejected by a sound played through the handle and found in [the output tap](#10-sound-outputs) |
+| **B9 Quiet when it should be** | Before a browser's first key or pointer press; a hidden tab; an app in the background; no device; a device that goes away | Queued sounds that all burst out when the output starts. Rejected by a count of sounds dropped while nothing was pulling. A sound queued just before the app went to the background, played on its return. Rejected by that play's outcome and by the frames after pulling starts again |
 | **B10 Loud is safe** | Every voice sounding at full volume at once | A hard clamp at the device, or none. Rejected by a bound on every output sample and by sums below the knee passing unchanged |
 | **B11 Nothing when unused** | A game that plays no sound | A feature inside an existing crate. Rejected by the dependency closure of a package that does not name the audio crate |
 | **B12 A record of what it did** | Every count in [the record](#11-the-record), on every output | Counters on the Mac only. The record marks what an output cannot know as absent |
@@ -121,22 +121,49 @@ Because commands are bytes either way, the mix that applies them is the same cod
 A mix applies the commands that have arrived at the start of a pull, in order. A sound started by a frame is
 therefore heard from the next pull: up to 512 frames later on this Mac, and 128 in Chrome.
 
+**Nothing is in flight that the mix has no room for.** The handle sends a command only when the mix's queue
+has room for it. Natively it sees the queue's room. In Chrome it learns it from the worklet's answers
+([mechanism 10](#10-sound-outputs)). The rule for a full queue, in the table below, is the one rule for
+pressure on every route.
+
+**A play has an identity, an epoch and one fate.** A play carries **an event identity**, 64 bits that its
+caller chooses, and the tick its event belongs to, or none. These are C11's durable event identity and
+simulation time. The SDK gives its event's. A caller with no event, such as a menu's click, gives any number.
+AUDIO carries both and gives them back, and reads no meaning into either: it never compares two plays by
+identity, never refuses a repeat and never schedules by the tick. Which predicted event is heard, and that it
+is heard once, stays the SDK's.
+
+The handle stamps each play with [**the output epoch**](#10-sound-outputs) in which it was called, which is
+C11's audio-device epoch. A play is given a voice only in the epoch it was called in.
+
+Each play ends in exactly one **fate**. It is `started`, when the mix gave it a voice and rendered its first
+frame, or it is the one cause it never started: `limit`, `pool`, `out of range`, `nothing pulling`,
+`interrupted`, `queue full` or `bad value`. The fate is published as **an outcome**: the play's event
+identity, its tick, its epoch and its fate. This is the bookkeeping C11 asks of audio: the call is the event
+seen, the command is the event queued, and the outcome says rendered or expired. The handle gathers outcomes,
+its own and the mix's, into a list of a fixed size that the game drains when it chooses. If more arrive
+between two drains than the list holds, the oldest are lost and the loss is counted, and
+[the record](#11-the-record)'s counts by cause stay exact. An outcome says a play was mixed. It cannot say a
+speaker played it.
+
 **What a call does when it cannot be honoured.** Sound is presentation, so nothing is refused with an error
 after setup ([the engineering rules](../../../.agents/skills/thrum-engineering/SKILL.md#engine-rules)):
 
 | Case | What happens |
 |---|---|
 | A volume or pitch outside its range | Clamped, and counted |
-| A value that is not finite | The call is dropped, and counted. A debug build asserts |
-| The command queue is full | A sound that happens is dropped and counted. A change of state is never lost: the handle keeps the latest value and sends it when there is room |
-| Nothing is pulling ([B9](#what-a-game-must-be-able-to-hear)) | A sound that happens is dropped and counted. State is kept and is what sounds when pulling starts |
+| A value that is not finite | The call is dropped, and counted. A play's fate is `bad value`. A debug build asserts |
+| The command queue is full | A sound that happens is dropped, with the fate `queue full`. A change of state is never lost: the handle keeps the latest value and sends it when there is room |
+| Nothing is pulling ([B9](#what-a-game-must-be-able-to-hear)) | A sound that happens is dropped, with the fate `nothing pulling`. State is kept and is what sounds when pulling starts |
+| Pulling stopped after the call and before the mix applied it | The play expires, with the fate `interrupted`, and is never heard ([mechanism 10](#10-sound-outputs)) |
 
 Setup can fail, and returns a typed error with the state unchanged: adding a product that does not validate,
 adding more sounds than the mix was made for, opening an output.
 
 **The handle can rebuild a mix.** Since it holds everything that should be heard, an output that starts late,
 or again after its device went away, is sent the present state: emitters and music sound, and no sound that
-happened in the meantime is replayed. That is C11's rule for an interruption.
+happened before is played. A new mix begins a new output epoch, so the rule for an interruption in
+[mechanism 10](#10-sound-outputs) covers it.
 
 ### 3. Voices
 
@@ -167,7 +194,7 @@ For a voice with a place, with `o` the place minus the listener's position, `d =
 - a stereo sound with a place is first summed to mono.
 
 The curve's shape, `near`'s starting value and the glide below are tuned by ear at
-[the listening](#what-only-an-ear-can-judge). The properties in the three points are not.
+[the owner's sitting](#what-only-an-ear-can-judge). The properties in the three points are not.
 
 Gains are recomputed when a command moves a place or the listener, never once a pull, and each voice's two
 channel gains then **glide** to the new values by a fixed step a frame ([mechanism 7](#7-glides-ramps-and-the-clip)).
@@ -176,15 +203,34 @@ Audibility is by radius alone. Whether a thing is on screen has no part in it, w
 ### 5. Emitters
 
 **An emitter** is a looping sound that a thing makes: a sound, a place or none, a volume and a pitch. It
-lasts until it is ended. The handle holds every emitter as plain data, and only an **audible** emitter holds a
-voice in the mix. An emitter with a place is audible inside its radius. One with no place always is.
+lasts until it is ended. The handle holds every emitter as plain data, and only some hold a voice in the mix.
+Which do is settled once a frame, in the handle's update, by one policy. The items judge by this policy and
+by nothing else.
 
-Once a frame the handle passes over its emitters. One that has come inside its radius is given a voice,
-starting at the loop's first frame, where its gain is still zero. One that has left gives its voice up, at
-zero gain. When more are audible than the emitters' share of the pool ([mechanism 6](#6-the-limit-and-the-pool)),
-the loudest hold the voices, and a voice changes hands only when the newcomer is louder by a margin, so two
-equal emitters do not swap each frame. The pass is arithmetic over plain arrays, linear in the emitters, with
-no command for an emitter whose state the mix need not know.
+- **Eligible.** An emitter is eligible while it is inside its radius, or has no place. A held emitter stays
+  eligible.
+- **Loudness.** An emitter's loudness is its volume times its distance gain from
+  [mechanism 4](#4-a-place-and-the-listener), which is 1 with no place. Nothing else counts: not the sound's
+  samples, the pan, a glide under way, a hold, or the three volumes. Of two equally loud emitters, the one
+  started earlier ranks as the louder.
+- **The margin** is a ratio in the mix's configuration. A challenger beats a holder only when its loudness is
+  more than the holder's times one plus the margin.
+- **The pass**, once an update, in this order:
+  1. An emitter that holds a voice and is no longer eligible gives it up.
+  2. While a voice of the emitters' share of the pool ([mechanism 6](#6-the-limit-and-the-pool)) is free and
+     an eligible emitter has none, the loudest such emitter takes one.
+  3. While the loudest eligible emitter without a voice beats the quietest emitter with one, the two change
+     places.
+
+So an eligible emitter that holds a voice keeps it until another beats it by the margin, and two emitters of
+nearly equal loudness do not swap each frame. After a pass, the emitters holding voices are all eligible,
+they number the smaller of the share and the eligible, and no emitter without a voice beats one with a
+voice. An emitter with no place is always eligible. It holds a voice when the policy gives it one, like any
+other.
+
+An emitter given a voice starts at the loop's first frame, at zero gain, and glides up. One that gives its
+voice up ramps out. The pass is arithmetic over plain arrays, with work that grows with the emitters and not
+with their square, and with no command for an emitter whose state the mix need not know.
 
 An emitter's voice wraps from its last frame to its first with no gap and no repeated frame. Setting its
 volume or pitch, or moving it, glides and never restarts it. **Holding** it ramps it to silence and freezes
@@ -194,16 +240,18 @@ ramps it out.
 ### 6. The limit and the pool
 
 **A limit** belongs to a play: at most `n` voices of that sound at once. The mix counts the voices of the
-sound that are still sounding when the command is applied, and drops the play if there are `n`. It is counted
-in the mix because only the mix knows when a voice ended.
+sound that are still sounding when the command is applied, and drops the play if there are `n`. A voice stops
+counting once its last frame has been rendered, so a play applied at the very next frame is admitted, and a
+play is admitted whenever fewer than `n` are sounding. It is counted in the mix because only the mix knows
+when a voice ended.
 
 **The pool** is the fixed number of voices a mix was made with, in two shares: one for emitters, which the
-handle gives out by loudness as above, and one for sounds that happen. When that share is full, a new play
+handle gives out by the policy above, and one for sounds that happen. When that share is full, a new play
 takes the place of its quietest voice if the new one would be louder, and the displaced voice ramps out. If it
 would not be louder, the new play is dropped. Both are counted.
 
-The sizes of the pool, of each share, of the command queue and of the table of sounds are fields of the mix's
-configuration. Their defaults are the builder's to choose in WP1 and are recorded with the cost measured at
+The sizes of the pool, of each share, of the command queue, of the list of outcomes and of the table of
+sounds, and the emitters' margin, are fields of the mix's configuration. Their defaults are the builder's to choose in WP1 and are recorded with the cost measured at
 them. None is a limit this design states.
 
 ### 7. Glides, ramps and the clip
@@ -214,24 +262,38 @@ Nothing in the mix changes a gain in one step.
   the three volumes all glide. A sound that happens starts at its gains, so its attack is its own. An
   emitter's voice starts at zero and glides up.
 - **A ramp** takes a voice to silence over a fixed number of frames before it is stopped, held, displaced or
-  cut, and back up when a held one is let go.
+  cut, and back up when a held one is let go. The one voice that ends with no ramp is a sound that happens
+  caught by an interruption ([mechanism 10](#10-sound-outputs)): nothing was pulling, so there was no frame
+  to ramp over, and the new epoch rises from silence.
 - **The clip** is the last thing a frame passes through. Below a knee a sample is unchanged, bit for bit.
   Above it the sample bends towards 1 and never reaches it, by a rational curve that is continuous and
   rising. Frames that reached the knee are counted, so a game that runs hot can see that it does.
 
 Steps and lengths are counted in frames, which is what keeps the second rule of mechanism 1. Their starting
-values, and the knee's, are the builder's and are tuned by ear at the listening.
+values, and the knee's, are the builder's and are tuned by ear after
+[the owner's sitting](#what-only-an-ear-can-judge).
 
 ### 8. Music
 
 A music track plays from its compressed form: what is added to the mix is the cooked bytes, and a stream
 decodes only the samples each pull asks for. Nothing holds a track decoded.
 
-- **Two streams.** One track is current. On a change the current stream becomes the outgoing one and fades
-  out from its present gain while the new one fades in, over the time the call gives, by square-root curves so
-  the power stays constant. A stream that was already outgoing is ramped out at once, so no more than two
-  streams fade at a time.
-- **Saying the current track again does nothing.** Saying no track fades the current one out.
+- **Three stream slots: the current, the outgoing and the tail.** One track is current. On a change the
+  current stream becomes the outgoing one and the new track starts as the current. The fade runs over the
+  time the call gives, counted in frames, with `t` going from 0 to 1 across it. The outgoing stream's gain is
+  the gain it had at the change times `sqrt(1 - t)`, and the new stream's is `sqrt(t)`. From a steady track
+  that is `sqrt(1 - t)` against `sqrt(t)`: both tracks sound all the way across the fade, each gain moves one
+  way only, and the squares of the two sum to 1 at every frame.
+- **A change during a fade.** The stream that was already outgoing moves to the tail, and goes from the gain
+  it has to silence by a ramp of [mechanism 7](#7-glides-ramps-and-the-clip). The stream that was fading in
+  becomes the outgoing one and falls from the gain it had reached, and the new track fades in, both by the
+  rule above. No gain steps, and no gain that was falling rises. The tail holds one stream. A change that
+  arrives while the tail is still ramping waits until it is silent, which is at most one ramp, and only the
+  track asked for last waits. So three streams decode together for at most one ramp, and otherwise no more
+  than two.
+- **Saying the current track again does nothing.** Saying no track fades the current one out by the same
+  rule, with nothing fading in. A track asked for while it is the outgoing stream is a change like any other:
+  a new stream of it starts from its first frame.
 - **A loop point.** A track that loops plays to its end and goes on from its loop point, for ever, with the
   frames of the cooked track in exactly that order. The cooked form is laid out so that going back to the
   loop point decodes nothing that is not played.
@@ -243,7 +305,10 @@ decodes only the samples each pull asks for. Nothing holds a track decoded.
 **The codec is QOA**, "Quite OK Audio": 3.2 bits a sample by its specification, which is about 2.3 MB a
 minute for 48 kHz stereo. Its decoder is integer arithmetic of a few operations a sample with no allocation,
 so it runs inside a pull on every target, including the worklet's module, and needs no decoding thread and
-no buffer between a decoder and the mix. The cooked form names its codec, so another can be added without
+no buffer between a decoder and the mix. The specification fixes the stream and the samples a decoder gives,
+and leaves an encoder free to choose among valid streams. So the engine's decoder is held to the reference
+decoder's samples exactly, and the cook's encoder is held only to writing streams that decode that way. How
+close its choices come to the reference encoder's is not a pass condition. The cooked form names its codec, so another can be added without
 changing what a game writes. [Techniques and evidence](#techniques-and-evidence) gives the account.
 
 ### 9. Cooked sounds and the cook
@@ -261,7 +326,11 @@ sheet is.
 **The cook** is in `thrum-cook`, which is authoring only: no shipping package links it, its decoders or its
 resampler. It reads a `.wav` (8, 16 or 24-bit integer or 32-bit float PCM) or an `.ogg` holding Vorbis, of
 one or two channels at any rate, resamples to 48 kHz with a band-limited resampler, and writes one of the two
-products. A source is a sound unless the cook is told it is music, with its loop point in seconds. The cook
+products. Band-limited has a number here, because a wrong resampler keeps the length, the pitch and the level
+right and adds a tone the source does not have: a tone cooked from another rate leaves its image or its alias
+at least 40 dB below itself. By arithmetic for an 8 kHz tone at 22,050 Hz, taking the nearest sample leaves
+the image at 14,050 Hz about 7 dB below the tone and drawing a line between two samples about 10 dB below. A
+windowed-sinc resampler leaves it past 60. A source is a sound unless the cook is told it is music, with its loop point in seconds. The cook
 is told by a small file beside the source, in the form the cooker's other small files have when WP2 is built.
 How a game spells that file, the SDK's `Music(..)`, and the asset catalog's entry are `GAME-SDK`'s.
 
@@ -290,9 +359,27 @@ mix module**: the mix built from the same source as a WebAssembly module that im
 exported-function interface and no `wasm-bindgen`. The page hands the output that module's bytes when it
 opens it. Each frame the handle posts one message of commands. A sound's bytes are transferred to the worklet
 before the first command that uses them, in pieces small enough that copying one does not make a pull late,
-and the port keeps their order. The worklet posts the record back. No `SharedArrayBuffer` is used, so a page
-needs no cross-origin isolation. The probe ran this shape: while the page was held for 500 ms the worklet
-rendered 501 ms of frames, with no pull skipped.
+and the port keeps their order. No `SharedArrayBuffer` is used, so a page needs no cross-origin isolation. The
+probe ran this shape: while the page was held for 500 ms the worklet rendered 501 ms of frames, with no pull
+skipped.
+
+**Chrome's port is bounded by answers.** Each message posted to the worklet is a task queued on the audio
+thread, so only the sender can bound the work waiting there. The worklet answers every message it takes,
+with the number of commands the mix has applied, the number of pieces it has copied, the record and the
+outcomes. The handle posts by those answers:
+
+- never more commands than the mix's queue has room for, by the last answer;
+- never a piece of sound data while an earlier piece is unanswered, so at most one piece is in flight;
+- a frame's commands ahead of the next piece, so a play or a listener update waits behind the copy of one
+  piece at most, however long the track;
+- no message at all while a fixed number are unanswered.
+
+When a frame's commands cannot all be posted, the full-queue rule of
+[mechanism 2](#2-the-game-side-says-what-should-be-heard) holds as it does natively: a sound that happens is
+dropped with the fate `queue full`, and a change of state is kept at its latest value and posted when there
+is room. So a play made while a track of minutes is arriving reaches the mix or is counted as dropped, the
+listener the mix ends with is the last one set, and pulls go on throughout. The record holds the most
+commands, pieces and messages that were ever in flight.
 
 **The buffer.** No device. A test, or the SDK's test harness, pulls frames when it chooses, so its time is
 the frames it has pulled.
@@ -305,37 +392,80 @@ device. Only `running` pulls.
   before the first pull, so music said on a title screen starts with the press.
 - **Suspending is asked for, not observed.** The shell's lifecycle is `HOST`'s, as built. Whoever holds the
   output forwards "the app went to the background" and "the tab is hidden" to `suspend`, and the return to `resume`.
-  The mix's clock stops while suspended. The iOS output also follows the audio session's interruptions, which
-  are the device's and not the app's.
+  The mix's clock is the frames pulled, so it stops while suspended. The iOS output also follows the audio
+  session's interruptions, which are the device's and not the app's.
 - **No device is not an error for a game.** Opening an output can fail with a typed error, and a game then
   runs with a mix nothing pulls.
+
+**The output epoch.** An output counts its stretches of pulling. The output epoch goes up by one every time
+pulling stops, by any route: a suspend, an interruption of the audio session, a device that went away, a
+context the browser suspended, an output closed, or a new mix. It is the audio-device epoch C11 asks for,
+and it is neither the tick nor the count of frames. The handle reads it to stamp each play. The output gives
+a new epoch to the mix itself, outside the command queue and ahead of the first pull of that epoch, so no
+play still on its way can get in front of it. A mix with no output is told that pulling stopped and started
+by the same two calls, so a test drives an interruption with no device. At the first pull of a new epoch,
+before any frame is rendered:
+
+- every play stamped with an older epoch expires, with the fate `interrupted`, whether it was waiting in the
+  queue or arrives later;
+- every voice of a sound that happens is freed without another frame, and counted as cut by the
+  interruption;
+- emitters' voices and music streams are where they stopped. They take the handle's present state, and the
+  whole output rises from silence over one ramp.
+
+That is C11's rule for an interruption: one-shots already queued are consumed and never replay, and what is
+continuous goes on from current state.
+
+**Silenced, with a tap.** An output can be opened silenced, for proof. It does everything an audible output
+does, up to and including writing the mix's frames into the device's own channel buffers in the device's
+layout. **The output tap** then copies what those buffers hold into a store of a fixed size, made when the
+output was opened, and only after that are the buffers zeroed. So the tap holds what the device was handed,
+after the adapter's conversion, and nothing is heard. A silenced output differs from an audible one in those
+two steps alone. The tap is read from the game's side after a run.
 
 ### 11. The record
 
 The mix publishes a record that the handle reads without waiting: voices sounding and the most there have
-been; emitters and how many are audible; plays started; plays dropped, by cause (the limit, a full pool, out
-of range, nothing pulling, a full queue, a bad value); voices displaced; values clamped; frames that reached
-the clip's knee; music streams, the current track and its position; frames a stream rendered silent for want
-of data; the command queue's high-water mark; frames pulled; and the output's state. An output adds what it
-knows and marks the rest absent: the device's rate and channels as read back, its reported latency, and the
-times at which a command was written and applied.
+been; emitters, how many are eligible and how many hold a voice; plays started; plays that never started, by
+fate (the limit, a full pool, out of range, nothing pulling, interrupted, a full queue, a bad value); voices
+displaced; voices cut by an interruption; outcomes lost; values clamped; frames that reached the clip's knee;
+music streams, the current track and its position; frames a stream rendered silent for want of data; the
+command queue's high-water mark; frames pulled; the output epoch; and the output's state. An output adds what
+it knows and marks the rest absent: the device's rate and channels as read back, its reported latency, the
+times at which a command was written and applied, and in Chrome the most commands, pieces and messages in
+flight.
 
-### 12. The reference script
+### 12. The reference script and the handle run
 
-One script of commands, each with the frame at which it is applied, over sounds made by integer arithmetic
-and, from WP2, cooked fixtures. It exercises mechanisms 3 to 8 as the mix sees them. Its rendered frames are folded into
-**a digest**, and the digest is kept beside the crate's tests. The same script is run to a buffer natively, by
-the mix module under Node, through the Mac's output, in the simulator and inside Chrome's worklet, and each
-must give the kept digest.
+Two proofs go through every device. They show different things, and neither stands in for the other.
 
-A run through a device applies each command at its frame from inside the pull, by splitting the pull
-there, which the second rule of mechanism 1 makes harmless, and folds what it pulled before the frames go to
-the device. Those runs are **silenced**: the output writes zeros to the device after
-the mix has rendered, so a check makes no noise on the owner's Mac and still proves the device pulled the
-right frames at the rate asked.
+**The reference script** shows that the arithmetic is the same everywhere. It is one script of commands, each
+with the frame at which it is applied, over sounds made by integer arithmetic and, from WP2, cooked fixtures.
+It exercises mechanisms 3 to 8 as the mix sees them. Its rendered frames are folded into **a digest**, and
+the digest is kept beside the crate's tests. The same script is run to a buffer natively, by the mix module
+under Node, through the Mac's output, in the simulator and inside Chrome's worklet, and each must give the
+kept digest.
+
+A run through a device applies each command at its frame from inside the pull, by splitting the pull there,
+which the second rule of mechanism 1 makes harmless. The output is opened
+[silenced](#10-sound-outputs), and the digest is folded from the output tap: from what was written to the
+device's channels, and not from the mix's own frames. An adapter that hands the device silence, or the
+channels the wrong way round, gives another digest.
+
+**The handle run** shows that a game's own calls reach the device. The script's commands never pass through
+the handle, the queue or, in Chrome, the port, so the digest alone would pass an output that ignored every
+call a game made. The handle run uses only [what AUDIO provides](#what-audio-provides), as a game does, and
+applies nothing from inside the pull. It makes a mix, opens a silenced output, adds a stereo sound whose two
+channels differ, and plays it once from the game's side with no place, at volume 1 and pitch 1. The tap must
+then hold that sound's samples exactly, whole and once, with its first channel in the device's first channel
+and zeros around it, and the play's outcome must be `started`. The same run with no play must tap only
+zeros. Where in the tap the sound begins is not fixed, since the call is tied to no frame. WP3 runs it on the
+Mac and in the simulator, and WP4 in Chrome.
+
+Both are silent, so a check makes no noise on the owner's Mac, and a reviewer judges each from its record.
 
 The digest changes only when the mix's arithmetic or the script is changed on purpose, such as a curve tuned
-after the listening. The log says so each time.
+after the owner has listened. The log says so each time.
 
 ## What AUDIO provides
 
@@ -348,19 +478,21 @@ builder's; the calls and their meaning are fixed here.
 | Make a mix, from a configuration | Fixed capacities. Gives the handle |
 | Add a sound, add a music track, from a cooked product | Validates. A typed error if it does not, or if the table is full. Gives an identity |
 | Replace or remove a sound | Voices already sounding finish on the data they started with. New plays use the new data. The old data is released on the game side, after the mix has let go of it |
-| Play a sound | Volume 0 to 1, pitch 0.5 to 2, a place or none, a limit or none. One voice, [B1](#what-a-game-must-be-able-to-hear) and [B2](#what-a-game-must-be-able-to-hear). No result to wait for |
+| Play a sound | Volume 0 to 1, pitch 0.5 to 2, a place or none, a limit or none, an event identity, and a tick or none. One voice, [B1](#what-a-game-must-be-able-to-hear) and [B2](#what-a-game-must-be-able-to-hear). No result to wait for: its fate comes later, as an outcome |
+| Read the outcomes | Drains the outcomes gathered since the last read: for each play its event identity, tick, epoch and fate ([mechanism 2](#2-the-game-side-says-what-should-be-heard)) |
 | Start an emitter | A sound, volume, pitch, a place or none. Gives an identity |
 | Set an emitter's volume or pitch; move it; hold it or let it go; end it | [Mechanism 5](#5-emitters) |
 | Set the listener | Position, right, `near` |
 | Say the music | A track or none, and a fade time in seconds |
 | Set the volumes | Master, music, effects. Each is a linear gain from 0 to 1. How a slider maps to it is the SDK's |
-| Update, once a frame | Settles which emitters are audible and sends the frame's commands |
+| Update, once a frame | Settles which emitters hold a voice and sends the frame's commands |
 | Read the record | The latest the mix published |
-| Open an output for a mix; suspend; resume; read its state | [Mechanism 10](#10-sound-outputs). In Chrome, opening takes the mix module's bytes |
-| Pull frames into a buffer | For a mix with no output. Interleaved stereo float |
+| Open an output for a mix, audible or silenced; suspend; resume; read its state and its epoch; read a silenced output's tap | [Mechanism 10](#10-sound-outputs). In Chrome, opening takes the mix module's bytes |
+| Pull frames into a buffer; say that pulling stopped or started | For a mix with no output. Interleaved stereo float. Stopping and starting are the calls an output uses, and advance the epoch the same way |
 | Cook a source | In `thrum-cook`: source bytes and "sound" or "music with this loop point" give product bytes or a named refusal |
 
-What stays the consumer's: which events make a sound and that a predicted event is heard once; what a pause
+What stays the consumer's: which events make a sound, the event identity and tick each play is given, and
+that a predicted event is heard once, since AUDIO plays what it is told and never chooses between plays; what a pause
 holds; the camera a listener is taken from and the `near` it is given; the radius of a sound played at a
 place with none said; the catalog and the `Music(..)` file; forwarding the lifecycle; and the web build step
 that puts the mix module beside the game's own, for which AUDIO gives one documented command.
@@ -426,7 +558,7 @@ platform maths functions, where a square root or a rational curve does the same 
 | The device stream and whether it is pulling | The sound output | One for a mix |
 | Cooked products, the store, the manifest, live edits | `CONTENT-LOOP`, as built | Adds two product kinds with their validation and their cook |
 | The app's lifecycle | `HOST`, as built | Offers `suspend` and `resume`. Observes nothing of the app itself |
-| Capability status | `docs/design/maturity.json` | An entry, with implementation, correctness and device kept apart, and "heard" not judged until the listening |
+| Capability status | `docs/design/maturity.json` | An entry, with implementation, correctness and device kept apart, and "heard" not judged until the owner's sitting in `GAME-SDK` WP19 |
 
 ### From a source file to the ear
 
@@ -440,9 +572,11 @@ device.
 
 1. Frame functions call the handle. Each call updates the handle's own data and, where the mix must know,
    appends a command. No call waits.
-2. The game calls update once. The handle passes over its emitters, starts and ends voices for those that
-   crossed their radius, and sends the frame's commands: nothing more natively, one message in Chrome.
-3. On the audio thread, a pull applies the commands that have arrived and frees the voices that ended.
+2. The game calls update once. The handle runs [the emitters' pass](#5-emitters), starts and ends voices
+   for those that gained or lost one, and sends the frame's commands that the mix has room for: nothing more
+   natively, one message in Chrome.
+3. On the audio thread, a pull first takes a new output epoch if one has begun, then frees the voices that
+   rendered their last frame, then applies the commands that have arrived, in order.
 4. For each sounding voice it reads the sound through the cubic at the voice's pitch, multiplies by the two
    gliding gains and adds into the stereo sum.
 5. Each music stream decodes the samples this pull needs, takes its fade gain and is added.
@@ -451,29 +585,33 @@ device.
 
 ## Proof
 
-No agent can hear. An agent proves what was mixed and that the device took it, and
+No agent can hear. An agent proves what was mixed and what the device was handed, and
 [an ear](#what-only-an-ear-can-judge) judges the rest.
 
 | What | Proof | Where |
 |---|---|---|
 | B1 to B6, B10 and the record, as arithmetic | CPU tests on the buffer, each on the smallest script that shows the behaviour, comparing frames with a plain statement of what they must be | WP1, WP2. Guards in `./dev check` |
-| B7, a pull's bounded work | A test that counts allocations in a pull with every mechanism at work, and a reviewer's question on locks and system calls | WP1 |
+| B9 and C11's interruption: a play caught by an interruption expires under its identity, one-shots are cut, and what is continuous goes on | CPU tests on the buffer, through the calls an output uses to say pulling stopped and started | WP1 |
+| B7, a pull's bounded work | A test that counts allocations in a pull with every mechanism at work; a test that watches replaced data being released on the game's side, since the test kit's counter does not count frees; and a reviewer's question on locks, frees and system calls | WP1 |
 | B8, one mix | The reference script's digest: natively, and by the mix module under Node | WP1, WP2 |
-| Cooked forms | Each source format cooked and compared with its source; hostile products refused; the codec exact against QOA's reference | WP2 |
-| Each output | The reference script through the device, silenced, to the kept digest; the format read back from the device; suspend and resume; in Chrome a held page and a first press | WP3, WP4 |
+| Cooked forms | Each source format cooked and compared with its source; a resampled tone's image and alias held 40 dB down; hostile products refused; the decoder exact against QOA's reference, and the cook's streams decoded by the reference | WP2 |
+| Each output | [The handle run](#12-the-reference-script-and-the-handle-run): a sound played through the handle, found in the output tap. The reference script through the device, silenced, to the kept digest folded from the tap. The format read back from the device; suspend and resume, with a play caught by the suspend expired; in Chrome a held page and a first press | WP3, WP4 |
+| Chrome's port stays bounded | A track of minutes transferred while a script plays sounds and moves the listener each frame: every play is in the tap or has an outcome that says why not, the listener applied last is the last one set, the most commands, pieces and messages in flight stay inside their bounds, and no pull is skipped | WP4 |
 | B11 | The dependency closure of a package without sound, and of the audio crate without the cook | WP2 |
 | Costs | [Tripwire records](#performance) | WP1 to WP4 |
 
-Proof stops where the frames leave the engine. That a speaker played them, at the right speed and on the
-right side, and that they sound right, is the listening's.
+Proof stops at the device's own buffers. That a speaker played them, at the right speed and on the right
+side, and that they sound right, is the owner's to hear.
 
 ## What only an ear can judge
 
-These wait for the owner, in one sitting, in WP5. No other item in this module judges sound, and no reviewer
-is asked to. The owner listens to **the listening room**, a small program built for it with real sounds and
-a real music track, on the Mac's own speakers or headphones and in Chrome, with this list:
+The owner judges how the engine sounds once, in `GAME-SDK` WP19, the sitting the module list gives it, with a
+2D game and a 3D game written on the SDK. That sitting is the single acceptance point for sound. No item in
+this module waits for the owner, none judges sound, and no reviewer is asked to.
 
-1. Sound comes out, on both.
+What an ear can find in the engine's part, for whoever writes that sitting's list:
+
+1. Sound comes out, on the Mac and in Chrome.
 2. Left is left and right is right.
 3. A known sound is at its own pitch and speed.
 4. Nothing crackles, drops out or clicks: in steady play, as sounds start and stop, at forty hits a second,
@@ -484,25 +622,34 @@ a real music track, on the Mac's own speakers or headphones and in Chrome, with 
 8. A crowded loud moment gets dense, not harsh.
 9. A press is heard when it is made.
 
-A "no" is tuned or fixed inside this module: the curves of mechanism 4, the steps of mechanism 7, the codec of
-mechanism 8, or a fault in an output. None reopens the SDK. The lead may hold WP5 for the sitting `GAME-SDK`
-WP19 already plans.
+A "no" to any of these comes back to this module as a work package planned from the owner's words, and is
+tuned or fixed here: the curves of mechanism 4, the steps of mechanism 7, the codec of mechanism 8, or a fault
+in an output. None reopens the SDK.
+
+**The listening room** is a diagnostic and not a gate. It is the runnable example of the engine's guide to
+sound, built in WP4 on the engine's own API: a few real sounds, a thing that moves past, and two music tracks
+to change between, audible on the Mac and in Chrome. It lets a fault heard in a game be told apart from a
+fault in the game, and lets a tuned value be heard. Nobody is asked to listen to it, and nothing waits for
+anyone who does.
 
 ## Risks
 
 1. **The worklet's instance stalls when a large sound arrives.** Copying a piece into the module's memory, or
-   growing that memory, happens on the audio thread between pulls. Early sign: the time one message takes in
-   the worklet against the time of one pull. WP4 measures it and sets the piece size from the result.
+   growing that memory, happens on the audio thread between pulls, and many small pieces can queue ahead of
+   a click. [The port's bounds](#10-sound-outputs) keep one piece in flight and put commands ahead of the
+   next. Early sign: the time one message takes in the worklet against the time of one pull, and the wait of
+   a play made while a track arrives. WP4 measures both and sets the piece size from the result.
 2. **Chrome's first press never comes**, for a demo that plays itself. The output stays waiting and the game
    runs silent. That is the browser's rule and is the SDK's to show to a player.
-3. **QOA's noise is audible in quiet music.** Early sign: only the owner's ear. The cooked form's codec name
+3. **QOA's noise is audible in quiet music.** Early sign: only the owner's ear, in `GAME-SDK` WP19. The cooked form's codec name
    is the way out.
 4. **The simulator's output does not behave as a phone's.** It proves function. The audio session's category
    and its interruptions are designed for and cannot be shown there.
 5. **A builder reaches for a maths function in the mix**, and the targets drift apart by a bit. Early sign:
    the mix module's digest under Node, in WP1.
-6. **The digest is taken for the sound.** A wrong curve gives a stable digest too. The CPU tests compare
-   frames with what they must be, and the digest only carries that to the other targets.
+6. **The digest is taken for the sound.** A wrong curve gives a stable digest too, and so does an output that
+   ignores a game. The CPU tests compare frames with what they must be, the digest only carries that to the
+   other targets, and the handle run shows a game's calls arrive.
 7. **Two modules edit the cooker at once.** `GAME-SDK` WP3 and WP4 change `thrum-cook` for sheets and
    content. WP2 here adds a kind beside theirs and integrates on what has landed.
 
@@ -521,7 +668,8 @@ condition beyond a missing measurement or a collapse:
 - the time to render a minute of sound with the pool full and two music streams, natively and in the mix
   module, as a share of real time. A collapse is a mix slower than real time;
 - the handle's update with 10,000 emitters of which 2,000 moved;
-- in Chrome, the longest a message keeps the worklet from a pull;
+- in Chrome, the longest a message keeps the worklet from a pull, and the longest a play waits from its call
+  to the pull that applies it while a track of minutes is arriving;
 - the time from a play call to its first frame leaving the mix, with the device's reported latency beside it;
 - cooked bytes for a second of each kind, and the cook's time for a second of source;
 - about 25% over a comparable earlier record, the vision and scope document's figure.
@@ -533,8 +681,8 @@ These hold in every work package.
 - **No agent judges how anything sounds.** An item that seems to need an ear is a question for the log, not a
   guess.
 - **Nothing this module adds makes a sound** during `./dev check`, an item's check or a build. A run through a
-  device is silenced as [mechanism 12](#12-the-reference-script) says. Only the listening room, run by the
-  owner, is audible.
+  device is opened silenced, as [mechanism 10](#10-sound-outputs) says. Only the listening room, when a person
+  runs it, is audible.
 - **Equal bits, or stop.** If a target cannot be made to give the kept digest inside the operations
   [mechanism 1](#1-one-mix-pulled) allows, keep the first frame that differs with both values and end
   `BLOCKED`. Do not compare with a tolerance, shorten the script or drop a target.
@@ -552,23 +700,26 @@ These hold in every work package.
 
 ## Open questions
 
-- **The defaults of the pool, its shares, the queue and the table of sounds.** WP1's builder chooses them and
-  records the cost at them.
-- **The starting values of the ramp, the glide, the knee and `near`.** WP1's builder chooses. The listening
-  tunes them.
-- **The piece size for sound data in Chrome.** WP4 measures and sets it.
-- **Whether QOA is good enough for music.** The listening settles it.
+- **The defaults of the pool, its shares, the queue, the list of outcomes and the table of sounds.** WP1's
+  builder chooses them and records the cost at them.
+- **The starting values of the ramp, the glide, the knee, `near` and the emitters' margin.** WP1's builder
+  chooses. They are tuned after the owner's sitting, if the owner asks.
+- **The piece size for sound data in Chrome, and how many messages may be unanswered.** WP4 measures and sets
+  them.
+- **Whether QOA is good enough for music.** The owner's sitting in `GAME-SDK` WP19 settles it.
 - **Whether headed Chrome's reported latency differs from the 32 ms headless Chrome reported.** WP4 records it.
 
 ## The work packages
 
-Five, in the order they are built. [The plan](PLAN.md) names each and [the done-when file](DONE.json) holds the
+Four, in the order they are built. [The plan](PLAN.md) names each and [the done-when file](DONE.json) holds the
 items of the first two.
 
 | Work package | Builds | Waits for |
 |---|---|---|
-| WP1 | Mechanisms 1 to 7 and 11 with no device, the reference script, and the mix module built and run under Node | Nothing |
+| WP1 | Mechanisms 1 to 7 and 11 with no device, with outcomes and the output epoch driven in the buffer, the reference script, and the mix module built and run under Node | Nothing |
 | WP2 | Mechanisms 8 and 9: the two product kinds, the cook, the codec, and music in the buffer | Nothing |
-| WP3 | The Apple output, on the Mac and in the simulator | Nothing |
-| WP4 | The Chrome output, the build command for the mix module, the engine's guide to sound, and the maturity entry. **This is the work package `GAME-SDK` WP18 waits for** | Nothing |
-| WP5 | The listening room, and the owner's one sitting | Nothing waits for it |
+| WP3 | The Apple output, on the Mac and in the simulator, with the silenced opening, the output tap, the output epoch across a suspend, and the handle run on both | Nothing |
+| WP4 | The Chrome output with its bounded port, the handle run in Chrome, the build command for the mix module, the engine's guide to sound with the listening room as its example, and the maturity entry. **This is the work package `GAME-SDK` WP18 waits for**, and it is the module's last | Nothing |
+
+The owner's judgement of how it sounds is not a work package here. It is `GAME-SDK` WP19's
+([what only an ear can judge](#what-only-an-ear-can-judge)).
