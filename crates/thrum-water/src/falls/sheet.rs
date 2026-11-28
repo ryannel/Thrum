@@ -549,7 +549,8 @@ fn ribbons(section: [Vertex; 3], spread: f32) -> [[Vertex; 3]; RIBBONS_PER_SEGME
             } else {
                 -1.0
             };
-        let depth = (0.034 + 0.24 * fold) * split * (1.0 - fraction).max(0.0).sqrt();
+        let depth =
+            (0.034 + 0.24 * fold) * (1.0 - spread) * split * (1.0 - fraction).max(0.0).sqrt();
         [-1.0_f32, 0.0, 1.0].map(|edge| {
             let mut vertex = at(edge.mul_add(narrowed, middle));
             let position =

@@ -34,11 +34,11 @@ fn strand_breakup(thickness: f32) -> f32 {
 }
 
 fn strand_offset(parcel: f32, fraction: f32, width_offset: f32,
-    width_axis: vec3<f32>, outward: vec3<f32>) -> vec3<f32> {
+    width_axis: vec3<f32>) -> vec3<f32> {
     let split = smoothstep(0.21 + 0.28 * parcel, 0.77, fraction);
     let width = mix(0.37, 0.85, parcel);
-    let spread = mix(0.021, 0.52, parcel * parcel) * (1.0 - 0.69 * smoothstep(0.65, 1.0, fraction));
-    return split * (width_axis * (0.24 * (parcel - 0.5) - width * width_offset) + outward * spread);
+    // Narrow each strand around its flow path instead of pushing a bulge out of the fall.
+    return split * width_axis * (0.09 * (parcel - 0.5) - width * width_offset);
 }
 
 fn splash_vertex(world_time: vec4<f32>, velocity_along: vec4<f32>, discharge: vec4<f32>,
@@ -120,7 +120,8 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
         let normal = vec3(axis.z, 0.0, -axis.x);
         strand_normal = axis * cos(angle) + normal * sin(angle);
     }
-    let weight = fold_weight(across_fraction.w) * select(1.0, 0.18, is_filament);
+    let fold_scale = select(select(1.0, 0.24, closed_strand), 0.18, is_filament);
+    let weight = fold_weight(across_fraction.w) * fold_scale;
     let fold = sheet_fold(velocity_along.w, birth, across_fraction.xz) * weight;
     var position = world_time.xyz + fold;
     var strand_motion = vec3(0.0);
@@ -128,12 +129,10 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
     let breakup = strand_breakup(discharge.w);
     if !is_filament && breakup > 0.0 && across_fraction.w > 0.21 {
         let parcel = sheet_noise(vec2(edge_receiver.w, birth), FALL_LOOP, vec2(3.5, 3.6), vec2(9.0, 0.0));
-        let face = vec3(-across_fraction.z, 0.0, across_fraction.x);
-        let outward = select(-face, face, dot(face, velocity_along.xyz) >= 0.0);
         let offset = velocity_along.w - edge_receiver.w;
         let last_fraction = across_fraction.w - length(velocity_along.xyz) * sheet_clock.y / across_fraction.y;
-        let current = breakup * strand_offset(parcel, across_fraction.w, offset, axis, outward);
-        let previous = breakup * strand_offset(parcel, last_fraction, offset, axis, outward);
+        let current = breakup * strand_offset(parcel, across_fraction.w, offset, axis);
+        let previous = breakup * strand_offset(parcel, last_fraction, offset, axis);
         position += current;
         strand_motion = current - previous;
     }
@@ -313,7 +312,7 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let last_fraction = input.across_fraction.w - length(input.velocity_along.xyz) * sheet_clock.y
         / max(0.001, path_distance);
     let fold_delta = (fold_weight(input.across_fraction.w) - fold_weight(last_fraction))
-        * select(1.0, 0.18, is_filament);
+        * select(select(1.0, 0.24, input.closed_strand != 0u), 0.18, is_filament);
     let displacement = input.velocity_along.xyz * sheet_clock.y
         + fold_delta * sheet_fold(lip, birth, across) + input.strand_motion + vec3(0.0, input.receiving.x, 0.0);
     let previous = view.previous_view_proj * vec4(point - displacement, 1.0);
