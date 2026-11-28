@@ -1947,7 +1947,7 @@
     {
       "id": "WP23",
       "name": "The weather's own clouds take a new form, a cluster of rounded heaps, in what a game reads and in stills drawn from it on the CPU",
-      "status": "not_started",
+      "status": "blocked",
       "depends_on": [],
       "quality_bar": "The outline and relief of fair-weather cumulus as in Red Dead Redemption 2 or Horizon Forbidden West, looked at one cloud at a time from the ground: rounded heaps of different heights on one level base, crowns in billows, no two clouds alike. These stills are judged for form alone; the engine's light, colour and motion are WP17's.",
       "items": [
@@ -1974,7 +1974,17 @@
         }
       ],
       "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      "failed_reviews_with_repeat": 0,
+      "blocked": {
+        "reason": "needs_context",
+        "what": "The planner needs to decide how to revise the puff form to remove the shelves and repeated lenses.",
+        "work": {
+          "commit": "aa8d61a8d3c7c6d3dea8caad1860e99cd85c84c1",
+          "branch": "build/clouds",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/CLOUDS/WP23-handoff.md"
+      }
     },
     {
       "id": "WP24",
