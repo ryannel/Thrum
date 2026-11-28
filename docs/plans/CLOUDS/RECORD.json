@@ -3025,7 +3025,7 @@
         {
           "verdict": "fail",
           "commit": "88238ba0762e767dea83755f0048583a34472a7e",
-          "review": ".orchestrate/evidence/CLOUDS/WP23-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP23-review-1.md",
           "items": {
             "WP23.1": "pass",
             "WP23.2": "pass"
@@ -3057,6 +3057,34 @@
             "turns": 1
           },
           "at": "2026-11-28T04:59:43Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "2998873ae8653c1c8f4b550fbd25f2443d94b587",
+          "review": ".orchestrate/evidence/CLOUDS/WP23-review.md",
+          "items": {
+            "WP23.1": "pass",
+            "WP23.2": "pass",
+            "WP23.3": "pass",
+            "WP23.4": "pass"
+          },
+          "summary": "All four items pass. The puff form preserves the ten point-query behaviours and the broken deck\u2019s opening, and all 31,094 puffs measured in 121 mature cells fit within their cells\u2019 radius and depth to floating-point precision. Independent CPU stills show varied heaps with rounded undersides, and the six ages of one cell show tufts gathering into a cloud and breaking apart again.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 131658,
+            "cached": 3992192,
+            "output": 12756,
+            "turns": 1
+          },
+          "at": "2026-11-28T09:52:27Z"
         }
       ],
       "authorised": {
@@ -3089,6 +3117,13 @@
           "output": 216439,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "2998873ae8653c1c8f4b550fbd25f2443d94b587",
+        "review": ".orchestrate/evidence/CLOUDS/WP23-review.md",
+        "checked": "151ed17376027871a7163771dda6a4318716aa1e",
+        "at": "2026-11-28T09:52:27Z"
       }
     },
     "WP24": {
