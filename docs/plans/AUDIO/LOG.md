@@ -47,3 +47,10 @@
   A settled hold keeps its slot and sample lease outside the per-frame voice list.
   [Mac, Node and source proof](../../../.orchestrate/evidence/AUDIO/WP1/hold-repair/README.md)
   includes all ten automated checks and the held-voice cost under shared load.
+- 2026-11-28 WP1 resume repair. A deferred retry with queue space publishes the current desired state before
+  enqueueing it. The command revision now describes the same emitter state a resume can restore, including
+  when the output stops again before the queue drains. A full queue still returns immediately.
+- 2026-11-28 All ten automated WP1 item checks and the source audit passed. The Mac buffer probes reached
+  silence when a restored emitter ended, 0.125 when it released, and 0.0625 after a volume change during
+  queue pressure. Node matched `cf7b0128f410d7db` at both pull sizes.
+  [Target proof, cost and source audit](../../../.orchestrate/evidence/AUDIO/WP1/resume-repair/README.md)
