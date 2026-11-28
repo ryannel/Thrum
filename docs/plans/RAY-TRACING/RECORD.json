@@ -1,10 +1,10 @@
 {
   "module": "RAY-TRACING",
   "design": {
-    "verdict": "ok",
+    "verdict": "changes",
     "review": ".orchestrate/evidence/RAY-TRACING/design-review.md",
-    "commit": "fae4e8d58960003074c5c512b25acae77c9e106e",
-    "hash": "3ef2b1c71234015f367589b0ba16e40143cf217a429970514001df34620f6d06",
+    "commit": "183efec03cc07ff24a3bf60a57c408135109a762",
+    "hash": "0b9a3933b45f6d58a78b7fd85cee6b32e7d621a2704184ec3e138e368079560c",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -13,15 +13,15 @@
       "model": "gpt-6.2-astra",
       "effort": "high"
     },
-    "cli": "codex-cli 0.171.0-alpha.13",
+    "cli": "codex-cli 0.171.0-alpha.13.2",
     "path": "headless",
     "usage": {
-      "input": 79260,
-      "cached": 1267328,
-      "output": 5609,
+      "input": 74800,
+      "cached": 970496,
+      "output": 4374,
       "turns": 1
     },
-    "at": "2026-11-25T01:05:49Z"
+    "at": "2026-11-28T02:55:12Z"
   },
   "work_packages": {
     "WP1": {
@@ -1363,6 +1363,29 @@
       "items_owed": [
         "WP7"
       ]
+    },
+    {
+      "verdict": "ok",
+      "review": ".orchestrate/evidence/RAY-TRACING/design-review-9.md",
+      "commit": "fae4e8d58960003074c5c512b25acae77c9e106e",
+      "hash": "3ef2b1c71234015f367589b0ba16e40143cf217a429970514001df34620f6d06",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13",
+      "path": "headless",
+      "usage": {
+        "input": 79260,
+        "cached": 1267328,
+        "output": 5609,
+        "turns": 1
+      },
+      "at": "2026-11-25T01:05:49Z"
     }
   ]
 }
