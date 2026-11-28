@@ -18,7 +18,7 @@ const SPLASHES_PER_SEGMENT: usize = 24;
 const RIBBONS_PER_SEGMENT: usize = 6;
 const STRAND_SIDES: usize = 8;
 const STRAND_EDGE: f32 = 4.0;
-const STRAND_ROLL_START: f32 = 0.39;
+const STRAND_ROLL_START: f32 = 0.18;
 const VERTICES_PER_SEGMENT: usize =
     RIBBONS_PER_SEGMENT * 6 * STRAND_SIDES * (ROWS + 3) + 6 * SPLASHES_PER_SEGMENT;
 const ATTRIBUTES: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4, 4 => Float32x4];
@@ -589,7 +589,8 @@ fn strand_section([left, centre, right]: [Vertex; 3], spread: f32) -> [Vertex; S
         0.5 * Vec3::from_slice(&left.world_time).distance(Vec3::from_slice(&right.world_time));
     // Keep one connected shell from crest to contact. It is flat until the
     // strands have left the tongue, so there is no join across the falling face.
-    let roll = (4.0 * (fraction - STRAND_ROLL_START)).clamp(0.0, 1.0) * spread;
+    let amount = ((fraction - STRAND_ROLL_START) / 0.57).clamp(0.0, 1.0);
+    let roll = amount * amount * (3.0 - 2.0 * amount) * spread;
     let interpolate = |a, b, t| Vec4::from_array(a).lerp(Vec4::from_array(b), t).to_array();
     std::array::from_fn(|i| {
         // Follow the actual flow orientation so the shell winds outwards at either bank.

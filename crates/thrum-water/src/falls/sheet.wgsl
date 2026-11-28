@@ -37,7 +37,7 @@ fn strand_offset(parcel: f32, fraction: f32, width_offset: f32,
     width_axis: vec3<f32>, outward: vec3<f32>) -> vec3<f32> {
     let split = smoothstep(0.21 + 0.28 * parcel, 0.77, fraction);
     let width = mix(0.37, 0.85, parcel);
-    let spread = mix(0.021, 0.64, parcel * parcel) * (1.0 - 0.69 * smoothstep(0.65, 1.0, fraction));
+    let spread = mix(0.021, 0.52, parcel * parcel) * (1.0 - 0.69 * smoothstep(0.65, 1.0, fraction));
     return split * (width_axis * (0.24 * (parcel - 0.5) - width * width_offset) + outward * spread);
 }
 
@@ -212,8 +212,8 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let normal = normalize(cross(vec3(across.x, 0.0, across.y), tangent));
     let geometric = select(-geometry_normal, geometry_normal, dot(geometry_normal, normal) > 0.0);
     let fraction = input.across_fraction.w;
-    let sheet_normal = mix(normal, geometric,
-        select(0.38 * smoothstep(0.34, 0.76, fraction), 1.0, is_filament));
+    let geometry_weight = select(0.38 * smoothstep(0.34, 0.76, fraction), 1.0, is_filament);
+    let sheet_normal = mix(normal, geometric, select(geometry_weight, 0.0, input.closed_strand != 0u));
     // At the root the strand's section is still flat and shares the tongue's normal.
     let rounding_in = select(0.0, smoothstep(FALL_STRAND_ROLL, 0.77, fraction), input.closed_strand != 0u);
     let contour = normalize(mix(sheet_normal, input.strand_normal, rounding_in));
