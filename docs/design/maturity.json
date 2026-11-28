@@ -568,7 +568,7 @@
     "M2_sun_cascades": {
       "implementation": "Ten camera-centred 2048-square D32 reverse-Z Sun cascades cover 4 m to 2,048 m, with a separate caster height layer. Cascades up to 16 m draw four quarter-texel positions from one caster list. The surface outline filter samples all four. Caster admission uses mesh cast width at the instance scale. Surfaces, the view volume and the lent Sun lookup share distance-based selection, blending and reach fade.",
       "functional_validation": "WP13 CPU and Metal checks cover the rotated-grid positions, radial fit, cast-width coverage, reverse-Z depth, adjacent blends, off-camera and aloft casters, secondary views and history independence.",
-      "experienced_quality": "Mac Metal motion captures show the held-camera C1 sphere edge sliding and the sunlit cubes meeting their shadows at contact. Exit captures retain the soft balloon edges and the sharper prop contacts. Mac and Chrome fixed image differences follow Sun shadows and contact.",
+      "experienced_quality": "Mac Metal motion captures show the held-camera C1 sphere edge sliding and the sunlit cubes meeting their shadows at contact. Exit captures retain the soft balloon edges and the sharper prop contacts. Chrome WebGPU motion captures match the Metal shadow shapes and contacts at paired exit and valley poses. Fixed Mac and Chrome image differences follow Sun shadows and contact.",
       "platform_performance": {
         "mac": "paired_capture_off_timing_under_shared_load",
         "windows": "not_run",

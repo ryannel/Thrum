@@ -878,7 +878,7 @@
           "inspect": "Capture `balloons.json` and `cubes.json`, in `.orchestrate/evidence/ATMOSPHERE/WP13-diagnosis/routes/`, in Chrome with the T2 capture of submitted images (`scripts/capture_v1_browser.mjs --route-file`, `realtime`), which keeps every submitted image with its tick, eye, heading and solar hour. They are the files WP13.4 and WP13.6 take on the Mac's portable recipe, and `cubes.json` carries the `proof` overlay. Play each take at its captured rate at 1x, then read native-size crops of at least 16 consecutive submitted images, naming them. The balloons drift, and a shadow that slides, bends over a rock or fades steadily is not at fault. 1. On the exit route at 1x, no shadow's edge crawls and none drops out and comes back. In the crops, a rock's and a balloon's shadow at about 150 m show no notch or step travelling along an edge. 2. In five stills along the exit route you cannot point to a row beyond which props cast no shadow. 3. At the cubes, the sphere's and the cubes' shadow edges are smooth in every image and slide from one image to the next without stepping. 4. Each sunlit cube's shadow starts where the cube rests, with no speckle or pale stretch beside it. 5. For three poses on each route, name a Chrome image and a Mac portable frame whose recorded eye, heading and solar hour agree to within one tick of the route. In each pair the shadows have the same shape and place.",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP13/motion/README.md",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP13/rule7-motion/README.md",
           "verdict": "",
           "review": ""
         },

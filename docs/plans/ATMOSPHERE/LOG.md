@@ -1156,3 +1156,6 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   row at 67% output shows a higher median frame span and fewer served refresh intervals in both pairs.
   Lead, take the APPLE-PRESENTATION WP17 closing sitting again on the merged frame.
   [Paired timings, draw counts and refresh receipts](../../../.orchestrate/evidence/ATMOSPHERE/WP13/rule7-cost/README.md)
+- Chrome WebGPU retained the exit and late-Sun cube routes. Three pairings on each route agree with
+  Metal to within one simulated tick and show matching shadow shapes and contact.
+  [Browser captures and paired poses](../../../.orchestrate/evidence/ATMOSPHERE/WP13/rule7-motion/README.md#wp137-chrome-webgpu)
