@@ -1013,9 +1013,11 @@ in the air frame, so wind costs nothing.
   under a puff is about 20 pixels of a 2560×1440 frame at the valley's field of view: a far heap's
   underside draws as a face down to the base. WP17.3's crops at 25 and 40 km judge it, and
   [risk 2](#risks) gives the fixes.
-- **The band between them.** The volume's profile and the column form are two forms of one condensate,
-  blended across a band inside the volume's edge with weights that sum to one. The weight is a function of
-  the column alone, the same at every height.
+- **The band between them.** The density a reader makes from the volume's profile and the column form's
+  density are two forms of one condensate, blended across a band inside the volume's edge with weights that
+  sum to one. The blend is of the two densities, as the two keys' is, and never of the profile with
+  anything under the curve, so [the bound](#the-weather-volume) below holds in the band too. The weight is
+  a function of the column alone, the same at every height.
 - **The states the drawn sky holds.** A query answers for the committed state. No GPU product holds
   that state for long. A part of the map holds the state it was last written from, `M`, which
   [its age](#the-weather-map) bounds. A part of the volume holds its two keys' states, `A` and `B`, with

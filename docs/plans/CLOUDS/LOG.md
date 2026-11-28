@@ -1398,3 +1398,10 @@ The replacement command and validator exercised the same comparison with a fresh
   makes a density from each key and blends the two densities. WP23.1, WP24.1, WP24.3 and WP24.6 written
   again. Both suggestions taken. No interface with another module changed.
   [What changed for each finding, and the stills](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-28-3/README.md)
+- 2026-11-28 Planner, started again on the same review after that revision had merged, with no reviewer to
+  follow. Each of the three fixes was checked against its finding and holds: the worked figures (0.66, 0.5,
+  0.34 and nothing; 0.5 against 0.66; 120 m against 240 m), the ten behaviours of WP23.1, the nine wrong
+  readers of WP24.6, and the model at `aa8d61a8d`, which takes the deepest of the puffs' own depths and
+  joins the deck by density, and still scales by the strength after the erosion, which WP23.1's tenth
+  behaviour turns away. One sentence of the design changed for finding 2: the band between the volume and
+  the column form blends two densities, as the two keys do. No item changed.
