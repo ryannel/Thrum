@@ -13,7 +13,98 @@
   "work_packages": {
     "WP1": {
       "definitions": "22ee954c0259a86219c9c4123ef96e09484e29404486abfd095e15a21fc8513b",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "34cdf9d695b1e9e3065fdbd732fb3f13e00781dc",
+          "review": ".orchestrate/evidence/AUDIO/WP1-review.md",
+          "items": {
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "fail",
+            "WP1.4": "fail",
+            "WP1.5": "fail",
+            "WP1.6": "fail",
+            "WP1.11": "fail",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.10": "fail"
+          },
+          "findings": [
+            {
+              "name": "An emitter restored on resume can keep sounding after it ends",
+              "item": "WP1.6",
+              "repeat": false
+            },
+            {
+              "name": "Repeated listener writes can starve an emitter indefinitely",
+              "item": "WP1.11",
+              "repeat": false
+            },
+            {
+              "name": "Dropping the pulling half strands play outcomes",
+              "item": "WP1.6",
+              "repeat": false
+            },
+            {
+              "name": "Stopping or displacing a short sound cuts its ramp at the last sample",
+              "item": "WP1.5",
+              "repeat": false
+            },
+            {
+              "name": "Changing a stereo emitter's place switches its channel gains in one frame",
+              "item": "WP1.10",
+              "repeat": false
+            },
+            {
+              "name": "A panned emitter can exceed the glide step on leaving its radius",
+              "item": "WP1.4",
+              "repeat": false
+            },
+            {
+              "name": "An emitter started while stopped takes two simultaneous fades on resume",
+              "item": "WP1.6",
+              "repeat": false
+            },
+            {
+              "name": "A play limit ignores a sounding emitter of the same sound",
+              "item": "WP1.3",
+              "repeat": false
+            },
+            {
+              "name": "The record excludes voices still sounding during their ramp",
+              "item": "WP1.11",
+              "repeat": false
+            },
+            {
+              "name": "A silent pull scans every reserved voice slot per frame",
+              "repeat": false
+            },
+            {
+              "name": "Nonfinite input omits the specified debug assertion",
+              "repeat": false
+            }
+          ],
+          "summary": "WP1 fails because ordinary calls can leave an ended emitter sounding, keep a selected emitter silent, or cut a voice off in one frame during an eight-frame fade. The native buffer and import-free WebAssembly module agree on the reference samples, and the full-pool cost is within real time on both. Five items pass and six fail.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 101387,
+            "cached": 2555392,
+            "output": 14192,
+            "turns": 1
+          },
+          "at": "2026-11-28T04:39:29Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of AUDIO at .orchestrate/evidence/AUDIO/design-review.md asked for changes, with its 4 Must Fix findin",

@@ -4,7 +4,7 @@
     {
       "id": "WP1",
       "name": "A program plays sounds into a buffer with no device, placed, pitched, looped and limited, and a test reads exactly what would be heard",
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "A mixer as dependable as a shipped game's: a crowded moment degrades by dropping its quietest sounds, and never by crackling, clicking or stalling a frame. Correctness held as `SIM-2D` holds it: one script, one digest, the same on every target. No reference game is named, because no item here is judged by ear or by eye: how it sounds is the owner's to judge, in `GAME-SDK` WP19.",
       "items": [
         {
@@ -19,8 +19,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/AUDIO/WP1/WP1.1.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
         {
           "id": "WP1.2",
@@ -34,8 +34,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/AUDIO/WP1/WP1.2.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
         {
           "id": "WP1.3",
@@ -47,10 +47,10 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/AUDIO/WP1/WP1.3.log",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
         {
           "id": "WP1.4",
@@ -62,10 +62,10 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/AUDIO/WP1/WP1.4.log",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
         {
           "id": "WP1.5",
@@ -77,10 +77,10 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/AUDIO/WP1/WP1.5.log",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
         {
           "id": "WP1.6",
@@ -92,10 +92,10 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/AUDIO/WP1/WP1.6.log",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
         {
           "id": "WP1.11",
@@ -107,10 +107,10 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/AUDIO/WP1/WP1.11.log",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
         {
           "id": "WP1.7",
@@ -124,8 +124,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/AUDIO/WP1/WP1.7.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
         {
           "id": "WP1.8",
@@ -140,8 +140,8 @@
           "target": "stand_in:chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/AUDIO/WP1/module.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
         {
           "id": "WP1.9",
@@ -156,22 +156,77 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/AUDIO/WP1/costs.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
         {
           "id": "WP1.10",
           "statement": "The mix is one piece of code that nothing can make wait, it gives the same bits on every target, and it holds nothing of a game's and makes no choice that is a game's.",
           "ask": "Read `thrum-audio` and its tests. 1. Is there one implementation of mixing: do the buffer, the mix module and whatever a sound output will pull all compile the same source for voices, gains, the pool and the clip, with no second path behind a `cfg`? 2. Follow a pull from its entry to its return. Does anything it executes take a lock, wait on anything, allocate or free, read a file or a clock, or call the operating system? Look at a replaced sound's data in particular: can its last holder be the mix, so that a pull would free it? 3. Does any call on the handle take a lock a pull could hold, or wait for a pull? 4. Does the mix path use only operations whose results are fixed on every target: is there a platform maths function, a fused multiply-add, or a table built with one? 5. Is every gain change a glide or a ramp counted in frames, with none worked out once a pull? 6. Does the crate hold any world state, name any game type, or depend on a renderer, a window or a shell? Does it ever choose between two plays, refuse one or order one by its event identity or its tick? 7. Are the crate and each outside dependency registered in `.config/architecture.toml` with an exact version, and is every licence permissive?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/AUDIO/WP1/README.md#wp110-code-audit",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         }
       ],
-      "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      "failed_reviews": 1,
+      "failed_reviews_with_repeat": 0,
+      "findings": [
+        {
+          "name": "An emitter restored on resume can keep sounding after it ends",
+          "item": "WP1.6",
+          "repeat": false
+        },
+        {
+          "name": "Repeated listener writes can starve an emitter indefinitely",
+          "item": "WP1.11",
+          "repeat": false
+        },
+        {
+          "name": "Dropping the pulling half strands play outcomes",
+          "item": "WP1.6",
+          "repeat": false
+        },
+        {
+          "name": "Stopping or displacing a short sound cuts its ramp at the last sample",
+          "item": "WP1.5",
+          "repeat": false
+        },
+        {
+          "name": "Changing a stereo emitter's place switches its channel gains in one frame",
+          "item": "WP1.10",
+          "repeat": false
+        },
+        {
+          "name": "A panned emitter can exceed the glide step on leaving its radius",
+          "item": "WP1.4",
+          "repeat": false
+        },
+        {
+          "name": "An emitter started while stopped takes two simultaneous fades on resume",
+          "item": "WP1.6",
+          "repeat": false
+        },
+        {
+          "name": "A play limit ignores a sounding emitter of the same sound",
+          "item": "WP1.3",
+          "repeat": false
+        },
+        {
+          "name": "The record excludes voices still sounding during their ramp",
+          "item": "WP1.11",
+          "repeat": false
+        },
+        {
+          "name": "A silent pull scans every reserved voice slot per frame",
+          "repeat": false
+        },
+        {
+          "name": "Nonfinite input omits the specified debug assertion",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "WP2",
