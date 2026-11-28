@@ -14,6 +14,7 @@ crate-type = ["cdylib", "rlib"]
 workspace = true
 
 [dependencies]
+serde_json = "=1.0.154"
 thrum-core = { path = "../../crates/thrum-core" }
 thrum-sim3d = { path = "../../crates/thrum-sim3d" }
 

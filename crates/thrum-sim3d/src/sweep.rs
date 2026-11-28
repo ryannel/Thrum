@@ -10,7 +10,7 @@ use crate::{
 pub const MAX_HALF_GAP_MOTION: i32 = 4_096;
 
 /// The denominator of the contact tolerance, expressed as its exact reciprocal.
-pub const CONTACT_TOLERANCE_DENOMINATOR: i32 = 64;
+pub const CONTACT_TOLERANCE_DENOMINATOR: i32 = 128;
 
 /// Gap to stop within in a collision sweep.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

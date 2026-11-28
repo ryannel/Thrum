@@ -2,63 +2,63 @@
 use thrum_core::profile::Number;
 use thrum_sim3d::{DOMAIN_BOUND, Shape, SweepGap, Vector3};
 
-pub fn n(value: i32) -> Number {
+pub(crate) fn n(value: i32) -> Number {
     Number::from_i32(value)
 }
 
-pub fn ratio(numerator: i32, denominator: i32) -> Number {
+pub(crate) fn ratio(numerator: i32, denominator: i32) -> Number {
     n(numerator) / n(denominator)
 }
 
-pub fn v(x: i32, y: i32, z: i32) -> Vector3 {
+pub(crate) fn v(x: i32, y: i32, z: i32) -> Vector3 {
     Vector3::new(n(x), n(y), n(z))
 }
 
-pub fn x(value: Number) -> Vector3 {
+pub(crate) fn x(value: Number) -> Vector3 {
     Vector3::new(value, Number::ZERO, Number::ZERO)
 }
 
-pub fn sphere(center: Vector3, radius: Number) -> Shape {
+pub(crate) fn sphere(center: Vector3, radius: Number) -> Shape {
     Shape::Sphere { center, radius }
 }
 
-pub fn capsule(ends: [Vector3; 2], radius: Number) -> Shape {
+pub(crate) fn capsule(ends: [Vector3; 2], radius: Number) -> Shape {
     Shape::Capsule { ends, radius }
 }
 
-pub fn box_at(center: Vector3, half_edges: [Vector3; 3]) -> Shape {
+pub(crate) fn box_at(center: Vector3, half_edges: [Vector3; 3]) -> Shape {
     Shape::Cuboid { center, half_edges }
 }
 
-pub fn cube(center: Vector3, half: Number) -> Shape {
+pub(crate) fn cube(center: Vector3, half: Number) -> Shape {
     box_at(center, Vector3::AXES.map(|axis| axis * half))
 }
 
-pub fn triangle(corners: [Vector3; 3]) -> Shape {
+pub(crate) fn triangle(corners: [Vector3; 3]) -> Shape {
     Shape::Triangle { corners }
 }
 
-pub fn face() -> Shape {
+pub(crate) fn face() -> Shape {
     triangle([v(0, -4, -4), v(0, 4, -4), v(0, 0, 4)])
 }
 
-pub fn turned_box() -> Shape {
+pub(crate) fn turned_box() -> Shape {
     box_at(Vector3::ZERO, [v(2, 2, 1), v(2, -1, -2), v(-1, 2, -2)])
 }
 
-pub const GAPS: [SweepGap; 2] = [SweepGap::Tolerance, SweepGap::HalfTolerance];
-pub const STOP: Vector3 = Vector3::ZERO;
-pub const FORWARD: Vector3 = Vector3::AXES[0];
+pub(crate) const GAPS: [SweepGap; 2] = [SweepGap::Tolerance, SweepGap::HalfTolerance];
+pub(crate) const STOP: Vector3 = Vector3::ZERO;
+pub(crate) const FORWARD: Vector3 = Vector3::AXES[0];
 
 #[derive(Clone, Copy)]
-pub struct Frame {
-    pub name: &'static str,
+pub(crate) struct Frame {
+    pub(crate) name: &'static str,
     signs: [i32; 3],
     offset: Vector3,
 }
 
 impl Frame {
-    pub fn vector(self, value: Vector3) -> Vector3 {
+    pub(crate) fn vector(self, value: Vector3) -> Vector3 {
         Vector3::new(
             value.x * n(self.signs[0]),
             value.y * n(self.signs[1]),
@@ -66,11 +66,11 @@ impl Frame {
         )
     }
 
-    pub fn point(self, point: Vector3) -> Vector3 {
+    pub(crate) fn point(self, point: Vector3) -> Vector3 {
         self.offset + self.vector(point)
     }
 
-    pub fn shape(self, shape: Shape) -> Shape {
+    pub(crate) fn shape(self, shape: Shape) -> Shape {
         match shape {
             Shape::Sphere { center, radius } => sphere(self.point(center), radius),
             Shape::Capsule { ends, radius } => capsule(ends.map(|point| self.point(point)), radius),
@@ -82,7 +82,7 @@ impl Frame {
     }
 }
 
-pub fn frames() -> [Frame; 9] {
+pub(crate) fn frames() -> [Frame; 9] {
     let corner = DOMAIN_BOUND - 48;
     [
         Frame {
@@ -133,7 +133,7 @@ pub fn frames() -> [Frame; 9] {
     ]
 }
 
-pub fn canonical_shapes() -> [Shape; 4] {
+pub(crate) fn canonical_shapes() -> [Shape; 4] {
     [
         sphere(STOP, n(1)),
         capsule([v(0, -2, 0), v(0, 2, 0)], n(1)),
@@ -142,14 +142,14 @@ pub fn canonical_shapes() -> [Shape; 4] {
     ]
 }
 
-pub struct PairCase {
-    pub id: String,
-    pub mover: Shape,
-    pub struck: Shape,
-    pub gap: Number,
+pub(crate) struct PairCase {
+    pub(crate) id: String,
+    pub(crate) mover: Shape,
+    pub(crate) struck: Shape,
+    pub(crate) gap: Number,
 }
 
-pub fn overlap_cases() -> Vec<PairCase> {
+pub(crate) fn overlap_cases() -> Vec<PairCase> {
     let shapes = canonical_shapes();
     let mut cases = Vec::new();
     for (a, mover) in shapes[..3].iter().copied().enumerate() {
@@ -242,15 +242,15 @@ pub fn overlap_cases() -> Vec<PairCase> {
     cases
 }
 
-pub struct RayCase {
-    pub id: String,
-    pub start: Vector3,
-    pub motion: Vector3,
-    pub struck: Shape,
-    pub expected: Option<(Number, Vector3, Vector3, Number)>,
+pub(crate) struct RayCase {
+    pub(crate) id: String,
+    pub(crate) start: Vector3,
+    pub(crate) motion: Vector3,
+    pub(crate) struck: Shape,
+    pub(crate) expected: Option<(Number, Vector3, Vector3, Number)>,
 }
 
-pub fn ray_cases() -> Vec<RayCase> {
+pub(crate) fn ray_cases() -> Vec<RayCase> {
     let [ball, capsule, cuboid, face] = canonical_shapes();
     let mut cases = Vec::new();
     let turned_axis = v(2, 2, 1);
@@ -314,7 +314,7 @@ pub fn ray_cases() -> Vec<RayCase> {
     cases
 }
 
-pub fn sweep_movers() -> [Shape; 3] {
+pub(crate) fn sweep_movers() -> [Shape; 3] {
     [
         sphere(STOP, n(1)),
         capsule([x(ratio(-1, 2)), x(ratio(1, 2))], ratio(1, 2)),
@@ -323,23 +323,23 @@ pub fn sweep_movers() -> [Shape; 3] {
 }
 
 #[derive(Clone, Copy)]
-pub struct SweepExpected {
-    pub fraction: Number,
-    pub normal: Vector3,
-    pub point: Option<Vector3>,
-    pub precise: bool,
+pub(crate) struct SweepExpected {
+    pub(crate) fraction: Number,
+    pub(crate) normal: Vector3,
+    pub(crate) point: Option<Vector3>,
+    pub(crate) precise: bool,
 }
 
-pub struct SweepCase {
-    pub id: String,
-    pub mover: Shape,
-    pub motion: Vector3,
-    pub struck: Shape,
-    pub struck_motion: Vector3,
-    pub expected: Option<SweepExpected>,
+pub(crate) struct SweepCase {
+    pub(crate) id: String,
+    pub(crate) mover: Shape,
+    pub(crate) motion: Vector3,
+    pub(crate) struck: Shape,
+    pub(crate) struck_motion: Vector3,
+    pub(crate) expected: Option<SweepExpected>,
 }
 
-pub fn sweep_cases() -> Vec<SweepCase> {
+pub(crate) fn sweep_cases() -> Vec<SweepCase> {
     let mut cases = Vec::new();
     for (a, mover) in sweep_movers().into_iter().enumerate() {
         for (b, struck) in canonical_shapes().into_iter().enumerate() {
@@ -511,16 +511,16 @@ pub fn sweep_cases() -> Vec<SweepCase> {
     cases
 }
 
-pub struct DepthCase {
-    pub id: &'static str,
-    pub mover: Shape,
-    pub struck: Shape,
-    pub depth: Number,
-    pub normal: Option<Vector3>,
-    pub perpendicular_to: Vec<Vector3>,
+pub(crate) struct DepthCase {
+    pub(crate) id: &'static str,
+    pub(crate) mover: Shape,
+    pub(crate) struck: Shape,
+    pub(crate) depth: Number,
+    pub(crate) normal: Option<Vector3>,
+    pub(crate) perpendicular_to: Vec<Vector3>,
 }
 
-pub fn depth_cases() -> Vec<DepthCase> {
+pub(crate) fn depth_cases() -> Vec<DepthCase> {
     let half = ratio(1, 2);
     let ball = sphere(STOP, n(1));
     let big = cube(STOP, n(4));
@@ -627,7 +627,7 @@ pub fn depth_cases() -> Vec<DepthCase> {
 }
 
 /// Candidate start-contact cases use all twelve shape pairs at each requested gap.
-pub fn start_cases(gap: SweepGap) -> Vec<SweepCase> {
+pub(crate) fn start_cases(gap: SweepGap) -> Vec<SweepCase> {
     let mut cases = Vec::new();
     let tolerance = SweepGap::Tolerance.units();
     for (a, mover) in sweep_movers().into_iter().enumerate() {
@@ -665,7 +665,7 @@ pub fn start_cases(gap: SweepGap) -> Vec<SweepCase> {
     cases
 }
 
-pub fn moving_cases() -> Vec<SweepCase> {
+pub(crate) fn moving_cases() -> Vec<SweepCase> {
     let ball = |at| sphere(at, ratio(1, 2));
     let mut cases = Vec::new();
     for (id, mover, motion, struck, struck_motion, expected) in [
@@ -748,4 +748,13 @@ pub fn moving_cases() -> Vec<SweepCase> {
         });
     }
     cases
+}
+
+pub(crate) fn depth_motions(normal: Vector3) -> [Vector3; 4] {
+    let axis = if normal.x.abs() < ratio(3, 4) {
+        FORWARD
+    } else {
+        v(0, 1, 0)
+    };
+    [-normal, normal.cross(axis), normal, STOP]
 }

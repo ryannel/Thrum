@@ -1,7 +1,7 @@
 use thrum_core::profile::Number;
 use thrum_sim3d::{SweepGap, depth, distance, sweep};
 
-use crate::cases::{GAPS, STOP, depth_cases, frames, n, ratio, start_cases, v};
+use crate::cases::{GAPS, depth_cases, depth_motions, frames, n, ratio, start_cases};
 
 #[test]
 fn hand_worked_depths_and_deep_initial_contacts() {
@@ -56,14 +56,8 @@ fn hand_worked_depths_and_deep_initial_contacts() {
                 }
             }
 
-            let axis = if hit.normal.x.abs() < ratio(3, 4) {
-                v(1, 0, 0)
-            } else {
-                v(0, 1, 0)
-            };
-            let along = hit.normal.cross(axis);
             for gap in GAPS {
-                for motion in [-hit.normal, along, hit.normal, STOP] {
+                for motion in depth_motions(hit.normal) {
                     let swept = sweep(first, motion, second, gap)
                         .unwrap()
                         .unwrap_or_else(|| panic!("{label} missed"));
