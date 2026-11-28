@@ -291,12 +291,7 @@ impl Changes {
             }
             if let Some(handle) = world.handle(entity.stable()) {
                 let index = candidate.changes.len();
-                let edit = change.edit(
-                    handle,
-                    world.has_component(handle, change.column().key),
-                    bindings,
-                    index,
-                );
+                let edit = change.edit(world, handle, bindings, index);
                 if let Some(edit) = edit {
                     candidate.changed_entities.push(entity);
                     candidate.changes.push(change);
@@ -319,8 +314,8 @@ pub(crate) trait QueuedComponent: Send + Sync {
     fn any(&self) -> &dyn Any;
     fn edit(
         &self,
+        world: &WorldRead<'_>,
         handle: Handle,
-        present: bool,
         bindings: &Bindings,
         index: usize,
     ) -> Option<Edit<Candidate>>;
@@ -342,8 +337,8 @@ impl<T: Component> QueuedComponent for ComponentChange<T> {
     }
     fn edit(
         &self,
+        world: &WorldRead<'_>,
         handle: Handle,
-        present: bool,
         bindings: &Bindings,
         index: usize,
     ) -> Option<Edit<Candidate>> {
@@ -351,11 +346,17 @@ impl<T: Component> QueuedComponent for ComponentChange<T> {
             candidate.changes[index].any()
         }
         let permit = bindings.write::<T>();
-        match (self.0.is_some(), present) {
-            (true, true) => Some(Edit::replace(permit, handle, index, value)),
-            (true, false) => Some(Edit::insert(permit, handle, index, value)),
-            (false, true) => Some(Edit::remove(permit, handle)),
-            (false, false) => None,
+        let present = world.has_component(handle, self.column().key);
+        match (&self.0, present) {
+            (Some(next), true) => {
+                let unchanged = world
+                    .with(bindings.read::<T>(), handle, |current| current == next)
+                    .expect("registered component on a live entity");
+                (!unchanged).then(|| Edit::replace(permit, handle, index, value))
+            }
+            (Some(_), false) => Some(Edit::insert(permit, handle, index, value)),
+            (None, true) => Some(Edit::remove(permit, handle)),
+            (None, false) => None,
         }
     }
 }

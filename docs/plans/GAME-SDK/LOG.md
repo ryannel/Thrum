@@ -793,3 +793,14 @@
   chunks and finish before the query releases its loans, including on panic. This narrow unsafe
   transfer avoids the recurring queue allocation observed with Rayon submission. Existing core callers
   keep their executor behavior. [Mac proofs](../../../.orchestrate/evidence/GAME-SDK/WP1/)
+
+### WP1 full random seeds and unchanged harness edits
+
+- The SDK mixes the full seed, qualified function name, tick and run count into the Philox counter
+  origin and advances the counter per draw. The seed-17 reference draws reflect the new sequence.
+  Debug and release replay guards cover the former collision between seeds 1 and 4294967296 and
+  check that successive ticks do not swap the first two draws.
+- A queued component replacement compares the incoming and stored encodings before staging an edit.
+  An identical value keeps rewind history through both `TestGame::set` and `game.run`. A different
+  encoding, including a change of sign on zero, starts a new history.
+  [Mac replay and rewind proof](../../../.orchestrate/evidence/GAME-SDK/WP1/review5-WP1.3.log)

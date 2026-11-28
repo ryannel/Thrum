@@ -221,6 +221,45 @@ fn manual_reads_and_refusals_preserve_authority_and_history() -> Result {
     Ok(())
 }
 
+#[test]
+fn unchanged_component_replacements_keep_history_but_changed_encodings_reset_it() -> Result {
+    #[derive(Component)]
+    struct Position(Num);
+
+    let mut game = Game::new("manual replacements")
+        .component::<Position>()
+        .scene(|scene: &mut Scene| {
+            scene.on_enter(|mut entities: Entities<'_>| {
+                entities.spawn((Body(4), Position(Num::ZERO)));
+            });
+            scene.rules(|mut body: Single<'_, &mut Body>| body.0 += 1);
+        })
+        .test()?;
+    let entity = game.single::<With<Body>>()?;
+    let start = game.digest();
+    game.step()?;
+    let after_tick = game.digest();
+    game.set(entity, game.get::<Body>(entity)?)?;
+    assert_eq!(game.digest(), after_tick);
+    game.rewind(1)?;
+    assert_eq!(game.get::<Body>(entity)?, Body(4));
+    assert_eq!(game.digest(), start);
+    game.step()?;
+    assert_eq!(game.digest(), after_tick);
+    game.run(move |mut entities: Entities<'_>| entities.insert(entity, Body(5)))?;
+    game.rewind(1)?;
+    assert_eq!(game.digest(), start);
+    game.step()?;
+    assert_eq!(game.digest(), after_tick);
+
+    // Signed zeros compare equal numerically but have different world encodings.
+    game.set(entity, Position(-Num::ZERO))?;
+    assert!(!game.get::<Position>(entity)?.0.same_encoding(&Num::ZERO));
+    assert_ne!(game.digest(), after_tick);
+    assert_eq!(game.rewind(1).unwrap_err().code(), "T0505");
+    Ok(())
+}
+
 #[derive(Resource, Default)]
 struct Draws {
     condition: u32,
@@ -264,8 +303,39 @@ fn omen(mut draw: Random) -> u32 {
 }
 
 #[test]
+fn both_seed_words_influence_named_draws_without_reordering_adjacent_ticks() -> Result {
+    let setup = |seed| {
+        Game::new("full random seed")
+            .resource(LootLog::default())
+            .scene(|scene: &mut Scene| scene.rules((loot, weather)))
+            .test_setup()
+            .seed(seed)
+            .start()
+    };
+    let mut low_word = setup(1)?;
+    let mut high_word = setup(1 << 32)?;
+    let mut even = low_word.resource::<LootLog>()?;
+    for tick in 1_u32..=32 {
+        low_word.step()?;
+        high_word.step()?;
+        let low = low_word.resource::<LootLog>()?;
+        let high = high_word.resource::<LootLog>()?;
+        assert_ne!(low.loot, high.loot);
+        assert_ne!(low.weather, high.weather);
+
+        if tick.is_multiple_of(2) {
+            even = low;
+        } else if tick > 1 {
+            assert_ne!(even.loot[..2], [low.loot[1], low.loot[0]]);
+            assert_ne!(even.weather[..2], [low.weather[1], low.weather[0]]);
+        }
+    }
+    Ok(())
+}
+
+#[test]
 fn loot_is_build_stable_and_has_one_stream_through_every_route() -> Result {
-    const FIRST_LOOT: [u32; 3] = [3_485_800_425, 1_699_994_307, 565_622_368];
+    const FIRST_LOOT: [u32; 3] = [3_310_134_685, 2_142_806_310, 170_536_242];
 
     fn alone(scene: &mut Scene) {
         scene.rules(loot);

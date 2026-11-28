@@ -388,21 +388,25 @@ impl ReadOnly for Tick {}
 /// fn roll(mut random: Random) -> Num { random.between(Num::ZERO, Num::ONE) }
 /// ```
 pub struct Random {
-    seed: u64,
-    tick: u64,
-    stream: u64,
-    run: u64,
-    draw: u128,
-    entity: u128,
+    rule_origin: u64,
+    counter: u64,
+    stream: u32,
+}
+
+// The SplitMix64 finalizer permutes all 64 bits. Mixing each field before
+// adding the next keeps two fields with the same bits from cancelling out.
+fn mix_random_key(mut key: u64) -> u64 {
+    key = (key ^ (key >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
+    key = (key ^ (key >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
+    key ^ (key >> 31)
 }
 
 impl Random {
     fn word(&mut self) -> u64 {
-        let key = self.draw ^ self.entity.rotate_left(64);
-        let seed = self.seed ^ self.stream ^ self.run.wrapping_mul(0x9e37_79b9_7f4a_7c15);
-        let stream = u32::try_from(self.stream >> 32).expect("high word");
-        let value = thrum_core::profile::random_u64(seed, self.tick, key, stream);
-        self.draw = self.draw.wrapping_add(1);
+        // Philox2x32 consumes the full counter and a 32-bit key. Keep the
+        // game's seed in the counter origin, and advance it in draw order.
+        let value = thrum_core::profile::random_u64(u64::from(self.stream), self.counter, 0, 0);
+        self.counter = self.counter.wrapping_add(1);
         value
     }
 
@@ -452,14 +456,16 @@ impl Random {
     /// }
     /// ```
     #[must_use]
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "split the entity into two words"
+    )]
     pub fn for_entity(&self, entity: Entity) -> Self {
+        let key = mix_random_key(self.rule_origin ^ (entity.0 >> 64) as u64);
         Self {
-            seed: self.seed,
-            tick: self.tick,
+            rule_origin: self.rule_origin,
+            counter: mix_random_key(key ^ entity.0 as u64),
             stream: self.stream,
-            run: self.run,
-            draw: 0,
-            entity: entity.0,
         }
     }
 }
@@ -476,13 +482,13 @@ unsafe impl Param for Random {
         Ok(())
     }
     fn item((): &mut (), context: &ReadContext<'_>) -> Self {
+        let key = mix_random_key(context.seed ^ context.stream);
+        let key = mix_random_key(key ^ context.tick.number().0);
+        let origin = mix_random_key(key ^ context.run);
         Self {
-            seed: context.seed,
-            tick: context.tick.number().0,
-            stream: context.stream,
-            run: context.run,
-            draw: 0,
-            entity: 0,
+            rule_origin: origin,
+            counter: origin,
+            stream: u32::try_from(context.stream >> 32).expect("high word"),
         }
     }
 }

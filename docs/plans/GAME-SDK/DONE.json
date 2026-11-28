@@ -47,8 +47,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SDK/WP1/review5-WP1.3.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
