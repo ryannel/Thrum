@@ -236,7 +236,11 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let broken = smoothstep(rank - 0.24 - width, rank + 0.09 + width, breakout);
     let parcel = sheet_noise(vec2(lip, birth), FALL_LOOP, vec2(2.1, 5.25), vec2(117.0, 0.0));
     let pulse = smoothstep(0.40, 0.72, 0.86 * parcel + 0.14 * fine);
-    let packet = aeration_packet(input.strand_lip, birth);
+    let rounded = input.closed_strand != 0u;
+    let packet_skew = mix(-0.15, 0.15, noise_hash(vec2(input.strand_lip * 23.3, 79.0)));
+    let packet_birth = birth + (lip - input.strand_lip) * packet_skew + (fine - 0.5) * 0.018;
+    let packet_core = select(1.0, 1.0 - smoothstep(0.17, 0.93, input.edge), rounded);
+    let packet = aeration_packet(input.strand_lip, packet_birth) * packet_core;
     let filament_white = smoothstep(0.06, 0.48, input.across_fraction.w)
         * mix(0.22, 1.0, 0.82 * packet + 0.18 * pulse);
     let streak_white = smoothstep(0.42, 0.89, input.across_fraction.w)
@@ -314,8 +318,10 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
         * vec3(0.84, 0.90, 0.89) / 3.14159265;
     let parcel_light = mix(0.16, 1.38, pulse);
     let broken_light = mix(churn, aerated * parcel_light, max(rolled, breakup * below_tongue));
-    let mixed_air = select(0.0, smoothstep(0.10, 0.33, fraction), input.closed_strand != 0u);
-    let packet_light = aerated * (0.33 + 0.17 * fine + 0.91 * packet);
+    let mixed_air = select(0.0, smoothstep(0.10, 0.33, fraction), rounded);
+    let round_light = 0.08 * packet_core;
+    let diffuse_streaks = 0.11 * coarse + 0.13 * fine + 0.12 * grain;
+    let packet_light = aerated * (0.26 + round_light + diffuse_streaks + 0.78 * packet);
     let sheet_colour = mix(mix(clear_light, broken_light, white), packet_light, mixed_air);
     let spray_light = mix(sheet_colour, aerated,
         mixing * (1.0 - thinness) * mix(0.32 + 0.58 * contact_foam + 0.10 * fine, 0.93, breakup));
