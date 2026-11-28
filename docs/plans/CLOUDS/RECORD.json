@@ -1,27 +1,15 @@
 {
   "module": "CLOUDS",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/CLOUDS/design-review.md",
-    "commit": "6d13ca9899e6d200846dfc64a847b10a4ac22c77",
-    "hash": "89da5675bfc809efc5522a99f0021d8eaf3917a8fa03808acfb0c19997490d91",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.171.0-alpha.13.2",
-    "path": "headless",
-    "usage": {
-      "input": 50896,
-      "cached": 431616,
-      "output": 2656,
-      "turns": 1
-    },
-    "at": "2026-11-28T03:23:04Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "dbd246d8119a8671f2380c5cc7cfea718cf15bdb8383a9ec839403ef9ba67f7d",
+    "after": [
+      ".orchestrate/evidence/CLOUDS/design-review-33.md",
+      ".orchestrate/evidence/CLOUDS/design-review-34.md",
+      ".orchestrate/evidence/CLOUDS/design-review.md"
+    ],
+    "at": "2026-11-28T03:37:23Z"
   },
   "work_packages": {
     "WP1": {
@@ -3042,12 +3030,12 @@
       }
     },
     "WP24": {
-      "definitions": "290dc050d40dd7b6edc7b1cca6cb77758a099092acffb1761e7a88c8c3c52612",
+      "definitions": "6aaf8ece3e830073473387126ad25e7aeeeace18f24f6463d35fe43684086378",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its Must Fix findin",
-        "at": "2026-11-28T03:16:12Z"
+        "at": "2026-11-28T03:37:23Z"
       }
     },
     "WP25": {
@@ -3244,11 +3232,15 @@
     {
       "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its Must Fix findings.",
       "at": "2026-11-28T03:16:12Z"
+    },
+    {
+      "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
+      "at": "2026-11-28T03:37:23Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-28T03:16:12Z"
+    "at": "2026-11-28T03:37:23Z"
   },
   "design_history": [
     {
@@ -4099,6 +4091,29 @@
         "turns": 1
       },
       "at": "2026-11-28T03:20:12Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/CLOUDS/design-review.md",
+      "commit": "6d13ca9899e6d200846dfc64a847b10a4ac22c77",
+      "hash": "89da5675bfc809efc5522a99f0021d8eaf3917a8fa03808acfb0c19997490d91",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13.2",
+      "path": "headless",
+      "usage": {
+        "input": 50896,
+        "cached": 431616,
+        "output": 2656,
+        "turns": 1
+      },
+      "at": "2026-11-28T03:23:04Z"
     }
   ]
 }
