@@ -2722,12 +2722,12 @@
       }
     },
     "WP17": {
-      "definitions": "ce8bbcbe9504a7331d21f90959840cf82d01ec1d15ff642b463f6628b5f0d3a8",
+      "definitions": "f8aaf5bd1bf065b7c857703c70c7107eafef4551e0ba8c116ddc40223589938e",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Unblock CLOUDS WP17. The builder wrote: The lead needs to reopen the cloud-form design using the separate findings for o",
-        "at": "2026-11-27T23:46:49Z"
+        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 7 Must Fix find",
+        "at": "2026-11-28T00:55:35Z"
       }
     },
     "WP18": {
@@ -3033,21 +3033,30 @@
       "ends_stretch": true
     },
     "WP23": {
-      "definitions": "6049982d3ac9dde18836c82124f0c92b5ba65860d003e4e0c57c12309a4ca3fa",
+      "definitions": "88ccf585fb047b8bd1a75d1f540eb8dfb1da718a31ca17731d1be8c12f3cf7e8",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Unblock CLOUDS WP17. The builder wrote: The lead needs to reopen the cloud-form design using the separate findings for o",
-        "at": "2026-11-27T23:46:49Z"
+        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 7 Must Fix find",
+        "at": "2026-11-28T00:55:35Z"
       }
     },
     "WP24": {
-      "definitions": "7db88f7779eb76e43c6f988f12e3331fad7c6da5943e0d1e5e2f6f24e77df4f2",
+      "definitions": "8021b96ce9108a311e6812b9b77069710f917ca024df84a05fde3fdded5310ff",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Unblock CLOUDS WP17. The builder wrote: The lead needs to reopen the cloud-form design using the separate findings for o",
-        "at": "2026-11-27T23:46:49Z"
+        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 7 Must Fix find",
+        "at": "2026-11-28T00:55:35Z"
+      }
+    },
+    "WP25": {
+      "definitions": "2c090bf01b2a559916695033d0b445c4041ad9d66cae2fb25cfed68911adc2ba",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 7 Must Fix find",
+        "at": "2026-11-28T00:55:35Z"
       }
     }
   },
@@ -3223,11 +3232,15 @@
     {
       "task": "Unblock CLOUDS WP17. The builder wrote: The lead needs to reopen the cloud-form design using the separate findings for overlapping cells and isolated cloud shape. The builder's handoff, .orchestrate/evidence/CLOUDS/WP17-handoff.md, says what is finished, what was tried and what to do first; its cell-isolation follow-up is in .orchestrate/evidence/CLOUDS/WP17/cell-isolation/README.md. Its work is on branch build/clouds at aeb56f582db0, which isn't merged; read it with git show. Three looks failed on form (smooth domes and caps, folded rims, repeated pointed tops on level skirts, a notch between hanging flaps), so another tuning round is not the answer. Before choosing a replacement form, research how current shipped real-time volumetric cloud systems build cloud shape (modern state of the art, not older techniques just because code for them exists), judge which fits Thrum's shared point density for query, view and Sun path, and reopen the cloud-form design accordingly. Keep the existing weather and Sun-path tests as acceptance gates. The bar is shipped high-end game clouds, judged by an inspection list. Decide whether WP17 needs to split so the passing weather-map work can merge on its own.",
       "at": "2026-11-27T23:46:49Z"
+    },
+    {
+      "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 7 Must Fix findings.",
+      "at": "2026-11-28T00:55:35Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T23:46:49Z"
+    "at": "2026-11-28T00:55:35Z"
   },
   "design_history": [
     {

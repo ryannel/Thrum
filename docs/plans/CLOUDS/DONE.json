@@ -1990,7 +1990,9 @@
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP24.2",
@@ -2022,7 +2024,9 @@
           "target": "chrome-webgpu",
           "lock": "chrome",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP24.5",
@@ -2031,7 +2035,9 @@
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP24.6",
