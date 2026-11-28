@@ -557,11 +557,6 @@ impl ShadowPrepared {
 }
 
 impl ShadowTarget {
-    #[cfg(test)]
-    pub(super) fn layer_count(&self) -> usize {
-        self.views.len()
-    }
-
     pub(super) fn new(texture: &wgpu::Texture) -> Self {
         let views = (0..texture.depth_or_array_layers())
             .map(|index| {

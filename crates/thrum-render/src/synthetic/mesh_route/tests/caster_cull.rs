@@ -77,19 +77,14 @@ impl Gpu {
         direct: &OffscreenTarget,
         culled: &OffscreenTarget,
     ) -> Vec<u32> {
-        let layers = direct
-            .shadow
-            .as_ref()
-            .expect("shadowed target")
-            .layer_count();
-        assert_eq!(
-            layers,
-            culled
-                .shadow
-                .as_ref()
-                .expect("shadowed target")
-                .layer_count()
-        );
+        let [layers, culled_layers] = [direct, culled].map(|target| {
+            target
+                .textures
+                .texture(target.ids.shadow.as_ref().expect("Sun shadow resource"))
+                .expect("Sun shadow texture")
+                .depth_or_array_layers()
+        });
+        assert_eq!(layers, culled_layers);
         let bytes = (layers * 4) as u64;
         let out = self.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("caster cull depth mismatch counts"),
@@ -140,7 +135,7 @@ impl Gpu {
             let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
             pass.set_pipeline(&pipeline);
             pass.set_bind_group(0, &group, &[]);
-            pass.dispatch_workgroups(shadow::SIZE / 16, shadow::SIZE / 16, layers as u32);
+            pass.dispatch_workgroups(shadow::SIZE / 16, shadow::SIZE / 16, layers);
         }
         let readback =
             thrum_test_support::readback::Readback::buffer(&self.device, &mut encoder, &out, ..);
