@@ -1,6 +1,28 @@
 {
   "module": "AUDIO",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": ".orchestrate/evidence/AUDIO/design-review.md",
+    "commit": "a35d8f28efe5242acce669bdbeaf59a6838e9f5c",
+    "hash": "62d7fd869a89b3d66c7bbada50dae0d3b63c7ed4e53f88086711b26e46df6f15",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6.2-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6.2-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.171.0-alpha.13.2",
+    "path": "headless",
+    "usage": {
+      "input": 97760,
+      "cached": 2151808,
+      "output": 9584,
+      "turns": 1
+    },
+    "at": "2026-11-28T02:40:26Z"
+  },
   "work_packages": {
     "WP1": {
       "definitions": "d574463458820783ca310e1326a1bd735d1ee047eb2075b0974b343c1dcf808b",
