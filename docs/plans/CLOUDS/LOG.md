@@ -1387,3 +1387,7 @@ The replacement command and validator exercised the same comparison with a fresh
   the volume shows one shown tick, and the map's heaped part comes from the procedural column. WP24.1,
   WP24.2, WP24.4, WP24.5 and WP24.6 written again. No interface with another module changed.
   [What changed for each finding](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-28-2.md)
+- 2026-11-28 Planner, unblocking WP23 after its stills kept a shelf, lenses and a cap. Every cue comes from
+  the size of the puffs, so the design bounds a puff and firms a heaped cell's erosion. No item changed, and
+  the builder goes on from `build/clouds` at `aa8d61a8d`. The 13 tests that stopped at 10 s were load.
+  [Causes, revision, stills and the test record](../../../.orchestrate/evidence/CLOUDS/WP23-unblock/README.md)

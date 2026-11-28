@@ -107,10 +107,11 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 
 ## WP23 The weather's own clouds take a new form, a cluster of rounded heaps, in what a game reads and in stills drawn from it on the CPU
 
-Start from main: `build/clouds` holds only the failed turret looks.
-[The form control](../../../.orchestrate/evidence/CLOUDS/design-proof/form-control/README.md)'s numbers are a
-starting point. If WP23.2's stills
-show the turret flaws or curtains, end `BLOCKED` with `needs_context` ([risk 2](DESIGN.md#risks)).
+Go on from `build/clouds` at `aa8d61a8d`: bring the puffs inside
+[the three bounds](DESIGN.md#one-weather-field-in-the-air-frame) and the erosion to
+[its two rules](DESIGN.md#one-density-in-m¹), from
+[the revision's switches](../../../.orchestrate/evidence/CLOUDS/WP23-unblock/README.md), and take the stills
+again. [Risk 2](DESIGN.md#risks) says when to end `BLOCKED`.
 
 ## WP24 The engine draws, shades and answers for the new cloud form on the Mac and in Chrome, and the old form is gone
 

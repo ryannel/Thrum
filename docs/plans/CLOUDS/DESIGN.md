@@ -90,6 +90,13 @@ ticks that arrive together. The drawn sky is held to
 state, and the design says what a game may rely on. The map's heaped part is taken from
 [the procedural column](#the-weather-map), so a placed shape is drawn once. The key interval is no governor
 knob. No interface with another module changed.
+Revised once more that day after [WP23's handoff](../../../.orchestrate/evidence/CLOUDS/WP23-handoff.md): the
+puff form's first stills from the model kept shelves, lenses and a cap. Drawn again on the builder's own
+model, one rule at a time, they come from the size of the puffs and from nothing else in the form
+([part XXIII](#check-that-it-can-work)). [A puff is now bounded](#one-weather-field-in-the-air-frame) by the
+fade length and by its thermal's height, and [a heaped cell's erosion](#one-density-in-m¹) carries finer
+lobes and a firm edge. The form, its union, its rise through the base and what a query answers stand. No
+item and no interface changed.
 
 ## The request
 
@@ -499,21 +506,37 @@ with no GPU:
   ([research](#research-and-selection)). A cluster is a function of its cell's identity alone and is fixed in
   the air frame for the cell's life, so every reader gets the same puffs. Its **signed distance** is the
   distance to the union of its spheres, cut off level at the condensation level, which is the cloud's flat
-  base; the union may be rounded over a short length, by a rule under which the model can still find every
-  height at which a column enters and leaves the surface
-  ([what a query promises](#one-weather-field-in-the-air-frame)). A puff whose underside stands above the base keeps it, so
+  base. The union is exact, so the heights at which a column enters and leaves the surface are each
+  sphere's closed form ([what a query promises](#one-weather-field-in-the-air-frame)); rounding it removed
+  no flaw and smoothed the cloud's body ([part XXIII](#check-that-it-can-work)). A puff whose underside
+  stands above the base keeps it, so
   a cloud's rim is a rounded underside and never a wedge thinning onto the base. The cell's **profile** at a
-  point is its depth inside that surface as a share of the **fade length** (300 m in part XX), and no more
-  than 1: 0 at the surface and outside it, 1 in the core. It is measured in metres along the surface's own
-  normal, so [the noise that erodes it](#one-density-in-m¹) moves a crown, a flank and a rim in by the same
-  distance. The rule this replaces stretched a profile to each column's height, which moved a tall column's
+  point is its depth inside that surface as a share of the **fade length** (300 m in parts XX and XXIII),
+  and no more than 1: 0 at the surface and outside it, 1 in the core. It is measured in metres along the
+  surface's own normal, so [the noise that erodes it](#one-density-in-m¹) moves a crown, a flank and a rim
+  in by the same distance. One fade length serves every puff and the base: a fade of a puff's own made
+  small puffs solid balls, and a shorter one at the base drew level plates under the large clouds. The rule
+  this replaces stretched a profile to each column's height, which moved a tall column's
   top by hundreds of metres and a rim by none: caps, lenses and skirts with a smooth skin
-  ([part XX](#check-that-it-can-work)). The puff counts, their size ranges, the lean and the fade length are
-  profile constants, as the lattice is.
+  ([part XX](#check-that-it-can-work)).
+- **A puff is no larger than the noise can break.** The noise moves a puff's surface in by most of a fade
+  length at most, so a sphere several fade lengths across keeps its own outline whatever erodes it: cut by
+  the base it is a dome with an upright flank and a level plate under it, and part risen it is a lens.
+  Those were the shelves, the squared break, the repeated lenses and the dying cell's cap of the form's
+  first stills ([part XXIII](#check-that-it-can-work)). Three bounds follow, and they are the mechanism,
+  not tuning. No puff's radius is more than twice the fade length. A thermal is a stack and never one
+  dome: its first puff's radius is no more than about half the thermal's **reach**, the height its stack
+  climbs to over the base, so a low thermal at a cloud's edge is small puffs piled up. And a cloud's width
+  and depth come from how many thermals and levels it has, never from the size of a sphere. Inside those
+  bounds the puff counts, their sizes, the lean and the fade length are profile constants, as the lattice
+  is. Part XXIII's are where a builder starts.
 - **A cell's life moves its cluster up and down, and never sideways.** The envelope sets how far the cluster
   has risen through the condensation level. At 0 all of it lies below the base, where nothing condenses, and
   the column is clear. At 1 it stands whole. So a cell grows as a thermal does, its tallest stack breaking
-  through first, and each stage is a smaller cloud of the same kind. The envelope also scales the cell's
+  through first, and each stage is a smaller cloud of the same kind. What shows first and last is the top
+  of the tallest stacks, and at any moment about half the live cells are under half risen, so the bounds
+  on a puff's size are what make a young cloud, a dying one and a part-selected one tufts on the base and
+  not lenses. The envelope also scales the cell's
   density, and over the last part of a life the erosion deepens, so a dying cloud frays and thins while it
   subsides. Nothing moves sideways and no puff changes size, because a heap's edge that swept over a point
   would step the column's top there. A type's share of cells scales the rise and the density the same way.
@@ -699,6 +722,20 @@ lobes on a puff, and smaller lobes on those. A finer detail noise erodes only th
 extinction and never add it beyond the column's bound: any shaping of the eroded value is one rising function
 applied to the uneroded profile alike. As a cluster rises through fixed noise, and as a dying cell's erosion
 deepens, billows appear and dissolve as structure and nothing slides.
+
+Two things hold of a heaped cell's erosion, from the form's first stills
+([part XXIII](#check-that-it-can-work)), where an erosion without them drew every puff as a smooth ball.
+**The threshold has lobes at two scales:** the shape noise's, about as wide as a small puff, and a
+**finer term** about a quarter of that size and smaller, which carries about a quarter of the threshold.
+**And the eroded surface is firm:** past the threshold the density rises to the type's steeply, as a
+concave function of the depth past it, and never in proportion to the profile, which lays a soft skin a
+fade length deep over every puff. That function is the one rising function of the rule above: it shapes
+the uneroded profile too, so the column's optical depth is the integral of the shaped profile and still
+bounds every eroded density. The coarse density takes the finer term at its mean, as it takes the
+detail noise. Where the finer term comes from is the builder's: the stills read the shape volume a second
+time, 4.3 times finer, and a detail volume made of billows is the other way. It costs the full density no
+more than one read a sample beyond today's, WP24.5's and WP17.5's records carry what it does cost, and it
+changes no erosion but a heaped cell's: the deck's and a placed shape's are as they passed.
 
 Each noise is one tiling volume, generated on the GPU at preparation from the same integer hash on every
 target, and costs a sample one read, where octaves of lobes computed at the sample would each cost a
@@ -2139,6 +2176,39 @@ is a toy. It shows outline and relief, and nothing of the engine's light, map or
   both keys. *A shape counted twice.* Coverage zero and one directed shape with a footprint of optical
   depth 1: the field's column is 1 and the procedural column is clear. A heaped part of the field's column
   less the deck's is 1, and past the volume the column form's 1 and the shape's own 1 make 2.
+- **XXIII, which rule makes each flaw of the form's first stills**, 28 November, after WP23 stopped
+  ([its handoff](../../../.orchestrate/evidence/CLOUDS/WP23-handoff.md),
+  [the record, stills and tool](../../../.orchestrate/evidence/CLOUDS/WP23-unblock/README.md)). Part XX drew
+  a fixed layout of six cells, all whole, 8 to 15 km off. The build drew the valley's fair weather, where
+  cells stand overhead and at every age, and failed on four cues. They are drawn again here by the
+  builder's march through the builder's model at `aa8d61a8d`, with one rule switched at a time.
+  *Nothing eroded:* every failing cue is in the spheres. *The union rounded over 80 m, and part XX's
+  erosion in place of the builder's:* each alone leaves every cue where it was. *Every cluster standing
+  whole:* the lenses in the middle distance become heaps, and a cell that coverage has part-selected, made
+  to stand as high as a selected one, changes nothing, so the lenses are young and dying cells and not
+  coverage. *A thermal's first sphere held to 600 m:* the shelf, the fold and the squared break are gone
+  and the lenses are tufts. The causes: a thermal's first sphere was up to 1,270 m in radius with its
+  centre 0.3 radii over the base, a dome up to 2.5 km wide with a plate under it; and the life envelope
+  leaves half the cells under half risen, where a cluster shows the caps of its topmost spheres, each a
+  lens five times as wide as it is high.
+  *The revision*, five changes and nothing else: a first sphere of at most 600 m and at most 0.55 of its
+  thermal's reach (it was 0.8), and at least 120 m; a lean of up to 0.7 of a radius a level (0.3); 8 to 12
+  thermals a cell (5 to 8); and part XX's erosion, its threshold 0.85 of the profile's range with 28% of
+  it from the shape volume read 4.3 times finer, and its density a 0.6 power of the depth past the
+  threshold. On the same weather: heaps of different heights with billowed crowns and ragged bases, tufts
+  and small heaps in the middle distance, and no shelf, fold, squared break, lens, curtain or cylinder.
+  Three cells followed alone through twelve ages from 0.06 to 0.94 begin as tufts, rise into a heap and
+  fray back to tufts, with no cap at any age and no late-life fraying added. A second weather, 2,700 s
+  and 17 km away, reads the same, where the build's form has slabs and domes overhead. Taken out of the
+  revision alone, the 600 m bound brings back a dome, a slab and a lens; the share of the reach, soft
+  lenses where a shallow cell is part risen; the erosion, smooth balls; the lean, upright stacks that
+  repeat as pawns; the added thermals, no flaw. *Tried and worse:* a fade of half a puff's own radius
+  (solid smooth balls), and a 120 m fade at the base (level plates under every large cloud). *What it
+  costs:* 94 to 321 puffs a live cell, median 187, where the build's rule has 28 to 214, median 88, and
+  the revision with the build's thermal count 56 to 220, median 120.
+  *Not shown:* the planner read these alone. In the second weather two near clouds seen from almost below
+  are soft rounded masses, and a thermal that stands clear of its cluster reads as a small tower, three or
+  four to a frame. WP23.2's builder and its reviewer judge both.
 - **Unrun:** the engine's light and its noise on the form; the weather volume's filter at 50 and 100 m
   voxels, where the toy's grid is 25 m; the column form past the volume and the band between them; a dying
   cloud, in motion; the blend of two keys 30 seconds of weather apart, where a fast cloud's two surfaces
@@ -2249,7 +2319,7 @@ there, not here.
 | Weather step | Tick, CPU | One record and at most 16 directed shapes | Microseconds | |
 | Phases | Frame, once a ray; the tables at preparation | One table read and one closed form; a table for each row of the type table, about 4 KiB each at 1,025 entries, with the Sun term's four numbers | None in the march | |
 | Weather map | Half a second of weather, in parts: 2 Hz at 1× | 4 levels × 256², two textures, or three where the deck's own column needs one. A heaped texel integrates its column between the heights the puffs enter and leave it | Under 0.1 ms a frame at 1× under turrets; WP24.5 records it under puffs | 2 ms an update |
-| Weather volume | A part a tick, the whole in one key interval of 30 ticks, at every time scale | 2 levels of 512² columns, 96 and 48 voxels deep, two keys a voxel, one byte a key: 37.7 M voxels. A whole fill on each tick, which the map's bound would ask at 60×, cannot fit: at the 1 to 2 ns a texel the map's pass measured (262 k texels a tick at 60× in 0.23 ms a frame, WP2.9's record) it is 40 to 75 ms. A tick writes 1.26 M voxels, and the voxels that enter the reach: 49 k in a 40 m/s wind at 60×. A reset (a cut, a seek, a replaced device and the first frame) writes both keys whole, once, as a Sun-path jump refills its product. A frame that receives several ticks writes a part for each, and after a hitch of a key interval one key of every part. A voxel under a live cell measures its distance to that cell's puffs, 46 to 136 a cell in part XX; any other costs its cells' footprint tests | Unmeasured. About five times the map's texels a tick: 1 to 3 ms on a tick's frame if a voxel costs what a map texel does, less where a part no live cell stands in is passed over. WP24.5 records the pass and the largest fill in one frame in each of its runs at 1×, 8× and 60×, and WP25 decides whether the sky still holds the refresh | |
+| Weather volume | A part a tick, the whole in one key interval of 30 ticks, at every time scale | 2 levels of 512² columns, 96 and 48 voxels deep, two keys a voxel, one byte a key: 37.7 M voxels. A whole fill on each tick, which the map's bound would ask at 60×, cannot fit: at the 1 to 2 ns a texel the map's pass measured (262 k texels a tick at 60× in 0.23 ms a frame, WP2.9's record) it is 40 to 75 ms. A tick writes 1.26 M voxels, and the voxels that enter the reach: 49 k in a 40 m/s wind at 60×. A reset (a cut, a seek, a replaced device and the first frame) writes both keys whole, once, as a Sun-path jump refills its product. A frame that receives several ticks writes a part for each, and after a hitch of a key interval one key of every part. A voxel under a live cell measures its distance to that cell's puffs: 94 to 321 a cell, median 187, in part XXIII, about twice part XX's 46 to 136 and the first build's 28 to 214. Any other costs its cells' footprint tests | Unmeasured. About five times the map's texels a tick: 1 to 3 ms on a tick's frame if a voxel costs what a map texel does, less where a part no live cell stands in is passed over, and more as a voxel measures more puffs: a pass that measures every puff of a cell at every voxel under it is the costly way, and a thermal's bound or a list a column is the builder's to add if WP24.5's record asks for it. WP24.5 records the pass and the largest fill in one frame in each of its runs at 1×, 8× and 60×, and WP25 decides whether the sky still holds the refresh | |
 | Noise | Preparation | 128³ and 32³ | None in a frame | |
 | Sun's path | At 1×, near level over 8 frames, mid 32, far 128 | 3 × 256² columns (80 m, 320 m and 1.6 km wide, the last reaching the horizon), 48, 32 and 16 slices of the coarse density, which reads the map, the weather volume and the shape noise, and a placed cell's slab where its volume form has weight: 6.3 M stored slices to fill, about 0.5 M a frame. A stored slice is one or more density reads: part H's accuracy figures took four | 0.1–0.2 ms | 2.2 ms shadow |
 | Ground field and far value | With the Sun's path; the far value each frame | 1024², and a mean over the outermost level's ground slice | Under 0.05 ms | |
@@ -2322,6 +2392,10 @@ with no largest fill, is turned away too (WP24.5).
    parked the cue on 18 November 2026 after five rounds of looks, and WP17 took it up on 27 November. Three
    more looks, on the Mac and in Chrome, left a smooth dome over a folded rim, a notch between two hanging
    flaps and pointed tops on level skirts. Puffs replace turrets ([part XX](#check-that-it-can-work)).
+   The puff form's first build (WP23) failed its stills from the model on a shelf and a fold across the
+   Sun, lenses and a squared break away from it, and a cap on a dying cell. Those are the size of its
+   puffs and not the form ([part XXIII](#check-that-it-can-work)), and
+   [a puff is now bounded](#one-weather-field-in-the-air-frame).
 
    What those rounds established, in [WP3's erosion notes](../../../.orchestrate/evidence/CLOUDS/WP3-erosion/README.md),
    [WP17's evidence](../../../.orchestrate/evidence/CLOUDS/WP17/README.md) and
@@ -2343,23 +2417,34 @@ with no largest fill, is turned away too (WP24.5).
      and then evenly drawn, depths; a doubled noise wavelength; a stronger taper; lower water with a longer
      base fade; a higher clearing threshold; independently varied widths; lifted and joined shoulders; varied
      crown curvature; billows stretched upward; a softer heaped edge.
+   - On puffs (part XXIII): a sphere several fade lengths across is a dome, a plate or a lens whatever
+     erodes it, and rounding the union, changing the erosion and standing every cluster whole each left it
+     so. Tried on puffs and worse: a fade of a puff's own, a shorter fade at the base, a rounded union.
 
    The causes, as the design now takes them: a height a column cannot overhang, so every side is a slope
    down to a level base; a profile stretched to each column's height erodes a rim by nothing; and two clouds
    in line need a shaded base over a lit crown to read as two. The puff form answers the first two in the
    density. The third is the light's and the inspection list's: WP17.1 asks for it by name.
 
-   **Early signs, in order.** WP23's stills from the model, before any GPU work: if they show part XX's
-   turret flaws, or curtains, the form is wrong again, and the builder ends `BLOCKED` with `needs_context`
-   and the stills, for a planner. If they fail on a cue part XX's puff frames do not show, the profile
-   constants are the builder's to tune (puff counts, sizes and lean, the fade length, the erosion and the
-   noise's lobe sizes). Then WP17's Metal and Chrome stills, where the constants and the light's are the
-   builder's. Three failed looks on one cue go to the log and end `BLOCKED`.
+   **Early signs, in order.** WP23's stills from the model, before any GPU work. They are taken again
+   from part XXIII's revision, and every later look is held to the same order: no GPU work on the form
+   until its stills from the model pass. Inside [the three bounds](#one-weather-field-in-the-air-frame)
+   and [the two rules of the erosion](#one-density-in-m¹), the profile constants are the builder's to tune
+   on whatever cue the stills show: puff counts, sizes and lean, the fade length, the erosion's strengths
+   and the noise's lobe sizes. Part XXIII names two to look for: a soft rounded mass where a near cloud is
+   seen from almost below, and a thermal that stands clear of its cluster as a small tower. Before
+   changing a constant for a cue, find which rule makes it, as part XXIII did: its switches are kept with
+   its record, and a still costs seconds. The builder ends `BLOCKED` with `needs_context` and the stills,
+   for a planner, in two cases: a cue that stands with every puff inside the bounds and cannot be traced
+   to a constant, or curtains, which would mean the form is wrong again. Then WP17's Metal and Chrome
+   stills, where the constants and the light's are the builder's. Three failed looks on one cue go to the
+   log and end `BLOCKED`.
 
    **Never:** a height a column in place of the cluster, or one dome a cell; a form only the trace has, since
    the query, the map, the weather volume, the Sun's path and the trace read one density, which WP24 holds;
    a column the query does not give, such as a share standing in for heaps a far level cannot resolve or a
-   field smoothed for it; a puff that moves sideways or changes size in its cell's life.
+   field smoothed for it; a puff that moves sideways or changes size in its cell's life; a puff larger
+   than twice the fade length, or a thermal that is one dome on the base.
 
    **The fallback**, a planner's decision from the record and not a builder's: every heaped cell near the
    camera becomes a [placed cell](#placed-volumes) on a slab from a set of forms the engine generates. The
