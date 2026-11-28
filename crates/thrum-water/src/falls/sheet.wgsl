@@ -12,9 +12,23 @@ struct SheetVertex {
     @location(7) strand_motion: vec3<f32>,
     @location(8) @interpolate(flat) closed_strand: u32,
     @location(9) strand_normal: vec3<f32>,
+    @location(10) @interpolate(flat) strand_lip: f32,
 }
 
 fn sheet_age(age: f32) -> f32 { return age - floor(age / FALL_LOOP) * FALL_LOOP; }
+
+fn aeration_packet(lip: f32, birth: f32) -> f32 {
+    // Emit irregular packets of fixed duration at each strand's departure
+    // point. The stored flight time stretches their image on faster water.
+    let cells = max(1.0, floor(FALL_LOOP * 3.8));
+    let seed = lip * 59.3;
+    let emitted = birth * (cells / FALL_LOOP) + noise_hash(vec2(seed, 37.0));
+    let cell = floor(emitted);
+    let slot = cell - floor(cell / cells) * cells;
+    let centre = mix(0.28, 0.72, noise_hash(vec2(seed, slot)));
+    let radius = mix(0.17, 0.26, noise_hash(vec2(seed + 51.0, slot)));
+    return 1.0 - smoothstep(0.0, radius, abs(fract(emitted) - centre));
+}
 
 fn fold_weight(fraction: f32) -> f32 {
     let departure = smoothstep(0.12, 0.47, fraction);
@@ -83,7 +97,7 @@ fn splash_vertex(world_time: vec4<f32>, velocity_along: vec4<f32>, discharge: ve
     let world = vec4(point, phase);
     return SheetVertex(view.view_proj * vec4(point, 1.0), world, velocity_along,
         vec4(random, kick, strength, select(0.0, 1.0, impact)),
-        vec4(corner.x, -1.0, corner.y, phase), 0.0, vec3(0.0), foam, vec3(0.0), 0u, vec3(0.0));
+        vec4(corner.x, -1.0, corner.y, phase), 0.0, vec3(0.0), foam, vec3(0.0), 0u, vec3(0.0), 0.0);
 }
 
 fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<f32>,
@@ -151,9 +165,10 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
         foam = fall_foam(position.xz);
     }
     let world = vec4(position, world_time.w);
+    let strand_lip = select(velocity_along.w, edge_receiver.w, closed_strand);
     return SheetVertex(view.view_proj * vec4(world.xyz, 1.0), world, velocity_along, discharge,
         across_fraction, edge, vec3(receiving_motion, position.y - receiving_level, edge_receiver.z),
-        foam, strand_motion, u32(closed_strand), strand_normal);
+        foam, strand_motion, u32(closed_strand), strand_normal, strand_lip);
 }
 
 struct FallOutput {
@@ -221,8 +236,9 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let broken = smoothstep(rank - 0.24 - width, rank + 0.09 + width, breakout);
     let parcel = sheet_noise(vec2(lip, birth), FALL_LOOP, vec2(2.1, 5.25), vec2(117.0, 0.0));
     let pulse = smoothstep(0.40, 0.72, 0.86 * parcel + 0.14 * fine);
+    let packet = aeration_packet(input.strand_lip, birth);
     let filament_white = smoothstep(0.06, 0.48, input.across_fraction.w)
-        * mix(0.25, 1.0, pulse);
+        * mix(0.22, 1.0, 0.82 * packet + 0.18 * pulse);
     let streak_white = smoothstep(0.42, 0.89, input.across_fraction.w)
         * smoothstep(0.23, 0.78, 0.65 * coarse + 0.35 * fine);
     let parcel_foam = breakup * below_tongue * (0.12 + 0.53 * pulse);
@@ -298,7 +314,9 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
         * vec3(0.84, 0.90, 0.89) / 3.14159265;
     let parcel_light = mix(0.16, 1.38, pulse);
     let broken_light = mix(churn, aerated * parcel_light, max(rolled, breakup * below_tongue));
-    let sheet_colour = mix(clear_light, broken_light, white);
+    let mixed_air = select(0.0, smoothstep(0.10, 0.33, fraction), input.closed_strand != 0u);
+    let packet_light = aerated * (0.33 + 0.17 * fine + 0.91 * packet);
+    let sheet_colour = mix(mix(clear_light, broken_light, white), packet_light, mixed_air);
     let spray_light = mix(sheet_colour, aerated,
         mixing * (1.0 - thinness) * mix(0.32 + 0.58 * contact_foam + 0.10 * fine, 0.93, breakup));
     let colour = (spray_light * aerial.transmission + aerial.scatter) * environment_storage_scale();
@@ -309,9 +327,9 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let film_opacity = (clear * glass_alpha + white * (0.90 + 0.18 * grain)) * streak_cover;
     // The aerated body transmits through a similar thickness across its face.
     // Lighting follows the departing parcels independently of the cover.
-    let mixed_air = select(0.0, smoothstep(0.16, 0.40, fraction), input.closed_strand != 0u);
-    let opacity = mix(film_opacity, 0.62, mixed_air)
-        * presence * mix(0.62, 1.0, seam) * contact_cover * trickle_film;
+    let glass_cover = film_opacity * presence * mix(0.62, 1.0, seam) * contact_cover * trickle_film;
+    let aerated_cover = 0.58 * foot;
+    let opacity = mix(glass_cover, aerated_cover, mixed_air);
     let path_distance = select(input.across_fraction.y, -input.across_fraction.y - 2.0, is_filament);
     let last_fraction = input.across_fraction.w - length(input.velocity_along.xyz) * sheet_clock.y
         / max(0.001, path_distance);
