@@ -4,7 +4,7 @@
     {
       "id": "WP1",
       "name": "A rule asks whether two 3D shapes touch, where a ray meets one and where a moving one is stopped, and gets the same answer on the Mac, in Chrome and on the iPhone simulator",
-      "status": "ready_for_review",
+      "status": "in_progress",
       "depends_on": [
         "SIM-2D:WP3"
       ],
@@ -21,10 +21,10 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SIM-3D/WP1/WP1.1.log",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         },
         {
           "id": "WP1.2",
@@ -37,10 +37,10 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SIM-3D/WP1/WP1.2.log",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         },
         {
           "id": "WP1.3",
@@ -53,10 +53,10 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SIM-3D/WP1/WP1.3.log",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         },
         {
           "id": "WP1.4",
@@ -69,10 +69,10 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SIM-3D/WP1/WP1.4.log",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         },
         {
           "id": "WP1.5",
@@ -90,8 +90,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/SIM-3D/WP1/WP1.5.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         },
         {
           "id": "WP1.6",
@@ -107,10 +107,10 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SIM-3D/WP1/WP1.6.log",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         },
         {
           "id": "WP1.7",
@@ -128,8 +128,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/SIM-3D/WP1/WP1.7.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         },
         {
           "id": "WP1.8",
@@ -147,18 +147,18 @@
           "target": "ios-sim",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/SIM-3D/WP1/WP1.8.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         },
         {
           "id": "WP1.9",
           "statement": "The tests are proved by answers that do not come from themselves, the contact tolerance was set from a measurement, a sweep reports no place it has not tested, and what was translated from elsewhere is on record.",
           "ask": "1. Are the expected answers in the distance, overlap, depth, ray and sweep tests written out from geometry, with coordinates the profile holds exactly, and not computed by the functions under test? 2. Does each test's answer depend on its arguments alone: is there no cache, counter or other state that outlives a call? 3. Does each test subtract one reference point from the coordinates it reads before it multiplies, so that a case at a corner of the query domain is computed in a local frame? 4. Does the work package's evidence hold a record, made before the contact tolerance was fixed, of the gap left at the reported place by every sweep case of WP1.4 at the origin and at the corners of the query domain, and by a sweep from one corner of the domain to the opposite one? Is the largest gap recorded for the sweeps asked to stop within the tolerance no more than the tolerance, and for those asked to stop within half of it no more than half? 5. Does a sweep report a hit met on the way only after testing the reported place, with the mover there clear of what it struck and within the gap asked for? When its fixed number of steps runs out, does it go on by halving to such a hit or to a miss, and never report the place it had reached untested? 6. Does `docs/provenance/SIM-3D.md` list every file translated or adapted from another project with its source, revision and licence, or say that none was, and is none GPL or share-alike?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SIM-3D/WP1/WP1.9.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         },
         {
           "id": "WP1.10",
@@ -171,10 +171,10 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SIM-3D/WP1/WP1.10.log",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         },
         {
           "id": "WP1.11",
@@ -189,12 +189,63 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/SIM-3D/WP1/WP1.11.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         }
       ],
-      "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      "failed_reviews": 1,
+      "failed_reviews_with_repeat": 0,
+      "findings": [
+        {
+          "name": "Two moving spheres pass through each other without a sweep hit",
+          "repeat": false
+        },
+        {
+          "name": "Collinear hulls return a normal that leaves the mover inside",
+          "item": "WP1.10",
+          "repeat": false
+        },
+        {
+          "name": "Swapping a point and a collinear triangle changes overlap",
+          "item": "WP1.2",
+          "repeat": false
+        },
+        {
+          "name": "An edge-on ray hits a tilted triangle",
+          "item": "WP1.3",
+          "repeat": false
+        },
+        {
+          "name": "A zero-area triangle produces a ray hit",
+          "item": "WP1.3",
+          "repeat": false
+        },
+        {
+          "name": "A sphere extending beyond the domain passes validation",
+          "item": "WP1.1",
+          "repeat": false
+        },
+        {
+          "name": "The fast thin-target fixtures end in overlap",
+          "item": "WP1.4",
+          "repeat": false
+        },
+        {
+          "name": "The triangle ray fixtures omit three required misses",
+          "item": "WP1.3",
+          "repeat": false
+        },
+        {
+          "name": "The retained vectors omit required hand-worked inputs",
+          "item": "WP1.6",
+          "repeat": false
+        },
+        {
+          "name": "The tolerance measurement omits the required clear-ended thin crossings",
+          "item": "WP1.9",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "WP2",

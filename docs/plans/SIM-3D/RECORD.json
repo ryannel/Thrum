@@ -13,7 +13,94 @@
   "work_packages": {
     "WP1": {
       "definitions": "104c3eef5cd625d803ba12147d8b90ab7d2d0e83d56d4d21d11d355785e8670f",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "0f2bc98f8f8807dfd2cf5520403ef4603c650209",
+          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md",
+          "items": {
+            "WP1.1": "fail",
+            "WP1.2": "fail",
+            "WP1.3": "fail",
+            "WP1.4": "fail",
+            "WP1.5": "pass",
+            "WP1.6": "fail",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "fail",
+            "WP1.10": "fail",
+            "WP1.11": "pass"
+          },
+          "findings": [
+            {
+              "name": "Two moving spheres pass through each other without a sweep hit",
+              "repeat": false
+            },
+            {
+              "name": "Collinear hulls return a normal that leaves the mover inside",
+              "item": "WP1.10",
+              "repeat": false
+            },
+            {
+              "name": "Swapping a point and a collinear triangle changes overlap",
+              "item": "WP1.2",
+              "repeat": false
+            },
+            {
+              "name": "An edge-on ray hits a tilted triangle",
+              "item": "WP1.3",
+              "repeat": false
+            },
+            {
+              "name": "A zero-area triangle produces a ray hit",
+              "item": "WP1.3",
+              "repeat": false
+            },
+            {
+              "name": "A sphere extending beyond the domain passes validation",
+              "item": "WP1.1",
+              "repeat": false
+            },
+            {
+              "name": "The fast thin-target fixtures end in overlap",
+              "item": "WP1.4",
+              "repeat": false
+            },
+            {
+              "name": "The triangle ray fixtures omit three required misses",
+              "item": "WP1.3",
+              "repeat": false
+            },
+            {
+              "name": "The retained vectors omit required hand-worked inputs",
+              "item": "WP1.6",
+              "repeat": false
+            },
+            {
+              "name": "The tolerance measurement omits the required clear-ended thin crossings",
+              "item": "WP1.9",
+              "repeat": false
+            }
+          ],
+          "summary": "WP1 fails because a sweep can miss two solid spheres moving through each other, and several queries give wrong answers on exactly representable geometry. The Mac, Chrome and iPhone simulator reproduced all 12,471 retained vectors bit for bit. Two required fast crossings are missing from those vectors and from the contact-tolerance measurement.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 98784,
+            "cached": 3169536,
+            "output": 14949,
+            "turns": 1
+          },
+          "at": "2026-11-28T05:41:56Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of SIM-3D at .orchestrate/evidence/SIM-3D/design-review.md asked for changes, with its 6 Must Fix find",
