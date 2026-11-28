@@ -806,7 +806,7 @@
     {
       "id": "WP13",
       "name": "Sun shadows hold still as the Sun moves, start at the foot of what casts them, and thin out with distance with no line where they stop, on the Mac and in Chrome",
-      "status": "not_started",
+      "status": "blocked",
       "quality_bar": "Sun shadows as in Red Dead Redemption 2's open country, this module's shadow reference since WP6, and as Horizon Forbidden West holds them while its time of day runs: edges that slide and never step, crawl or shimmer, shadows that start at the foot of what casts them, sharper at contact and softer with the blocker's distance, and small shadows that thin out with distance with no line where they stop. Judged in words from the running game against each item's list and beside the takes from before, never against a target image. Grounding is judged in sunlight: the darkening of contact in shade is WP14's, and a cube inside another shadow is not judged here.",
       "items": [
         {
@@ -925,7 +925,17 @@
         }
       ],
       "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      "failed_reviews_with_repeat": 0,
+      "blocked": {
+        "reason": "needs_context",
+        "what": "WP13.6 needs a planner-approved design response to the residual sphere-shadow step.",
+        "work": {
+          "commit": "6a49b48dffcae9955b2c2da3de96cc9a510ae042",
+          "branch": "build/atmosphere",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/ATMOSPHERE/WP13-handoff.md"
+      }
     },
     {
       "id": "WP14",
