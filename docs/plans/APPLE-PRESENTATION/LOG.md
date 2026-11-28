@@ -824,3 +824,11 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
 - Verified WP19.1 on the Apple M3 Max. All six tests passed in each of ten whole-binary runs with 16 test
   threads, and the output-scale test passed alone under nextest.
   [WP19.1 evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP19/README.md)
+
+- 2026-11-28 Planner (for `GATE-TIME`): `long-tests` fails again in the library's tests with
+  `TimestampQuerySetsExhausted`, from the native provider tests. The call site of WP16 is right and nothing
+  leaks: a host holds 2 and a capture host 5, and three provider tests keep three capture hosts each, 17, 17
+  and 12 at their peaks, in a process that shares 32 with every other test. WP16.4's five runs passed before
+  those tests existed. The fix is `GATE-TIME` WP16, which runs each feature test in a process of its own. No
+  file of this module changes.
+  [The runs](../../../.orchestrate/evidence/GATE-TIME/WP16-plan/README.md)

@@ -23,6 +23,7 @@ another module's: change nothing those tests assert about the engine. The work p
 - Assumption: the atmosphere's Monte Carlo reference is deleted, about 2,200 lines; the night checks and the twilight guard stay in the check. The other choice keeps it as an ignored diagnostic.
 - Assumption: three more tests that hold GPU output to a reference are replaced by short tests of the behaviour, about 1,400 lines: the mirror pool's rounding-allowance proof, the cooked cloud march's f64 reference and the scene-view shader hashes. The other choice keeps any of the three.
 - Assumption: the smallest world and no device for logic bind tests written or changed from 21 November, and WP9 and WP3 apply them to the tests over ten seconds. The other choice also sweeps the 1,290 faster tests, for at most 141 s summed.
+- Assumption: on main, the tests behind a Cargo feature run each in a process of its own, as a merge's tests do, and are stopped only as a hang, at 120 seconds. The other choice keeps a binary's tests in one process and repairs the cap in `thrum-render`'s library tests, which the next process-wide limit would pass again.
 - Assumption: macOS's check of each new binary stays on. The other choice is yours alone: listing the builders' apps under Developer Tools in System Settings removes that cost, and an OS security check with it.
 
 ## WP1 A merge's check no longer runs the ten-minute gale, the stepped hour, the field flythroughs or the shore-blend solve, and they pass on main after each merge: done
@@ -61,30 +62,21 @@ another module's: change nothing those tests assert about the engine. The work p
 ## WP4 Three tests that held GPU output to a reference are replaced by short tests of the behaviour: the mirror pool, the cooked cloud march and the scene-view shader text: done
 [review](../../../.orchestrate/evidence/GATE-TIME/WP4-review.md)
 
-## WP14 The full workspace check passes when a fast test needs more time on a busy Mac
+## WP14 The full workspace check passes when a fast test needs more time on a busy Mac: done
+[review](../../../.orchestrate/evidence/GATE-TIME/WP14-review.md)
 
-Build this before WP5. Use [the workspace rerun design](DESIGN.md#workspace-reruns-under-builder-load).
-Keep the replay, its checker `check_loaded.py`, the raw check output and the load samples in
-`.orchestrate/evidence/GATE-TIME/WP14/`. Capture a successful `./dev check-all` on the fixed code during
-representative contention. Use a focused replay through the production workspace runner on the same revision
-for incident cases without a passing serial rerun in the full run, or to capture a recovery above ten seconds
-and within thirty if the full run has none. Use active builders and a concurrent Metal workload, or reproduce
-the incident's CPU and Metal contention with controlled competing work. Capture the one-minute load during
-the runs, including the reruns, the core and builder counts, and the overlapping GPU work.
+## WP15 Merge verification reuses a bounded local Cargo cache: done
+[review](../../../.orchestrate/evidence/GATE-TIME/WP15-review.md)
 
-Have `check_loaded.py` read the retained records for the passing full check, the six incident case results and
-the load evidence. Accept the over-ten-second recovery from either run when the record ties the first-attempt
-timeout, passing serial retry within thirty seconds and production verdict to the same real case and fixed
-revision. Keep the checker cheap so work package checks can rerun from the records.
+## WP16 The long tests on main pass every run: each test behind a Cargo feature runs in a process of its own, as tests do before a merge
 
-## WP15 Merge verification reuses a bounded local Cargo cache
-
-Build and qualify [the cached check](DESIGN.md#cargo-cache-for-merge-verification) before switching the project
-test command. Replay both merge entry points with scratch candidates. Before activation, exercise the configured
-test command through orchestrate's `check` in a builder worktree with a failing local edit. Replay the same
-invocation on a known-good pre-M15 revision. Coordinate the cutover with the lead so new requests load the updated
-test command. Record the activation push and time, the paired trials and the replay logs in
-`.orchestrate/evidence/GATE-TIME/WP15/`.
+Build this before WP5: the main-branch check `long-tests` fails about every other run until it merges. Read
+[mechanism 16](DESIGN.md#feature-tests-in-processes-of-their-own) first.
+[The planner's record](../../../.orchestrate/evidence/GATE-TIME/WP16-plan/README.md) has the runs that show the
+fault and the trial of each feature line through cargo-nextest, with the two limits that proved too short under
+load. The settings line of the check does not change, so the lead has nothing to fast-forward for. Bring the
+comments of `.config/nextest.toml` and the `./dev long-tests` row of `CONTRIBUTING.md` into line with what the
+command now runs, with the time your own runs took.
 
 ## WP5 The post-rollout record shows a five-minute median for Rust landings
 

@@ -112,3 +112,16 @@
   developer's environment. Mac discovery passed with ambient `RUSTFLAGS=-Cdebuginfo=1`, with several
   combined overrides and with the default environment. An explicit flag still goes to the ordinary
   caller unchanged on fallback. [Mac evidence](../../../.orchestrate/evidence/GATE-TIME/WP15/ambient-flags-repair.md).
+- 2026-11-28 Planner: the main-branch check `long-tests` failed in five of nine runs from 27 November 15:07,
+  in `thrum-render`'s library tests with `creation-counters`, with `TimestampQuerySetsExhausted` from the
+  native provider tests, and passed on the same commits when run again. Nothing leaks and the engine's pool is
+  not too small: three provider tests hold 17, 17 and 12 of Metal's 32 for a process, the library tests' own
+  cap still assumes 8 for the heaviest, and `./dev long-tests` is the one command that puts a binary's tests
+  in one process. New WP16, before WP5, runs the tests behind a Cargo feature each in a process of its own
+  (design, mechanism 16). One assumption was added. No other module's item changed.
+  [The runs](../../../.orchestrate/evidence/GATE-TIME/WP16-plan/README.md)
+- 2026-11-28 Planner: WP14 and WP15 are Done by the record (24 and 25 November), so the plan file keeps their
+  headings and reviews only. Their builder notes are gone from it: the mechanisms are in the design
+  ([workspace reruns](DESIGN.md#workspace-reruns-under-builder-load),
+  [the Cargo cache](DESIGN.md#cargo-cache-for-merge-verification)) and their records are in
+  `.orchestrate/evidence/GATE-TIME/WP14/` and `WP15/`.

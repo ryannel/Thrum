@@ -878,6 +878,26 @@
       "failed_reviews_with_repeat": 0
     },
     {
+      "id": "WP16",
+      "name": "The long tests on main pass every run: each test behind a Cargo feature runs in a process of its own, as tests do before a merge",
+      "status": "not_started",
+      "quality_bar": "A main-branch test run as dependable as the CI of a well-kept Rust workspace such as wgpu's, which runs its GPU tests through cargo-nextest: a test gives the same answer whichever tests run beside it, and a failure on main names a fault in the code.",
+      "items": [
+        {
+          "id": "WP16.1",
+          "statement": "`./dev long-tests` runs the tests behind a Cargo feature through cargo-nextest, each test in a process of its own. For every feature line of `.config/long-tests.txt` it runs the line's package, features and binaries, the tests that are not ignored, in the debug build with a GPU required, under the profile `main-tier` of `.config/nextest.toml`. That profile stops a test at 120 seconds, runs no test again and reports every failure of a line. A line that fails does not stop the lines after it, and fails the command. The long tests still run through `cargo test`, one binary at a time, in the build the list gives. The command stops before any step when cargo-nextest is missing or older than `./dev check` accepts. Run that way, `thrum-render`'s line passes every test five times in a row, and each of the four other feature lines the list held on 28 November 2026 passes once: the game's, the two of `thrum-asset-gpu` and the one of `thrum-clouds`. No test file changes. Guard: a test of the runner on the command it builds for a feature line, and device runs of the lines; only a device shows that the tests pass beside each other.",
+          "check": "sh -c 'out=$(cargo test --locked --offline -p xtask feature_tests_run_through_nextest 2>&1) && echo \"$out\" | grep -qE \"test result: ok\\. [1-9][0-9]* passed\" || { echo \"$out\"; exit 1; }' && export THRUM_REQUIRE_GPU=1 && n() { cargo nextest run --locked --offline --profile main-tier --no-tests=fail \"$@\"; } && for i in 1 2 3 4 5; do n -p thrum-render --features creation-counters --tests || exit 1; done && n -p v1-game --features draw-probe,creation-counters,thrum-render/creation-counters --lib --test ray_tracing_gpu --test cooked_assets_gpu --test view_volume_shadow_gpu --test view_volume_sky_gpu --test view_volume_history_gpu --test view_volume_medium_gpu --test ground_band_receivers_gpu --test view_volume_handover_gpu --test clouds_knobs_gpu --test clouds_ground_selection_gpu && n -p thrum-asset-gpu --features draw-probe --test error_types && n -p thrum-asset-gpu --features fault-probe --test cooked_fault_gpu && n -p thrum-clouds --features thrum-render/creation-counters --test capabilities_gpu",
+          "ask": "Read the long-test command in `tools/xtask/src/` and the profile `main-tier` in `.config/nextest.toml`. 1. Does every feature line of the main-tier list run through cargo-nextest under that profile, with its package, its features, and every test binary or the ones it names, and with a GPU required? 2. Does a failing line leave the later lines to run and still fail the command? 3. Do the long tests still run through `cargo test`, one binary at a time, in the listed build? 4. Does the profile stop a test at 120 seconds and retry none? 5. Does the change leave every test file as it was?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
       "id": "WP5",
       "name": "The post-rollout record shows a five-minute median for Rust landings",
       "status": "blocked",

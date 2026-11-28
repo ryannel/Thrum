@@ -1,7 +1,10 @@
 # Gate time: a merge's check takes about five minutes, because it runs the fast tests its change can reach, side by side and each once, and everything else runs on main after the merge
 
 20 November 2026, revised 21 November for [four changes to how tests are written and built](#measured-again-on-21-november),
-and again that day for [the guard rules](#the-guard-rules) that hold them.
+and again that day for [the guard rules](#the-guard-rules) that hold them. Revised 28 November for
+[the feature tests' own processes on main](#feature-tests-in-processes-of-their-own), which WP16 builds, after
+the main-branch check `long-tests` failed about every other run. It changes how `./dev long-tests` runs the
+tests behind a Cargo feature, and nothing WP1 to WP15 built for a merge's check.
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-6-the-cleanup-of-20-november) ·
 [test tiers](../../../ORCHESTRATE.md#test-tiers), the policy this module applies ·
@@ -330,7 +333,8 @@ the list and its guard work from the test files, not only from the manifests.
   reused, so a merge that touches none of them pays seconds.
 - *On main*, `./dev long-tests` runs them with their features on and a GPU required, in the debug build, as the
   item checks that run them do. It runs the tests that are not ignored: an ignored test there is a measurement
-  that a cost script runs.
+  that a cost script runs. From WP16 it runs each in a process of its own
+  ([mechanism 16](#feature-tests-in-processes-of-their-own)).
 - A test that fails at the commit WP6 starts from is listed as not run, with its failure and its owning module,
   and is not changed here. The builder's handoff names each one, so the lead can give it to its owner: until
   then it runs in no tier.
@@ -486,8 +490,9 @@ what brings a merge's check from twenty minutes to a few, and WP8 builds it.
   tests. It is what large Rust workspaces such as wgpu's and Zed's run their tests with, and Zed's CI selects the
   tests of changed packages and their dependants through its filters, as mechanism 4 does. Doc tests, which it
   does not run, go through `cargo test --doc` as before. A failed test is not run again: a retry would hide a
-  test that fails one time in ten. `./dev long-tests` keeps `cargo test`, one binary at a time, because a long
-  test is run alone on purpose.
+  test that fails one time in ten. `./dev long-tests` keeps `cargo test`, one binary at a time, for the long
+  tests, because a long test is run alone on purpose. WP6 ran the tests behind a Cargo feature the same way,
+  and [mechanism 16](#feature-tests-in-processes-of-their-own) moves those to this runner.
 - *It is required.* The check names the oldest cargo-nextest it accepts and, where that is not installed, stops
   before any step with the command that installs it. One runner means one behaviour to trust: a fallback to
   `cargo test` would be the slow path nobody runs. The manual CI workflow installs it.
@@ -587,8 +592,10 @@ allow, because a mass move would collide with every builder.
 - *What stays a target of its own.* A file whose binary something names, or that has to run apart:
   - a binary an open item's check names with `--test`, in any module, until that item's work package is Done;
   - a binary the main-tier list names, and any file that holds a long test or a test behind a Cargo feature.
-    `./dev long-tests` runs those through `cargo test`, where the tests of one binary share a process, and
-    folding them would make tests share statics, creation counters and device mutexes they never shared;
+    When WP11 was built, `./dev long-tests` ran all of those through `cargo test`, where the tests of one
+    binary share a process, and folding them would have made tests share statics, creation counters and
+    device mutexes they never shared. It still runs the long tests so. These files stay targets of their own
+    after WP16 too, which folds nothing;
   - a target with `required-features` or `harness = false`, and one built for another target, such as the wasm
     tests of `thrum-asset`;
   - a binary a script or a tool runs by name.
@@ -738,6 +745,67 @@ The incident cases are `thrum-rain-model::it conformance::the_harness_passes_rai
 `water-scene::foam_scene_gpu craft_trail_outlives_removed_source_and_spreads` and
 `thrum-sea::it portable_limits_gpu::default_webgpu_limits_match_the_model_a_day_in`.
 
+<a id="feature-tests-in-processes-of-their-own"></a>
+
+**16. On main, a test behind a Cargo feature runs in a process of its own.** WP16 builds this before WP5. The
+main-branch check `long-tests` failed in five of its nine runs from 27 November 15:07 to 28 November 00:34,
+each time in `thrum-render`'s library tests with `creation-counters`, with
+`Timing(TimestampQuerySetsExhausted)` from one or two of the `runtime::tests::device::native::provider` tests.
+The same commit failed one run and passed the next, so the trace could name no commit.
+
+What the planner measured on 28 November
+([record](../../../.orchestrate/evidence/GATE-TIME/WP16-plan/README.md)):
+
+- Nothing leaks. Run one test at a time, every test's first request for a timestamp query set finds none live
+  in the process, and the binary passes. The engine's own holdings are small: a frame host holds two, and five
+  with a submitted capture on.
+- The fault is what shares the process. Metal gives one process 32 live timestamp query sets
+  ([`APPLE-PRESENTATION`'s design](../APPLE-PRESENTATION/DESIGN.md#timestamp-query-sets-and-metals-limit-wp16)).
+  Two of the provider tests hold 17 each at their peak, with three capture hosts alive at once, and a third
+  holds 12. The library's tests have a cap of their own from 8 November, `timestamp_permit.rs`: three such
+  tests at once, on the assumption that the heaviest holds 8. Three can now hold 46, and 11 tests that hold 4
+  to 7 take no permit at all. The three provider tests alone in one process failed 20 runs of 20, and the
+  whole binary 7 of 20.
+- No other tier can see it. `./dev check` runs each test in a process of its own, where it has all 32, and an
+  item check runs the one test or the few it names. `./dev long-tests` is the only tier that runs a whole
+  binary's tests in one process, and it is the third time in a week that this alone failed it: `APPLE-PRESENTATION` WP16 and WP19 were the first two.
+  `MESH-SHADING`'s `mesh_stage_gpu` is listed as not run because it fails run whole and passes one test at a
+  time.
+
+So the cause is in this module's runner, and a larger or better-kept cap in one crate would leave the next
+process-wide limit to fail the same way. [The test tiers](../../../ORCHESTRATE.md#test-tiers) already say that a
+test runs in a process of its own and relies on no static it shares with another. WP6 made the main tier the
+one place where that is untrue.
+
+- *The runner.* `./dev long-tests` runs each feature line of the main-tier list through cargo-nextest, as
+  mechanism 8 runs a merge's tests: every test in a process of its own, side by side across the line's
+  binaries. A line still means what mechanism 3 says: its package, its features, every test binary or the ones
+  it names, the tests that are not ignored, the debug build, a GPU required. One line is one run, because
+  features differ between lines, and a line that fails does not stop the lines after it. The long tests do
+  not change: `cargo test`, one binary at a time, in the build the list gives.
+- *The limit is a hang guard.* These runs use a profile of their own in `.config/nextest.toml`, `main-tier`.
+  It stops a test at 120 seconds, runs no test again and reports every failure of a line. The ten-second rule
+  is the merge tier's and does not move here: these tests run in no merge's check, one of them takes 24 s
+  alone, and a wrongly stopped test costs a trace of whole runs over some hours. In the planner's trial the
+  ten-second limit stopped 1 to 4 of `thrum-render`'s 601 tests in each run under builder load, and a
+  30-second one stopped a game test once, on the first run after its build, that takes 1.9 s alone. The
+  script already runs a failed check once more whole, so the profile retries nothing. The groups and heavy
+  counts of the default profile apply to these runs as they do to a merge's.
+- *It needs the runner installed.* `./dev long-tests` stops before any step when cargo-nextest is missing or
+  older than `./dev check` accepts, with the same message.
+- *No test file changes.* A test that fails only because tests of its binary now run at once in separate
+  processes joins a group in `.config/nextest.toml`, by WP8's rule. The planner's trial needed none: with a
+  30-second limit all 601 tests of `thrum-render`'s line passed in both of two runs, both lines of
+  `thrum-asset-gpu` and `thrum-clouds`' one passed, and the game's 96 passed in two runs of three, the first
+  losing the one test to the limit as above. A mutex a test file keeps for `cargo test` stays and is never
+  contended.
+- *What it leaves alone.* The main-tier list and its format, the `not-run` lines, the settings line of the
+  check, and every test file. The owner of a `not-run` binary may find that it passes now, and moving it to a
+  feature line is that owner's landing.
+
+The trial also timed the runs: `thrum-render`'s line took 34 to 47 s through cargo-nextest against 91 s one
+binary at a time, and the game's 20 to 38 s against 48 s, so the check holds its `gpu` slot for less.
+
 ## Cargo cache for merge verification
 
 The pre-rollout WP5 record found 404.6 seconds median across 45 Rust landings, with 37 over five minutes. In the
@@ -799,7 +867,7 @@ test command only after it passes this proof. WP5 measures the real rollout inde
 | A long test: marked `#[ignore]` with a reason that starts `long:`, in a binary the main-tier list names; the main-branch check `long-tests` runs it | Any module with a test that takes over about ten seconds and cannot be made fast. Its builder adds the binary to the list, with the fault the test leaves unguarded before a merge |
 | The main-tier list, `.config/long-tests.txt`: each long-test binary with its package and build, and each package with tests behind a Cargo feature, with those features, whole or by test binary. The docs check fails a test file or target that names a feature the list does not cover | Any module that adds a long test, or a test behind a Cargo feature in a package the list does not cover whole |
 | The merge selection: `./dev check` runs the tests of the packages a change can reach, by Cargo's graph and the path rules and declared edges of mechanism 4; `./dev check-all` runs the whole workspace | Every builder. A module that adds a folder outside a package gets the whole workspace on every change there until it adds a path rule. A module that adds a test reading another package's files at run time declares the edge in the same landing |
-| The runner, from WP8: a test runs in a process of its own, beside tests of every other binary, with cargo-nextest installed. From WP13 a test is stopped at ten seconds and rerun once serially under the same limit. From WP14 only `./dev check-all` gives that serial rerun 30 seconds and reports passes above ten seconds. `.config/nextest.toml` holds the groups of tests that take turns and the tests counted as heavy | Every module that writes a test. A test relies on no other test of its binary having run and on no static it shares with one. A test that needs a device to itself joins a group, and one that starts a thread pool is counted as heavy, in the same landing |
+| The runner, from WP8: a test runs in a process of its own, beside tests of every other binary, with cargo-nextest installed. From WP13 a test is stopped at ten seconds and rerun once serially under the same limit. From WP14 only `./dev check-all` gives that serial rerun 30 seconds and reports passes above ten seconds. `.config/nextest.toml` holds the groups of tests that take turns and the tests counted as heavy. From WP16 `./dev long-tests` runs the tests behind a Cargo feature the same way, a process to each test, under the profile `main-tier`, whose only limit is a hang guard of 120 seconds | Every module that writes a test. A test relies on no other test of its binary having run and on no static it shares with one. A test that needs a device to itself joins a group, and one that starts a thread pool is counted as heavy, in the same landing |
 | Two rules for a test written or changed from 21 November 2026, which [the test tiers](../../../ORCHESTRATE.md#test-tiers) state: it uses the smallest world that shows its behaviour, and it tests logic without a device, leaving a GPU test only what a device alone can show | Every module that writes a test, and every planner and reviewer |
 | The guard rules, from WP12: `limit-exempt`, `main-tier` and `test-binary`, each a count that can only fall. `main-tier` rises only through its version, in a landing that a done-when item asks for. `test-binary` counts the lines of `.config/unplanned-test-binaries.txt`, and fails a test target that is neither on that list nor named by a plan | Every builder: no new exemption from the limit, no main-tier test without an item that asks for it, and a new test in a test file that exists. A landing in any module that deletes, renames or folds a target on that list takes its line off the list, whatever files the module's plan gives it. Every planner: an item that adds a main-tier test says what only it can show; a binary a builder is to create is named by an item's check; and the last check naming a binary that exists is not dropped |
 | The check's closing lines, from WP8 and WP12: the time of each step, the ten slowest tests, the summed time of the tests and of the GPU tests. Reports, never a gate | The lead and every builder, and WP5's record |
@@ -846,6 +914,7 @@ everyone's: `.config/shape-baseline.json`, `.config/unplanned-test-binaries.txt`
 | WP4 | `examples/mirror/tests/pool_gpu/` and the result parsing of `scripts/check_mirror_browser.mjs`; `crates/thrum-asset-gpu/src/draw/tests.rs`; `crates/thrum-render/tests/scene_view_absent_gpu.rs` and `tests/pre_record_source/` | `REVIEW-RENDER` WP2, which is extending `pre_record_source` | `CLOUDS` and `RAY-TRACING` edit `thrum-asset-gpu`'s `draw.rs`, not its tests |
 | WP14 | The check runner, its tests and help in `tools/xtask/src/`, `.config/nextest.toml`, and the corresponding timeout text in `ORCHESTRATE.md` and `CONTRIBUTING.md`. Load evidence in the working folder | The landed WP13 runner | `REPO-RULES` owns the check command outside the test runner. WP5 uses the contributor guide's merge timing |
 | WP15 | `dev` and its merge-verification helper and tests under `scripts/`, the check entry point and selection inputs in `tools/xtask/src/` if needed, the test-command line in `ORCHESTRATE.md`, the cache operation notes in `CONTRIBUTING.md`, and the test-profile debug-info setting in `Cargo.toml` only if the paired proof needs it | The landed WP14 check runner | `REPO-RULES` owns the check command. Its guards and callers keep their contracts. The lead coordinates the test-command cutover and verifier cleanup |
+| WP16 | The long-test command, its help text and its tests in `tools/xtask/src/`; the new profile and the comments that say which command runs what in `.config/nextest.toml`; the `./dev long-tests` row of the commands table in `CONTRIBUTING.md`. No test file | Nothing | `.config/nextest.toml` is a shared input, so this landing's own check runs the whole workspace. `REPO-RULES` owns the check command outside the test runner. WP5 edits the same table of `CONTRIBUTING.md`, after it |
 | WP5 | The commands table and test-command text of `CONTRIBUTING.md`, plus the closing record in the working folder | WP15 and `DEAD-TOOLS` WP2 | `DEAD-TOOLS` WP3 edits other text of `CONTRIBUTING.md`. `REPO-RULES` WP3, the one rename, waits for this work package |
 
 ## Not built here
@@ -868,7 +937,12 @@ everyone's: `.config/shape-baseline.json`, `.config/unplanned-test-binaries.txt`
   modules, and changing a check sends its module's design back for review. Mechanism 10 lets each fold after it
   is built. This is an assumption in [the plan](PLAN.md).
 - **Folding the long tests and the tests behind a Cargo feature.** `./dev long-tests` would first have to run
-  each test in a process of its own.
+  each test in a process of its own. WP16 does that for the tests behind a feature and stops there: folding
+  them renames binaries that open items and the main-tier list name, and no work package here does it.
+- **Repairing or removing the cap in `thrum-render`'s library tests** (`crates/thrum-render/src/timestamp_permit.rs`).
+  Its numbers are out of date ([mechanism 16](#feature-tests-in-processes-of-their-own)). After WP16 no tier
+  runs two of those tests in one process, so nothing rests on it, and item checks that run a few of the
+  library's tests through `cargo test` still pass through it. It is the frame runtime's to keep or delete.
 - **Exempting the builders' apps from macOS's first-run check.** Listing an app under Developer Tools in System
   Settings, as cargo-nextest's notes describe, removes the first-run cost for any number of binaries. It turns
   off an OS security check for everything that app starts, on the owner's Mac, so it is the owner's to choose,
@@ -918,7 +992,10 @@ reference is proved by the test that replaces it, which the reviewer reads. WP15
 candidate runs, a committed candidate with a failing test and its passing revert, and cache-pressure and
 concurrent-use cases. With the cache warm, it also runs the configured command on a passing commit with a failing
 assertion edited locally, then restores the file and checks that it passes. A replay of the configured command on
-a known-good pre-M15 revision proves the invocation works across activation. WP5 uses the saved wall times in
+a known-good pre-M15 revision proves the invocation works across activation. WP16 is proved by five runs in
+a row of `thrum-render`'s feature line under the new profile and one of each other line, by the runner's own
+test of the command it builds for a line, which a reviewer reads, and afterwards by the main-branch check
+`long-tests` on main, which no item waits for. WP5 uses the saved wall times in
 [the fixed post-rollout window](#the-goal).
 
 One test binary a package is proved by the names of every test before and after, which a reviewer lists again; by
