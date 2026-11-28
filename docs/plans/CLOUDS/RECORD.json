@@ -1795,12 +1795,12 @@
       }
     },
     "WP12": {
-      "definitions": "090f81e2cacf9fc8e826f975b89b77284707d8fc738e37b66631f382d5f81b1f",
+      "definitions": "e7b51eb7d533f7ecbe405444679f1fda78e71121a938f5c28cfdff925a43bbeb",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Lead decision on CLOUDS WP14 (Blocked, Needs Context; handoff .orchestrate/evidence/CLOUDS/WP14-handoff.md in the clouds",
-        "at": "2026-11-26T16:49:04Z"
+        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 4 Must Fix find",
+        "at": "2026-11-28T05:19:49Z"
       }
     },
     "WP13": {
@@ -2722,12 +2722,12 @@
       }
     },
     "WP17": {
-      "definitions": "f8aaf5bd1bf065b7c857703c70c7107eafef4551e0ba8c116ddc40223589938e",
+      "definitions": "f4f6cc08f35a9787f1cb75b9df8049f11de5437fdd758f558b25bd84cc64cd68",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 7 Must Fix find",
-        "at": "2026-11-28T00:55:35Z"
+        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 4 Must Fix find",
+        "at": "2026-11-28T05:19:49Z"
       }
     },
     "WP18": {
@@ -3033,7 +3033,7 @@
       "ends_stretch": true
     },
     "WP23": {
-      "definitions": "7dee2a77d970983702398e2971f28e61d687c015d2f228fea89e60036345f444",
+      "definitions": "b33a7a1947e03292ee9d1b0fb5dff1c5e3f033439d1d9bb8e99c73ba0dbff56c",
       "reviews": [
         {
           "verdict": "fail",
@@ -3074,46 +3074,17 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its Must Fix findin",
-        "at": "2026-11-28T03:16:12Z"
-      },
-      "ready_for_review": {
-        "commit": "9c2708105111496787f284dc3c08f512ea22e7f0",
-        "checked": "9c2708105111496787f284dc3c08f512ea22e7f0",
-        "at": "2026-11-28T04:52:18Z",
-        "reused": [
-          "WP23.1"
-        ],
-        "host": "codex",
-        "model": "gpt-6.2-sol",
-        "effort": "medium",
-        "observed": {
-          "model": "gpt-6.2-sol",
-          "effort": "medium"
-        },
-        "cli": "codex-cli 0.171.0-alpha.13.2",
-        "path": "headless",
-        "usage": {
-          "input": 453668,
-          "cached": 93366144,
-          "output": 144296,
-          "turns": 2
-        },
-        "session_usage": {
-          "input": 453668,
-          "cached": 93366144,
-          "output": 144296,
-          "turns": 2
-        }
+        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 4 Must Fix find",
+        "at": "2026-11-28T05:19:49Z"
       }
     },
     "WP24": {
-      "definitions": "6aaf8ece3e830073473387126ad25e7aeeeace18f24f6463d35fe43684086378",
+      "definitions": "1322eb4f8a12266447c0f9096ae3eeb8062c5c374c5bded08d4f240862ab9077",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its Must Fix findin",
-        "at": "2026-11-28T03:37:23Z"
+        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 4 Must Fix find",
+        "at": "2026-11-28T05:19:49Z"
       }
     },
     "WP25": {
@@ -3314,11 +3285,15 @@
     {
       "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
       "at": "2026-11-28T03:37:23Z"
+    },
+    {
+      "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 4 Must Fix findings. WP23's build now passes both its items (the CPU stills show distinct billowed heaps rising, thinning and breaking apart) and its review (.orchestrate/evidence/CLOUDS/WP23-review.md) failed only on two design requirements: selecting puffs removes existing erosion from broken decks, and clusters extend beyond their cells' radius and depth. Settle the design findings with the smallest change, keep WP23's passing form, and leave the builder a clear path to merge WP23.",
+      "at": "2026-11-28T05:19:49Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-28T03:37:23Z"
+    "at": "2026-11-28T05:19:49Z"
   },
   "design_history": [
     {

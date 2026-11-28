@@ -1947,7 +1947,7 @@
     {
       "id": "WP23",
       "name": "The weather's own clouds take a new form, a cluster of rounded heaps, in what a game reads and in stills drawn from it on the CPU",
-      "status": "in_progress",
+      "status": "not_started",
       "depends_on": [],
       "quality_bar": "The outline and relief of fair-weather cumulus as in Red Dead Redemption 2 or Horizon Forbidden West, looked at one cloud at a time from the ground: rounded heaps of different heights on one level base, crowns in billows, no two clouds alike. These stills are judged for form alone; the engine's light, colour and motion are WP17's.",
       "items": [
@@ -1959,8 +1959,8 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/CLOUDS/WP23-review.md"
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP23.2",
@@ -1969,8 +1969,8 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/CLOUDS/WP23-review.md"
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP23.3",
@@ -1993,18 +1993,8 @@
           "review": ""
         }
       ],
-      "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
-      "findings": [
-        {
-          "name": "Puff form drops broken-deck bank shaping",
-          "repeat": false
-        },
-        {
-          "name": "Puff clusters exceed their cells\u2019 radius and depth",
-          "repeat": false
-        }
-      ]
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
     },
     {
       "id": "WP24",
