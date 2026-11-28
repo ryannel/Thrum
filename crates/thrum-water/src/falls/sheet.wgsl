@@ -181,7 +181,7 @@ fn splash_shade(input: SheetVertex) -> FallOutput {
     return FallOutput(vec4(colour, alpha), vec2(0.0), alpha);
 }
 
-fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
+fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let point = input.world_time.xyz;
     let look = normalize(view.camera_xyz_time.xyz - point);
     let lip = input.velocity_along.w;
@@ -197,6 +197,7 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let rank = 0.28 * coarse + 0.10 * fine + 0.62 * grouped;
     let pixel = max(length(dpdx(xy)), length(dpdy(xy)));
     let geometry_normal = normalize(cross(dpdx(point), dpdy(point)));
+    if input.closed_strand != 0u && !front { discard; }
     if input.across_fraction.y < 0.0 && input.across_fraction.y > -1.5 {
         if solid { discard; }
         return splash_shade(input);
@@ -322,9 +323,9 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
         white * presence * contact_cover * streak_cover);
 }
 
-@fragment fn sheet_thin(input: SheetVertex) -> FallOutput {
-    return sheet_shade(input, false);
+@fragment fn sheet_thin(input: SheetVertex, @builtin(front_facing) front: bool) -> FallOutput {
+    return sheet_shade(input, false, front);
 }
-@fragment fn sheet_solid(input: SheetVertex) -> FallOutput {
-    return sheet_shade(input, true);
+@fragment fn sheet_solid(input: SheetVertex, @builtin(front_facing) front: bool) -> FallOutput {
+    return sheet_shade(input, true, front);
 }
