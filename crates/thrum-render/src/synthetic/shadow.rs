@@ -411,6 +411,16 @@ impl ShadowPrepared {
             .collect()
     }
 
+    #[cfg(feature = "creation-counters")]
+    pub(super) fn drawing_views(&self, count: u32, outlines: u32) -> Vec<&wgpu::Buffer> {
+        let end = MAPS + outlines as usize * OUTLINE_EXTRA;
+        (0..count as usize)
+            .chain(MAPS..end)
+            .chain(std::iter::once(HEIGHT_LAYER))
+            .map(|index| &self.cascades[index].buffer)
+            .collect()
+    }
+
     pub(super) fn update(
         &mut self,
         view: &SyntheticView,

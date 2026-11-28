@@ -1990,7 +1990,11 @@ const fn draw_witness_usage() -> wgpu::BufferUsages {
 #[cfg(feature = "creation-counters")]
 impl PreparedSynthetic {
     pub(crate) fn shadow_view_witness(&self) -> Option<Vec<&wgpu::Buffer>> {
-        Some(self.shadow.as_ref()?.caster_views())
+        Some(
+            self.shadow
+                .as_ref()?
+                .drawing_views(self.shadow_cascade_count(), self.shadow_outline_count()),
+        )
     }
 
     pub(crate) fn main_draw_witness<'a>(
@@ -2007,7 +2011,9 @@ impl PreparedSynthetic {
         }
         if let Some(shadow) = &self.shadow {
             add(&shadow.sample_buffer);
-            for view in shadow.caster_views() {
+            for view in
+                shadow.drawing_views(self.shadow_cascade_count(), self.shadow_outline_count())
+            {
                 add(view);
             }
         }

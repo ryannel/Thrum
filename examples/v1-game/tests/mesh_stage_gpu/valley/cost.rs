@@ -11,7 +11,7 @@ use v1_game::GameHost as _;
 
 use super::{Gpu, SunProbe, Valley, Witness, output, read_buffer, store};
 
-const PASSES: [&str; 12] = [
+const PASSES: [&str; 22] = [
     "contribution compute",
     "synthetic forward opaque",
     "synthetic Sun shadow near",
@@ -23,6 +23,16 @@ const PASSES: [&str; 12] = [
     "synthetic Sun cascade 6",
     "synthetic Sun cascade 7",
     "synthetic Sun cascade 8",
+    "synthetic Sun cascade 9",
+    "synthetic Sun cascade 0 outline 1",
+    "synthetic Sun cascade 0 outline 2",
+    "synthetic Sun cascade 0 outline 3",
+    "synthetic Sun cascade 1 outline 1",
+    "synthetic Sun cascade 1 outline 2",
+    "synthetic Sun cascade 1 outline 3",
+    "synthetic Sun cascade 2 outline 1",
+    "synthetic Sun cascade 2 outline 2",
+    "synthetic Sun cascade 2 outline 3",
     "synthetic Sun horizon heights",
 ];
 

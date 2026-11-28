@@ -91,7 +91,7 @@ fn view_sun_profiles_match_ordinary_main_without_borrowing_its_cascades() {
             irradiance: [1.0; 3],
         };
         let mut profiles = Vec::new();
-        for count in 0..=2 {
+        for (count, reach) in [(0, 64.0), (1, 64.0), (2, 64.0), (2, 16.0)] {
             scene.view = camera(15.0);
             let mut prepared =
                 PreparedSynthetic::prepare_with_light(&device, &queue, 1, &scene, light)
@@ -115,13 +115,13 @@ fn view_sun_profiles_match_ordinary_main_without_borrowing_its_cascades() {
                 request: Some(
                     SecondaryViewRequest::new(&camera(-15.0), [64, 64], None, ViewAir::Camera)
                         .expect("request")
-                        .with_shadows(count, 64.0)
+                        .with_shadows(count, reach)
                         .expect("profile"),
                 ),
             };
             let (actual, _) = render(&device, &queue, &prepared, &target, &mut asker);
             scene.view = camera(-15.0)
-                .with_sun_shadow_profile(count, 64.0)
+                .with_sun_shadow_profile(count, reach)
                 .expect("reference profile");
             let reference = ordinary(&device, &queue, &scene, light).await;
             let mut covered = 0;
@@ -146,7 +146,7 @@ fn view_sun_profiles_match_ordinary_main_without_borrowing_its_cascades() {
                 }
             }
             eprintln!(
-                "Sun profile {count}: {covered} covered pixels, maximum {max_steps} stored steps"
+                "Sun profile {count} at {reach} m: {covered} covered pixels, maximum {max_steps} stored steps"
             );
             assert!(covered > 500);
             profiles.push(actual);
