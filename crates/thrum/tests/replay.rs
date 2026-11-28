@@ -273,16 +273,20 @@ fn function_pointer_rules_repeat_independently_after_rebuilding() -> Result {
 
 #[test]
 fn scheduled_and_manual_calls_share_their_function_pointer_identity() -> Result {
-    type Callback = fn(Random, ResMut<'_, Draws>);
-    fn loot(mut random: Random, mut draws: ResMut<'_, Draws>) {
+    #[derive(Resource)]
+    struct Range;
+
+    type Callback = fn(Random, ResMut<'_, Draws>, Res<'_, Range>);
+    fn loot(mut random: Random, mut draws: ResMut<'_, Draws>, _range: Res<'_, Range>) {
         draws.condition = random.below(u32::MAX);
     }
-    fn weather(mut random: Random, mut draws: ResMut<'_, Draws>) {
+    fn weather(mut random: Random, mut draws: ResMut<'_, Draws>, _range: Res<'_, Range>) {
         draws.rule = random.below(u32::MAX);
     }
     let rules: [Callback; 2] = [loot, weather];
     let mut game = Game::new("scheduled pointer streams")
         .resource(Draws::default())
+        .resource(Range)
         .scene(move |scene: &mut Scene| scene.rules((rules[0], rules[1])))
         .test()?;
     game.step()?;

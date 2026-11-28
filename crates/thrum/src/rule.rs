@@ -167,7 +167,7 @@ fn stream<F>() -> u64 {
 }
 
 macro_rules! functions {
-    ($(($($parameter:ident $value:ident $index:tt),*)),+ $(,)?) => {$(
+    ($(($($parameter:ident $value:ident $index:tt $borrow:lifetime),*)),+ $(,)?) => {$(
         impl<F, O: 'static, $($parameter,)*> RuleFunction<($($parameter,)*), O> for F
         where
             F: FnMut($($parameter),*) -> O + for<'t> FnMut($($parameter::Item<'t>),*) -> O + Send + 'static,
@@ -184,6 +184,13 @@ macro_rules! functions {
                 let pointer = function
                     .downcast_ref::<fn($($parameter),*) -> O>()
                     .map(|function| *function as usize)
+                    .or_else(|| {
+                        // A function type can quantify each parameter's loan
+                        // separately or use a single lifetime for the loans.
+                        function
+                            .downcast_ref::<for<$($borrow),*> fn($($parameter::Item<$borrow>),*) -> O>()
+                            .map(|function| *function as usize)
+                    })
                     .or_else(|| {
                         function
                             .downcast_ref::<for<'t> fn($($parameter::Item<'t>),*) -> O>()
@@ -246,7 +253,14 @@ macro_rules! functions {
     )+};
 }
 
-functions!( (A a 0), (A a 0, B b 1), (A a 0, B b 1, C c 2), (A a 0, B b 1, C c 2, D d 3), (A a 0, B b 1, C c 2, D d 3, E e 4), (A a 0, B b 1, C c 2, D d 3, E e 4, F0 f 5));
+functions!(
+    (A a 0 'a0),
+    (A a 0 'a0, B b 1 'a1),
+    (A a 0 'a0, B b 1 'a1, C c 2 'a2),
+    (A a 0 'a0, B b 1 'a1, C c 2 'a2, D d 3 'a3),
+    (A a 0 'a0, B b 1 'a1, C c 2 'a2, D d 3 'a3, E e 4 'a4),
+    (A a 0 'a0, B b 1 'a1, C c 2 'a2, D d 3 'a3, E e 4 'a4, F0 f 5 'a5),
+);
 
 /// An ordinary rule returns nothing or a Thrum result.
 /// ```
