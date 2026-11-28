@@ -10,14 +10,17 @@ fn running_lip_feeds_the_pool_and_the_dry_sample_feeds_nothing() {
 
     let Some(gpu) = thrum_test_support::gpu("plunge stocks and rings", Some(wgpu::Backend::Metal)) else { return; };
     let camera = Camera::look_at([0.0, 7.4, 4.0], [0.0, 0.0, 3.0], 55.0);
-    let trial = |gauge| {
-        let fall::Scene { game, report, map, foam, wake } = fall::scene(gauge, true, true, camera);
-        let step = std::time::Duration::from_millis(50);
-        let game = game.with_tick_duration(step).expect("compact transport clock");
-        let mut scene = support::Fixture::from_game(&gpu, [20, 12], game, report);
-        let foam = foam.expect("stocks");
-        let wake = wake.expect("endpoints");
-        for tick in (0..=24).step_by(8) {
+    let fall::Scene { game, report, map, foam, wake } = fall::scene(0.0, true, true, camera);
+    let step = std::time::Duration::from_millis(50);
+    let game = game.with_tick_duration(step).expect("compact transport clock");
+    let mut scene = support::Fixture::from_game(&gpu, [20, 12], game, report);
+    let foam = foam.expect("stocks");
+    let wake = wake.expect("endpoints");
+    // Start with the dry lip so its empty stocks and wake cannot contain water
+    // from the running sample. Then open the gauge in the same prepared scene.
+    let mut trial = |gauge, first_tick| {
+        map.lock().expect("map").set_gauge(0, gauge).expect("fall gauge");
+        for tick in (first_tick..=first_tick + 24).step_by(8) {
             scene.frame_without_timings((step * tick).as_secs_f64());
         }
         let sample = foam.latest().expect("foam submitted");
@@ -50,8 +53,8 @@ fn running_lip_feeds_the_pool_and_the_dry_sample_feeds_nothing() {
         assert_eq!(map.lock().expect("map").gauge(0).to_bits(), f64::to_bits(gauge));
         (strongest, live)
     };
-    let (running, rings) = trial(1.0);
-    let (dry, dry_rings) = trial(0.0);
+    let (dry, dry_rings) = trial(0.0, 0);
+    let (running, rings) = trial(1.0, 25);
     eprintln!("Metal plunge air, fresh film, carried film={running:?}; ring cells={rings}; dry={dry:?}/{dry_rings}");
     assert!(running[0] > 0.02 && running[1] > 0.02 && running[2] > 0.01 && rings > 20);
     assert_eq!(dry.map(f32::to_bits), [0; 3]);
