@@ -379,6 +379,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A name in the glossary waits for your agreement: Sound output (the planner chose the name)
 - A name in the glossary waits for your agreement: Output epoch (the planner chose it for AUDIO)
 - A name in the glossary waits for your agreement: Outcome (the planner chose the name)
+- A name in the glossary waits for your agreement: Play number (the planner chose the name)
 - A name in the glossary waits for your agreement: Output tap (the planner chose it for AUDIO)
 - A name in the glossary waits for your agreement: Placement (the planner chose the name, in place of "scenery")
 - A name in the glossary waits for your agreement: Fixed collision (the planner chose "fixed" over "static", which in Rust means something else)
@@ -412,7 +413,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - GATE-TIME's design: Design Ready for Review · [design](GATE-TIME/DESIGN.md) · [plan](GATE-TIME/PLAN.md)
 - An agent writes a game's scenes, phases and rules in plain Rust against one crate, in the order they run, and proves them in an ordinary test with no window (GAME-SDK WP1): Ready for Review · [plan](GAME-SDK/PLAN.md) · [latest review](../../.orchestrate/evidence/GAME-SDK/WP1-review.md)
 - SIM-3D's design: Design Changes Requested · [design](SIM-3D/DESIGN.md) · [plan](SIM-3D/PLAN.md)
-- AUDIO's design: Design Changes Requested · [design](AUDIO/DESIGN.md) · [plan](AUDIO/PLAN.md)
+- A program plays sounds into a buffer with no device, placed, pitched, looped and limited, and a test reads exactly what would be heard (AUDIO WP1): Not Started · [plan](AUDIO/PLAN.md)
 
 ### Recently done
 
@@ -576,4 +577,4 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 36 | DEAD-CODE | Engine code that nothing calls is gone, and a scene contribution no longer writes empty methods | GATE-TIME WP1 to start; GATE-TIME WP6 for the contribution's defaults; WATERS WP7 for the water scene's settings; HOST WP3 for the game's projection; REVIEW-RENDER WP3 and GATE-TIME WP6 for the two helpers | Done 22 Nov |
 | 37 | GAME-SDK | A developer or an agent builds a 2D, a 3D or an online game in plain Rust against one documented crate, and the showcase and the swarm game are written on it | Nothing to start: the owner approved its design on 27 November 2026. SESSION WP7 for a game played online; GAME-UI WP4 for menus and status displays and GAME-UI WP6 for the iPhone simulator; APPLE-PRESENTATION WP8 to WP12, RAY-TRACING WP6 and MESH-SHADING WP3 for 3D models that turn between ticks; SIM-3D for a 3D character that walks on the ground and is stopped by walls; AUDIO for sound; GAME-SPLIT WP4 for the showcase on the SDK | WP1 of 19 · Ready for Review |
 | 38 | SIM-3D | A 3D game's characters and shots find what is near them, what a ray meets and where they are stopped, the same on every device, and a character walks over hills, steps and solid models | SIM-2D WP3 | Design Changes Requested |
-| 39 | AUDIO | A game's sounds and music are heard on the Mac, in Chrome and on the iPhone simulator, mixed in one place and never stalling a frame |  | Design Changes Requested |
+| 39 | AUDIO | A game's sounds and music are heard on the Mac, in Chrome and on the iPhone simulator, mixed in one place and never stalling a frame |  | WP1 of 4 · Not Started |
