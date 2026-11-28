@@ -227,7 +227,9 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let streak_white = smoothstep(0.42, 0.89, input.across_fraction.w)
         * smoothstep(0.23, 0.78, 0.65 * coarse + 0.35 * fine);
     let parcel_foam = breakup * below_tongue * (0.12 + 0.53 * pulse);
-    let sheet_white = max(max(mix(pow(breakout, 1.18), broken, 0.74), 0.63 * streak_white), parcel_foam);
+    let base_white = max(mix(pow(breakout, 1.18), broken, 0.74), 0.63 * streak_white);
+    let rolled = select(0.0, breakup * smoothstep(0.20, 0.42, fraction), input.closed_strand != 0u);
+    let sheet_white = max(max(base_white, parcel_foam), rolled * mix(0.79, 0.99, pulse));
     let white = select(sheet_white * below_tongue, filament_white, is_filament);
     let clear = 1.0 - white;
     // Preserve the long strands of a small discharge when the trail widens
@@ -296,7 +298,7 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let aerated = (environment_diffuse(vec3(0.0, 1.0, 0.0)) + direct * max(0.0, light.y))
         * vec3(0.84, 0.90, 0.89) / 3.14159265;
     let parcel_light = mix(0.16, 1.38, pulse);
-    let broken_light = mix(churn, aerated * parcel_light, breakup * below_tongue);
+    let broken_light = mix(churn, aerated * parcel_light, max(rolled, breakup * below_tongue));
     let sheet_colour = mix(clear_light, broken_light, white);
     let spray_light = mix(sheet_colour, aerated,
         mixing * (1.0 - thinness) * mix(0.32 + 0.58 * contact_foam + 0.10 * fine, 0.93, breakup));
