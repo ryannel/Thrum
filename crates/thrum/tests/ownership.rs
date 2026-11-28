@@ -4,7 +4,7 @@ use crate::prefabs::rustc;
 
 #[test]
 fn choosing_children_and_querying_their_owner() {
-    let output = rustc(include_str!("fixtures/ownership_game.rs"), true);
+    let output = rustc(include_str!("fixtures/ownership_game.rs.in"), true);
     assert!(
         output.status.success(),
         "{}",

@@ -74,7 +74,7 @@ pub(super) fn rustc(source: &str, link: bool) -> Output {
 
 #[test]
 fn defaults_variants_required_inputs_and_definition_children() {
-    let output = rustc(include_str!("fixtures/prefab_game.rs"), true);
+    let output = rustc(include_str!("fixtures/prefab_game.rs.in"), true);
     assert!(
         output.status.success(),
         "{}",
