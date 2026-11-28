@@ -3,8 +3,8 @@
   "design": {
     "verdict": "changes",
     "review": ".orchestrate/evidence/AUDIO/design-review.md",
-    "commit": "a35d8f28efe5242acce669bdbeaf59a6838e9f5c",
-    "hash": "62d7fd869a89b3d66c7bbada50dae0d3b63c7ed4e53f88086711b26e46df6f15",
+    "commit": "bc40fc1a61bf4e5051192bb1eb3561782cbe54d6",
+    "hash": "164d57c43448a1b3ab16380e6eb675da3c0b71804b20018809c4a88661f52196",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -16,12 +16,12 @@
     "cli": "codex-cli 0.171.0-alpha.13.2",
     "path": "headless",
     "usage": {
-      "input": 97760,
-      "cached": 2151808,
-      "output": 9584,
+      "input": 87824,
+      "cached": 1132928,
+      "output": 8349,
       "turns": 1
     },
-    "at": "2026-11-28T02:40:26Z"
+    "at": "2026-11-28T03:01:13Z"
   },
   "work_packages": {
     "WP1": {
@@ -57,5 +57,30 @@
   "planner": {
     "host": "claude",
     "at": "2026-11-28T02:56:09Z"
-  }
+  },
+  "design_history": [
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/AUDIO/design-review-1.md",
+      "commit": "a35d8f28efe5242acce669bdbeaf59a6838e9f5c",
+      "hash": "62d7fd869a89b3d66c7bbada50dae0d3b63c7ed4e53f88086711b26e46df6f15",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13.2",
+      "path": "headless",
+      "usage": {
+        "input": 97760,
+        "cached": 2151808,
+        "output": 9584,
+        "turns": 1
+      },
+      "at": "2026-11-28T02:40:26Z"
+    }
+  ]
 }
