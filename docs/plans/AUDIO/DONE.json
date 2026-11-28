@@ -47,8 +47,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/AUDIO/WP1/WP1.3.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
@@ -62,8 +62,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/AUDIO/WP1/WP1.4.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
@@ -77,8 +77,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/AUDIO/WP1/WP1.5.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
@@ -92,8 +92,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/AUDIO/WP1/WP1.6.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
@@ -107,8 +107,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/AUDIO/WP1/WP1.11.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
@@ -164,8 +164,8 @@
           "statement": "The mix is one piece of code that nothing can make wait, it gives the same bits on every target, and it holds nothing of a game's and makes no choice that is a game's.",
           "ask": "Read `thrum-audio` and its tests. 1. Is there one implementation of mixing: do the buffer, the mix module and whatever a sound output will pull all compile the same source for voices, gains, the pool and the clip, with no second path behind a `cfg`? 2. Follow a pull from its entry to its return. Does anything it executes take a lock, wait on anything, allocate or free, read a file or a clock, or call the operating system? Look at a replaced sound's data in particular: can its last holder be the mix, so that a pull would free it? 3. Does any call on the handle take a lock a pull could hold, or wait for a pull? 4. Does the mix path use only operations whose results are fixed on every target: is there a platform maths function, a fused multiply-add, or a table built with one? 5. Is every gain change a glide or a ramp counted in frames, with none worked out once a pull? 6. Does the crate hold any world state, name any game type, or depend on a renderer, a window or a shell? Does it ever choose between two plays, refuse one or order one by its event identity or its tick? 7. Are the crate and each outside dependency registered in `.config/architecture.toml` with an exact version, and is every licence permissive?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/AUDIO/WP1/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         }

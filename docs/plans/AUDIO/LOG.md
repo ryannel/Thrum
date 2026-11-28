@@ -33,3 +33,12 @@
 - 2026-11-28 WP1 established reference digest `cf7b0128f410d7db`. The
   [proof record](../../../.orchestrate/evidence/AUDIO/WP1/README.md) gives the Mac buffer, Node and source
   checks. The [module command](../../../crates/thrum-audio/README.md) builds the artifact for the web build step.
+- 2026-11-28 WP1 review repair. State retries leave room for emitter changes under continuous control
+  writes. Resume reconciles slots with the restored state, and dropping the mix closes its epoch. The mix
+  completes outgoing ramps after PCM exhaustion, glides stereo routing, and counts same-sound emitters and
+  audible releases. A radius exit can extend beyond the ordinary ramp to respect the glide step after pan.
+  Active slot indices preserve summation order without visiting vacant slots on each frame.
+- 2026-11-28 All ten automated WP1 item checks and the source audit passed on their specified targets.
+  The Mac release suite passed 44 tests, and Node matched the native reference digest at both required pull
+  sizes. The [proof record](../../../.orchestrate/evidence/AUDIO/WP1/README.md) includes the full-pool and sparse
+  timings. The later output work packages own the device routes.
