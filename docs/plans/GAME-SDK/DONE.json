@@ -4,7 +4,7 @@
     {
       "id": "WP1",
       "name": "An agent writes a game's scenes, phases and rules in plain Rust against one crate, in the order they run, and proves them in an ordinary test with no window",
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "Game code that reads as plainly as Bevy's `breakout` example with less ceremony: a scene function reads top to bottom as one tick, and no line names engine plumbing. Compiler and startup messages as useful as Rust's own, each naming the object, the cause and the next step. Correctness held as `SIM-2D` holds it: one trace, one digest. The reference for how game code reads is the design's worked examples, which the owner approves.",
       "items": [
         {
@@ -17,8 +17,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GAME-SDK/WP1/review2-WP1.1.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
@@ -32,8 +32,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GAME-SDK/WP1/review2-WP1.2.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
@@ -47,8 +47,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GAME-SDK/WP1/review2-WP1.3.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
@@ -64,7 +64,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GAME-SDK/WP1/review2-WP1.4.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
         {
@@ -81,7 +81,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GAME-SDK/WP1/review2-WP1.5.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
         {
@@ -89,8 +89,8 @@
           "statement": "The SDK is a layer over the engine's simulation and adds no second one.",
           "ask": "Read `thrum` and the tests' games. 1. Is world state held anywhere but `thrum-core`'s registered simulation: is there a second store, clock or undo? Which scene and phase run are world state there too? 2. Are a rule's structural edits applied when the rule ends inside the tick's one transaction, so that a refused tick undoes them with everything else, and does a rule that staged none pay nothing for the barrier? 3. Is the loop over entities inside a rule monomorphised for that rule's parameters, with no dynamic call and no allocation for each entity, and no allocation for each tick once warm? One call for each rule each tick through the engine's registered callback is as designed. 4. Does a component's schema identity come from its name and fields, and never from a Rust type ID? 5. Are the changes made in `thrum-core` additions only, with its existing tests unedited and passing? 6. Does any test's game name a crate other than `thrum`, or a schema number, permit, executor, page or device?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GAME-SDK/WP1/review2-WP1.6-engine-layer.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
@@ -105,25 +105,13 @@
           "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         }
       ],
-      "failed_reviews": 2,
-      "failed_reviews_with_repeat": 1,
+      "failed_reviews": 3,
+      "failed_reviews_with_repeat": 2,
       "findings": [
         {
-          "name": "Undo loses a component write that changes the sign of zero",
-          "item": "WP1.4",
-          "different": "The compiler diagnostic guard is fixed. A runtime refusal now demonstrably leaves different component bits in the committed world.",
-          "repeat": false
-        },
-        {
-          "name": "A successful manual rule discards a resource write that changes the sign of zero",
-          "item": "WP1.1",
-          "different": "The earlier manual error committed a refused write. This successful invocation discards a valid write in the authority equality check.",
-          "repeat": false
-        },
-        {
-          "name": "A held phase request changes a different scene after a harness transition",
-          "item": "WP1.2",
-          "different": "The old no-op manual call no longer consumes a request early. An explicit scene change now preserves a phase index beyond its originating scene.",
+          "name": "Rewound manual rule registrations change future random draws",
+          "item": "WP1.6",
+          "different": "Field schemas and warmed event collection are repaired. This failure is a mutable random-stream assignment outside the state restored by history.",
           "repeat": false
         },
         {
@@ -132,21 +120,22 @@
           "repeat": true
         },
         {
-          "name": "A component keeps its schema identity when an aliased field changes width",
-          "item": "WP1.6",
-          "different": "The schema hashes the field alias spelling across incompatible encodings. The previous findings concerned admission, allocation and component traversal.",
+          "name": "A scheduled closure changes random stream when called through the harness",
+          "item": "WP1.3",
+          "different": "One closure receives two streams depending on its invocation route. The earlier collision gives two functions one stream.",
           "repeat": false
         },
         {
-          "name": "Reading events after each tick makes the next warm tick allocate",
-          "item": "WP1.6",
-          "different": "The old scene-transition fixture reuses its payloads. The allocation here is in event collection after a harness read, with no scene transition.",
+          "name": "Resuming a phase restarts its rule cadence",
+          "item": "WP1.1",
+          "different": "The successful signed-zero resource write now lands. The failure here is a phase rule missing its due interval after resume.",
           "repeat": false
         },
         {
-          "name": "Public method examples do not demonstrate the method they document",
-          "item": "WP1.5",
-          "repeat": true
+          "name": "Resuming a phase delays an elapsed-time threshold at 60 Hz",
+          "item": "WP1.2",
+          "different": "The held request is retired on scene exit. The new failure comes from rounding elapsed ticks on each side of a clock restore.",
+          "repeat": false
         }
       ]
     },

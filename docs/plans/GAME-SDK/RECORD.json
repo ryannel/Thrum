@@ -133,7 +133,7 @@
         {
           "verdict": "fail",
           "commit": "9ac273d40ca6a2e4a85fc26e06c03fd7aa101da1",
-          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review-2.md",
           "items": {
             "WP1.1": "fail",
             "WP1.2": "fail",
@@ -202,6 +202,68 @@
             "turns": 1
           },
           "at": "2026-11-28T01:45:31Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "66edf302b2acb3a51721071c50090cc03c6cc02f",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md",
+          "items": {
+            "WP1.1": "fail",
+            "WP1.2": "fail",
+            "WP1.3": "fail",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "fail",
+            "WP1.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "Rewound manual rule registrations change future random draws",
+              "item": "WP1.6",
+              "different": "Field schemas and warmed event collection are repaired. This failure is a mutable random-stream assignment outside the state restored by history.",
+              "repeat": false
+            },
+            {
+              "name": "Different rule functions share a random stream",
+              "item": "WP1.3",
+              "repeat": true
+            },
+            {
+              "name": "A scheduled closure changes random stream when called through the harness",
+              "item": "WP1.3",
+              "different": "One closure receives two streams depending on its invocation route. The earlier collision gives two functions one stream.",
+              "repeat": false
+            },
+            {
+              "name": "Resuming a phase restarts its rule cadence",
+              "item": "WP1.1",
+              "different": "The successful signed-zero resource write now lands. The failure here is a phase rule missing its due interval after resume.",
+              "repeat": false
+            },
+            {
+              "name": "Resuming a phase delays an elapsed-time threshold at 60 Hz",
+              "item": "WP1.2",
+              "different": "The held request is retired on scene exit. The new failure comes from rounding elapsed ticks on each side of a clock restore.",
+              "repeat": false
+            }
+          ],
+          "summary": "WP1 fails because two games at the same tick, seed and world digest can give the same rule different random draws after one game rewinds. The previous finding that two different rules share a stream also reproduces in a release build. Resuming a phase can skip a scheduled rule and delay a one-second time check by a tick, although both headless worked examples pass.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 172550,
+            "cached": 5027712,
+            "output": 13406,
+            "turns": 1
+          },
+          "at": "2026-11-28T03:17:35Z"
         }
       ],
       "authorised": {
