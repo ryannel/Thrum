@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-23 of 39 modules done · 15 in progress · 1 to come
+23 of 39 modules done · 14 in progress · 2 to come
 
 ### Needs you now
 
@@ -366,6 +366,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - SIM-3D assumes: a model's triangles and a terrain stop a shape from both sides and have no inside. A box is solid through. ([plan](SIM-3D/PLAN.md))
 - SIM-3D assumes: the sizes proved are 10,000 colliders with up to 2,000 of them asking each tick, V1's representative scene, and worlds within 32,768 units of the origin, which holds the showcase's 36 km terrain. A question asked farther out is refused, because a contact there would be coarser than the game is told it is. ([plan](SIM-3D/PLAN.md))
 - SIM-3D assumes: a shape stops within about 1.5 cm of what it meets (1/64 of a unit at most), and a walking character rests that near the ground. The exact figure is measured and set by the first work package. ([plan](SIM-3D/PLAN.md))
+- SIM-3D assumes: the first release leaves exact real-number classification of arbitrary tangencies outside scope. WP1 judges boundary accuracy on its [named cases](SIM-3D/DESIGN.md#wp1-boundary-cases). The same inputs still give identical answer bits on every target. ([plan](SIM-3D/PLAN.md))
 - SIM-3D assumes: a character's move covers at most 4,096 units in one tick. Farther than that is a teleport, which the game writes. ([plan](SIM-3D/PLAN.md))
 - SIM-3D assumes: a character that climbs a step, or is set back down on the ground, covers the climb at one even speed, within the time its travel over the step took. So a trigger on the way up or down is met at a moment and at a speed, and a plain slide or stop keeps the times the game SDK's design gives. ([plan](SIM-3D/PLAN.md))
 - SIM-3D assumes: a character rides about 1 cm (three quarters of the stopping distance above) off the ground and walls it moves along, so the joins between floor pieces never stop it. In a gap less than about 2 cm wider than the character it may stop at a join. ([plan](SIM-3D/PLAN.md))
@@ -425,7 +426,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A waterfall pours over its lip in a smooth tongue, breaks into white strands as it gathers speed and plunges into its pool, which boils, foams and sends out rings (RIVERS WP6): In Progress · [plan](RIVERS/PLAN.md) · [latest review](../../.orchestrate/evidence/RIVERS/WP6-review.md)
 - GATE-TIME WP16 The long tests on main pass every run: each test behind a Cargo feature runs in a process of its own, as tests do before a merge: Blocked: Needs Dependency: The ATMOSPHERE caster repair must land on `main` before WP16 can verify the published candidate and merge. A planner adds it to the module that owns it
 - A game names a reusable thing, spawns it and variants of it, attaches one thing to another and takes a thing out of play (GAME-SDK WP11): Not Started · [plan](GAME-SDK/PLAN.md)
-- A rule asks whether two 3D shapes touch, where a ray meets one and where a moving one is stopped, and gets the same answer on the Mac, in Chrome and on the iPhone simulator (SIM-3D WP1): In Progress · [plan](SIM-3D/PLAN.md) · [latest review](../../.orchestrate/evidence/SIM-3D/WP1-review.md)
+- SIM-3D's design: Design Ready for Review · [design](SIM-3D/DESIGN.md) · [plan](SIM-3D/PLAN.md)
 - A program plays sounds into a buffer with no device, placed, pitched, looped and limited, and a test reads exactly what would be heard (AUDIO WP1): In Progress · [plan](AUDIO/PLAN.md) · [latest review](../../.orchestrate/evidence/AUDIO/WP1-review.md)
 
 ### Recently done
@@ -585,5 +586,5 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 35 | DEAD-TOOLS | Scripts, benches and records that nothing runs or reads are gone and the check refuses new ones, no tool writes into `docs/evidence`, and each module's record of what it copied is tracked in Git | Nothing to start; TEST-SUPPORT WP2 for its last work package | Done 21 Nov |
 | 36 | DEAD-CODE | Engine code that nothing calls is gone, and a scene contribution no longer writes empty methods | GATE-TIME WP1 to start; GATE-TIME WP6 for the contribution's defaults; WATERS WP7 for the water scene's settings; HOST WP3 for the game's projection; REVIEW-RENDER WP3 and GATE-TIME WP6 for the two helpers | Done 22 Nov |
 | 37 | GAME-SDK | A developer or an agent builds a 2D, a 3D or an online game in plain Rust against one documented crate, and the showcase and the swarm game are written on it | Nothing to start: the owner approved its design on 27 November 2026. SESSION WP7 for a game played online; GAME-UI WP4 for menus and status displays and GAME-UI WP6 for the iPhone simulator; APPLE-PRESENTATION WP8 to WP12, RAY-TRACING WP6 and MESH-SHADING WP3 for 3D models that turn between ticks; SIM-3D for a 3D character that walks on the ground and is stopped by walls; AUDIO for sound; GAME-SPLIT WP4 for the showcase on the SDK | WP11 of 19 · Not Started |
-| 38 | SIM-3D | A 3D game's characters and shots find what is near them, what a ray meets and where they are stopped, the same on every device, and a character walks over hills, steps and solid models | SIM-2D WP3 | WP1 of 5 · In Progress |
+| 38 | SIM-3D | A 3D game's characters and shots find what is near them, what a ray meets and where they are stopped, the same on every device, and a character walks over hills, steps and solid models | SIM-2D WP3 | Design Ready for Review |
 | 39 | AUDIO | A game's sounds and music are heard on the Mac, in Chrome and on the iPhone simulator, mixed in one place and never stalling a frame |  | WP1 of 4 · In Progress |
