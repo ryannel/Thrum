@@ -1,4 +1,9 @@
-use std::{fs, io::Write as _, process::Command};
+use std::{
+    fs,
+    io::Write as _,
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 use thrum::prelude::*;
 
@@ -396,31 +401,58 @@ fn runtime_reports_unknown_component_capacity_single_scene_and_rule_failure() ->
     Ok(())
 }
 
-#[test]
-fn compiler_names_forbidden_world_fields_and_missing_first_default() {
-    let dir = std::env::current_exe()
-        .expect("test fixture provides this value")
+fn compiler_dependencies() -> (PathBuf, Vec<PathBuf>) {
+    let binary = std::env::current_exe().expect("locate the integration test");
+    let directory = binary
         .parent()
-        .expect("test fixture provides this value")
-        .to_owned();
-    let mut libraries: Vec<_> = fs::read_dir(&dir)
-        .expect("test fixture provides this value")
-        .map(|item| item.expect("test fixture provides this value").path())
+        .expect("the integration test is in a build directory");
+    if directory.file_name().is_some_and(|name| name == "out") {
+        // The merge runner's Cargo puts each unit in build/<package>/<unit>/out.
+        let build = directory
+            .ancestors()
+            .nth(3)
+            .expect("Cargo's build directory");
+        let dependencies = children(build)
+            .flat_map(|package| children(&package))
+            .map(|unit| unit.join("out"))
+            .filter(|out| out.is_dir())
+            .collect();
+        (build.join("thrum"), dependencies)
+    } else {
+        // A package-only Cargo test may keep every linked unit in deps/.
+        (directory.to_path_buf(), vec![directory.to_path_buf()])
+    }
+}
+
+fn children(directory: &Path) -> impl Iterator<Item = PathBuf> + use<> {
+    fs::read_dir(directory)
+        .into_iter()
+        .flatten()
+        .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+}
+
+fn sdk_library(directory: &Path, dependencies: &[PathBuf]) -> PathBuf {
+    dependencies
+        .iter()
+        .filter(|path| path.starts_with(directory))
+        .flat_map(|path| children(path))
         .filter(|path| {
             path.file_name()
-                .expect("test fixture provides this value")
-                .to_string_lossy()
-                .starts_with("libthrum-")
+                .is_some_and(|name| name.to_string_lossy().starts_with("libthrum-"))
                 && path.extension().is_some_and(|ext| ext == "rlib")
         })
-        .collect();
-    libraries.sort_unstable_by_key(|path| {
-        fs::metadata(path)
-            .expect("test fixture provides this value")
-            .modified()
-            .expect("test fixture provides this value")
-    });
-    let sdk = libraries.last().expect("test fixture provides this value");
+        .max_by_key(|path| {
+            path.metadata()
+                .and_then(|metadata| metadata.modified())
+                .ok()
+        })
+        .expect("Cargo linked the SDK library into this test")
+}
+
+#[test]
+fn compiler_names_forbidden_world_fields_and_missing_first_default() {
+    let (sdk_directory, dependencies) = compiler_dependencies();
+    let sdk = sdk_library(&sdk_directory, &dependencies);
     let source = String::from("use thrum::prelude::*;\n")
         + &["Component", "Resource", "Event", "Scene"]
             .into_iter()
@@ -436,14 +468,14 @@ fn compiler_names_forbidden_world_fields_and_missing_first_default() {
             })
             .collect::<String>()
         + "#[derive(Scene)] struct NoDefault;\nfn main() { let _ = Game::new(\"bad\").scene(|_: &mut Scene<NoDefault>| {}); }\n";
-    let mut child = Command::new("rustc")
-        .args([
-            "--edition=2024",
-            "--emit=metadata",
-            "--error-format=json",
-            "-L",
-        ])
-        .arg(format!("dependency={}", dir.display()))
+    let mut rustc = Command::new(std::env::var_os("RUSTC").unwrap_or_else(|| "rustc".into()));
+    rustc.args(["--edition=2024", "--emit=metadata", "--error-format=json"]);
+    for directory in dependencies {
+        rustc
+            .arg("-L")
+            .arg(format!("dependency={}", directory.display()));
+    }
+    let mut child = rustc
         .arg("--extern")
         .arg(format!("thrum={}", sdk.display()))
         .arg("-")
