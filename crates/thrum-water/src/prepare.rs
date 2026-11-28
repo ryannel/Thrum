@@ -216,9 +216,12 @@ impl Prepared {
     }
 
     pub(super) fn shaft_index(&self) -> Option<usize> {
-        self.shafts
-            .as_ref()
-            .map(|_| 1 + usize::from(self.lens_cut.is_some()) + usize::from(self.film.is_some()))
+        self.shafts.as_ref().map(|_| {
+            usize::from(self.sheet.is_some())
+                + usize::from(self.gather.is_some())
+                + usize::from(self.lens_cut.is_some())
+                + usize::from(self.film.is_some())
+        })
     }
 
     pub(super) fn graph(&self) -> EffectGraph {
