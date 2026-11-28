@@ -6,7 +6,9 @@ invariants, [the reference](#the-reference) gives every public type its methods 
 design of 26 November, and was revised again that day from [a third round of games](#what-round-3-found).
 **The owner approved it that day** ([O7](#decisions)) and answered
 [the scope questions](#scope-questions-for-the-owner) (O8), and [a fourth round of games](#what-round-4-found)
-added to the core without reshaping it. [Plan](PLAN.md) · [done-when file](DONE.json) ·
+added to the core without reshaping it. On 28 November, after three failed reviews of WP1,
+[a rule's identity](#3-rules-and-the-tick) and [what a resumed phase restores](#4-scenes-phases-time-and-pause)
+were settled, as the [log](LOG.md#wp1-diagnosis) records. [Plan](PLAN.md) · [done-when file](DONE.json) ·
 [log](LOG.md) · [module list](../ARCHITECTURE.md#track-7-the-game-sdk) · [glossary](../GLOSSARY.md) ·
 [the creator guide](../../design/ENGINE-EXPERIENCE.md), whose ambition this module builds ·
 [the performance policy](../../design/AI-PERFORMANCE.md#performance-investment-from-the-first-design) ·
@@ -615,16 +617,40 @@ and `PerPlayer` in [R2](#r2-what-world-state-holds); `Query` with `under` and it
 - **Parallel work is inside a rule.** `query.par_each(..)` runs the closure over the engine's chunks. It
   writes only the entity it is given, and the result is the serial loop's by construction. What a rule looks
   things up through, such as `Space2d` and `Level2d`, may be asked inside it.
-- **Cadence and conditions.** `rule.every(seconds(1))` runs a rule once each interval, counted from when its
-  phase or scene was entered, first at the end of the first interval. `rules.when(condition)` runs a rule or a
+- **Cadence and conditions.** `rule.every(seconds(1))` runs a rule once each interval, first at the end of the
+  first interval. A rule written in a phase's block counts its interval on
+  [that phase's clock](#4-scenes-phases-time-and-pause): from when the phase was entered, and in a resumed
+  phase from where the clock had got to. Every other rule, one under `during` included, counts from when
+  the scene was entered. `rules.when(condition)` runs a rule or a
   group only in ticks where a read-only function returns true. `rules.during(phase)`, with one phase or a
   tuple of them, runs a rule or a group only while the scene is in one of those phases, where it is written:
   it is for rules that two phases share. A phase block is still where a phase's enter and exit functions and
   its length are said. A cadence that belongs to one thing is a `Cooldown` on that thing.
-- **A draw from `Random` is keyed by the game's seed, the game's tick, the rule that asks and how many times
-  that rule has run at that game's tick**, which is more than once only for
+- **A rule's identity is its function's name**: the path Rust gives a named function, as
+  `swarm::rules::spawn_enemies`, which is the path [section 1's check](#1-a-game-one-crate-one-package-one-value)
+  reads and the name an error gives the rule. It belongs to the function, not to where or how the function
+  is listed. So it is the same in a scene's `rules`, alone or inside a tuple, in a phase's block, under
+  `every`, `when` and `during`, as a condition, as an enter or an exit function, as the function a `lasts` is
+  given, as a `then_run` rule, and in a test's `game.run`; and it is the same in every build of the same
+  sources, on every target. **None of it is state.** The SDK keeps no table that fills as functions are
+  registered or called, and takes nothing from an address, a Rust type ID, the order of registration or a
+  hasher of Rust's library, because none of those is the same in every build. A rewind, a replay and a game
+  built again have nothing of it to restore.
+- **A draw from `Random` is keyed by the game's seed, the game's tick, the name of the function that asks
+  and how many times that function has already run at that game's tick**, and by nothing else. So a function
+  draws the same wherever it is listed, two functions draw apart, a function listed twice in a scene draws
+  apart in its two runs of a tick, and a rule added to a scene changes no other rule's draws. Across ticks
+  the count is more than nothing only for
   [a rule that runs through a pause](#4-scenes-phases-time-and-pause). So two hands dealt in two paused ticks
-  are two hands, and no draw depends on how many empty paused ticks a driver committed.
+  are two hands, and no draw depends on how many empty paused ticks a driver committed. What a test runs
+  between ticks draws as that function's first run at that tick and is not counted, so a test's calls,
+  rewound or not, leave every later draw as it was. A control function, which runs once for each player,
+  is keyed by its player in place of the count, so a match runs it ahead for one player alone.
+- **Only a named function may take `Random`.** A closure has the name of the function it is written in,
+  which every closure written there shares, and a function pointer has no name: two functions with one
+  body are one address in an optimised build. Either is a rule like any other until it asks for `Random`.
+  Then it is refused, at startup where a scene lists it and as the error `game.run` returns, with the
+  callable and the step: write a named function.
 - **The tick** is 60 Hz unless `Game::tick_rate` says otherwise. Speeds are written per second and multiplied
   by `tick.dt()`.
 
@@ -676,9 +702,11 @@ and `PerPlayer` in [R2](#r2-what-world-state-holds); `Query` with `under` and it
 - `lasts` takes a time, or a read-only function that returns one, asked once, when the phase is entered, so
   a night's length can come from its content file or the host's choice. Its answer is world state, so the
   function is one of [the checked routes](#1-a-game-one-crate-one-package-one-value).
-- **A phase's clock is world state, fixed on entry**: how long the phase has run and, where it has a length
-  still to run out, how long it has left. Nothing asks for the length again, so a setting that changes while
-  a phase runs changes the next phase entered and not this one.
+- **A phase's clock is world state, counted in whole ticks and fixed on entry**: how many ticks the phase has
+  run and, where it has a length still to run out, how many it has left. Everything that counts from the
+  phase's entry reads that one count: `phase.time()`, `Tick::in_phase()`, the phase's `lasts`, and the
+  interval of each `every` rule in the phase's block. Nothing asks for the length again, so a setting that
+  changes while a phase runs changes the next phase entered and not this one.
 - **When the time is up the phase goes on to `.then(phase)`, or runs `.then_run(rule)`**: an ordinary rule,
   run once in that tick after every other, which may ask for a scene made from the run, such as the next
   round or a result page. Its request is the `lasts` request, last in the tick's order. If it asks for
@@ -692,19 +720,37 @@ and `PerPlayer` in [R2](#r2-what-world-state-holds); `Query` with `under` and it
   [example D](#d-a-precision-platformer) keeps it. So a game written for one player gains a second with no
   rule changed (K3).
 - **A scene entered from a save resumes its phase with the clock it was saved with, and enters none.**
-  `Phase::clock()` gives the phase's clock as one value, a `PhaseClock`, which a save keeps beside the phase.
+  `Phase::clock()` gives the phase's clock as one value, a `PhaseClock`, which holds the clock's counts of
+  ticks and which a save keeps beside the phase.
   An `on_enter` function of the scene may call `PhaseMut::resume(phase, clock)`: the scene then starts in
-  that phase with that clock. `time()` reads what it read, and the phase's time is up when what the clock
-  had left runs out. No function is asked again: no phase's enter function, because nothing was entered; not
+  that phase with that clock, and **the phase carries on tick for tick as the phase the clock was taken from
+  would have**. The first tick after the scene is entered is the tick that would have come next where the
+  clock was taken: after the tick a rule took it in, or after the last tick committed where a test or a
+  save's capture took it between ticks. In that tick and in each one after, `phase.time()`,
+  `Tick::in_phase()` and the time left read what they would have read, an `every` rule of the phase's block
+  runs if it would have run, and the phase's time is up if it would have been. So a rule that runs every
+  five seconds, in a phase saved four seconds in, next runs one second after the restore, and no reading is
+  a tick late, because none is the sum of two rounded times.
+  No function is asked again: no phase's enter function, because nothing was entered; not
   the function `lasts` was given, because the length was fixed on entry; and not a `then_run` rule whose
   time was already up when the clock was taken. So a phase entered with ten seconds and saved four seconds
   in ends six seconds after the restore, though the setting its length came from says twenty by then.
+  **`resume` restores the phase's clock and nothing else.** What counts from the scene's entry, which is
+  `Tick::in_scene()` and the interval of an `every` rule outside the phase's block, counts from this
+  entry, and a `Timer` and a `Cooldown` are the game's own values, which its save brings back.
   Called anywhere else `resume` returns `false` and changes nothing.
 
 **Time belongs to the thing being timed** (R5). All of it is counted in ticks and is world state, so it
 rewinds, replays and saves. Coyote time, a jump buffer and a dash are `Timer` windows. A weapon's rate is a
 `Cooldown` on the hero that holds it. A phase with a length uses `lasts`. Each says how long it has left and
 how far along it is, to a rule and to [a frame function](#9-frame-functions-looks-and-the-interface) alike.
+**A time is a whole number of ticks wherever the SDK counts one, and there is one rule each way.** A count
+of ticks reads as the nearest time a `Seconds` holds. A length of time `d` (a `lasts`, an `every`, a
+`Timer`'s or a `Cooldown`'s wait, `tick.after(d)`, a time a `PhaseClock` is made from by hand) is the
+fewest ticks whose time reads at least `d`, and an `every` is never less than one tick. So a wait never
+ends early, a time read from a count gives that count back, and `phase.time() >= d` first holds in the
+tick a `lasts(d)` runs out, at 60 Hz as at any rate, whether the phase ran straight through or was resumed
+on the way.
 **A save keeps both.** A `Timer` or a `Cooldown` in a save is written as its whole wait and the time it has
 left, and comes back with both, so `left` and `fraction` read after a restore what they read at the capture.
 A wait of four seconds saved two seconds in comes back half done, and one of eight saved six seconds in
@@ -1631,6 +1677,7 @@ panel, the Chrome page and parameter files work as they do today, and the profil
 | Startup | Two accesses of one function reach one resource and one of them writes it, through a `Params` struct included; a writing parameter of the SDK's taken twice | The function, both parameters and the resource, and which to drop |
 | Startup | A scene calls `phases` twice, has two `players().spawn(..)` lines, or has two control lines that could run in one phase | The scene and the lines, and what to write instead |
 | Startup | A rule reads a resource nothing provides | The rule, the resource, and `scene.resource(..)` or `Game::resource(..)` |
+| Startup, and from `game.run` | A closure or a function pointer takes `Random` | The callable; that draws are keyed by a function's name, which a closure and a pointer do not have; and to write a named function |
 | Startup | A function that makes or changes the world is defined outside the `rules` module, in a game that has one | The function and the module |
 | Startup | The action maps do not fit an input frame; a command type is too large | The counts or the size, and the limit |
 | Startup | A declared prefab name has no definition; a definition names an asset that does not exist; an `ids!` block names a record that does not exist; a content file fails its type, names a record that does not exist or fails the game's validator | The prefab, the constant or the file, the field, and the nearest name |
@@ -1664,7 +1711,8 @@ panel, the Chrome page and parameter files work as they do today, and the profil
   join still waiting for its tick, a player with no character, an entity that is gone.
 - **What a test changes, it changes between ticks**, and it has landed when the call returns. `game.run(rule)`
   runs any rule function once the same way, so a game's own helpers that take `Entities` or a `Query` set a
-  test up.
+  test up. A named function run this way keeps [its name](#3-rules-and-the-tick), so it draws from `Random`
+  what a scene's first run of it draws at that tick, however often the test calls it.
 - **`TestScreen`** runs the scene's frame functions for one player against the world as it stands, with no
   renderer, so a test can open a pause menu, pick an upgrade card and see `offer.status()` change. Each call
   on it is one picture.
@@ -1897,10 +1945,12 @@ Cooldown:     something that may happen again after a wait.  Cooldown::READY,  C
               left(tick) -> Seconds;  fraction(tick) -> Num, 1 when it is ready
               In a save a Timer and a Cooldown keep the whole wait and the time left, so `left` and `fraction`
               read after a restore what they read at the capture
-PhaseClock:   a phase's whole clock, to keep in a save: what `phase.clock()` gives and `resume` takes.
+PhaseClock:   a phase's whole clock, in ticks, to keep in a save: what `phase.clock()` gives and `resume` takes.
               time() -> Seconds, how long the phase has run;  left() -> Option<Seconds>, None where it has no
               length or its time is up;  PhaseClock::at(time), with no length, and .ending_in(left): one made
-              by hand, for a test and for a save's conversion from a version that kept only the time
+              by hand, for a test and for a save's conversion from a version that kept only the time.
+              Each time becomes ticks as every length does (section 4), so a clock made from the `time()` and
+              `left()` another gave resumes as that one does
 
 // Names. Each is Copy and compared.
 Entity:       one life of a slot.  `spawn` returns it, a query names it, and a component may keep it
@@ -1994,15 +2044,16 @@ Emit<T>:      send(event)
 Tick:         number() -> TickNumber;  dt() -> Num, a tick's length in seconds, to multiply a speed by;
               seconds(),  in_scene(),  in_phase() -> Seconds;  every(d) -> bool,  after(d) -> TickNumber,
               reached(t) -> bool;  Tick::test(number), for a unit test of a pure function
-Random:       draws keyed by the game's seed, the game's tick, the rule that asks and how many times it has run
-              at that tick (section 3).  between(a, b),  below(n),  chance(p),
+Random:       draws keyed by the game's seed, the game's tick, the name of the function that asks and how many
+              times it has run at that tick (section 3).  A named function takes it, and a closure or a
+              function pointer that does is refused.  between(a, b),  below(n),  chance(p),
               angle(),  direction(),  pick(items) -> Option<&T>,  and for_entity(e) inside par_each
 Scenes:       go_to(scene) -> bool,  restart() -> bool: false when the tick's one transition is taken.
               `go_to` of the running scene's type leaves it and enters it with the new value
 Phase<P>:     get() -> P,  is(p) -> bool,  time() -> Seconds, how long it has run;  clock() -> PhaseClock
 PhaseMut<P>:  everything Phase<P> has, and go_to(p) -> bool;  resume(p, clock) -> bool, in a scene's enter
-              function: the phase carries on with that clock, and no enter function, `lasts` function or
-              `then_run` already run is asked again
+              function: the phase carries on with that clock tick for tick, its `every` rules with it, and
+              no enter function, `lasts` function or `then_run` already run is asked again
 
 Inputs<A>:    of(player) -> &A,  iter() -> (Player, &A),  any(|a| ..)
 BotInputs<A>: set(player, A),  is_bot(player) -> bool
@@ -4681,6 +4732,12 @@ in place of each prefab and a plain position in place of `Transform2d`.
     for it.** `follow` is a call on plain data, as `teleport` is. Early sign: WP12's followed-move proof,
     and the size of a transform before and after it, which WP12's builder records. If only a path kept in
     every transform can be built, the builder ends `BLOCKED`, because the crowd's cost is the owner's.
+20. **A function's name is the compiler's rendering of its path**, which two versions of the compiler may
+    spell differently. Two programs that do so are two builds, and the build is in
+    [the rule-set identity](#11-multiplayer-an-opt-in-over-input-only-networking), so they start no match
+    together; a recording replayed by a program built with another compiler may draw differently, as it
+    may after any change to the rules. Early sign: WP2's digests on the three targets, which one compiler
+    builds. If a target renders a path differently, the builder ends `BLOCKED`.
 
 ## Proof
 

@@ -652,6 +652,48 @@
   examples run from the SDK's re-exports, where game authors use the derives.
   [Mac proofs](../../../.orchestrate/evidence/GAME-SDK/WP1/)
 
+## WP1 diagnosis
+
+- 2026-11-28 WP1 diagnosed after three failed reviews
+  ([1](../../../.orchestrate/evidence/GAME-SDK/WP1-review-1.md),
+  [2](../../../.orchestrate/evidence/GAME-SDK/WP1-review-2.md),
+  [3](../../../.orchestrate/evidence/GAME-SDK/WP1-review.md)). The plan was at fault, in two places the
+  design left open. The builder fixed every case each review named, 14 then 7 then 5 findings, and WP1.4,
+  WP1.5 and WP1.7 pass. No finding went beyond its item, and the work package is not too big.
+- 2026-11-28 Fault 1: the design keyed a draw by "the rule that asks" and never said what a rule's identity
+  is. The builder gave it a new source each round: the schedule slot; then the Rust type name; then a
+  table filled in the order pointers and closures were first registered or run, keyed by address; and in
+  the uncommitted fourth attempt a `TypeId` table with a library hasher. Each fixed the case a review
+  named and left another route with a different stream, a shared one, or one that a rewind did not restore.
+- 2026-11-28 Decision: a rule's identity is its function's name, the path Rust gives a named function,
+  and none of it is state (section 3). A draw is keyed by seed, game's tick, that name and the count of
+  that function's runs at the tick. A test's `game.run` draws as the first run and is not counted. A
+  closure or a function pointer that takes `Random` is refused. Measured on this Mac with rustc 1.99.1:
+  two closures in one function share one type name, two pointers of one type share theirs, and an
+  optimised build gave two functions with one body one address.
+- 2026-11-28 Rejected: the place in the written order as the identity, because a rule added to a scene
+  would change every later rule's draws and a function `game.run` runs has no place; a count of manual
+  calls, because a read-only call would then change what later calls draw; a name given by the game,
+  because it adds a word to learn where a named function already has one.
+- 2026-11-28 Fault 2: the design said a phase's clock is how long the phase has run, and did not say that
+  a rule's interval counts on it or in what unit it is kept. So a resumed phase restarted its `every`
+  rules, and a clock kept as rounded times read a nanosecond short after a restore at 60 Hz.
+- 2026-11-28 Decision: a phase's clock counts whole ticks, and `phase.time()`, `Tick::in_phase()`, the
+  `lasts` and the interval of each `every` rule in the phase's block all read it. A resumed phase carries
+  on tick for tick, and `resume` restores nothing else. One rule each way between ticks and times: a
+  count reads as the nearest `Seconds`, and a length is the fewest ticks whose time reads at least it
+  (section 4).
+- 2026-11-28 Items changed, each by its statement or its question, with no check command changed. WP1.1:
+  clause 7 says what an interval counts on. WP1.2: clause 3 ties `phase.time()` to the tick a `lasts`
+  runs out, and clause 8 is written again whole around the tick-for-tick claim, with review 3's two cases
+  and a clock made by hand. WP1.3: clause 3 is written again whole as seven closed claims, among them the
+  routes that must give one function the same draws, review 3's rewind case and the refusal. WP1.6:
+  question 1 also asks whether a draw or a clock rests on anything a build or a call order could change.
+  WP1.4, WP1.5 and WP1.7 are unchanged.
+- 2026-11-28 Planner's choices in this revision, each for the owner to overturn: only a named function
+  draws from `Random`; two `game.run` calls of one function at one tick draw the same; a resumed scene's
+  own time starts again; a control function's draws are keyed by its player.
+
 ### WP1 phase-clock and rule-identity review fixes
 
 - Resuming a phase keeps the elapsed tick fraction and the exact deadline. Its cadence continues from

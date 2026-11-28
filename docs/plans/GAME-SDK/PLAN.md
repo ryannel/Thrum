@@ -23,6 +23,9 @@ and [the seam rulings](../ARCHITECTURE.md#seam-rulings-for-game-sdk) before any 
 - Assumption: one terrain is drawn and stood on from one source, and a level may place things that are drawn and not solid.
 - Assumption: in a 3D game, an edit that changes a mesh's or a terrain's shape waits for the game to be started again, and an edit to how it looks is redrawn at once.
 - Assumption: a host with no window continues a saved run only through the standard lobby, reads its save once as it starts, and takes no save or restore asked for by a player's screen.
+- Assumption: only a named function draws from `Random`. A closure or a function pointer that asks for it is refused with a message, because neither has a name that is the same in every build.
+- Assumption: a function a test runs with `game.run` draws what a scene's first run of it draws at that tick, so two calls at one tick draw the same.
+- Assumption: a scene resumed from a save carries on its phase's clock and nothing else. The scene's own time, `Tick::in_scene()`, starts again, and a game that wants it kept saves it.
 
 ## WP1 An agent writes a game's scenes, phases and rules in plain Rust against one crate, in the order they run, and proves them in an ordinary test with no window
 
@@ -38,6 +41,24 @@ and `GameRuntime`.
 The derive crate is a new package: register it and `thrum` in `.config/architecture.toml`. New tests go in
 `thrum`'s one test target, `it`. `scripts/sdk_surface.py` is yours to write, and it joins `./dev check` in this
 landing.
+
+The work on `build/game-sdk` stands, and three reviews found two things the design had left open, which
+[the diagnosis](LOG.md#wp1-diagnosis) settled. Build these two from the design, not from the findings one
+at a time:
+
+- **[A rule's identity is its function's name](DESIGN.md#3-rules-and-the-tick).** Take out every other
+  source of a random stream: the schedule slot, the table that fills as functions are registered or run,
+  the pointer's address, and the worktree's uncommitted `RuleStreams` keyed by `TypeId` with a
+  `DefaultHasher` for harness calls, which is the same kind of thing and differs between builds. A named
+  function's type has no size and its type name is its path; a function pointer's type always has a size,
+  in every build profile, which its address cannot tell you. The tests in `replay.rs` that draw inside a
+  closure or through a pointer table become named functions, and the table becomes WP1.3's refusal.
+- **[A phase's clock counts whole ticks](DESIGN.md#4-scenes-phases-time-and-pause)**, a `PhaseClock`
+  holds those counts, and each time is read from a count by the one rule that section gives. A rule
+  under `every` in a phase's block counts on the same clock.
+
+WP1.4, WP1.5 and WP1.7 are as they were, so keep what they rest on. The new refusal is proved under
+WP1.3, and its code is documented as every other message's is.
 
 ## WP11 A game names a reusable thing, spawns it and variants of it, attaches one thing to another and takes a thing out of play
 
