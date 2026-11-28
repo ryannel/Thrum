@@ -2086,3 +2086,23 @@
   phases. The eight configured target checks passed.
   [Chrome inspection](../../../.orchestrate/evidence/WATERS/WP16/revised/chrome.md)
   · [Target checks](../../../.orchestrate/evidence/WATERS/WP16/revised/target-checks.json).
+
+## WP16 review repair
+
+- 2026-11-28 The receiver and the signed march take water ownership from
+  the same world-space columns. The moving irradiance window fades the
+  caustic factor to unity while the Sun visibility tap stays at the
+  refracted exit. The floating mesh uses the same visibility tap. The
+  Metal and Chrome probes each check the centre, fade and exterior.
+- The pond's light ridges were barely visible with the original focus
+  filter. Increasing the pond wave gains did little. A silt floor made
+  the cells easier to see, and keeping finer grids and narrower blur
+  through the shallow rungs made their outlines legible. The deeper
+  filter still broadens the light. The independent readings differed on
+  two low-Sun pond stills. The second reader found the connecting arcs
+  and their movement in the 15° trade sequence.
+- The cost fixture now checks the beach camera's downward ray. The Metal
+  record compares repeated on/off batches to newly measured views from
+  the WP15 revision and keeps the named pass timings and investigations
+  beside their tripwires.
+  [Evidence and reproduction](../../../.orchestrate/evidence/WATERS/WP16/review-repair/index.md).

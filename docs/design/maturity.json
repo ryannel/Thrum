@@ -3460,10 +3460,10 @@
         "functional_validation": "passed",
         "experienced_quality": "builder_inspected_review_owed",
         "scope": "WATERS WP16 adds direct-Sun caustics at opaque receivers and signed underwater beam scattering.",
-        "correctness": "Metal checks the depth ladder, receiver application, common refracted exit, calm march and live quality controls. Hardware Chrome checks the portable ladder, receiver, signed shadow and incident meter without validation errors.",
-        "visuals": "The revised WP16 inspections pass on Metal and at noon on hardware Chrome. Fine shallow ridges move across the pond and beach. Softer light moves on the retained deeper beds, and moving highlights read on the lit hull and float. The retained shafts, 1 m glow, depth and lens crossings read on their specified targets. WP26 takes the four deferred underwater light cues.",
-        "device": "Apple M3 Max Metal and Chrome WebGPU. The paired 1440p Metal cost record measures the sea, lake and beach with both light profiles under shared load.",
-        "evidence": "../../.orchestrate/evidence/WATERS/WP16/revised/index.md"
+        "correctness": "Metal and hardware Chrome measure agreement between the bed shadow and the signed water shadow at the centre, fade and exterior of the moving irradiance window. Their common visibility tap follows the refracted exit. The ladder, receiver, calm march, exposure and live quality checks retain their separate proofs.",
+        "visuals": "Finer shallow rungs and the pond's silt floor reveal moving ridges around dark cells in the pond and beach shallows. The deeper beds retain softer patches. The existing shaft, depth, crossing and portable visual inspections have separate target records. Fresh readers differed on the two low-Sun pond stills. The submitted trade sequence shows connected arcs moving between frames.",
+        "device": "Apple M3 Max Metal and hardware Chrome WebGPU. The paired capture-off Metal cost record repeats both light profiles at 1440p with the same view as the historical WP15 runs at sea, lake and beach. It records pass timings and tripwire investigations under shared load.",
+        "evidence": "../../.orchestrate/evidence/WATERS/WP16/review-repair/index.md"
       },
       "waters_chart_optics": {
         "implementation": "partial",

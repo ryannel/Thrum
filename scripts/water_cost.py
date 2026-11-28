@@ -1124,8 +1124,9 @@ def under_light_summary(record, enabled):
         assert ('underwater Sun shafts' in passes) is enabled, (record['location'], enabled, passes.keys())
     if enabled:
         assert 'water caustic columns' in passes
-    sha = ('underwater Sun shafts' in passes)
-    shaft_pass = 'measured' if sha else ('dry lens above the beach' if enabled else 'capability disabled')
+    shaft_pass = 'capability disabled'
+    if enabled:
+        shaft_pass = 'measured' if 'underwater Sun shafts' in passes else 'dry lens above the beach'
     return dict(gpu_ms=statistics.median(frame['gpu_ms'] for frame in record['frames']),
                 passes_ms={name: statistics.median(samples) for name, samples in passes.items()},
                 samples_by_pass={name: len(samples) for name, samples in passes.items()},
@@ -1179,15 +1180,16 @@ def under_light_investigations(arms, historical):
             if not any(after['median_ms'] >= before['median_ms'] * 1.25 > 0
                        for after, before in zip(current, paired, strict=True)):
                 continue
-            after = [batch['median_ms'] for batch in current]
-            before = [batch['median_ms'] for batch in reference]
             overlap = any(a['range_ms'][0] <= b['range_ms'][1] and b['range_ms'][0] <= a['range_ms'][1]
                           for a in current for b in reference)
             disabled = under_light_samples(cohorts['disabled'], name)
-            if 'forward' in name and baseline == 'disabled':
-                disposition = 'The enabled forward shader additionally reads the Sun-path provider. Retain the enabled/disabled difference as the measured cost of that path.'
-            elif min(after) <= max(before) * 1.25 or overlap:
-                disposition = 'The timing intervals overlap or the repeated batches disagree at the trigger. Keep the observation under load for a repeat if this pass becomes limiting.'
+            repeatable = all(a['median_ms'] >= b['median_ms'] * 1.25 > 0
+                             for a, b in zip(current, paired, strict=True))
+            provider_read = name == 'synthetic forward opaque' and baseline == 'disabled'
+            if not repeatable or overlap:
+                disposition = 'The intervals overlap or the repeated comparisons disagree at the trigger. Keep the observation under load for a repeat if this pass becomes limiting.'
+            elif provider_read:
+                disposition = 'The enabled forward shader additionally reads the Sun-path provider. Retain the repeatable difference for follow-up on the cost of that path.'
             else:
                 disposition = 'The increase persisted across the measured batches. Keep this pass for follow-up. The scoped timestamps do not isolate the cause of the change.'
             rows.append(dict(wire='Matched pass costs at least 25% more', pass_name=name,
