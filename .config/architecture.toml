@@ -30,6 +30,15 @@ allowed_workspace_dependencies = []
 manifest = "crates/thrum-sim2d/Cargo.toml"
 allowed_workspace_dependencies = ["thrum-core", "thrum-test-support"]
 
+[packages.thrum-sim3d]
+manifest = "crates/thrum-sim3d/Cargo.toml"
+rule_package = true
+allowed_workspace_dependencies = ["thrum-core"]
+
+[packages.sim3d-run]
+manifest = "examples/sim3d-run/Cargo.toml"
+allowed_workspace_dependencies = ["thrum-core", "thrum-sim3d"]
+
 [packages.crowd-2d]
 manifest = "examples/crowd-2d/Cargo.toml"
 rule_package = true

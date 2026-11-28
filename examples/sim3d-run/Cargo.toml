@@ -1,0 +1,30 @@
+[package]
+name = "sim3d-run"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "Native, browser and simulator runner for 3D collision conformance"
+autotests = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[lints]
+workspace = true
+
+[dependencies]
+thrum-core = { path = "../../crates/thrum-core" }
+thrum-sim3d = { path = "../../crates/thrum-sim3d" }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "=0.2.129"
+
+[[test]]
+name = "it"
+path = "tests/it.rs"
+
+[[bin]]
+name = "sim3d-run"
+path = "src/main.rs"
+test = false
