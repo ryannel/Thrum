@@ -33,10 +33,10 @@ fn strand_breakup(thickness: f32) -> f32 {
 
 fn strand_offset(parcel: f32, fraction: f32, width_offset: f32,
     width_axis: vec3<f32>, outward: vec3<f32>) -> vec3<f32> {
-    let split = smoothstep(0.24 + 0.14 * parcel, 0.77, fraction);
-    let width = mix(0.42, 0.87, parcel);
-    let spread = mix(0.014, 0.21, parcel * parcel) * (1.0 - 0.5 * smoothstep(0.8, 1.0, fraction));
-    return split * (width_axis * (0.085 * (parcel - 0.5) - width * width_offset) + outward * spread);
+    let split = smoothstep(0.21 + 0.28 * parcel, 0.77, fraction);
+    let width = mix(0.37, 0.85, parcel);
+    let spread = mix(0.014, 0.32, parcel * parcel) * (1.0 - 0.5 * smoothstep(0.8, 1.0, fraction));
+    return split * (width_axis * (0.24 * (parcel - 0.5) - width * width_offset) + outward * spread);
 }
 
 fn splash_vertex(world_time: vec4<f32>, velocity_along: vec4<f32>, discharge: vec4<f32>,
@@ -63,7 +63,7 @@ fn splash_vertex(world_time: vec4<f32>, velocity_along: vec4<f32>, discharge: ve
         + across * (random - 0.5) * 0.54;
     let spray = smoothstep(0.009, 0.018, discharge.w) * strand_breakup(discharge.w);
     let loft = (select(mix(0.034, 0.39, kick * kick), mix(0.037, 0.13, kick), impact)
-        + select(0.0, spray * mix(0.03, 0.16, kick), impact))
+        + select(0.0, spray * mix(0.07, 0.24, kick), impact))
         * mix(0.30, 1.0, strength);
     let pool_height = clamp(wake_at(source.xz, 0.0).x, -0.42, 0.42);
     let centre = source + drift * phase + vec3(0.0, pool_height, 0.0)
@@ -75,7 +75,7 @@ fn splash_vertex(world_time: vec4<f32>, velocity_along: vec4<f32>, discharge: ve
     let index = u32(across_fraction.w);
     let corner = vec2(f32(index & 1u), f32(index >> 1u)) * 2.0 - 1.0;
     let radius = (select(mix(0.018, 0.089, random * random), mix(0.11, 0.23, random), impact)
-        + select(0.0, spray * mix(0.04, 0.14, kick), impact))
+        + select(0.0, spray * mix(0.08, 0.19, kick), impact))
         * mix(0.45, 1.0, strength);
     let point = centre + radius * (right * corner.x + up * corner.y * (1.0 + 1.3 * kick));
     let world = vec4(point, phase);
@@ -115,7 +115,7 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
     var strand_motion = vec3(0.0);
     if is_filament { position += strand_swelling(birth, velocity_along, across_fraction, edge_receiver.x); }
     let breakup = strand_breakup(discharge.w);
-    if !is_filament && breakup > 0.0 && across_fraction.w > 0.24 {
+    if !is_filament && breakup > 0.0 && across_fraction.w > 0.21 {
         let parcel = sheet_noise(vec2(edge_receiver.w, birth), FALL_LOOP, vec2(3.5, 3.6), vec2(9.0, 0.0));
         let axis = vec3(across_fraction.x, 0.0, across_fraction.z);
         let face = vec3(-across_fraction.z, 0.0, across_fraction.x);
@@ -237,7 +237,7 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
         rounding + select(0.17 + 0.21 * contact_foam, 0.06, is_filament),
         input.receiving.y);
     let breakup = select(strand_breakup(input.discharge.w), 0.0, is_filament);
-    let strand_foot = smoothstep(-0.04 + 0.07 * coarse, 0.25 + 0.15 * fine, input.receiving.y);
+    let strand_foot = smoothstep(0.03 + 0.16 * coarse, 0.36 + 0.19 * fine, input.receiving.y);
     let plunge_foot = mix(ribbon_foot, strand_foot, breakup);
     let meets_pool = input.receiving.z > 1.5;
     let foot = select(path_foot, plunge_foot, meets_pool);
@@ -272,14 +272,17 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
         1.0 - smoothstep(0.05, 0.58, input.receiving.y), meets_pool);
     let aerated = (environment_diffuse(vec3(0.0, 1.0, 0.0)) + direct * max(0.0, light.y))
         * vec3(0.84, 0.90, 0.89) / 3.14159265;
-    let parcel_light = mix(0.62, 1.16, smoothstep(0.22, 0.71, 0.70 * coarse + 0.30 * fine));
+    let pulse = smoothstep(0.19, 0.72, 0.72 * coarse + 0.28 * fine);
+    let parcel_light = mix(0.26, 1.19, pulse);
     let broken_light = mix(churn, aerated * parcel_light, 0.72 * breakup);
     let sheet_colour = mix(glass, broken_light, white);
     let spray_light = mix(sheet_colour, aerated,
         mixing * (1.0 - thinness) * mix(0.32 + 0.58 * contact_foam + 0.10 * fine, 0.93, breakup));
     let colour = (spray_light * aerial.transmission + aerial.scatter) * environment_storage_scale();
+    let streak_cover = mix(1.0, mix(0.48, 1.0, pulse),
+        breakup * smoothstep(0.20, 0.72, input.across_fraction.w));
     let opacity = (clear * min(0.88, fresnel + 0.07 + 1.7 * input.discharge.w + 0.35 * breakout) + white * (0.90 + 0.18 * grain))
-        * presence * mix(0.62, 1.0, seam) * contact_cover;
+        * presence * mix(0.62, 1.0, seam) * contact_cover * streak_cover;
     let path_distance = select(input.across_fraction.y, -input.across_fraction.y - 2.0, is_filament);
     let last_fraction = input.across_fraction.w - length(input.velocity_along.xyz) * sheet_clock.y
         / max(0.001, path_distance);

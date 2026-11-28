@@ -470,12 +470,15 @@ fn mesh(
                 .chain((1..=rows).map(|row| row as f64 / rows as f64))
         };
         let half = strip(0.5)[1];
+        let foot = strip(1.0);
         if half.discharge[2] < 0.53 {
             filament(vertices, |fraction| at(fraction, 1), stations());
         } else {
-            let mut top = ribbons(strip(-1.0));
+            let thickness = f64::from(foot[1].discharge[3]) / sheet.tear;
+            let spread = ((2.48 - thickness) / 0.73).clamp(0.0, 1.0) as f32;
+            let mut top = ribbons(strip(-1.0), spread);
             for fraction in stations() {
-                let bottom = ribbons(strip(fraction));
+                let bottom = ribbons(strip(fraction), spread);
                 for (a, b) in top.into_iter().zip(bottom) {
                     stitch(vertices, a, b);
                 }
@@ -483,13 +486,13 @@ fn mesh(
             }
         }
         if segment.plunge.is_some() {
-            splash(vertices, strip(1.0));
+            splash(vertices, foot);
         }
     }
 }
 
 #[expect(clippy::cast_precision_loss, reason = "ribbon indices are bounded")]
-fn ribbons(section: [Vertex; 3]) -> [[Vertex; 3]; RIBBONS_PER_SEGMENT] {
+fn ribbons(section: [Vertex; 3], spread: f32) -> [[Vertex; 3]; RIBBONS_PER_SEGMENT] {
     let at = |distance: f32| {
         let (a, b, t) = if distance <= 0.5 {
             (section[0], section[1], 2.0 * distance)
@@ -505,9 +508,23 @@ fn ribbons(section: [Vertex; 3]) -> [[Vertex; 3]; RIBBONS_PER_SEGMENT] {
             edge_receiver: [0.0, a.edge_receiver[1], a.edge_receiver[2], 0.0],
         }
     };
+    let step = 1.0 / RIBBONS_PER_SEGMENT as f32;
+    let division = |index: usize| {
+        let equal = index as f32 * step;
+        if index == 0 || index == RIBBONS_PER_SEGMENT {
+            return equal;
+        }
+        let lip = at(equal).velocity_along[3];
+        equal + spread * step * 0.39 * (lip * 43.7).sin()
+    };
     std::array::from_fn(|index| {
-        let half_width = 0.5 / RIBBONS_PER_SEGMENT as f32;
-        let middle = (2.0 * index as f32 + 1.0) * half_width;
+        let (middle, half_width) = if spread > 0.0 {
+            let (left, right) = (division(index), division(index + 1));
+            (f32::midpoint(left, right), 0.5 * (right - left))
+        } else {
+            let half_width = 0.5 / RIBBONS_PER_SEGMENT as f32;
+            ((2.0 * index as f32 + 1.0) * half_width, half_width)
+        };
         let centre = at(middle);
         let [ax, _, az, fraction] = centre.across_fraction;
         let along = centre.velocity_along[3];

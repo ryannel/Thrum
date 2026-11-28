@@ -888,15 +888,14 @@ impl SceneContribution for Water {
         }
         if !frame.time.capture
             && let (Some(config), Some(plunges)) = (&self.falls, &mut p.plunges)
-            && plunges.record(
+        {
+            plunges.record(
                 config,
                 &map,
                 frame.time.tick_duration,
                 p.interaction.is_some(),
-            )
-            && let Some(foam) = &p.foam
-        {
-            foam.write_plunges(&p.queue, &plunges.births);
+                p.foam.as_ref().map(|foam| (foam, &p.queue)),
+            );
         }
         if let Some(interaction) = &mut p.interaction {
             interaction.record(&p.queue, encoder, frame, &map, p.plunges.as_ref());
