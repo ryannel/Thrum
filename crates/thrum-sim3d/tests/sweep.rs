@@ -16,8 +16,11 @@ pub(crate) fn check_hit(frame: Frame, case: &SweepCase, gap: SweepGap, hit: Opti
     let second = frame
         .shape(case.struck)
         .translated(frame.vector(case.struck_motion) * hit.fraction);
-    let separation = distance(first, second).unwrap();
-    assert!(!overlap(first, second).unwrap(), "{label}: {hit:?}");
+    let separation = distance(first, second).expect("valid hand-worked pair");
+    assert!(
+        !overlap(first, second).expect("valid hand-worked pair"),
+        "{label}: {hit:?}"
+    );
     assert!(
         separation <= gap.units(),
         "{label}: gap {separation:?} in {hit:?}"
@@ -49,11 +52,11 @@ pub(crate) fn check_hit(frame: Frame, case: &SweepCase, gap: SweepGap, hit: Opti
     let tolerance = SweepGap::Tolerance.units();
     let point = sphere(hit.point, Number::ZERO);
     assert!(
-        distance(point, second).unwrap() <= tolerance,
+        distance(point, second).expect("valid hand-worked pair") <= tolerance,
         "{label}: {hit:?}"
     );
     assert!(
-        distance(point, first).unwrap() <= separation + tolerance,
+        distance(point, first).expect("valid hand-worked pair") <= separation + tolerance,
         "{label}: {hit:?}"
     );
     if let Some(point) = expected.point {

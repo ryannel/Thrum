@@ -29,7 +29,6 @@ impl Vector3 {
     }
 
     /// Scalar product.
-    #[must_use]
     pub fn dot(self, rhs: Self) -> Number {
         (self.x * rhs.x + self.y * rhs.y) + self.z * rhs.z
     }
@@ -45,7 +44,6 @@ impl Vector3 {
     }
 
     /// Euclidean length.
-    #[must_use]
     pub fn length(self) -> Number {
         let squared = self.dot(self);
         if squared > Number::ZERO || self == Self::ZERO {

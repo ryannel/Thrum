@@ -10,20 +10,28 @@ use crate::cases::{
 
 #[test]
 fn hand_worked_inputs() {
+    let mut rows = String::new();
     for frame in frames() {
         for case in overlap_cases() {
             let mover = frame.shape(case.mover);
             let struck = frame.shape(case.struck);
             for (order, first, second) in [("ab", mover, struck), ("ba", struck, mover)] {
                 for query in ["distance", "overlap"] {
-                    emit(frame, &case.id, &format!("{query}-{order}"), query, |row| {
-                        pair(row, first, second)
-                    });
+                    emit(
+                        &mut rows,
+                        frame,
+                        &case.id,
+                        &format!("{query}-{order}"),
+                        query,
+                        |row| {
+                            pair(row, first, second);
+                        },
+                    );
                 }
             }
         }
         for case in ray_cases() {
-            emit(frame, &case.id, "ray", "ray", |row| {
+            emit(&mut rows, frame, &case.id, "ray", "ray", |row| {
                 vector(row, frame.point(case.start));
                 vector(row, frame.vector(case.motion));
                 shape(row, frame.shape(case.struck));
@@ -31,14 +39,14 @@ fn hand_worked_inputs() {
         }
         for case in sweep_cases() {
             for gap in GAPS {
-                cast(frame, "sweep", &case, gap);
+                cast(&mut rows, frame, "sweep", &case, gap);
             }
         }
         for case in depth_cases() {
             let first = frame.shape(case.mover);
             let second = frame.shape(case.struck);
-            emit(frame, case.id, "depth", "depth", |row| {
-                pair(row, first, second)
+            emit(&mut rows, frame, case.id, "depth", "depth", |row| {
+                pair(row, first, second);
             });
             if case.depth == Number::ZERO {
                 continue;
@@ -50,20 +58,27 @@ fn hand_worked_inputs() {
                 ("against-tie", first.translated(hit.normal * ratio(-1, 2))),
             ] {
                 if operation == "parted" {
-                    emit(frame, case.id, "parted-distance", "distance", |row| {
-                        pair(row, moved, second)
-                    });
+                    emit(
+                        &mut rows,
+                        frame,
+                        case.id,
+                        "parted-distance",
+                        "distance",
+                        |row| {
+                            pair(row, moved, second);
+                        },
+                    );
                 }
                 if operation == "parted" || case.id == "coincident-spheres" {
-                    emit(frame, case.id, operation, "depth", |row| {
-                        pair(row, moved, second)
+                    emit(&mut rows, frame, case.id, operation, "depth", |row| {
+                        pair(row, moved, second);
                     });
                 }
             }
             for gap in GAPS {
                 for (index, motion) in depth_motions(hit.normal).into_iter().enumerate() {
                     let id = format!("{}-deep-{index}", case.id);
-                    emit(frame, &id, gap_name(gap), "sweep", |row| {
+                    emit(&mut rows, frame, &id, gap_name(gap), "sweep", |row| {
                         sweep_inputs(row, gap, first, motion, second, STOP);
                     });
                 }
@@ -72,11 +87,11 @@ fn hand_worked_inputs() {
 
         for gap in GAPS {
             for case in start_cases(gap) {
-                cast(frame, "initial", &case, gap);
+                cast(&mut rows, frame, "initial", &case, gap);
             }
         }
         for case in moving_cases() {
-            cast(frame, "moving", &case, SweepGap::Tolerance);
+            cast(&mut rows, frame, "moving", &case, SweepGap::Tolerance);
         }
     }
     let corner = thrum_sim3d::DOMAIN_BOUND;
@@ -90,13 +105,20 @@ fn hand_worked_inputs() {
         crate::cases::sphere(corner, Number::ZERO),
         STOP,
     );
-    println!("input {row}");
+    println!("{rows}input {row}");
 }
 
-fn emit(frame: Frame, id: &str, suffix: &str, query: &str, inputs: impl FnOnce(&mut String)) {
+fn emit(
+    rows: &mut String,
+    frame: Frame,
+    id: &str,
+    suffix: &str,
+    query: &str,
+    inputs: impl FnOnce(&mut String),
+) {
     let mut row = format!("{}/{id}/{suffix} {query}", frame.name);
     inputs(&mut row);
-    println!("input {row}");
+    writeln!(rows, "input {row}").expect("writing to a String");
 }
 
 fn gap_name(gap: SweepGap) -> &'static str {
@@ -106,9 +128,9 @@ fn gap_name(gap: SweepGap) -> &'static str {
     }
 }
 
-fn cast(frame: Frame, category: &str, case: &SweepCase, gap: SweepGap) {
+fn cast(rows: &mut String, frame: Frame, category: &str, case: &SweepCase, gap: SweepGap) {
     let id = format!("{category}-{}", case.id);
-    emit(frame, &id, gap_name(gap), "sweep", |row| {
+    emit(rows, frame, &id, gap_name(gap), "sweep", |row| {
         sweep_inputs(
             row,
             gap,
