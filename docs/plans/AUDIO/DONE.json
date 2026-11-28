@@ -4,7 +4,7 @@
     {
       "id": "WP1",
       "name": "A program plays sounds into a buffer with no device, placed, pitched, looped and limited, and a test reads exactly what would be heard",
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "A mixer as dependable as a shipped game's: a crowded moment degrades by dropping its quietest sounds, and never by crackling, clicking or stalling a frame. Correctness held as `SIM-2D` holds it: one script, one digest, the same on every target. No reference game is named, because no item here is judged by ear or by eye: how it sounds is the owner's to judge, in `GAME-SDK` WP19.",
       "items": [
         {
@@ -62,8 +62,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/AUDIO/WP1/hold-repair/WP1.4.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
@@ -79,7 +79,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/AUDIO/WP1/hold-repair/WP1.5.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
         {
@@ -92,9 +92,9 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/AUDIO/WP1/hold-repair/WP1.6.log",
-          "verdict": "pass",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
           "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
         {
@@ -107,8 +107,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/AUDIO/WP1/hold-repair/WP1.11.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
@@ -170,29 +170,24 @@
           "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         }
       ],
-      "failed_reviews": 2,
-      "failed_reviews_with_repeat": 1,
+      "failed_reviews": 3,
+      "failed_reviews_with_repeat": 2,
       "findings": [
         {
-          "name": "Repeated plays can keep a pending master mute from reaching the mix",
-          "item": "WP1.11",
-          "different": "The previous listener-write case now delivers its emitter. Play bypasses the retry priority and repeatedly takes the free slot ahead of an already pending volume change.",
-          "repeat": false
+          "name": "An emitter restored on resume can keep sounding after it ends",
+          "item": "WP1.6",
+          "repeat": true
         },
         {
-          "name": "Holding a fading-in emitter makes it grow louder",
+          "name": "Releasing a restored emitter can leave it held",
           "item": "WP1.4",
-          "different": "The earlier emitter findings concerned a radius exit, stereo routing and ending a restored emitter. This hold interrupts the entry glide of an unplaced mono loop.",
+          "different": "The prior hold during entry now fades correctly. Here the post-resume release command is discarded and the selected loop stays silent.",
           "repeat": false
         },
         {
-          "name": "Holding during a volume reduction exceeds the ramp step",
-          "item": "WP1.5",
-          "different": "The previous stop and displacement defect at PCM exhaustion is fixed. This is a continuing loop whose volume glide and hold envelope both fall during the same frames.",
-          "repeat": false
-        },
-        {
-          "name": "Fully held emitters still incur per-frame rendering work",
+          "name": "An emitter volume changed while the queue is full can be lost on resume",
+          "item": "WP1.11",
+          "different": "The earlier master mute now reaches the mix during continuous plays. This emitter change reaches the queue once, is rejected at the restored snapshot revision and is never retried.",
           "repeat": false
         }
       ]

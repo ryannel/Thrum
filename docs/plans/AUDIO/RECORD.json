@@ -107,7 +107,7 @@
         {
           "verdict": "fail",
           "commit": "12e5b571d593801d56a57ef3732ce10414f7a1fa",
-          "review": ".orchestrate/evidence/AUDIO/WP1-review.md",
+          "review": ".orchestrate/evidence/AUDIO/WP1-review-2.md",
           "items": {
             "WP1.1": "pass",
             "WP1.2": "pass",
@@ -162,6 +162,60 @@
             "turns": 1
           },
           "at": "2026-11-28T05:53:54Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "4a0e087adbc95cc156082565a9b8c8a3a188b538",
+          "review": ".orchestrate/evidence/AUDIO/WP1-review.md",
+          "items": {
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "fail",
+            "WP1.5": "pass",
+            "WP1.6": "fail",
+            "WP1.11": "fail",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "An emitter restored on resume can keep sounding after it ends",
+              "item": "WP1.6",
+              "repeat": true
+            },
+            {
+              "name": "Releasing a restored emitter can leave it held",
+              "item": "WP1.4",
+              "different": "The prior hold during entry now fades correctly. Here the post-resume release command is discarded and the selected loop stays silent.",
+              "repeat": false
+            },
+            {
+              "name": "An emitter volume changed while the queue is full can be lost on resume",
+              "item": "WP1.11",
+              "different": "The earlier master mute now reaches the mix during continuous plays. This emitter change reaches the queue once, is rejected at the restored snapshot revision and is never retried.",
+              "repeat": false
+            }
+          ],
+          "summary": "WP1 fails three of eleven items. After an interruption, one play can cause the mix to discard an emitter\u2019s latest change permanently. At the default queue capacity, an ended loop still rendered at 0.125 in both channels after 4,096 frames and eight further updates, while the handle reported zero emitters.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 116621,
+            "cached": 2505472,
+            "output": 12781,
+            "turns": 1
+          },
+          "at": "2026-11-28T08:11:19Z"
         }
       ],
       "authorised": {
