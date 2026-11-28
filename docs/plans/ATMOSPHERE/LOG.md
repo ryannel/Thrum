@@ -1141,3 +1141,14 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   | `native/sdr-1/pre-cut.surface-bgra8.gz` | `ae18d5691db5b72eb767d80dd2daa395176961a3a3e8715df9b69bc9a7a09244` | `1e4ed70e066847cc47dbdeab0ce4662176d6c59a926f03c01e019146fe596c46` |
   | `native/sun-linear/checkpoint-0.rgba16f.gz` | `073c6ac95ed8952597cc97a483e399ed2898b68357dd65782ef6d0e0430e1254` | `4c0fb8e370a7e9b383fef5ba367874a61bcef8a83acabadd4f87e51832512044` |
   | `native/sun-sdr/checkpoint-0.png` | `3a69a89679180afe8d8045b917cbf5408a1c41d9d2b7667bbfd494b263f9e005` | `0f21144e1ac1d4241a83bef2e2e86a7bedb4a37b8a9f5ef6e26aff22fe966174` |
+
+- WP13 rule 7 draws the cascades at 4 m, 8 m and 16 m from four sub-texel positions with one caster list
+  per cascade. The surface filter integrates all four positions. The view volume, blocker search and lent
+  Sun lookup read the first drawing. The Metal depth guards compare all drawings and cover a secondary
+  view at 16 m. The WATERS refracted-shadow check passed on Metal.
+- The Mac C1 sphere outline slides through Portable submissions 218–233. A repeat of the first build’s
+  brightness crossing on five rows put the edge within 0.20 pixels of its fitted time path. The two
+  sunlit cube extremes also slide and stay attached. The near-exit pose was recut after the first pose
+  placed the required cactus in another prop’s shade.
+  [Motion and recut](../../../.orchestrate/evidence/ATMOSPHERE/WP13/rule7-motion/README.md) ·
+  [Crossings](../../../.orchestrate/evidence/ATMOSPHERE/WP13/rule7-c1-witness/crossings.json)
