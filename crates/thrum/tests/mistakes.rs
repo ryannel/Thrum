@@ -290,6 +290,43 @@ fn disjoint_queries_can_read_or_write_the_same_component_type() -> Result {
 }
 
 #[test]
+fn optional_writers_share_empty_cells_and_lend_present_disjoint_rows() -> Result {
+    let mut game = Game::new("optional writers")
+        .max_entities(3)
+        .scene(|scene: &mut Scene| {
+            scene.on_enter(|mut entities: Entities<'_>| {
+                entities.spawn((Health(1), Left));
+                entities.spawn((Health(2), Right));
+                entities.spawn((Left, Right));
+            });
+            scene.rules(
+                |mut left: Query<'_, Option<&mut Health>, With<Left>>,
+                 mut right: Query<'_, Option<&mut Health>, With<Right>>| {
+                    std::thread::scope(|scope| {
+                        scope.spawn(|| {
+                            for health in (&mut left).into_iter().flatten() {
+                                health.0 += 10;
+                            }
+                        });
+                        for health in (&mut right).into_iter().flatten() {
+                            health.0 += 20;
+                        }
+                    });
+                },
+            );
+        })
+        .test()?;
+    let before = game.digest();
+    game.step()?;
+    let entities = game.find::<With<Health>>();
+    assert_eq!(game.get::<Health>(entities[0])?, Health(11));
+    assert_eq!(game.get::<Health>(entities[1])?, Health(22));
+    game.rewind(1)?;
+    assert_eq!(game.digest(), before);
+    Ok(())
+}
+
+#[test]
 #[expect(
     clippy::items_after_statements,
     reason = "each diagnostic control is shown beside its assertion"

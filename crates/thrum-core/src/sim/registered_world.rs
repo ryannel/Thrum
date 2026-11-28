@@ -1381,11 +1381,11 @@ impl RegisteredWorld {
         Ok(true)
     }
 
-    pub(super) fn rule_column_address<T: Send + Sync + 'static>(
+    pub(super) fn rule_column_addresses<T: Send + Sync + 'static>(
         &mut self,
         component: usize,
-    ) -> (std::ptr::NonNull<()>, usize) {
-        self.column_mut_index::<T>(component).rule_address()
+    ) -> (std::ptr::NonNull<()>, std::ptr::NonNull<u64>, usize) {
+        self.column_mut_index::<T>(component).rule_addresses()
     }
 
     pub(super) fn journal_rule_column<T: PartialEq + Send + Sync + 'static>(

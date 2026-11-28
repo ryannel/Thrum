@@ -9,6 +9,7 @@ use super::{Handle, ReadPermit, RegisteredWorldError, WorldTxn, WritePermit};
 #[derive(Clone, Copy)]
 pub struct RuleStorage {
     values: NonNull<()>,
+    presence: NonNull<u64>,
     len: usize,
     type_id: TypeId,
 }
@@ -59,7 +60,8 @@ impl<T> RuleColumn<T> {
         reason = "read a row admitted by a scoped rule projection"
     )]
     pub unsafe fn read<'a>(&self, row: usize) -> Option<&'a T> {
-        let cell = self.row_address(row);
+        // SAFETY: Structural edits cannot change column presence during a live loan.
+        let cell = unsafe { self.present_row_address(row) }?;
         // SAFETY: The caller guarantees the column is still live and that
         // this physical row has no concurrent exclusive loan.
         unsafe { &*cell }.as_ref()
@@ -88,7 +90,8 @@ impl<T> RuleColumn<T> {
         prior: &'a mut Option<P>,
         capture: impl FnOnce(&T) -> P,
     ) -> Option<&'a mut T> {
-        let cell = self.row_address(row);
+        // SAFETY: Structural edits cannot change column presence during a live loan.
+        let cell = unsafe { self.present_row_address(row) }?;
         // SAFETY: The caller guarantees the column is still live and that it
         // holds the only loan of this physical row.
         let current = unsafe { &mut *cell }.as_mut()?;
@@ -96,13 +99,23 @@ impl<T> RuleColumn<T> {
         Some(current)
     }
 
-    fn row_address(&self, row: usize) -> *mut Option<T> {
+    #[expect(unsafe_code, reason = "read the presence bitmap of a live column")]
+    unsafe fn present_row_address(&self, row: usize) -> Option<*mut Option<T>> {
         assert!(row < self.storage.len);
-        self.storage
-            .values
-            .cast::<Option<T>>()
-            .as_ptr()
-            .wrapping_add(row)
+        let word = self.storage.presence.as_ptr().wrapping_add(row / 64);
+        // SAFETY: The row bound gives a valid presence word. The caller holds
+        // a live loan, during which all presence words are immutable.
+        let word = unsafe { *word };
+        let present = word & (1 << (row % 64)) != 0;
+        // Several optional projections may share a missing component. Do
+        // not create even a temporary reference to its vacant cell.
+        present.then(|| {
+            self.storage
+                .values
+                .cast::<Option<T>>()
+                .as_ptr()
+                .wrapping_add(row)
+        })
     }
 }
 
@@ -124,9 +137,10 @@ impl WorldTxn<'_> {
         if permit.system != self.system {
             return Err(RegisteredWorldError::WrongSystem);
         }
-        let (values, len) = self.world.rule_column_address::<T>(permit.component);
+        let (values, presence, len) = self.world.rule_column_addresses::<T>(permit.component);
         Ok(RuleStorage {
             values,
+            presence,
             len,
             type_id: TypeId::of::<T>(),
         })
