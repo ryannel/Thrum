@@ -19,6 +19,7 @@ const RIBBONS_PER_SEGMENT: usize = 6;
 const STRANDS_PER_SEGMENT: usize = 8;
 const STRAND_SIDES: usize = 8;
 const STRAND_EDGE: f32 = 4.0;
+const TONGUE_EDGE: f32 = 3.625;
 const STRAND_ROLL_START: f32 = 0.18;
 const VERTICES_PER_SEGMENT: usize =
     STRANDS_PER_SEGMENT * 6 * STRAND_SIDES * (ROWS + 3) + 6 * SPLASHES_PER_SEGMENT;
@@ -144,7 +145,7 @@ impl Sheet {
                 + "fn fall_foam(point: vec2<f32>) -> vec2<f32> { return foam_at(point, vec4(0.0)).stocks.xy; }",
         );
         let source = format!(
-            "{library}\n{}\nconst FALL_LOOP: f32 = {:?};\nconst FALL_CONTACT_DROPS: f32 = {}.0;\nconst FALL_TEAR: f32 = {:?};\nconst FALL_STRAND_EDGE: f32 = {STRAND_EDGE:?};\nconst FALL_STRAND_SIDES: f32 = {STRAND_SIDES}.0;\nconst FALL_STRAND_ROLL: f32 = {STRAND_ROLL_START:?};\nfn fall_cloud(point: vec3<f32>) -> f32 {{ return {cloud}; }}\n{}\n{stocks}\n{}\n{}",
+            "{library}\n{}\nconst FALL_LOOP: f32 = {:?};\nconst FALL_CONTACT_DROPS: f32 = {}.0;\nconst FALL_TEAR: f32 = {:?};\nconst FALL_STRAND_EDGE: f32 = {STRAND_EDGE:?};\nconst FALL_TONGUE_EDGE: f32 = {TONGUE_EDGE:?};\nconst FALL_STRAND_SIDES: f32 = {STRAND_SIDES}.0;\nconst FALL_STRAND_ROLL: f32 = {STRAND_ROLL_START:?};\nfn fall_cloud(point: vec3<f32>) -> f32 {{ return {cloud}; }}\n{}\n{stocks}\n{}\n{}",
             crate::VIEW_RECORDS,
             thrum_sea_model::LOOP_SECONDS,
             SPLASHES_PER_SEGMENT / 2,
@@ -476,6 +477,19 @@ fn mesh(
         let half = strip(0.5)[1];
         let foot = strip(1.0);
         if half.discharge[2] < 0.53 {
+            let tongue = |fraction| {
+                strip(fraction).map(|mut vertex| {
+                    vertex.edge_receiver[0] = TONGUE_EDGE + 0.25 * vertex.edge_receiver[0];
+                    vertex.world_time[1] += 0.012;
+                    vertex
+                })
+            };
+            let mut top = tongue(-1.0);
+            for fraction in [-0.65, -0.33, 0.0, 0.05, 0.10, 0.17, 0.25] {
+                let bottom = tongue(fraction);
+                stitch(vertices, top, bottom);
+                top = bottom;
+            }
             filament(vertices, |fraction| at(fraction, 1), stations());
         } else {
             let thickness = f64::from(foot[1].discharge[3]) / sheet.tear;

@@ -132,11 +132,13 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
     let birth = sheet_age(sheet_clock.x - world_time.w);
     let is_filament = across_fraction.y <= -2.0;
     let closed_strand = edge_receiver.x >= FALL_STRAND_EDGE;
+    let wet_tongue = edge_receiver.x >= FALL_TONGUE_EDGE && !closed_strand;
     let axis = vec3(across_fraction.x, 0.0, across_fraction.z);
     let section = max(0.0, edge_receiver.x - FALL_STRAND_EDGE);
     let angle = floor(section) * (6.2831853 / FALL_STRAND_SIDES);
-    let strand_strength = fract(section) * 2.0;
-    let edge = select(edge_receiver.x, abs(cos(angle)), closed_strand);
+    let strand_strength = select(fract(section) * 2.0, -1.0, wet_tongue);
+    let round_edge = select(edge_receiver.x, abs(cos(angle)), closed_strand);
+    let edge = select(round_edge, 4.0 * (edge_receiver.x - FALL_TONGUE_EDGE), wet_tongue);
     var strand_normal = vec3(0.0);
     if closed_strand {
         let normal = vec3(axis.z, 0.0, -axis.x);
@@ -207,6 +209,25 @@ fn splash_shade(input: SheetVertex) -> FallOutput {
     return FallOutput(vec4(colour, alpha), vec2(0.0), alpha);
 }
 
+fn tongue_shade(input: SheetVertex, look: vec3<f32>) -> FallOutput {
+    let tangent = normalize(input.velocity_along.xyz + vec3(1e-7, 0.0, 0.0));
+    let across = vec3(input.across_fraction.x, 0.0, input.across_fraction.z);
+    let normal = normalize(cross(across, tangent));
+    let up = select(-normal, normal, dot(normal, look) >= 0.0);
+    let facing = max(0.0, dot(up, look));
+    let grazing = pow(1.0 - facing, 3.0);
+    let reflection = environment_reflection(reflect(-look, up), 0.18, facing).radiance;
+    let diffuse = environment_diffuse(vec3(0.0, 1.0, 0.0));
+    let clear = mix(diffuse * 0.18, reflection, 0.42 + 0.30 * grazing);
+    let fraction = input.across_fraction.w;
+    let wet = smoothstep(-1.0, -0.42, fraction) * (1.0 - smoothstep(0.07, 0.25, fraction));
+    let edge = 1.0 - smoothstep(0.57, 1.0, input.edge);
+    let alpha = (0.28 + 0.17 * grazing) * wet * edge;
+    let air = environment_aerial(input.world_time.xyz, input.clip.xy * view_aux.viewport_inv_viewport.zw);
+    let colour = (clear * air.transmission + air.scatter) * environment_storage_scale();
+    return FallOutput(vec4(colour, alpha), vec2(0.0), 0.0);
+}
+
 fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let point = input.world_time.xyz;
     let look = normalize(view.camera_xyz_time.xyz - point);
@@ -227,6 +248,10 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     if input.across_fraction.y < 0.0 && input.across_fraction.y > -1.5 {
         if solid { discard; }
         return splash_shade(input);
+    }
+    if input.strand_strength < 0.0 {
+        if solid { discard; }
+        return tongue_shade(input, look);
     }
     let width = max(0.025, min(0.27, 0.10 * pixel));
     let tangent = normalize(input.velocity_along.xyz + vec3(1e-8, -1e-8, 0.0));
@@ -252,6 +277,20 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let packet_birth = birth + (lip - input.strand_lip) * packet_skew + (fine - 0.5) * 0.018;
     let packet_core = select(1.0, 1.0 - smoothstep(0.17, 0.93, input.edge), rounded);
     let packet = aeration_packet(input.strand_lip, packet_birth) * packet_core;
+    let mixed_air = smoothstep(0.10, 0.33, fraction) * smoothstep(0.0, 0.55, input.strand_strength);
+    let radial = normalize(input.strand_normal - tangent * dot(input.strand_normal, tangent)
+        + vec3(1e-7, 0.0, 0.0));
+    let view_across = normalize(look - tangent * dot(look, tangent) + vec3(1e-7, 0.0, 0.0));
+    let chord = smoothstep(0.02, 0.83, abs(dot(radial, view_across)));
+    let droplets = sheet_noise(vec2(lip, birth), FALL_LOOP, vec2(42.0, 13.6), vec2(91.0, 0.0));
+    // The transparent film dwindles into travelling bursts below the crest.
+    // Keep only faint water between bursts so the prepared mesh has no fixed hem.
+    let dispersed = smoothstep(0.19, 0.77, fraction);
+    let air_breaks = smoothstep(0.29, 0.77, 0.65 * parcel + 0.22 * fine + 0.13 * droplets);
+    let wet_pockets = max(packet, air_breaks * (0.42 + 0.58 * chord));
+    let middle_cover = mix(1.0, 0.075 + 0.925 * wet_pockets, dispersed * mixed_air);
+    let filament_cover = mix(0.09, 1.0, smoothstep(0.05, 0.59, packet + 0.13 * pulse));
+    let passing_cover = middle_cover * select(1.0, filament_cover, is_filament);
     let filament_white = smoothstep(0.06, 0.48, input.across_fraction.w)
         * mix(0.22, 1.0, 0.82 * packet + 0.18 * pulse);
     let streak_white = smoothstep(0.42, 0.89, input.across_fraction.w)
@@ -295,7 +334,8 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let contact_cover = foot
         * mix(1.0, smoothstep(0.18, 0.71, tear + 0.54 * fine),
         smoothstep(0.51, 0.90, input.across_fraction.w));
-    if (presence > 0.5 && foot > 0.35) != solid || presence * contact_cover < 0.015 {
+    let writes_depth = presence > 0.5 && foot > 0.35 && passing_cover > 0.28;
+    if writes_depth != solid || presence * contact_cover * passing_cover < 0.015 {
         discard;
     }
     let seam = smoothstep(0.0, 0.05, input.world_time.w);
@@ -329,13 +369,7 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
         * vec3(0.84, 0.90, 0.89) / 3.14159265;
     let parcel_light = mix(0.16, 1.38, pulse);
     let broken_light = mix(churn, aerated * parcel_light, max(rolled, breakup * below_tongue));
-    let mixed_air = smoothstep(0.10, 0.33, fraction) * smoothstep(0.0, 0.55, input.strand_strength);
-    let radial = normalize(input.strand_normal - tangent * dot(input.strand_normal, tangent)
-        + vec3(1e-7, 0.0, 0.0));
-    let view_across = normalize(look - tangent * dot(look, tangent) + vec3(1e-7, 0.0, 0.0));
-    let chord = smoothstep(0.02, 0.83, abs(dot(radial, view_across)));
     let round_light = 0.14 * chord;
-    let droplets = sheet_noise(vec2(lip, birth), FALL_LOOP, vec2(42.0, 13.6), vec2(91.0, 0.0));
     let bead_light = 0.20 * smoothstep(0.42, 0.78, droplets);
     let diffuse_streaks = 0.11 * coarse + 0.13 * fine + 0.12 * grain + bead_light;
     let packet_light = aerated * (0.26 + round_light + diffuse_streaks + 0.78 * packet);
@@ -354,7 +388,7 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let breaking = smoothstep(0.47, 0.90, fraction)
         * (1.0 - smoothstep(0.28, 0.73, 0.40 * fine + 0.39 * coarse + 0.21 * droplets));
     let aerated_cover = 0.71 * foot * mix(0.16, 1.0, chord) * (1.0 - 0.54 * breaking);
-    let opacity = mix(glass_cover, aerated_cover, mixed_air);
+    let opacity = mix(glass_cover, aerated_cover, mixed_air) * passing_cover;
     let path_distance = select(input.across_fraction.y, -input.across_fraction.y - 2.0, is_filament);
     let last_fraction = input.across_fraction.w - length(input.velocity_along.xyz) * sheet_clock.y
         / max(0.001, path_distance);
@@ -367,7 +401,7 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let motion = (previous.xy / previous.w - current.xy / current.w)
         * vec2(0.5, -0.5) * view_aux.viewport_inv_viewport.xy;
     return FallOutput(vec4(colour, opacity), select(motion, vec2(65504.0), sheet_clock.z > 0.5),
-        white * presence * contact_cover * streak_cover);
+        white * presence * contact_cover * streak_cover * passing_cover);
 }
 
 @fragment fn sheet_thin(input: SheetVertex, @builtin(front_facing) front: bool) -> FallOutput {
