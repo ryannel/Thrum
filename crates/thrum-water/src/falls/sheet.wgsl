@@ -285,8 +285,8 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let droplets = sheet_noise(vec2(lip, birth), FALL_LOOP, vec2(42.0, 13.6), vec2(91.0, 0.0));
     // The transparent film dwindles into travelling bursts below the crest.
     // Keep only faint water between bursts so the prepared mesh has no fixed hem.
-    let dispersed = smoothstep(0.19, 0.77, fraction);
-    let air_breaks = smoothstep(0.29, 0.77, 0.65 * parcel + 0.22 * fine + 0.13 * droplets);
+    let dispersed = smoothstep(0.11, 0.59, fraction);
+    let air_breaks = smoothstep(0.39, 0.80, 0.65 * parcel + 0.22 * fine + 0.13 * droplets);
     let wet_pockets = max(packet, air_breaks * (0.42 + 0.58 * chord));
     let middle_cover = mix(1.0, 0.075 + 0.925 * wet_pockets, dispersed * mixed_air);
     let filament_cover = mix(0.09, 1.0, smoothstep(0.05, 0.59, packet + 0.13 * pulse));
@@ -312,7 +312,7 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let sheet_presence = smoothstep(threshold - width, threshold + width,
         input.discharge.z * (1.0 - 0.88 * thinness * taper));
     let pulses = mix(0.42, 1.0, smoothstep(0.26, 0.70, 0.7 * coarse + 0.3 * fine));
-    let strand_presence = smoothstep(-0.12, 0.07, input.across_fraction.w)
+    let strand_presence = smoothstep(0.0, 0.20, input.across_fraction.w)
         * mix(1.0, pulses, smoothstep(0.16, 0.77, input.across_fraction.w));
     let ruptures = 1.0 - 0.62 * smoothstep(0.55, 1.0, input.discharge.z);
     let breaks_apart = ruptures * smoothstep(0.45, 0.92, input.across_fraction.w);
@@ -387,7 +387,8 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let glass_cover = film_opacity * presence * mix(0.62, 1.0, seam) * contact_cover * trickle_film;
     let breaking = smoothstep(0.47, 0.90, fraction)
         * (1.0 - smoothstep(0.28, 0.73, 0.40 * fine + 0.39 * coarse + 0.21 * droplets));
-    let aerated_cover = 0.71 * foot * mix(0.16, 1.0, chord) * (1.0 - 0.54 * breaking);
+    let pool_fade = 1.0 - 0.67 * smoothstep(0.64 + 0.16 * fine, 0.96, fraction);
+    let aerated_cover = 0.71 * foot * mix(0.16, 1.0, chord) * (1.0 - 0.54 * breaking) * pool_fade;
     let opacity = mix(glass_cover, aerated_cover, mixed_air) * passing_cover;
     let path_distance = select(input.across_fraction.y, -input.across_fraction.y - 2.0, is_filament);
     let last_fraction = input.across_fraction.w - length(input.velocity_along.xyz) * sheet_clock.y
