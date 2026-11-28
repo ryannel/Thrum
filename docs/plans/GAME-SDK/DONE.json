@@ -124,8 +124,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SDK/WP11/check.json",
           "verdict": "",
           "review": ""
         },
@@ -139,8 +139,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SDK/WP11/check.json",
           "verdict": "",
           "review": ""
         },
@@ -154,8 +154,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SDK/WP11/check.json",
           "verdict": "",
           "review": ""
         },
@@ -164,8 +164,8 @@
           "statement": "Prefabs and the tree cost nothing where they are not used, `keep_world` is held to its bound on every call, and both read as the design's examples do.",
           "ask": "1. Is a prefab, with its variants, resolved once when the game starts, so that a spawn copies a prepared set of components with no lookup by name and no allocation? 2. Does an entity with no parent and no child hold or pay for anything of the tree, in a query and in the digest's work? 3. Is the place a `keep_world` recomposes compared with where the child stood on every call, and the attachment refused past the design's bound, with the residual and the bound in the error? 4. Set the tests' games beside example E's `prefabs` function, its spawns of `BAT`, `ELITE_BAT`, `GEM` and `SHOT`, and example G's `take_or_set_down`. Is each difference in the log as a spelling, and is none a change of shape as the design's section \"What a builder may change\" defines one?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SDK/WP11/index.md",
           "verdict": "",
           "review": ""
         },
@@ -179,8 +179,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SDK/WP11/check.json",
           "verdict": "",
           "review": ""
         }
