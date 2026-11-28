@@ -49,7 +49,7 @@ pub(crate) struct Sheet {
     pipelines: [wgpu::RenderPipeline; 3],
     vertices: Vec<Vertex>,
     packets: Vec<Vertex>,
-    sheet_vertices: u32,
+    packet_start: u32,
     key: Option<([u64; 2], u32)>,
     levels: Vec<u64>,
     next_levels: Vec<u64>,
@@ -227,7 +227,7 @@ impl Sheet {
             pipelines,
             vertices: Vec::new(),
             packets: Vec::new(),
-            sheet_vertices: 0,
+            packet_start: 0,
             key: None,
             levels: Vec::new(),
             next_levels: Vec::new(),
@@ -273,7 +273,7 @@ impl Sheet {
                     falls.profile.sheet,
                 );
             }
-            self.sheet_vertices =
+            self.packet_start =
                 u32::try_from(self.vertices.len()).expect("prepared sheet vertices");
             self.vertices.append(&mut self.packets);
             if !self.vertices.is_empty() {
@@ -320,11 +320,11 @@ impl Sheet {
         pass.set_vertex_buffer(0, self.mesh.slice(..));
         for pipeline in &self.pipelines[..2] {
             pass.set_pipeline(pipeline);
-            pass.draw(0..self.sheet_vertices, 0..1);
+            pass.draw(0..self.packet_start, 0..1);
         }
-        if self.sheet_vertices < count {
+        if self.packet_start < count {
             pass.set_pipeline(&self.pipelines[2]);
-            pass.draw(self.sheet_vertices..count, 0..1);
+            pass.draw(self.packet_start..count, 0..1);
         }
     }
 

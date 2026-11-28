@@ -599,13 +599,10 @@
   Its measured vertical rate rose from 312 to 504 screen pixels per second.
   [Pass-colour comparison](../../../.orchestrate/evidence/RIVERS/WP6/cover-diagnostic/middle-front/native-frame-0006.png)
   [Middle-gauge motion record](../../../.orchestrate/evidence/RIVERS/WP6/continuous-packets/middle-streak/motion-note.md)
-- 2026-11-28 WP6. The clear crest follows the rock through all four shared
-  lip boundaries. Mac Metal realtime sequences show rock through all three
-  crests, with narrow white streaks at low flow and a fuller set at middle
-  flow. Tracked streaks lengthen and accelerate at both gauges. The final
-  60 m trickle view shows a single continuous crest. The pool sequences
-  show the boil, reflected water, downstream foam and rings, then the same
-  shoreline after the flow stops. All nine automated item checks passed on
-  the capture revision, including the Chrome WebGPU readback.
+- 2026-11-28 WP6. The clear crest follows the rock through all four shared lip
+  boundaries, including at 60 m. Mac Metal sequences show rock through all
+  three crests and white streaks lengthening and accelerating at the low and
+  middle gauges. The receiving pool keeps its waterline after the spring closes.
+  All nine automated checks passed, including the Chrome WebGPU readback.
   [Fall inspection](../../../.orchestrate/evidence/RIVERS/WP6/joined-roll/README.md)
   [Pool inspection](../../../.orchestrate/evidence/RIVERS/WP6/joined-roll/pool-inspection.md)
