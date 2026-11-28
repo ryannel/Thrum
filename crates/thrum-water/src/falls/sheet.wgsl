@@ -243,20 +243,19 @@ fn splash_shade(input: SheetVertex) -> FallOutput {
     return FallOutput(vec4(colour, alpha), vec2(0.0), alpha);
 }
 
-fn tongue_shade(input: SheetVertex, look: vec3<f32>) -> FallOutput {
-    let tangent = normalize(input.velocity_along.xyz + vec3(1e-7, 0.0, 0.0));
-    let across = vec3(input.across_fraction.x, 0.0, input.across_fraction.z);
-    let normal = normalize(cross(across, tangent));
+fn tongue_shade(input: SheetVertex, look: vec3<f32>, normal: vec3<f32>) -> FallOutput {
     let up = select(-normal, normal, dot(normal, look) >= 0.0);
     let facing = max(0.0, dot(up, look));
     let grazing = pow(1.0 - facing, 3.0);
     let reflection = environment_reflection(reflect(-look, up), 0.18, facing).radiance;
     let diffuse = environment_diffuse(vec3(0.0, 1.0, 0.0));
-    let clear = mix(diffuse * 0.18, reflection, 0.42 + 0.30 * grazing);
     let fraction = input.across_fraction.w;
+    let roll = smoothstep(-0.17, 0.05, fraction) * (1.0 - smoothstep(0.13, 0.25, fraction));
+    let clear = mix(diffuse * 0.18, reflection, 0.42 + 0.30 * grazing)
+        + roll * diffuse * vec3(0.07, 0.14, 0.17);
     let wet = smoothstep(-1.0, -0.42, fraction) * (1.0 - smoothstep(0.07, 0.25, fraction));
     let edge = 1.0 - smoothstep(0.57, 1.0, input.edge);
-    let alpha = (0.28 + 0.17 * grazing) * wet * edge;
+    let alpha = (0.31 + 0.15 * grazing + 0.09 * roll) * wet * edge;
     let air = environment_aerial(input.world_time.xyz, input.clip.xy * view_aux.viewport_inv_viewport.zw);
     let colour = (clear * air.transmission + air.scatter) * environment_storage_scale();
     return FallOutput(vec4(colour, alpha), vec2(0.0), 0.0);
@@ -268,12 +267,13 @@ fn tongue_shade(input: SheetVertex, look: vec3<f32>) -> FallOutput {
     let radius = dot(body, body);
     let profile = exp(-3.2 * radius) * (1.0 - smoothstep(0.52, 1.0, radius));
     let grain = 0.63 + 0.37 * sheet_noise(corner, 2.0, vec2(3.0, 2.4), vec2(input.discharge.y * 19.0, 0.0));
-    let alpha = 0.60 * input.discharge.x * profile * grain;
+    let alpha = 0.48 * input.discharge.x * profile * grain;
     if alpha < 0.016 { discard; }
     let point = input.world_time.xyz;
     let up = vec3(0.0, 1.0, 0.0);
     let sunlight = sun_irradiance(point) * fall_cloud(point) * max(0.0, environment_sun_direction().y);
-    let colour = (environment_diffuse(up) + sunlight) * vec3(0.66, 0.75, 0.78) / 3.14159265;
+    let aeration = mix(0.72, 1.44, smoothstep(0.10, 0.82, input.world_time.w));
+    let colour = (environment_diffuse(up) + sunlight) * vec3(0.66, 0.75, 0.78) * aeration / 3.14159265;
     let air = environment_aerial(point, input.clip.xy * view_aux.viewport_inv_viewport.zw);
     let now = view.unjittered_view_proj * vec4(point, 1.0);
     let previous = view.previous_view_proj * vec4(point - input.strand_motion, 1.0);
@@ -306,7 +306,7 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     }
     if input.strand_strength < 0.0 {
         if solid { discard; }
-        return tongue_shade(input, look);
+        return tongue_shade(input, look, geometry_normal);
     }
     let width = max(0.025, min(0.27, 0.10 * pixel));
     let tangent = normalize(input.velocity_along.xyz + vec3(1e-8, -1e-8, 0.0));
@@ -444,7 +444,8 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let round_light = 0.14 * chord;
     let bead_light = 0.20 * smoothstep(0.42, 0.78, droplets);
     let diffuse_streaks = 0.11 * coarse + 0.13 * fine + 0.12 * grain + bead_light;
-    let packet_light = aerated * (0.26 + round_light + diffuse_streaks + 0.78 * packet);
+    let packet_light = aerated * (0.26 + round_light + diffuse_streaks + 0.78 * packet)
+        * mix(0.64, 0.95, smoothstep(0.13, 0.48, fraction));
     let sheet_colour = mix(mix(clear_light, broken_light, white), packet_light, mixed_air);
     let spray_light = mix(sheet_colour, aerated,
         mixing * (1.0 - thinness) * mix(0.32 + 0.58 * contact_foam + 0.10 * fine, 0.93, breakup));

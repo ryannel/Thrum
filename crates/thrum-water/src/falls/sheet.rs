@@ -268,6 +268,7 @@ impl Sheet {
                     &mut self.vertices,
                     &mut self.packets,
                     &segments,
+                    map,
                     f64::from(spacing) * 0.001,
                     falls.profile.sheet,
                 );
@@ -370,6 +371,7 @@ fn mesh(
     vertices: &mut Vec<Vertex>,
     packets: &mut Vec<Vertex>,
     segments: &[Segment],
+    map: &Map,
     spacing: f64,
     sheet: thrum_water_model::SheetProfile,
 ) {
@@ -503,15 +505,21 @@ fn mesh(
                     let forward =
                         Vec3::from_slice(&vertex.velocity_along) * Vec3::new(1.0, 0.0, 1.0);
                     let roll = (fraction as f32 / 0.19).clamp(0.0, 1.0);
-                    let lifted = Vec3::from_slice(&vertex.world_time)
+                    let mut lifted = Vec3::from_slice(&vertex.world_time)
                         + 0.016 * Vec3::Y
                         + 0.15 * roll * roll * forward.normalize_or_zero();
+                    // This part of a trickle is still a film on the brink.
+                    // Follow the rendered bed where the stored path crosses it.
+                    if let Some(rock) = map.bed().height([f64::from(lifted.x), f64::from(lifted.z)])
+                    {
+                        lifted.y = lifted.y.max(rock as f32 + 0.022);
+                    }
                     vertex.world_time = lifted.extend(vertex.world_time[3]).to_array();
                     vertex
                 })
             };
             let mut top = tongue(-1.0);
-            for fraction in [-0.65, -0.33, 0.0, 0.05, 0.10, 0.17, 0.25] {
+            for fraction in (1..=20).map(|row| -1.0 + f64::from(row) / 16.0) {
                 let bottom = tongue(fraction);
                 stitch(vertices, top, bottom);
                 top = bottom;
