@@ -1,5 +1,4 @@
 use super::{Falls, active};
-use crate::foam::Foam;
 use bytemuck::{Pod, Zeroable};
 use glam::{Vec2, Vec3};
 use thrum_water_model::{FallSegment, Impulse, Map, PatternLoop, Plunge, PlungeProfile};
@@ -21,7 +20,7 @@ struct Impact {
 pub(crate) struct Plunges {
     key: Option<([u64; 2], std::time::Duration)>,
     impacts: Vec<Impact>,
-    births: Vec<Source>,
+    pub births: Vec<Source>,
     profile: PlungeProfile,
 }
 
@@ -36,11 +35,10 @@ impl Plunges {
         map: &Map,
         tick: std::time::Duration,
         waves: bool,
-        foam: Option<(&Foam, &wgpu::Queue)>,
-    ) {
+    ) -> bool {
         let key = (map.query_revision(), tick);
         if self.key == Some(key) {
-            return;
+            return false;
         }
         let same_tick_length = self.key.is_some_and(|(_, previous)| previous == tick);
         self.key = Some(key);
@@ -95,9 +93,7 @@ impl Plunges {
                 pattern,
             });
         }
-        if let Some((foam, queue)) = foam {
-            foam.write_plunges(queue, &self.births);
-        }
+        true
     }
 
     pub(crate) fn impulses(&self, tick: u64) -> impl Iterator<Item = Impulse> + '_ {

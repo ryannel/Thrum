@@ -822,6 +822,10 @@ impl SceneContribution for Water {
             .as_ref()
             .map_or_else(EffectGraph::default, prepare::Prepared::graph)
     }
+    #[expect(
+        clippy::too_many_lines,
+        reason = "one frame transaction preserves the committed and displayed map reads and records water producers in order"
+    )]
     fn encode_upload(&mut self, encoder: &mut wgpu::CommandEncoder, frame: &ContributionFrame) {
         let Some(p) = self.prepared.as_mut() else {
             return;
@@ -888,14 +892,15 @@ impl SceneContribution for Water {
         }
         if !frame.time.capture
             && let (Some(config), Some(plunges)) = (&self.falls, &mut p.plunges)
-        {
-            plunges.record(
+            && plunges.record(
                 config,
                 &map,
                 frame.time.tick_duration,
                 p.interaction.is_some(),
-                p.foam.as_ref().map(|foam| (foam, &p.queue)),
-            );
+            )
+            && let Some(foam) = &p.foam
+        {
+            foam.write_plunges(&p.queue, &plunges.births);
         }
         if let Some(interaction) = &mut p.interaction {
             interaction.record(&p.queue, encoder, frame, &map, p.plunges.as_ref());
