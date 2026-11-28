@@ -6,8 +6,7 @@ use crate::timing::TimingCategory;
 /// Contributed passes of one kind the role ranges hold apart; the tests prove
 /// the ranges do not meet below this count.
 const MAX_CONTRIBUTED: u32 = 1000;
-/// Secondary views the role ranges hold apart; the tests prove the secondary
-/// range stays below the tagged roles at this count.
+/// Secondary views the role ranges hold apart.
 const MAX_SECONDARY_VIEWS: u32 = 1000;
 
 /// Every key with one name in every graph.
@@ -77,12 +76,12 @@ fn indexed_keys() -> impl Iterator<Item = PassKey> {
                 SecondaryStage::Opaque,
                 SecondaryStage::Clusters,
                 SecondaryStage::Aerial,
-                SecondaryStage::Sun(0),
-                SecondaryStage::Sun(1),
                 SecondaryStage::Visibility,
                 SecondaryStage::Casters,
             ]
-            .map(|stage| PassKey::Secondary { view, stage })
+            .into_iter()
+            .chain((0..8).map(SecondaryStage::Sun))
+            .map(move |stage| PassKey::Secondary { view, stage })
         }))
 }
 
@@ -108,31 +107,36 @@ fn every_pipeline_role_value_belongs_to_one_role() {
 
 #[test]
 fn indexed_role_ranges_stay_apart_up_to_their_bounds() {
-    let tagged = [
-        PipelineRole::DepthPrepass,
-        PipelineRole::TemporalExposure,
-        PipelineRole::Surface,
-        PipelineRole::CasterCull,
-    ]
-    .map(PipelineRole::value);
-    let lowest_tag = tagged.into_iter().min().unwrap_or(0);
-    let last_secondary = PipelineRole::Secondary {
-        view: MAX_SECONDARY_VIEWS - 1,
-        stage: SecondaryStage::Casters,
+    let last_fixed = fixed()
+        .filter_map(PassKey::pipeline_role)
+        .map(PipelineRole::value)
+        .max()
+        .expect("fixed pipeline roles");
+    let first_secondary = PipelineRole::Secondary {
+        view: 0,
+        stage: SecondaryStage::Opaque,
     }
     .value();
-    assert!(last_secondary < lowest_tag);
+    assert!(last_fixed < first_secondary);
+    let last_stage = SecondaryStage::Sun(7);
+    for view in [0, 1, MAX_SECONDARY_VIEWS - 1] {
+        assert!(
+            PipelineRole::Secondary {
+                view,
+                stage: last_stage
+            }
+            .value()
+                < PipelineRole::Secondary {
+                    view: view + 1,
+                    stage: SecondaryStage::Opaque
+                }
+                .value()
+        );
+    }
     let last_effect = PipelineRole::Effect(MAX_CONTRIBUTED - 1).value();
     assert!(last_effect < PipelineRole::AfterOpaque(0).value());
     let last_after = PipelineRole::AfterOpaque(MAX_CONTRIBUTED - 1).value();
-    assert!(
-        last_after
-            < PipelineRole::Secondary {
-                view: 0,
-                stage: SecondaryStage::Opaque,
-            }
-            .value()
-    );
+    assert!(last_after < first_secondary);
     let last_atmosphere = PipelineRole::Atmosphere(AtmosphereStage::Reflection(6)).value();
     assert!(last_atmosphere < PipelineRole::ContributionCompute.value());
 }

@@ -215,7 +215,8 @@ pub(crate) enum PipelineRole {
 
 const EFFECT_BASE: u32 = 2000;
 const AFTER_OPAQUE_BASE: u32 = 3000;
-const SECONDARY_BASE: u32 = 5000;
+// Keep per-view ranges above the historical two-letter roles.
+const SECONDARY_BASE: u32 = 0x1_0000;
 const ATMOSPHERE_BASE: u32 = 10;
 
 impl PipelineRole {

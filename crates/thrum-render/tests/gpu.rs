@@ -1032,6 +1032,8 @@ fn place_box(instance: &mut InstanceRecord, center: [f32; 3], scale: [f32; 3]) {
 #[test]
 #[cfg(target_os = "macos")]
 fn sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters() {
+    // Ten cascade bases, nine additional outline positions, and the height layer.
+    const SHADOW_PASSES: usize = 20;
     pollster::block_on(async {
         let Some(thrum_test_support::Opened { device, queue, .. }) = thrum_test_support::open(
             "sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters",
@@ -1101,7 +1103,7 @@ fn sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters() {
                     shadow_passes += 1;
                 }
             }
-            assert_eq!(shadow_passes, 10);
+            assert_eq!(shadow_passes, SHADOW_PASSES);
             let shaded = render_pixels(&device, &queue, &shadowed, &target);
             if let Some(dir) = std::env::var_os("THRUM_SHADOW_CAPTURE_DIR") {
                 let name = if sample_x == 84 { "near" } else { "far" };
@@ -1191,14 +1193,21 @@ fn sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters() {
                 .expect("disabled Sun prepare");
         let off_target =
             OffscreenTarget::new(&device, &off_prepared, 65, 33).expect("off-state target");
+        let caster_cull = SHADOW_PASSES;
+        let forward = caster_cull + 1;
         assert_eq!(
             off_prepared
                 .graph(&off_target, false)
                 .expect("off-state graph")
                 .dependencies,
-            (0..11)
-                .map(|pass| (pass, 11))
-                .chain([(10, 13), (10, 14), (11, 12), (11, 14)])
+            (0..forward)
+                .map(|pass| (pass, forward))
+                .chain([
+                    (caster_cull, forward + 2),
+                    (caster_cull, forward + 3),
+                    (forward, forward + 1),
+                    (forward, forward + 3),
+                ])
                 .collect::<Vec<_>>(),
             "configured shadow and horizon maps remain ready for a live Sun activation"
         );
