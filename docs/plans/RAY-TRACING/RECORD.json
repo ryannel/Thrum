@@ -1047,12 +1047,12 @@
       }
     },
     "WP6": {
-      "definitions": "17773760688b38c835984739d6e5aad2bc68d9de2065cbe63b11b0120b143290",
+      "definitions": "912b7e7e74d0c7e861a3dc4d7f9bb70da6acd841c86810922bd63025f85666f2",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner decision change, 27 Nov 2026. I told the owner the shadow diagnosis (ATMOSPHERE WP13, .orchestrate/evidence/ATMOSP",
-        "at": "2026-11-27T23:02:39Z"
+        "task": "The design review of RAY-TRACING at .orchestrate/evidence/RAY-TRACING/design-review.md asked for changes, with its 1 Mus",
+        "at": "2026-11-28T02:57:21Z"
       },
       "ends_stretch": true
     },
@@ -1150,11 +1150,15 @@
     {
       "task": "Owner decision change, 27 Nov 2026. I told the owner the shadow diagnosis (ATMOSPHERE WP13, .orchestrate/evidence/ATMOSPHERE/WP13-diagnosis/README.md, cause 7) found that in shade nothing darkens where an object meets the ground, because the default path has no ambient occlusion (ARCHITECTURE owner decision 34: AO only where rays are traced, no screen-space stand-in), and asked whether to revisit decision 34 so the default path gets cheap screen-space ambient occlusion. The owner said: \"Yes, add screen-space ambient occlusion to the default path\".\n\nAmend owner decision 34 with those words: screen-space ambient occlusion is on the default (portable) path, on the Mac and in Chrome; ray-traced AO from RAY-TRACING stays the higher tier where rays run, and replaces SSAO there rather than stacking. Decide which module owns it (ATMOSPHERE's shading of the scene, EFFECT-GRAPH as an effect, or another, with the reason and one authority), choose the modern technique shipped high-end games use (for example GTAO or similar, half resolution with temporal accumulation and a bilateral upsample; say which and why), and plan it as that module's next work package, after ATMOSPHERE WP13 if they touch the same passes. Items: objects on the ground in shade read as grounded on the showcase routes (the cube scene and the exit desert), judged against shipped games; no halos or shimmer while flying; a paired Metal cost record with the frame budget at 120 Hz full screen in mind (APPLE-PRESENTATION WP17 holds 67%); and Chrome. Update the seam and contract rows that decision 34 touches.",
       "at": "2026-11-27T23:02:39Z"
+    },
+    {
+      "task": "The design review of RAY-TRACING at .orchestrate/evidence/RAY-TRACING/design-review.md asked for changes, with its 1 Must Fix findings.",
+      "at": "2026-11-28T02:57:21Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T23:02:39Z"
+    "at": "2026-11-28T02:57:21Z"
   },
   "design_history": [
     {
