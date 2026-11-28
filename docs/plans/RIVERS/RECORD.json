@@ -1059,7 +1059,37 @@
           "items": [],
           "at": "2026-11-27T20:49:45Z"
         }
-      ]
+      ],
+      "ready_for_review": {
+        "commit": "d9a0418062b3d331061910543b3b90a3d9c6393f",
+        "checked": "4f4f6fa9877ef423e2e3a348a9b91d4d0d2726b8",
+        "at": "2026-11-28T06:02:01Z",
+        "reused": [
+          "WP6.2",
+          "WP6.6"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "headless",
+        "usage": {
+          "input": 2403234,
+          "cached": 290455424,
+          "output": 536746,
+          "turns": 6
+        },
+        "session_usage": {
+          "input": 2403234,
+          "cached": 290455424,
+          "output": 536746,
+          "turns": 6
+        }
+      }
     },
     "WP7": {
       "definitions": "1e13bf39a02c9e2d2a7853662d53f4b40494c61f2e06c32cc6868b5dd8dbf627",
