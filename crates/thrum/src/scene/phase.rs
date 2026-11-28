@@ -79,7 +79,8 @@ impl Scenes<'_> {
 #[doc(hidden)]
 /// The SDK's prepared scene requests.
 /// ```
-/// fn rule(_: thrum::Scenes) {}
+/// use thrum::{Scenes, __derive::{Param, SceneRequests}};
+/// let _: <Scenes<'static> as Param>::State = SceneRequests::default();
 /// ```
 pub struct SceneRequests {
     requests: Arc<Mutex<Requests>>,
@@ -249,8 +250,10 @@ impl<P: PhaseType> PhaseMut<'_, P> {
 #[doc(hidden)]
 /// The SDK's prepared phase parameter.
 /// ```
+/// use thrum::{PhaseMut, __derive::{Param, PhaseRequests}};
 /// #[derive(thrum::Phase)]
 /// enum Stage { Play }
+/// let _: <PhaseMut<'static, Stage> as Param>::State = PhaseRequests::default();
 /// ```
 pub struct PhaseRequests<P> {
     current: Option<P>,

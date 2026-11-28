@@ -2,6 +2,8 @@
 //!
 //! ```
 //! use thrum_derive::Data;
+//! #[derive(Data)] struct Points(u32);
+//! assert_eq!(Points(3), Points(3).clone());
 //! ```
 
 use proc_macro::TokenStream;
@@ -12,6 +14,8 @@ use syn::{Data, DeriveInput, Fields, Member, parse_macro_input, spanned::Spanned
 /// Declare portable world data.
 /// ```
 /// use thrum_derive::Data;
+/// #[derive(Data)] struct Points(u32);
+/// assert_eq!(Points(3), Points(3).clone());
 /// ```
 #[proc_macro_derive(Data)]
 pub fn data(input: TokenStream) -> TokenStream {
@@ -21,6 +25,10 @@ pub fn data(input: TokenStream) -> TokenStream {
 /// Declare data attached to an entity.
 /// ```
 /// use thrum_derive::Component;
+/// #[derive(Component)] struct Health(u32);
+/// let health = Health(3);
+/// let copy = health;
+/// assert_eq!(health, copy);
 /// ```
 #[proc_macro_derive(Component)]
 pub fn component(input: TokenStream) -> TokenStream {
@@ -30,6 +38,10 @@ pub fn component(input: TokenStream) -> TokenStream {
 /// Declare data shared across rules.
 /// ```
 /// use thrum_derive::Resource;
+/// #[derive(Resource)] struct Score(u32);
+/// let game = thrum::Game::new("Example").resource(Score(3))
+///     .scene(|_: &mut thrum::Scene| {}).test().unwrap();
+/// assert_eq!(game.resource::<Score>().unwrap().0, 3);
 /// ```
 #[proc_macro_derive(Resource)]
 pub fn resource(input: TokenStream) -> TokenStream {
@@ -39,6 +51,12 @@ pub fn resource(input: TokenStream) -> TokenStream {
 /// Declare data sent to later rules of a tick.
 /// ```
 /// use thrum_derive::Event;
+/// #[derive(Event)] struct Scored(u32);
+/// let mut game = thrum::Game::new("Example").scene(|scene: &mut thrum::Scene| {
+///     scene.rules(|mut events: thrum::Emit<Scored>| events.send(Scored(3)));
+/// }).test().unwrap();
+/// game.step().unwrap();
+/// assert_eq!(game.events::<Scored>(), [Scored(3)]);
 /// ```
 #[proc_macro_derive(Event)]
 pub fn event(input: TokenStream) -> TokenStream {
@@ -48,6 +66,10 @@ pub fn event(input: TokenStream) -> TokenStream {
 /// Declare the data a scene is entered with.
 /// ```
 /// use thrum_derive::Scene;
+/// #[derive(Scene, Default)] struct Play;
+/// let game = thrum::Game::new("Example")
+///     .scene(|_: &mut thrum::Scene<Play>| {}).test().unwrap();
+/// assert!(game.in_scene::<Play>());
 /// ```
 #[proc_macro_derive(Scene)]
 pub fn scene(input: TokenStream) -> TokenStream {
@@ -57,6 +79,11 @@ pub fn scene(input: TokenStream) -> TokenStream {
 /// Declare the phases of a scene.
 /// ```
 /// use thrum_derive::Phase;
+/// #[derive(Phase)] enum Stage { Play }
+/// let game = thrum::Game::new("Example").scene(|scene: &mut thrum::Scene| {
+///     scene.phases(Stage::Play);
+/// }).test().unwrap();
+/// assert_eq!(game.phase::<Stage>().unwrap(), Stage::Play);
 /// ```
 #[proc_macro_derive(Phase)]
 pub fn phase(input: TokenStream) -> TokenStream {
@@ -73,7 +100,7 @@ fn derive_data(input: TokenStream, marker: Option<&str>) -> TokenStream {
 fn expand_data(input: &DeriveInput, marker: Option<&str>) -> syn::Result<Tokens> {
     let name = &input.ident;
     let mut generics = input.generics.clone();
-    let (implementation, write, read, declaration) = match &input.data {
+    let (write, read, declaration, variants) = match &input.data {
         Data::Struct(value) => {
             let fields = &value.fields;
             let members = members(fields);
@@ -87,12 +114,11 @@ fn expand_data(input: &DeriveInput, marker: Option<&str>) -> syn::Result<Tokens>
                     .map(|ty| quote!(<#ty as ::thrum::Data>::read(reader)?)),
             );
             let variants = vec![(quote!(Self), fields)];
-            let implementation = value_traits(name, &input.generics, &variants);
             (
-                implementation,
                 quote!(#(::thrum::Data::write(&self.#members, writer);)*),
                 construct,
                 quote!(#fields),
+                variants,
             )
         }
         Data::Enum(value) => {
@@ -130,13 +156,13 @@ fn expand_data(input: &DeriveInput, marker: Option<&str>) -> syn::Result<Tokens>
                 variants.push((path, fields));
             }
             (
-                value_traits(name, &input.generics, &variants),
                 quote!(match self { #write }),
                 quote!(match <u32 as ::thrum::Data>::read(reader)? {
                     #read
                     _ => return Err(::thrum::__derive::InvalidData),
                 }),
                 declaration,
+                variants,
             )
         }
         Data::Union(value) => {
@@ -146,6 +172,8 @@ fn expand_data(input: &DeriveInput, marker: Option<&str>) -> syn::Result<Tokens>
             ));
         }
     };
+    let (implementation, same_encoding) = value_traits(name, &input.generics, &variants);
+    let field_types = variants.iter().flat_map(|(_, fields)| types(fields));
     for parameter in generics.type_params_mut() {
         parameter.bounds.push(syn::parse_quote!(::thrum::Data));
     }
@@ -176,6 +204,12 @@ fn expand_data(input: &DeriveInput, marker: Option<&str>) -> syn::Result<Tokens>
         #copy
         impl #implementation_generics ::thrum::Data for #name #use_generics #requirements {
             const SCHEMA: &'static str = concat!(module_path!(), "::", stringify!(#name), stringify!(#declaration));
+            const SCHEMA_ID: u128 = ::thrum::__derive::schema_id(
+                Self::SCHEMA, &[#(<#field_types as ::thrum::Data>::SCHEMA_ID),*],
+            );
+            fn same_encoding(&self, other: &Self) -> bool {
+                #same_encoding
+            }
             fn write(&self, writer: &mut ::thrum::__derive::DataWriter<'_, '_>) {
                 #write
             }
@@ -214,7 +248,11 @@ fn construct(
     }
 }
 
-fn value_traits(name: &Ident, generics: &syn::Generics, variants: &[(Tokens, &Fields)]) -> Tokens {
+fn value_traits(
+    name: &Ident,
+    generics: &syn::Generics,
+    variants: &[(Tokens, &Fields)],
+) -> (Tokens, Tokens) {
     let mut generics = generics.clone();
     for parameter in generics.type_params_mut() {
         parameter.bounds.push(syn::parse_quote!(::thrum::Data));
@@ -222,6 +260,7 @@ fn value_traits(name: &Ident, generics: &syn::Generics, variants: &[(Tokens, &Fi
     let (parameters, args, requirements) = generics.split_for_impl();
     let mut cloned = Tokens::new();
     let mut equality = Tokens::new();
+    let mut encoding_equality = Tokens::new();
     let mut debug = Tokens::new();
     for (path, fields) in variants {
         let members = members(fields);
@@ -251,6 +290,9 @@ fn value_traits(name: &Ident, generics: &syn::Generics, variants: &[(Tokens, &Fi
         );
         cloned.extend(quote!(#pattern => #new_value,));
         equality.extend(quote!((#pattern, #other) => true #(&& #bindings == #right)*,));
+        encoding_equality.extend(quote! {
+            (#pattern, #other) => true #(&& ::thrum::Data::same_encoding(#bindings, #right))*,
+        });
         let label = path.to_string().rsplit("::").next().map_or_else(
             || name.to_string(),
             |variant| {
@@ -274,7 +316,7 @@ fn value_traits(name: &Ident, generics: &syn::Generics, variants: &[(Tokens, &Fi
         debug.extend(quote!(#pattern => #value,));
     }
     let different = (variants.len() > 1).then(|| quote!(_ => false,));
-    quote! {
+    let implementation = quote! {
         #[automatically_derived]
         impl #parameters ::core::clone::Clone for #name #args #requirements {
             fn clone(&self) -> Self { match self { #cloned } }
@@ -289,12 +331,23 @@ fn value_traits(name: &Ident, generics: &syn::Generics, variants: &[(Tokens, &Fi
                 match self { #debug }
             }
         }
-    }
+    };
+    (
+        implementation,
+        quote!(match (self, other) { #encoding_equality #different }),
+    )
 }
 
 /// Bundle named rule parameters into one user-defined parameter.
 /// ```
 /// use thrum_derive::Params;
+/// #[derive(thrum::Resource)] struct Score(u32);
+/// #[derive(Params)] struct Access<'a> { score: thrum::ResMut<'a, Score> }
+/// fn score(mut access: Access<'_>) { access.score.0 += 1; }
+/// let mut game = thrum::Game::new("Example").resource(Score(0))
+///     .scene(|scene: &mut thrum::Scene| { scene.rules(score); }).test().unwrap();
+/// game.step().unwrap();
+/// assert_eq!(game.resource::<Score>().unwrap().0, 1);
 /// ```
 #[proc_macro_derive(Params)]
 pub fn params(input: TokenStream) -> TokenStream {

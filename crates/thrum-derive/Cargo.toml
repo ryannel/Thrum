@@ -13,5 +13,8 @@ proc-macro2 = "=1.0.107"
 quote = "=1.0.47"
 syn = "=2.0.119"
 
+[dev-dependencies]
+thrum = { path = "../thrum", default-features = false }
+
 [lints]
 workspace = true

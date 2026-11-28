@@ -47,7 +47,10 @@ impl<T: Data> Value for T {
             .clone_from(self);
     }
     fn equals(&self, other: &dyn Value) -> bool {
-        other.any().downcast_ref::<T>() == Some(self)
+        other
+            .any()
+            .downcast_ref::<T>()
+            .is_some_and(|other| self.same_encoding(other))
     }
     fn encode_value(&self, digest: &mut Digest<'_>) {
         self.write(&mut DataWriter(digest));
@@ -273,10 +276,14 @@ impl EventBuffers {
             .iter_mut()
             .find(|(id, _)| *id == TypeId::of::<E>())
             .and_then(|(_, buffer)| buffer.as_any_mut().downcast_mut::<Vec<E>>())
-            .map_or_else(Vec::new, std::mem::take)
+            .map_or_else(Vec::new, |buffer| {
+                let mut events = Vec::with_capacity(buffer.len());
+                events.append(buffer);
+                events
+            })
     }
 
-    fn clear(&mut self) {
+    pub(crate) fn clear(&mut self) {
         for (_, buffer) in &mut self.0 {
             buffer.clear();
         }

@@ -275,35 +275,54 @@ impl<T: Component, F: Filter> std::ops::DerefMut for Single<'_, &mut T, F> {
 
 /// Data projected for one matching query row.
 /// ```
-/// fn count(query: thrum::Query<thrum::Entity>) -> u32 { query.count() }
+/// use thrum::{Query, QueryData};
+/// fn count<D: QueryData>(query: Query<'_, D>) -> u32 { query.count() }
 /// ```
 #[expect(private_bounds, reason = "only the SDK can define a query projection")]
 pub trait QueryData: sealed::Data<Owned = Self::RowData> {
     /// Reusable data held for one matching row.
     /// ```
-    /// fn count(query: thrum::Query<thrum::Entity>) -> u32 { query.count() }
+    /// use thrum::{Entity, QueryData};
+    /// let _: <Entity as QueryData>::RowData = Default::default();
     /// ```
     type RowData: Default + Send + 'static;
     /// A shared view of one row.
     /// ```
-    /// fn count(query: thrum::Query<thrum::Entity>) -> u32 { query.count() }
+    /// use thrum::{Entity, Query, QueryData};
+    /// fn first<'a>(query: &'a Query<'_, Entity>) -> Option<<Entity as QueryData>::Read<'a>> {
+    ///     query.iter().next()
+    /// }
     /// ```
     type Read<'a>;
     /// A view with the access declared by the query.
     /// ```
-    /// fn count(query: thrum::Query<thrum::Entity>) -> u32 { query.count() }
+    /// use thrum::{Component, Query, QueryData};
+    /// #[derive(Component)] struct Health(u32);
+    /// fn heal(mut query: Query<'_, &mut Health>) {
+    ///     for health in &mut query {
+    ///         let health: <&mut Health as QueryData>::Item<'_> = health;
+    ///         health.0 += 1;
+    ///     }
+    /// }
     /// ```
     type Item<'a>;
     /// The same projection with references tied to the current rule.
     /// ```
-    /// fn count(query: thrum::Query<thrum::Entity>) -> u32 { query.count() }
+    /// use thrum::{Component, Query, QueryData};
+    /// #[derive(Component)] struct Health(u32);
+    /// fn count<'a>(query: Query<'a, <&'static Health as QueryData>::For<'a>>) -> u32 {
+    ///     query.count()
+    /// }
     /// ```
     type For<'a>: QueryData<RowData = Self::RowData>;
 }
 
 /// A component presence filter.
 /// ```
-/// fn count(query: thrum::Query<thrum::Entity>) -> u32 { query.count() }
+/// use thrum::{Component, Entity, Filter, Query, With};
+/// #[derive(Component)] struct Player;
+/// fn count<F: Filter>(query: Query<'_, Entity, F>) -> u32 { query.count() }
+/// fn players(query: Query<'_, Entity, With<Player>>) -> u32 { count(query) }
 /// ```
 #[expect(private_bounds, reason = "only the SDK can define a query filter")]
 pub trait Filter: sealed::Filter {}
@@ -597,7 +616,8 @@ pub(crate) struct Row<T> {
 
 /// Scratch for a query's prepared rows.
 /// ```
-/// fn count(query: thrum::Query<thrum::Entity>) -> u32 { query.count() }
+/// use thrum::{Entity, Query, __derive::{Param, Rows}};
+/// let _: <Query<'static, Entity> as Param>::State = Rows::default();
 /// ```
 #[doc(hidden)]
 pub struct Rows<T> {

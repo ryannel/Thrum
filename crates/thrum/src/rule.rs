@@ -1,5 +1,6 @@
 use std::{
-    any::{TypeId, type_name},
+    any::{Any, TypeId, type_name},
+    collections::HashMap,
     panic::{AssertUnwindSafe, catch_unwind, resume_unwind},
     sync::{Arc, Mutex},
 };
@@ -13,22 +14,35 @@ pub(crate) mod query;
 use access::{Loans, Signature};
 use params::{Context, Param, ParameterList, ReadContext, ReadOnly};
 
-macro_rules! internal_doc {
-    ($doc:literal) => {
-        concat!($doc, "\n```\nfn rule(_: thrum::Tick) {}\n```\n")
-    };
-}
-
 type Invoke<O> = dyn FnMut(&mut Context<'_, '_>, &ReadContextParts<'_>) -> Result<O> + Send;
 
-#[doc = internal_doc!("A compiled callback prepared from a Rust rule.")]
+/// A compiled callback prepared from a Rust rule.
+/// ```
+/// use thrum::__derive::{Invocation, RuleFunction};
+/// let _: Invocation<u32> = (|| 7_u32).compile();
+/// ```
 #[doc(hidden)]
 pub struct Invocation<O> {
     pub(crate) name: &'static str,
     pub(crate) signature: Signature,
     pub(crate) stream: u64,
     pub(crate) callable: TypeId,
+    pub(crate) pointer: Option<usize>,
     pub(crate) invoke: Box<Invoke<O>>,
+}
+
+#[derive(Default)]
+pub(crate) struct RuleStreams(HashMap<(TypeId, Option<usize>), u64>);
+
+impl RuleStreams {
+    pub(crate) fn identify<O>(&mut self, invocation: &mut Invocation<O>) {
+        // Addresses only identify a pointer within this process. Registration
+        // order supplies its seed, so ASLR never enters the draw.
+        let next = self.0.len() as u64;
+        let key = (invocation.callable, invocation.pointer);
+        let registration = *self.0.entry(key).or_insert(next);
+        invocation.distinguish(0x6d61_6e75_616c_0000 ^ registration);
+    }
 }
 
 pub(crate) struct ReadContextParts<'a> {
@@ -50,6 +64,14 @@ impl<O> Invocation<O> {
         self.stream = (self.stream ^ registration).wrapping_mul(0x0100_0000_01b3);
     }
 
+    pub(crate) fn identify_scheduled(&mut self, registration: u64, streams: &mut RuleStreams) {
+        if self.pointer.is_some() {
+            streams.identify(self);
+        } else if self.anonymous() {
+            self.distinguish(registration);
+        }
+    }
+
     pub(crate) fn call(
         &mut self,
         context: &mut Context<'_, '_>,
@@ -59,37 +81,73 @@ impl<O> Invocation<O> {
     }
 }
 
-#[doc = internal_doc!("Marker used to infer rule parameter types.")]
+/// Marker used to infer rule parameter types.
+/// ```
+/// use thrum::{Rules, Tick, __derive::Function};
+/// fn require_rule(_: impl Rules<Function<((Tick,), ())>>) {}
+/// require_rule(|_: Tick| {});
+/// ```
 #[doc(hidden)]
 pub struct Function<M>(std::marker::PhantomData<M>);
 
-#[doc = internal_doc!("Marker used to infer one rule or a tuple of rules.")]
+/// Marker used to infer a tuple of rules.
+/// ```
+/// use thrum::{Rules, __derive::{Function, Group}};
+/// type NoArgs = Function<((), ())>;
+/// fn require_pair(_: impl Rules<Group<(NoArgs, NoArgs)>>) {}
+/// require_pair((|| {}, || {}));
+/// ```
 #[doc(hidden)]
 pub struct Group<M>(std::marker::PhantomData<M>);
 
-#[doc = internal_doc!("Parameter and return-type information inferred from a plain Rust function.")]
+/// Parameter and return-type information inferred from a plain Rust function.
+/// ```
+/// use thrum::{Tick, __derive::RuleFunction};
+/// fn require_tick(_: impl RuleFunction<(Tick,), ()>) {}
+/// require_tick(|_: Tick| {});
+/// ```
 #[doc(hidden)]
 pub trait RuleFunction<M, O> {
-    #[doc = internal_doc!("Compile the function's parameter adapters.")]
+    /// Compile the function's parameter adapters.
+    /// ```
+    /// use thrum::{Tick, __derive::RuleFunction};
+    /// fn tick_number(tick: Tick) -> thrum::TickNumber { tick.number() }
+    /// let _compiled = tick_number.compile();
+    /// ```
     fn compile(self) -> Invocation<O>;
 }
 
-#[doc = internal_doc!("A function whose parameters permit reads alone.")]
+/// A function whose parameters permit reads alone.
+/// ```
+/// use thrum::{Tick, __derive::ReadFunction};
+/// fn require_condition(_: impl ReadFunction<(Tick,), bool>) {}
+/// require_condition(|_: Tick| true);
+/// ```
 #[doc(hidden)]
 pub trait ReadFunction<M, O>: ScheduledFunction<M, O> {}
 
-#[doc = internal_doc!("A scheduled rule cannot mutate captured state.")]
+/// A scheduled rule cannot mutate captured state.
+/// ```
+/// use thrum::{Tick, __derive::ScheduledFunction};
+/// fn require_scheduled(_: impl ScheduledFunction<(Tick,), ()>) {}
+/// let limit = 5;
+/// require_scheduled(move |_: Tick| assert_eq!(limit, 5));
+/// ```
 #[doc(hidden)]
 pub trait ScheduledFunction<M, O>: RuleFunction<M, O> {}
 
-impl<F, O> RuleFunction<(), O> for F
+impl<F, O: 'static> RuleFunction<(), O> for F
 where
     F: FnMut() -> O + Send + 'static,
 {
     fn compile(mut self) -> Invocation<O> {
+        let function: &dyn Any = &self;
         Invocation {
             name: type_name::<F>(),
             callable: TypeId::of::<F>(),
+            pointer: function
+                .downcast_ref::<fn() -> O>()
+                .map(|function| *function as usize),
             stream: stream::<F>(),
             signature: Signature::default(),
             invoke: Box::new(move |_, _| Ok(self())),
@@ -97,8 +155,8 @@ where
     }
 }
 
-impl<F: Fn() -> O + Copy + Send + 'static, O> ScheduledFunction<(), O> for F {}
-impl<F: Fn() -> O + Copy + Send + 'static, O> ReadFunction<(), O> for F {}
+impl<F: Fn() -> O + Copy + Send + 'static, O: 'static> ScheduledFunction<(), O> for F {}
+impl<F: Fn() -> O + Copy + Send + 'static, O: 'static> ReadFunction<(), O> for F {}
 
 fn stream<F>() -> u64 {
     type_name::<F>()
@@ -110,7 +168,7 @@ fn stream<F>() -> u64 {
 
 macro_rules! functions {
     ($(($($parameter:ident $value:ident $index:tt),*)),+ $(,)?) => {$(
-        impl<F, O, $($parameter,)*> RuleFunction<($($parameter,)*), O> for F
+        impl<F, O: 'static, $($parameter,)*> RuleFunction<($($parameter,)*), O> for F
         where
             F: FnMut($($parameter),*) -> O + for<'t> FnMut($($parameter::Item<'t>),*) -> O + Send + 'static,
             $($parameter: Param + 'static,)*
@@ -122,9 +180,19 @@ macro_rules! functions {
                 let loan_types = list.0.loan_types();
                 let mut loans = Loans::default();
                 let mut state: ($($parameter::State,)*) = Default::default();
+                let function: &dyn Any = &self;
+                let pointer = function
+                    .downcast_ref::<fn($($parameter),*) -> O>()
+                    .map(|function| *function as usize)
+                    .or_else(|| {
+                        function
+                            .downcast_ref::<for<'t> fn($($parameter::Item<'t>),*) -> O>()
+                            .map(|function| *function as usize)
+                    });
                 Invocation {
                     name,
                     callable: TypeId::of::<F>(),
+                    pointer,
                     stream: stream::<F>(),
                     signature: list.0,
                     invoke: Box::new(move |context, parts| {
@@ -180,10 +248,22 @@ macro_rules! functions {
 
 functions!( (A a 0), (A a 0, B b 1), (A a 0, B b 1, C c 2), (A a 0, B b 1, C c 2, D d 3), (A a 0, B b 1, C c 2, D d 3, E e 4), (A a 0, B b 1, C c 2, D d 3, E e 4, F0 f 5));
 
-#[doc = internal_doc!("An ordinary rule returns nothing or a Thrum result.")]
+/// An ordinary rule returns nothing or a Thrum result.
+/// ```
+/// use thrum::__derive::RuleOutput;
+/// fn require_output(_: impl RuleOutput) {}
+/// require_output(());
+/// require_output(thrum::Result::Ok(()));
+/// ```
 #[doc(hidden)]
 pub trait RuleOutput: 'static {
-    #[doc = internal_doc!("Resolve the outcome of the rule.")]
+    /// Resolve the outcome of the rule.
+    /// ```
+    /// use thrum::__derive::RuleOutput;
+    /// assert!(().result().is_ok());
+    /// let refused: thrum::Result = Err(thrum::Error::invalid("score", "overflow"));
+    /// assert_eq!(refused.result().unwrap_err().code(), "T0401");
+    /// ```
     /// # Errors
     /// A rule can refuse a tick.
     fn result(self) -> Result;
@@ -201,7 +281,13 @@ impl RuleOutput for Result {
     }
 }
 
-#[doc = internal_doc!("One registered rule and its activation condition.")]
+/// One registered rule and its activation condition.
+/// ```
+/// use thrum::{Rules, __derive::Rule};
+/// let mut rules: Vec<Rule> = Vec::new();
+/// (|| {}).into_rules(&mut rules);
+/// assert_eq!(rules.len(), 1);
+/// ```
 #[doc(hidden)]
 pub struct Rule {
     pub(crate) invoke: Invocation<()>,
@@ -234,12 +320,12 @@ impl Condition {
         }
     }
 
-    pub(crate) fn identify(&self, registration: u64) {
+    pub(crate) fn identify(&self, registration: u64, streams: &mut RuleStreams) {
         let mut state = self.state.lock().expect("condition scratch");
-        if !state.identified && state.invocation.anonymous() {
-            state.invocation.distinguish(registration);
+        if !state.identified {
+            state.invocation.identify_scheduled(registration, streams);
+            state.identified = true;
         }
-        state.identified = true;
     }
 
     pub(crate) fn evaluate(
@@ -266,6 +352,7 @@ impl Rule {
             signature,
             stream,
             callable,
+            pointer,
             mut invoke,
         } = function.compile();
         Self {
@@ -274,6 +361,7 @@ impl Rule {
                 signature,
                 stream,
                 callable,
+                pointer,
                 invoke: Box::new(move |ctx, parts| invoke(ctx, parts)?.result()),
             },
             cadence: None,
@@ -282,9 +370,22 @@ impl Rule {
     }
 }
 
-#[doc = internal_doc!("A plain function, configured rule, or nested tuple of rules.")]
+/// A plain function, configured rule, or nested tuple of rules.
+/// ```
+/// use thrum::{Rules, Scene};
+/// fn add<M>(scene: &mut Scene, rules: impl Rules<M>) {
+///     scene.rules(rules);
+/// }
+/// add(&mut Scene::default(), (|| {}, || {}));
+/// ```
 pub trait Rules<M> {
-    #[doc = internal_doc!("Build the ordered list of registered rules.")]
+    /// Build the ordered list of registered rules.
+    /// ```
+    /// use thrum::Rules;
+    /// let mut rules = Vec::new();
+    /// (|| {}, || {}).into_rules(&mut rules);
+    /// assert_eq!(rules.len(), 2);
+    /// ```
     #[doc(hidden)]
     fn into_rules(self, out: &mut Vec<Rule>);
 
@@ -328,7 +429,12 @@ pub trait Rules<M> {
     }
 }
 
-#[doc = internal_doc!("An ordered rule or group with a cadence or condition.")]
+/// An ordered rule or group with a cadence or condition.
+/// ```
+/// use thrum::{ConfiguredRules, Rules, Scene, seconds};
+/// let updates: ConfiguredRules = (|| {}).every(seconds(2)).when(|| true);
+/// Scene::<()>::default().rules(updates);
+/// ```
 pub struct ConfiguredRules(Vec<Rule>);
 
 impl Rules<()> for ConfiguredRules {

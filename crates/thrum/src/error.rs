@@ -29,13 +29,20 @@ pub enum Error {
     },
     /// A game description or operation must be corrected before retrying.
     /// ```
-    /// let error = thrum::Error::invalid("health", "must be positive");
-    /// assert_eq!(error.code(), "T0401");
+    /// use thrum::{Error, Game, Scene};
+    /// let game = Game::new("Example").scene(|_: &mut Scene| {}).test().unwrap();
+    /// let error = game.single::<()>().unwrap_err();
+    /// assert!(matches!(error, Error::Refused(_)));
     /// ```
     Refused(
         /// The message, including the stable code and remedy.
         /// ```
-        /// assert!(thrum::Error::invalid("health", "must be positive").to_string().contains("T0401"));
+        /// use thrum::{Diagnostic, Error, Game, Scene};
+        /// let game = Game::new("Example").scene(|_: &mut Scene| {}).test().unwrap();
+        /// let Error::Refused(diagnostic): Error = game.single::<()>().unwrap_err() else {
+        ///     panic!("expected a harness refusal");
+        /// };
+        /// let _: Diagnostic = diagnostic;
         /// ```
         Diagnostic,
     ),
@@ -43,8 +50,13 @@ pub enum Error {
 
 /// A named game error and its remedy.
 /// ```
-/// let error = thrum::Error::invalid("health", "must be positive");
-/// assert!(error.to_string().contains("health"));
+/// use thrum::{Diagnostic, Error, Game, Scene};
+/// let game = Game::new("Example").scene(|_: &mut Scene| {}).test().unwrap();
+/// let Error::Refused(diagnostic) = game.single::<()>().unwrap_err() else {
+///     panic!("expected a harness refusal");
+/// };
+/// let diagnostic: Diagnostic = diagnostic;
+/// assert!(format!("{diagnostic:?}").contains("T0304"));
 /// ```
 #[derive(Debug)]
 pub struct Diagnostic {

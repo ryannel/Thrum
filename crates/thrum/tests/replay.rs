@@ -236,6 +236,62 @@ fn rule_draw(mut random: Random) -> u32 {
 }
 
 #[test]
+fn function_pointer_rules_repeat_independently_after_rebuilding() -> Result {
+    let rules: [fn(Random) -> u32; 2] = [condition_draw, rule_draw];
+    let setup = || {
+        Game::new("pointer streams")
+            .scene(|_: &mut Scene| {})
+            .test_setup()
+            .seed(17)
+            .start()
+    };
+    let mut first = setup()?;
+    let mut second = setup()?;
+    for _ in 0..3 {
+        let left = first.run(rules[0])?;
+        let right = first.run(rules[1])?;
+        assert_ne!(left, right);
+        assert_eq!(right, first.run(rules[1])?);
+        assert_eq!(left, first.run(rules[0])?);
+        assert_eq!(left, second.run(rules[0])?);
+        assert_eq!(right, second.run(rules[1])?);
+        first.step()?;
+        second.step()?;
+    }
+    first.rewind(1)?;
+    second.rewind(1)?;
+    assert_eq!(first.run(rules[0])?, second.run(rules[0])?);
+    Ok(())
+}
+
+#[test]
+fn scheduled_and_manual_calls_share_their_function_pointer_identity() -> Result {
+    type Callback = fn(Random, ResMut<'_, Draws>);
+    fn loot(mut random: Random, mut draws: ResMut<'_, Draws>) {
+        draws.condition = random.below(u32::MAX);
+    }
+    fn weather(mut random: Random, mut draws: ResMut<'_, Draws>) {
+        draws.rule = random.below(u32::MAX);
+    }
+    let rules: [Callback; 2] = [loot, weather];
+    let mut game = Game::new("scheduled pointer streams")
+        .resource(Draws::default())
+        .scene(move |scene: &mut Scene| scene.rules((rules[0], rules[1])))
+        .test()?;
+    game.step()?;
+    let scheduled = game.resource::<Draws>()?;
+    assert_ne!(scheduled.condition, scheduled.rule);
+    let digest = game.digest();
+    game.run(rules[1])?;
+    game.run(rules[0])?;
+    assert_eq!(game.digest(), digest);
+    game.rewind(1)?;
+    game.step()?;
+    assert_eq!(game.digest(), digest);
+    Ok(())
+}
+
+#[test]
 fn named_manual_rules_and_scheduled_condition_have_independent_streams() -> Result {
     let mut game = Game::new("condition and guarded rule")
         .resource(Draws::default())
@@ -273,6 +329,16 @@ struct Pattern([u16; 4]);
 
 #[derive(Resource)]
 struct Pair((u32, bool));
+
+#[test]
+fn derived_schema_uses_resolved_fields_in_nested_aliases() {
+    type Entries<T> = Option<[(T,); 2]>;
+    #[derive(Component)]
+    struct Score<T>(Entries<T>);
+
+    assert_eq!(Score::<u32>::SCHEMA, Score::<u64>::SCHEMA);
+    assert_ne!(Score::<u32>::SCHEMA_ID, Score::<u64>::SCHEMA_ID);
+}
 
 #[test]
 fn portable_array_components_and_tuple_resources_rewind() -> Result {
@@ -335,5 +401,61 @@ fn a_panic_with_live_column_loans_restores_every_mutated_column() -> Result {
             .contains("after two writes")
     );
     assert_eq!(game.digest(), before);
+    Ok(())
+}
+
+#[test]
+fn rollback_and_rewind_restore_the_exact_component_encoding() -> Result {
+    #[derive(Component)]
+    struct Velocity(Option<[(Num,); 1]>);
+
+    fn reverse(mut velocity: Single<'_, &mut Velocity>) {
+        let value = &mut velocity.0.as_mut().expect("starting speed")[0].0;
+        *value = -*value;
+    }
+    fn refuse() -> Result {
+        Err(Error::invalid("velocity", "refused tick"))
+    }
+    fn direction(game: &thrum::TestGame) -> Result<i32> {
+        let value = game.get::<Velocity>(game.single::<With<Velocity>>()?)?;
+        Ok((Num::ONE / value.0.expect("starting speed")[0].0)
+            .to_i32()
+            .signum())
+    }
+    let setup = |refusing| {
+        Game::new("velocity")
+            .max_entities(1)
+            .scene(move |scene: &mut Scene| {
+                scene.on_enter(|mut entities: Entities<'_>| {
+                    entities.spawn((Velocity(Some([(Num::ZERO,)])),));
+                });
+                scene.rules(reverse);
+                if refusing {
+                    scene.rules(refuse);
+                }
+            })
+            .test()
+    };
+    let mut game = setup(true)?;
+    let starting = game.digest();
+    for _ in 0..2 {
+        let error = game.step().unwrap_err();
+        assert_eq!(error.code(), "T0401");
+        assert!(error.to_string().contains("refuse at tick 1"));
+        assert_eq!(game.digest(), starting);
+        assert_eq!(direction(&game)?, 1);
+    }
+
+    let mut game = setup(false)?;
+    let starting = game.digest();
+    game.step()?;
+    let reversed = game.digest();
+    assert_eq!(direction(&game)?, -1);
+    assert_ne!(reversed, starting);
+    game.rewind(1)?;
+    assert_eq!(direction(&game)?, 1);
+    assert_eq!(game.digest(), starting);
+    game.step()?;
+    assert_eq!(game.digest(), reversed);
     Ok(())
 }

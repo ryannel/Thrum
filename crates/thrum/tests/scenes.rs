@@ -1,5 +1,58 @@
 use thrum::prelude::*;
 
+#[test]
+fn a_held_phase_request_belongs_to_its_scene_entry() -> Result {
+    #[derive(Phase)]
+    enum OldStage {
+        Start,
+        Later,
+    }
+    #[derive(Phase)]
+    enum NewStage {
+        Start,
+        Other,
+        Later,
+    }
+    #[derive(Scene, Default)]
+    struct Old;
+    #[derive(Scene)]
+    struct New(bool);
+
+    let setup = || {
+        Game::new("held phase")
+            .scene(|scene: &mut Scene<Old>| {
+                scene.phases(OldStage::Start);
+                scene.phase(OldStage::Later);
+                scene.on_enter(|mut phase: PhaseMut<'_, OldStage>| {
+                    assert!(phase.go_to(OldStage::Later));
+                });
+            })
+            .scene(|scene: &mut Scene<New>| {
+                scene.phases(NewStage::Start);
+                scene.phase(NewStage::Other);
+                scene.phase(NewStage::Later);
+                scene.on_enter(|new: Res<'_, New>, mut phase: PhaseMut<'_, NewStage>| {
+                    if new.0 {
+                        assert!(phase.go_to(NewStage::Later));
+                    }
+                });
+            })
+            .test()
+    };
+    for (request, expected) in [(false, NewStage::Start), (true, NewStage::Later)] {
+        let mut game = setup()?;
+        game.go_to(New(request))?;
+        assert_eq!(game.phase::<NewStage>()?, NewStage::Start);
+        game.step()?;
+        let digest = game.digest();
+        assert_eq!(game.phase::<NewStage>()?, expected);
+        game.rewind(1)?;
+        game.step()?;
+        assert_eq!(game.digest(), digest);
+    }
+    Ok(())
+}
+
 #[derive(Resource, Default)]
 struct Trace(u64);
 #[derive(Resource)]

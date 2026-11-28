@@ -29,12 +29,10 @@ impl Column {
             type_id: TypeId::of::<T>(),
             name: type_name::<T>(),
             schema: || {
-                let mut hash = 0x6c62_272e_07bb_0142_62b8_2175_6295_c58d_u128;
-                for byte in type_name::<T>().bytes().chain(T::SCHEMA.bytes()) {
-                    hash = (hash ^ u128::from(byte))
-                        .wrapping_mul(0x0000_0000_0100_0000_0000_0000_0000_013b);
-                }
-                ComponentSchemaId(hash)
+                ComponentSchemaId(crate::data::schema_hash(
+                    T::SCHEMA_ID,
+                    type_name::<T>().as_bytes(),
+                ))
             },
             register: |registry, schema| {
                 registry

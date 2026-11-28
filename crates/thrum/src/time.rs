@@ -100,6 +100,10 @@ impl Div for Seconds {
 
 impl Data for Seconds {
     const SCHEMA: &'static str = "thrum::Seconds(nanoseconds)";
+
+    fn same_encoding(&self, other: &Self) -> bool {
+        self == other
+    }
     fn write(&self, writer: &mut crate::__derive::DataWriter<'_, '_>) {
         self.0.write(writer);
     }

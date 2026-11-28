@@ -56,7 +56,7 @@ pub mod prelude {
 /// ```
 #[doc(hidden)]
 pub mod __derive {
-    pub use crate::data::{DataReader, DataWriter, InvalidData};
+    pub use crate::data::{DataReader, DataWriter, InvalidData, schema_id};
     pub use crate::entity::Changes;
     pub use crate::game::FirstScene;
     pub use crate::rule::params::{Context, Param, ParameterList, ReadContext, ReadOnly};

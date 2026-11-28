@@ -11,8 +11,9 @@ use super::access::{Bindings, Exclusive, Kind, Loans, Parameter, Signature};
 
 /// The parameter declarations collected by the SDK for a rule.
 /// ```
-/// use thrum::Tick;
-/// fn rule(_: Tick) {}
+/// use thrum::{Tick, __derive::{Param, ParameterList}};
+/// let mut parameters = ParameterList::default();
+/// Tick::describe("tick", &mut parameters);
 /// ```
 #[doc(hidden)]
 #[derive(Default)]
@@ -48,8 +49,10 @@ impl ParameterList {
 
 /// The view used to prepare rule parameters.
 /// ```
-/// use thrum::Tick;
-/// fn rule(_: Tick) {}
+/// use thrum::{Tick, __derive::{Param, ReadContext}};
+/// fn prepare_tick(context: &ReadContext<'_>) -> thrum::Result {
+///     Tick::read(&mut (), context)
+/// }
 /// ```
 #[doc(hidden)]
 pub struct ReadContext<'a> {
@@ -69,8 +72,10 @@ pub struct ReadContext<'a> {
 
 /// The view used to submit a rule's changes.
 /// ```
-/// use thrum::Tick;
-/// fn rule(_: Tick) {}
+/// use thrum::{Tick, __derive::{Context, Param}};
+/// fn submit_tick(context: &mut Context<'_, '_>) -> thrum::Result {
+///     Tick::write(&mut (), context)
+/// }
 /// ```
 #[doc(hidden)]
 pub struct Context<'a, 'w> {
@@ -91,8 +96,9 @@ pub struct Context<'a, 'w> {
 /// the same order. A loan must stay within the invocation that prepared it.
 /// Use `#[derive(Params)]` to implement these invariants.
 /// ```
-/// use thrum::Tick;
-/// fn rule(_: Tick) {}
+/// use thrum::{Tick, __derive::{Param, ParameterList}};
+/// fn declare<P: Param>(list: &mut ParameterList) { P::describe("parameter", list); }
+/// declare::<Tick>(&mut ParameterList::default());
 /// ```
 #[doc(hidden)]
 #[expect(
@@ -102,22 +108,22 @@ pub struct Context<'a, 'w> {
 pub unsafe trait Param {
     /// Reusable scratch for one rule parameter.
     /// ```
-    /// use thrum::Tick;
-    /// fn rule(_: Tick) {}
+    /// use thrum::{Tick, __derive::Param};
+    /// let _: <Tick as Param>::State = ();
     /// ```
     type State: Default + Send + 'static;
 
     /// The parameter lent to one invocation.
     /// ```
-    /// use thrum::Tick;
-    /// fn rule(_: Tick) {}
+    /// use thrum::{Tick, __derive::Param};
+    /// fn use_tick(tick: <Tick as Param>::Item<'_>) -> thrum::TickNumber { tick.number() }
     /// ```
     type Item<'t>;
 
     /// Declare the rule's accesses before compiling the schedule.
     /// ```
-    /// use thrum::Tick;
-    /// fn rule(_: Tick) {}
+    /// use thrum::{Tick, __derive::{Param, ParameterList}};
+    /// Tick::describe("tick", &mut ParameterList::default());
     /// ```
     fn describe(name: &str, list: &mut ParameterList);
 
@@ -126,15 +132,17 @@ pub unsafe trait Param {
     /// # Errors
     /// The world cannot supply the parameter, such as an empty Single query.
     /// ```
-    /// use thrum::Tick;
-    /// fn rule(_: Tick) {}
+    /// use thrum::{Tick, __derive::{Param, ReadContext}};
+    /// fn prepare_tick(context: &ReadContext<'_>) -> thrum::Result {
+    ///     Tick::read(&mut (), context)
+    /// }
     /// ```
     fn read(state: &mut Self::State, context: &ReadContext<'_>) -> Result;
 
     /// Lend the prepared parameter to the rule.
     /// ```
-    /// use thrum::Tick;
-    /// fn rule(_: Tick) {}
+    /// use thrum::{Tick, __derive::{Param, ReadContext}};
+    /// fn tick(context: &ReadContext<'_>) -> Tick { Tick::item(&mut (), context) }
     /// ```
     fn item<'t>(state: &'t mut Self::State, context: &ReadContext<'_>) -> Self::Item<'t>;
 
@@ -143,8 +151,12 @@ pub unsafe trait Param {
     /// # Errors
     /// Lent values must remain finite.
     /// ```
-    /// #[derive(thrum::Params)]
-    /// struct Access<'t> { entities: thrum::Query<'t, thrum::Entity> }
+    /// use thrum::{Component, Query, __derive::{Context, Param}};
+    /// #[derive(Component)] struct Health(u32);
+    /// type Bodies = Query<'static, &'static mut Health>;
+    /// fn journal(state: &mut <Bodies as Param>::State, context: &mut Context<'_, '_>) -> thrum::Result {
+    ///     Bodies::journal(state, context)
+    /// }
     /// ```
     fn journal(_: &mut Self::State, _: &mut Context<'_, '_>) -> Result {
         Ok(())
@@ -155,8 +167,12 @@ pub unsafe trait Param {
     /// # Errors
     /// A proposed change is invalid.
     /// ```
-    /// use thrum::Tick;
-    /// fn rule(_: Tick) {}
+    /// use thrum::{Resource, ResMut, __derive::{Context, Param}};
+    /// #[derive(Resource)] struct Score(u32);
+    /// type Points = ResMut<'static, Score>;
+    /// fn submit(state: &mut <Points as Param>::State, context: &mut Context<'_, '_>) -> thrum::Result {
+    ///     Points::write(state, context)
+    /// }
     /// ```
     fn write(_: &mut Self::State, _: &mut Context<'_, '_>) -> Result {
         Ok(())
@@ -165,8 +181,9 @@ pub unsafe trait Param {
 
 /// A parameter suitable for a read-only condition or duration.
 /// ```
-/// use thrum::Tick;
-/// fn condition(_: Tick) -> bool { true }
+/// use thrum::{Tick, __derive::ReadOnly};
+/// fn require_read_only<P: ReadOnly>() {}
+/// require_read_only::<Tick>();
 /// ```
 #[doc(hidden)]
 pub trait ReadOnly: Param {}

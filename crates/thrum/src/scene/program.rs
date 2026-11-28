@@ -13,7 +13,7 @@ use crate::{
     Error, Result, Seconds, Tick, TickNumber,
     entity::{Changes, contains_entities},
     rule::{
-        Invocation, ReadContextParts, Rule,
+        Invocation, ReadContextParts, Rule, RuleStreams,
         access::{Bindings, Column, Signature},
         params::Context,
     },
@@ -32,6 +32,7 @@ pub(crate) struct Program {
     slots: Vec<Slot>,
     scenes: Vec<ScenePlan>,
     pub(crate) columns: Vec<Column>,
+    pub(crate) streams: RuleStreams,
     rate: u32,
 }
 
@@ -84,7 +85,7 @@ impl Step {
         base.into_iter().chain(conditions).chain(duration)
     }
 
-    fn identify(&mut self, slot: u32) {
+    fn identify(&mut self, slot: u32, streams: &mut RuleStreams) {
         let rule = match self {
             Self::Main(_, _, rule)
             | Self::ExpiryRule(_, _, rule)
@@ -92,18 +93,14 @@ impl Step {
             | Self::EnterScene(_, rule)
             | Self::EnterPhase(_, _, rule) => rule,
             Self::Length(_, _, Duration::Read(read)) => {
-                if read.anonymous() {
-                    read.distinguish(u64::from(slot));
-                }
+                read.identify_scheduled(u64::from(slot), streams);
                 return;
             }
             _ => return,
         };
-        if rule.invoke.anonymous() {
-            rule.invoke.distinguish(u64::from(slot));
-        }
+        rule.invoke.identify_scheduled(u64::from(slot), streams);
         for (index, condition) in (1_u64..).zip(&rule.conditions) {
-            condition.identify((index << 32) | u64::from(slot));
+            condition.identify((index << 32) | u64::from(slot), streams);
         }
     }
 
@@ -233,9 +230,10 @@ impl Program {
 
         let mut slots = Vec::new();
         let mut systems = Vec::new();
+        let mut streams = RuleStreams::default();
         for (index, mut step) in main.into_iter().enumerate() {
             let id = u32::try_from(index).map_err(|_| Error::invalid("scene", "too many rules"))?;
-            step.identify(id);
+            step.identify(id, &mut streams);
             let writes_structure = matches!(step, Step::Manual | Step::Install)
                 || step
                     .signatures()
@@ -294,6 +292,7 @@ impl Program {
                 slots,
                 scenes,
                 columns,
+                streams,
                 rate,
             },
             registry,
@@ -470,6 +469,9 @@ impl Program {
         match candidate.transition.as_ref() {
             Some(Transition::Scene(index, value)) => {
                 crate::runtime::check_value(value.as_ref())?;
+                if matches!(candidate.state.held, Some(Transition::Phase(_))) {
+                    candidate.state.held = None;
+                }
                 if !matches!(
                     *authority.operation.lock().expect("operation"),
                     Operation::Start(..)

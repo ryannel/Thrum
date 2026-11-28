@@ -1,5 +1,26 @@
 use thrum::prelude::*;
 
+#[test]
+fn manual_rule_commits_the_exact_resource_encoding() -> Result {
+    #[derive(Resource)]
+    enum Velocity {
+        Horizontal(Num),
+    }
+    let mut game = Game::new("velocity")
+        .resource(Velocity::Horizontal(Num::ZERO))
+        .scene(|_: &mut Scene| {})
+        .test()?;
+    let starting = game.digest();
+    game.run(|mut velocity: ResMut<'_, Velocity>| {
+        let Velocity::Horizontal(value) = &mut *velocity;
+        *value = -*value;
+    })?;
+    let Velocity::Horizontal(value) = game.resource::<Velocity>()?;
+    assert_eq!((Num::ONE / value).to_i32().signum(), -1);
+    assert_ne!(game.digest(), starting);
+    Ok(())
+}
+
 #[derive(Component)]
 struct Health(i32);
 #[derive(Component)]

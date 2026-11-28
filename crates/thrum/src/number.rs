@@ -99,6 +99,11 @@ impl SubAssign for Num {
 
 impl Data for Num {
     const SCHEMA: &'static str = "thrum::Num(binary32)";
+
+    fn same_encoding(&self, other: &Self) -> bool {
+        self.0.to_bits() == other.0.to_bits()
+    }
+
     fn write(&self, writer: &mut DataWriter<'_, '_>) {
         self.0.encode(writer.0);
     }

@@ -1,6 +1,5 @@
 use std::{
     any::{Any, TypeId, type_name},
-    collections::HashMap,
     num::NonZeroUsize,
     sync::{Arc, Mutex},
 };
@@ -202,7 +201,6 @@ impl Game {
             authority,
             candidate,
             history,
-            manual_streams: HashMap::new(),
         })
     }
 }
@@ -324,7 +322,6 @@ pub struct TestGame {
     authority: Authority,
     candidate: Candidate,
     history: RuntimeHistory<State, ()>,
-    manual_streams: HashMap<TypeId, u64>,
 }
 
 impl TestGame {
@@ -393,7 +390,7 @@ impl TestGame {
         self.history
             .rewind(&mut self.runtime, &mut self.authority, ticks)
             .map_err(history_error)?;
-        self.authority.events = EventBuffers::default();
+        self.authority.events.clear();
         Ok(())
     }
 
@@ -627,6 +624,10 @@ impl TestGame {
     /// # Errors
     /// The rule cannot acquire its parameters, returns an error as a rule
     /// result, or proposes an invalid edit.
+    ///
+    /// Function pointers get their random stream when first registered or
+    /// run. Repeat manual calls in the same order to reproduce a run in a
+    /// freshly built game.
     /// # Panics
     /// Only if an internal harness invariant is broken.
     pub fn run<M, O: Send + 'static>(&mut self, function: impl RuleFunction<M, O>) -> Result<O> {
@@ -641,10 +642,9 @@ impl TestGame {
         let name = invocation.name;
         let signature = invocation.signature.clone();
         let callable = invocation.callable;
-        if invocation.anonymous() {
-            let next = self.manual_streams.len() as u64;
-            let registration = *self.manual_streams.entry(callable).or_insert(next);
-            invocation.distinguish(0x6d61_6e75_616c_0000 ^ registration);
+        let pointer = invocation.pointer;
+        if pointer.is_some() || invocation.anonymous() {
+            self.authority.program.streams.identify(&mut invocation);
         }
         let stream = invocation.stream;
         let invoke = move |context: &mut Context<'_, '_>, parts: &ReadContextParts<'_>| {
@@ -661,6 +661,7 @@ impl TestGame {
             signature,
             stream,
             callable,
+            pointer,
             invoke: Box::new(invoke),
         }))?;
         Ok(output

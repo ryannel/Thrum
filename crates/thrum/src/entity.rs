@@ -178,7 +178,8 @@ impl Entities<'_> {
 #[doc(hidden)]
 /// Scratch used by the structural edits of one rule.
 /// ```
-/// fn rule(_: thrum::Entities) {}
+/// use thrum::{Entities, __derive::{Changes, Param}};
+/// let _: <Entities<'static> as Param>::State = Changes::default();
 /// ```
 pub struct Changes {
     live: Vec<Entity>,
