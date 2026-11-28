@@ -18,12 +18,12 @@ pub(crate) fn append_seeded(output: &mut String) {
         let motion = axis * n(24);
         let shot = center - axis * n(12);
         let mover = a.translated(shot - center);
-        let struck_motion = if case % 2 == 0 {
+        let struck_motion = if case.is_multiple_of(2) {
             draw.vector(6)
         } else {
             Vector3::ZERO
         };
-        let gap = if case % 2 == 0 {
+        let gap = if case.is_multiple_of(2) {
             SweepGap::Tolerance
         } else {
             SweepGap::HalfTolerance
@@ -60,7 +60,11 @@ impl Draw {
 
     fn axis(&mut self) -> Vector3 {
         let axis = Vector3::AXES[usize::try_from(self.next() % 3).expect("three axes")];
-        if self.next() % 2 == 0 { axis } else { -axis }
+        if self.next().is_multiple_of(2) {
+            axis
+        } else {
+            -axis
+        }
     }
 
     fn shape(&mut self, center: Vector3, kinds: u64) -> Shape {
@@ -75,7 +79,7 @@ impl Draw {
                 }
             }
             2 => {
-                let half_edges = if self.next() % 2 == 0 {
+                let half_edges = if self.next().is_multiple_of(2) {
                     Vector3::AXES.map(|axis| axis * (random_fraction(self.next()) * n(3)))
                 } else {
                     [v(2, 2, 1), v(2, -1, -2), v(-1, 2, -2)].map(|axis| {
