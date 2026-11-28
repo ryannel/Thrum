@@ -1,0 +1,24 @@
+[package]
+name = "thrum-audio"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+autotests = false
+description = "Deterministic 48 kHz stereo mix and game-side audio handle"
+
+[dependencies]
+rtrb = { version = "=0.4.1", default-features = false }
+
+[dev-dependencies]
+thrum-test-support = { path = "../thrum-test-support" }
+
+[[test]]
+name = "it"
+path = "tests/it.rs"
+
+[features]
+mix-module = []
+
+[lints]
+workspace = true

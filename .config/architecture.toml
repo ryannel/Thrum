@@ -10,6 +10,10 @@ manifest = "crates/thrum-test-support/Cargo.toml"
 test_role = "support"
 allowed_workspace_dependencies = ["thrum-render"]
 
+[packages.thrum-audio]
+manifest = "crates/thrum-audio/Cargo.toml"
+allowed_workspace_dependencies = ["thrum-test-support"]
+
 [packages.thrum-core]
 manifest = "crates/thrum-core/Cargo.toml"
 allowed_workspace_dependencies = ["thrum-test-support"]
@@ -209,6 +213,12 @@ allowed_workspace_dependencies = ["v1-game", "thrum-render", "thrum-core", "thru
 # requirement, its declared license, purpose and target/build cost note.
 # The check validates declarations; license/provenance review remains human work.
 [external_dependencies]
+
+[external_dependencies.rtrb]
+requirement = "=0.4.1"
+license = "MIT OR Apache-2.0"
+purpose = "Bounded single-producer single-consumer audio command queue"
+target_cost = "No runtime allocation after setup, no device or platform dependencies"
 
 [external_dependencies.getrandom]
 requirement = "=0.4.3"

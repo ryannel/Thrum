@@ -26,3 +26,10 @@
   - Finding 4, four plays could be admitted and one mixed. WP1.3 is rewritten on a sound of one constant value: every frame holds that value times the number of started plays that cover it, with the frames named for each case.
   - Suggestion taken: the glossary's Emitter entry follows mechanism 5. Outcome names the play number, and Play number is a new proposed name.
 - 2026-11-28 For the project planner: `GAME-SDK` WP18 keeps each play's place and volume under the play number its call returns, and reads `screen.sounds()` from the outcomes whose fate is `started`, matched by that number.
+- 2026-11-28 WP1 built the 48 kHz buffer, the game-side handle and the import-free mix module from the same
+  mix source. Set the initial 64-voice pool to 48 one-shots and 16 emitters, with 256 commands, 512 outcomes,
+  256 sounds, a 128-frame ramp, a 1/128 glide step, a 0.75 knee, a 0.25 listener `near` and a 0.125 emitter
+  margin. The placed-stereo downmix weights the channels equally and preserves the level of identical channels.
+- 2026-11-28 WP1 established reference digest `cf7b0128f410d7db`. The
+  [proof record](../../../.orchestrate/evidence/AUDIO/WP1/README.md) gives the Mac buffer, Node and source
+  checks. The [module command](../../../crates/thrum-audio/README.md) builds the artifact for the web build step.
