@@ -11,11 +11,18 @@ use v1_game::GameHost as _;
 
 use super::{Gpu, SunProbe, Valley, Witness, output, read_buffer, store};
 
-const PASSES: [&str; 5] = [
+const PASSES: [&str; 12] = [
     "contribution compute",
     "synthetic forward opaque",
     "synthetic Sun shadow near",
     "synthetic Sun shadow far",
+    "synthetic Sun cascade 2",
+    "synthetic Sun cascade 3",
+    "synthetic Sun cascade 4",
+    "synthetic Sun cascade 5",
+    "synthetic Sun cascade 6",
+    "synthetic Sun cascade 7",
+    "synthetic Sun cascade 8",
     "synthetic Sun horizon heights",
 ];
 
@@ -124,7 +131,7 @@ fn route_cost() {
     let witness = count.then(|| {
         gpu.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("route shadow view witness"),
-            size: 3 * 80,
+            size: ((PASSES.len() - 2) * 80) as u64,
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::COPY_SRC,
             mapped_at_creation: false,
         })
@@ -132,7 +139,7 @@ fn route_cost() {
     let readback = count.then(|| {
         gpu.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("route shadow view readback"),
-            size: 3 * 80,
+            size: ((PASSES.len() - 2) * 80) as u64,
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
             mapped_at_creation: false,
         })
@@ -147,7 +154,10 @@ fn route_cost() {
                 .encode_scene()
                 .expect("encode");
             let frame_extent = encoded.frame_extent().expect("encoded view");
-            assert_eq!(encoded.copy_shadow_view_witness(witness), Some(240));
+            assert_eq!(
+                encoded.copy_shadow_view_witness(witness),
+                Some(witness.size())
+            );
             assert!(
                 encoded
                     .submit(Some(&SurfaceOutput {

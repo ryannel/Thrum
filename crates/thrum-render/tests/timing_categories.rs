@@ -74,7 +74,7 @@ fn name_buckets(passes: &[PassTiming]) -> [(&'static str, f64); 12] {
                     "synthetic Sun shadow far"
                         | "synthetic Sun horizon heights"
                         | "synthetic Sun air shadow heights"
-                )
+                ) || n.starts_with("synthetic Sun cascade ")
             }),
         ),
         ("clusters", sum(passes, |n| n == "synthetic cluster build")),

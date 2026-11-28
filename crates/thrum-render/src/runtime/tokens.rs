@@ -173,7 +173,7 @@ struct ReadyFrame<'a, W: FrameWorld, V: SceneSource<W::Page>> {
 }
 
 impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
-    /// Copy the three caster view uniforms from this recording, in map order.
+    /// Copy the caster view uniforms from this recording, in map order.
     /// Used by offline geometry diagnostics on a separate untimed submission.
     #[cfg(feature = "creation-counters")]
     pub fn copy_shadow_view_witness(&mut self, output: &wgpu::Buffer) -> Option<u64> {

@@ -392,13 +392,15 @@ impl ShadowPrepared {
     pub(super) fn inspection_volumes(
         &self,
         bounds: Option<ShadowBounds>,
-    ) -> [SecondaryShadowCascade; MAPS] {
+    ) -> Vec<SecondaryShadowCascade> {
         let cooked = bounds.and_then(|bounds| self.inputs.fit(Some(bounds)).ok());
-        cooked
-            .as_ref()
-            .unwrap_or(&self.fitted)
-            .matrices
+        let fit = cooked.as_ref().unwrap_or(&self.fitted);
+        fit.matrices[..fit.count as usize]
+            .iter()
+            .chain(std::iter::once(&fit.matrices[HEIGHT_LAYER]))
+            .copied()
             .map(SecondaryShadowCascade::new)
+            .collect()
     }
 
     pub(super) fn encode_cascade<const MAP_COUNT: usize>(

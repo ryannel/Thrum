@@ -93,7 +93,7 @@ pub(crate) fn prove_casters() {
                 baseline = Some(key);
             }
             let cascades = host.ray_inspection_shadow_volumes();
-            assert_eq!(cascades.len(), if sun_shadows { 3 } else { 0 });
+            assert_eq!(cascades.len(), if sun_shadows { 10 } else { 0 });
             for point in [ENTITIES[1].1, PLACEMENTS[1]] {
                 let box_at = ShadowBounds::new(point.map(|v| v - 1.0), point.map(|v| v + 1.0))
                     .expect("fixture box");

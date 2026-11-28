@@ -26,9 +26,9 @@ impl PreparedSynthetic {
         &self,
         bounds: Option<crate::contribution::ShadowBounds>,
     ) -> Vec<crate::contribution::SecondaryShadowCascade> {
-        self.shadow.as_ref().map_or_else(Vec::new, |shadow| {
-            shadow.inspection_volumes(bounds).to_vec()
-        })
+        self.shadow
+            .as_ref()
+            .map_or_else(Vec::new, |shadow| shadow.inspection_volumes(bounds))
     }
 
     /// Inspect the last recorded list, including from an abandoned encoder.
