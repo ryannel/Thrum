@@ -562,3 +562,22 @@
   through the pale boil. The trial also missed one expected sheet-depth pixel in the existing Metal
   fall guard. The branch restores the previous rendering. WP6.4 and WP6.5 remain open for the lead's
   decision. [Trial evidence and handoff](../../../.orchestrate/evidence/RIVERS/WP6-handoff.md)
+
+- 2026-11-28 WP6. The owner said “keep trying, pass it to a planner and see if they can
+  help.” [Recorded feedback](RECORD.json). The rebased package follows the revised
+  inspection. It judges the low and middle fall, all three crests, and the pool response.
+  The heavy fall below its crest is WP11's. The rebase preserves the upstream after-opaque
+  depth producers, combines the water quality settings and uses the waterfall's pass
+  index when dispatching the downstream underwater shafts.
+- 2026-11-28 WP6. Hardware Chrome and the Metal item checks ran again on the rebased
+  work. In the five-second Metal trials, the separated rings stay with their respective
+  currents and the straight and bend blends retain 98.5% and 77.6% of still-water
+  energy. The dry-then-running plunge guard now reuses one prepared scene. Its focused
+  Metal run finished in 3.15 s with the dry stocks and rings still exactly zero.
+  [Checks](../../../.orchestrate/evidence/RIVERS/WP6/advected-parcels/checks/README.md)
+  [Plunge guard](../../../.orchestrate/evidence/RIVERS/WP6/continuous-strands/plunge-metal.log)
+- 2026-11-28 WP6. At the middle gauge the strands separate below the crest and white
+  parcels travel on the fall's departure clock. The Metal pool views show the reflected
+  fall between foam streaks, separate contacts through the boil and a ring fading into
+  the left bank. The dry transition keeps the waterline after the boil dissipates.
+  [Receiving-pool inspection](../../../.orchestrate/evidence/RIVERS/WP6/separate-streams/pool-inspection.md)
