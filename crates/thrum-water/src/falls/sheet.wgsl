@@ -202,13 +202,19 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
         select(0.38 * smoothstep(0.34, 0.76, input.across_fraction.w), 1.0, is_filament)));
     var face = select(-contour, contour, dot(contour, look) >= 0.0);
     let breakout = input.discharge.y;
+    let breakup = select(strand_breakup(input.discharge.w), 0.0, is_filament);
+    let fraction = input.across_fraction.w;
+    let below_tongue = smoothstep(0.02, 0.23, fraction);
     let broken = smoothstep(rank - 0.24 - width, rank + 0.09 + width, breakout);
     let filament_white = smoothstep(0.06, 0.48, input.across_fraction.w)
         * smoothstep(0.08, 0.58, 0.72 * coarse + 0.28 * fine);
     let streak_white = smoothstep(0.42, 0.89, input.across_fraction.w)
         * smoothstep(0.23, 0.78, 0.65 * coarse + 0.35 * fine);
-    let white = select(max(mix(pow(breakout, 1.18), broken, 0.74), 0.63 * streak_white),
-        filament_white, is_filament);
+    let parcel = sheet_noise(vec2(lip, birth), FALL_LOOP, vec2(2.1, 5.25), vec2(117.0, 0.0));
+    let pulse = smoothstep(0.35, 0.73, 0.82 * parcel + 0.18 * fine);
+    let parcel_foam = breakup * below_tongue * (0.12 + 0.35 * pulse);
+    let sheet_white = max(max(mix(pow(breakout, 1.18), broken, 0.74), 0.63 * streak_white), parcel_foam);
+    let white = select(sheet_white * below_tongue, filament_white, is_filament);
     let clear = 1.0 - white;
     // Preserve the long strands of a small discharge when the trail widens
     // in time. The lower-frequency mask follows each parcel from the lip.
@@ -236,7 +242,6 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let ribbon_foot = smoothstep(rounding - 0.065 * contact_foam,
         rounding + select(0.17 + 0.21 * contact_foam, 0.06, is_filament),
         input.receiving.y);
-    let breakup = select(strand_breakup(input.discharge.w), 0.0, is_filament);
     let strand_foot = smoothstep(0.03 + 0.16 * coarse, 0.36 + 0.19 * fine, input.receiving.y);
     let plunge_foot = mix(ribbon_foot, strand_foot, breakup);
     let meets_pool = input.receiving.z > 1.5;
@@ -252,11 +257,13 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
         vec2(4.0, 0.82), vec2(0.0)) - 0.5;
     let spray = sheet_noise(xy, span, vec2(13.1, 1.65), vec2(23.9)) - 0.5;
     let grain = mix(0.68 * streak + 0.32 * spray, 0.0, smoothstep(0.65, 2.8, pixel));
-    face = normalize(face + (0.92 * grain + 0.38 * (coarse - fine)) * cross(tangent, face)
-        + 0.26 * spray * tangent);
+    let ripples = (0.92 * grain + 0.38 * (coarse - fine)) * cross(tangent, face)
+        + 0.26 * spray * tangent;
+    face = normalize(face + ripples * below_tongue);
     let nv = max(0.0, dot(face, look));
     let fresnel = 0.02 + 0.98 * pow(1.0 - nv, 5.0);
-    let mirror = environment_reflection(reflect(-look, face), mix(0.055, 0.39, white), nv).radiance;
+    let roughness = mix(0.12, mix(0.055, 0.39, white), below_tongue);
+    let mirror = environment_reflection(reflect(-look, face), roughness, nv).radiance;
     let light = environment_sun_direction();
     let direct = sun_irradiance(point) * fall_cloud(point);
     let diffuse = mix(environment_diffuse(face), environment_diffuse(vec3(0.0, 1.0, 0.0)), 0.35);
@@ -265,23 +272,23 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let translucence = mix(vec3(0.97, 1.0, 1.04), vec3(0.71, 0.94, 1.0), breakout * (0.36 - grain));
     let churn = foam * translucence * (0.60 + 0.72 * smoothstep(-0.44, 0.32, grain));
     let glint = pow(max(dot(reflect(-light, face), look), 0.0), 160.0) * 0.055 * direct;
-    let glass = mirror * (0.18 + 0.82 * fresnel) + glint;
+    let glass = mirror * (0.18 + 0.82 * fresnel) + glint * below_tongue;
     let uv = input.clip.xy * view_aux.viewport_inv_viewport.zw;
     let aerial = environment_aerial(point, uv);
     let mixing = select(smoothstep(0.72, 0.99, input.across_fraction.w),
         1.0 - smoothstep(0.05, 0.58, input.receiving.y), meets_pool);
     let aerated = (environment_diffuse(vec3(0.0, 1.0, 0.0)) + direct * max(0.0, light.y))
         * vec3(0.84, 0.90, 0.89) / 3.14159265;
-    let pulse = smoothstep(0.19, 0.72, 0.72 * coarse + 0.28 * fine);
-    let parcel_light = mix(0.26, 1.19, pulse);
-    let broken_light = mix(churn, aerated * parcel_light, 0.72 * breakup);
+    let parcel_light = mix(0.23, 1.26, pulse);
+    let broken_light = mix(churn, aerated * parcel_light, breakup * below_tongue);
     let sheet_colour = mix(glass, broken_light, white);
     let spray_light = mix(sheet_colour, aerated,
         mixing * (1.0 - thinness) * mix(0.32 + 0.58 * contact_foam + 0.10 * fine, 0.93, breakup));
     let colour = (spray_light * aerial.transmission + aerial.scatter) * environment_storage_scale();
     let streak_cover = mix(1.0, mix(0.48, 1.0, pulse),
         breakup * smoothstep(0.20, 0.72, input.across_fraction.w));
-    let opacity = (clear * min(0.88, fresnel + 0.07 + 1.7 * input.discharge.w + 0.35 * breakout) + white * (0.90 + 0.18 * grain))
+    let glass_alpha = min(mix(0.46, 0.88, below_tongue), fresnel + 0.07 + 1.7 * input.discharge.w + 0.35 * breakout);
+    let opacity = (clear * glass_alpha + white * (0.90 + 0.18 * grain))
         * presence * mix(0.62, 1.0, seam) * contact_cover * streak_cover;
     let path_distance = select(input.across_fraction.y, -input.across_fraction.y - 2.0, is_filament);
     let last_fraction = input.across_fraction.w - length(input.velocity_along.xyz) * sheet_clock.y
@@ -294,7 +301,8 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let current = view.unjittered_view_proj * vec4(point, 1.0);
     let motion = (previous.xy / previous.w - current.xy / current.w)
         * vec2(0.5, -0.5) * view_aux.viewport_inv_viewport.xy;
-    return FallOutput(vec4(colour, opacity), select(motion, vec2(65504.0), sheet_clock.z > 0.5), white * presence * contact_cover);
+    return FallOutput(vec4(colour, opacity), select(motion, vec2(65504.0), sheet_clock.z > 0.5),
+        white * presence * contact_cover * streak_cover);
 }
 
 @fragment fn sheet_thin(input: SheetVertex) -> FallOutput { return sheet_shade(input, false); }

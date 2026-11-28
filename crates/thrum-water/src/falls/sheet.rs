@@ -17,7 +17,7 @@ pub(crate) const PASS: &str = "waterfall sheet";
 const SPLASHES_PER_SEGMENT: usize = 24;
 const RIBBONS_PER_SEGMENT: usize = 6;
 const VERTICES_PER_SEGMENT: usize =
-    12 * RIBBONS_PER_SEGMENT * (ROWS + 3) + 6 * SPLASHES_PER_SEGMENT;
+    12 * RIBBONS_PER_SEGMENT * (2 * ROWS + 3) + 6 * SPLASHES_PER_SEGMENT;
 const ATTRIBUTES: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4, 4 => Float32x4];
 
 #[repr(C)]
@@ -481,6 +481,13 @@ fn mesh(
                 let bottom = ribbons(strip(fraction), spread);
                 for (a, b) in top.into_iter().zip(bottom) {
                     stitch(vertices, a, b);
+                    if spread > 0.0 && fraction > 0.21 {
+                        stitch(
+                            vertices,
+                            back_of_strand(a, spread),
+                            back_of_strand(b, spread),
+                        );
+                    }
                 }
                 top = bottom;
             }
@@ -542,17 +549,29 @@ fn ribbons(section: [Vertex; 3], spread: f32) -> [[Vertex; 3]; RIBBONS_PER_SEGME
             } else {
                 -1.0
             };
+        let bulge = (4.0 * (fraction - 0.21)).clamp(0.0, 1.0) * spread;
         let depth = (0.034 + 0.24 * fold) * split * (1.0 - fraction).max(0.0).sqrt();
         [-1.0_f32, 0.0, 1.0].map(|edge| {
             let mut vertex = at(edge.mul_add(narrowed, middle));
-            let position =
-                Vec3::from_slice(&vertex.world_time) + outward * depth * (1.0 - 0.42 * edge.abs());
+            let position = Vec3::from_slice(&vertex.world_time)
+                + outward
+                    * (depth * (1.0 - 0.42 * edge.abs()) + 0.085 * bulge * (1.0 - edge.abs()));
             vertex.world_time = position.extend(vertex.world_time[3]).to_array();
             vertex.edge_receiver[0] = edge.abs();
             vertex.edge_receiver[3] = along;
             vertex
         })
     })
+}
+
+fn back_of_strand(mut section: [Vertex; 3], spread: f32) -> [Vertex; 3] {
+    let [left, middle, right] = section.map(|vertex| Vec3::from_slice(&vertex.world_time));
+    let centre = left.midpoint(right);
+    let vertex = &mut section[1];
+    let crown = (4.0 * (vertex.across_fraction[3] - 0.21)).clamp(0.0, 1.0) * spread;
+    let back = middle.lerp(centre * 2.0 - middle, crown);
+    vertex.world_time = back.extend(vertex.world_time[3]).to_array();
+    section
 }
 
 #[expect(
