@@ -28,6 +28,7 @@ pub(super) struct Emitters {
     entries: Vec<Option<Emitter>>,
     free: Vec<usize>,
     slots: Vec<Option<usize>>,
+    pub(super) range_exits: Vec<Option<EmitterId>>,
     candidates: Vec<Ranked>,
     holders: Vec<Ranked>,
     vacancies: Vec<usize>,
@@ -42,6 +43,7 @@ impl Emitters {
             entries: Vec::new(),
             free: Vec::new(),
             slots: vec![None; slots],
+            range_exits: vec![None; slots],
             candidates: Vec::new(),
             holders: Vec::with_capacity(slots),
             vacancies: Vec::with_capacity(slots),
@@ -77,6 +79,13 @@ impl Emitters {
         self.entries
             .get_mut(identity.0)?
             .as_mut()
+            .filter(|e| e.identity == identity)
+    }
+
+    pub(super) fn get(&self, identity: EmitterId) -> Option<&Emitter> {
+        self.entries
+            .get(identity.0)?
+            .as_ref()
             .filter(|e| e.identity == identity)
     }
 
@@ -132,6 +141,7 @@ impl Emitters {
                     self.candidates.push(rank);
                 }
             } else if let Some(slot) = entry.slot.take() {
+                self.range_exits[slot].get_or_insert(entry.identity);
                 self.slots[slot] = None;
             }
         }

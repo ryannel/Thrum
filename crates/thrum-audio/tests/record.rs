@@ -4,7 +4,9 @@ use thrum_audio::{
     Config, Error, Fate, Listener, Outcome, Play, PlayNumber, VoiceSettings, Volumes,
 };
 
-use crate::support::{audio, config, exact, first, mono, outcomes, pcm, place, pull};
+use crate::support::{
+    audio, config, exact, first, mono, nonfinite_call, outcomes, pcm, place, pull,
+};
 
 #[test]
 fn every_fate_preserves_call_number_event_tick_and_epoch() {
@@ -21,7 +23,14 @@ fn every_fate_preserves_call_number_event_tick_and_epoch() {
         let number = PlayNumber(expected.len() as u64 + 1);
         play.event = 100 + number.0;
         play.tick = Some(10 + number.0);
-        assert_eq!(handle.play(play), number);
+        let returned = if fate == Fate::BadValue {
+            nonfinite_call(|| handle.play(play))
+        } else {
+            Some(handle.play(play))
+        };
+        if let Some(returned) = returned {
+            assert_eq!(returned, number);
+        }
         expected.push(Outcome {
             number,
             event: play.event,
@@ -308,12 +317,14 @@ fn mixed_script_accounts_for_all_counts_even_with_outcome_overflow() {
     handle.play(quiet);
     mix.stop_pulling();
     handle.play(quiet);
-    handle.play(Play {
-        settings: VoiceSettings {
-            pitch: f32::NAN,
-            ..quiet.settings
-        },
-        ..quiet
+    nonfinite_call(|| {
+        handle.play(Play {
+            settings: VoiceSettings {
+                pitch: f32::NAN,
+                ..quiet.settings
+            },
+            ..quiet
+        })
     });
     mix.start_pulling();
     drop(pull(&mut mix, 9));
@@ -324,7 +335,7 @@ fn mixed_script_accounts_for_all_counts_even_with_outcome_overflow() {
         [Fate::NothingPulling, Fate::BadValue]
     );
     let record = handle.record();
-    assert_eq!((record.voices, record.peak_voices), (1, 2));
+    assert_eq!((record.voices, record.peak_voices), (1, 3));
     assert_eq!(
         (
             record.emitters,
@@ -366,6 +377,61 @@ fn mixed_script_accounts_for_all_counts_even_with_outcome_overflow() {
     ] {
         assert_eq!(record.plays(fate), 1 + u64::from(fate == Fate::Started));
     }
+}
+
+#[test]
+fn continuous_control_writes_leave_room_for_pending_emitters() {
+    let (mut handle, mut mix) = audio(Config {
+        commands: 1,
+        emitters: 2,
+        ..config()
+    });
+    let sound = mono(&mut handle, vec![2048]);
+    let emitters = [(); 2].map(|()| {
+        handle
+            .start_emitter(sound, VoiceSettings::default())
+            .expect("valid emitter")
+    });
+    for frame in 0..120_i16 {
+        handle.set_listener(Listener {
+            position: [f32::from(frame), 0.0, 0.0],
+            ..Listener::default()
+        });
+        handle.set_volumes(Volumes {
+            effects: if frame < 112 { 1.0 } else { 0.5 },
+            ..Volumes::default()
+        });
+        handle.update();
+        let frames = pull(&mut mix, 400);
+        if frame == 7 {
+            exact(frames[399], [pcm(4096); 2]);
+        }
+        if frame == 119 {
+            exact(frames[399], [pcm(2048); 2]);
+        }
+    }
+    assert!(emitters.into_iter().all(|id| handle.emitter_voiced(id)));
+    assert_eq!(handle.record().voices, 2);
+}
+
+#[test]
+fn a_releasing_voice_counts_until_its_last_ramp_frame() {
+    let (mut handle, mut mix) = audio(config());
+    let sound = mono(&mut handle, vec![4096; 64]);
+    let number = handle.play(Play::new(sound, 1));
+    exact(first(&mut mix), [pcm(4096); 2]);
+    assert!(handle.stop_play(number));
+    let releasing = pull(&mut mix, 2);
+    exact(releasing[1], [pcm(3584); 2]);
+    assert_eq!(
+        (handle.record().voices, handle.record().peak_voices),
+        (1, 1)
+    );
+    drop(pull(&mut mix, 6));
+    assert_eq!(
+        (handle.record().voices, handle.record().peak_voices),
+        (0, 1)
+    );
 }
 
 #[test]

@@ -60,6 +60,59 @@ fn every_frame_and_fate_over_forty_plays() {
 }
 
 #[test]
+fn a_play_limit_counts_a_sounding_emitter_and_its_release() {
+    let (mut handle, mut mix) = audio(config());
+    let sound = mono(&mut handle, vec![2048]);
+    let emitter = handle
+        .start_emitter(sound, VoiceSettings::default())
+        .expect("valid emitter");
+    handle.update();
+    drop(pull(&mut mix, 9));
+    let play = Play {
+        limit: NonZeroUsize::new(1),
+        ..Play::new(sound, 1)
+    };
+    let rejected = handle.play(play);
+    exact(first(&mut mix), [pcm(2048); 2]);
+    fate(&mut handle, rejected, Fate::Limit);
+
+    handle.end_emitter(emitter);
+    handle.update();
+    let rejected = handle.play(play);
+    exact(first(&mut mix), [pcm(2048); 2]);
+    fate(&mut handle, rejected, Fate::Limit);
+    drop(pull(&mut mix, 7));
+    let started = handle.play(play);
+    exact(first(&mut mix), [pcm(2048); 2]);
+    fate(&mut handle, started, Fate::Started);
+}
+
+#[test]
+fn displacement_ramps_even_with_one_source_frame_left() {
+    let (mut handle, mut mix) = audio(Config {
+        one_shots: 1,
+        ..config()
+    });
+    let short = mono(&mut handle, vec![8192; 2]);
+    let replacement = mono(&mut handle, vec![0; 9]);
+    handle.play(Play {
+        settings: VoiceSettings {
+            volume: 0.5,
+            ..VoiceSettings::default()
+        },
+        ..Play::new(short, 1)
+    });
+    exact(first(&mut mix), [pcm(4096); 2]);
+    handle.play(Play::new(replacement, 2));
+    let frames = pull(&mut mix, 9);
+    exact(frames[0], [pcm(4096); 2]);
+    exact(frames[7], [pcm(512); 2]);
+    exact(frames[8], [0.0; 2]);
+    steps(&frames, pcm(4096) / 8.0);
+    assert_eq!(handle.record().displaced, 1);
+}
+
+#[test]
 fn limits_are_per_sound_and_shares_stay_separate() {
     let (mut handle, mut mix) = audio(Config {
         one_shots: 5,

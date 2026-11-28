@@ -1,10 +1,12 @@
-use std::sync::atomic::{AtomicU64, Ordering::SeqCst};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering::SeqCst};
 
 use crate::{Fate, Outcome, PlayNumber, Record};
 
 pub(crate) struct Transport {
     // Low bit is running. The upper bits are the epoch.
     state: AtomicU64,
+    closed: AtomicBool,
+    last_drained_play: AtomicU64,
     pub(crate) serial: AtomicU64,
     pub(crate) outcomes: Outcomes,
     pub(crate) stats: Stats,
@@ -14,6 +16,8 @@ impl Transport {
     pub(crate) fn new(outcomes: usize, epoch: u64) -> Self {
         Self {
             state: AtomicU64::new(epoch << 1),
+            closed: AtomicBool::new(false),
+            last_drained_play: AtomicU64::new(0),
             serial: AtomicU64::new(0),
             outcomes: Outcomes::new(outcomes),
             stats: Stats::default(),
@@ -27,6 +31,17 @@ impl Transport {
 
     pub(crate) fn set_state(&self, epoch: u64, running: bool) {
         self.state.store((epoch << 1) | u64::from(running), SeqCst);
+    }
+
+    pub(crate) fn close(&self, last_drained_play: u64) {
+        self.last_drained_play.store(last_drained_play, SeqCst);
+        self.closed.store(true, SeqCst);
+    }
+
+    pub(crate) fn last_drained_play(&self) -> Option<u64> {
+        self.closed
+            .load(SeqCst)
+            .then(|| self.last_drained_play.load(SeqCst))
     }
 }
 

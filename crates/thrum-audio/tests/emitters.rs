@@ -2,7 +2,60 @@ use std::{cmp::Ordering, sync::Arc};
 
 use thrum_audio::{Config, Listener, Play, VoiceSettings};
 
-use crate::support::{audio, close, config, exact, first, mono, pcm, place, pull, steps};
+use crate::support::{audio, close, config, exact, first, mono, pcm, place, pull, steps, stereo};
+
+#[test]
+fn setting_and_clearing_a_stereo_place_glides_both_channel_contributions() {
+    let config = config();
+    let (mut handle, mut mix) = audio(config);
+    let sound = stereo(&mut handle, vec![8192, -8192]);
+    let emitter = handle
+        .start_emitter(sound, VoiceSettings::default())
+        .expect("valid emitter");
+    handle.update();
+    drop(pull(&mut mix, 9));
+    let dry = [pcm(8192), pcm(-8192)];
+    exact(first(&mut mix), dry);
+    for (location, start, end) in [
+        (Some(place(0.0, 0.0, 8.0)), dry, [0.0; 2]),
+        (None, [0.0; 2], dry),
+    ] {
+        handle.move_emitter(emitter, location);
+        handle.update();
+        let frames = pull(&mut mix, 9);
+        exact(frames[0], start);
+        exact(frames[8], end);
+        steps(&frames, pcm(8192) * config.glide_step);
+    }
+}
+
+#[test]
+fn a_panned_emitter_leaves_its_radius_by_at_most_one_glide_step() {
+    let config = config();
+    let (mut handle, mut mix) = audio(config);
+    let sound = mono(&mut handle, vec![8192]);
+    let emitter = handle
+        .start_emitter(
+            sound,
+            VoiceSettings {
+                place: Some(place(1.0, 0.0, 100.0)),
+                ..VoiceSettings::default()
+            },
+        )
+        .expect("valid emitter");
+    handle.update();
+    drop(pull(&mut mix, 20));
+    let before = first(&mut mix);
+    assert!(before[1] > pcm(8192));
+    handle.move_emitter(emitter, Some(place(101.0, 0.0, 100.0)));
+    handle.update();
+    assert!(!handle.emitter_voiced(emitter));
+    let mut frames = vec![before];
+    frames.extend(pull(&mut mix, 14));
+    exact(frames[1], before);
+    exact(frames[14], [0.0; 2]);
+    steps(&frames, pcm(8192) * config.glide_step);
+}
 
 #[test]
 fn loops_wrap_exactly_at_small_and_large_lengths() {

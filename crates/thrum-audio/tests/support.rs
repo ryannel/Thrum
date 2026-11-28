@@ -86,3 +86,19 @@ pub(crate) fn steps(frames: &[[f32; 2]], max: f32) {
         }
     }
 }
+
+pub(crate) fn nonfinite_call<T>(call: impl FnOnce() -> T) -> Option<T> {
+    if cfg!(debug_assertions) {
+        let Err(panic) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(call)) else {
+            panic!("nonfinite audio call must assert in a debug build");
+        };
+        assert!(
+            panic
+                .downcast_ref::<&str>()
+                .is_some_and(|message| message.starts_with("nonfinite "))
+        );
+        None
+    } else {
+        Some(call())
+    }
+}

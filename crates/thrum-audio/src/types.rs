@@ -242,9 +242,9 @@ pub struct Outcome {
 /// Mix counters and the latest published state.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Record {
-    /// Sounding pool slots, including held emitters but excluding ramp tails.
+    /// Sounding voices, including releases until their ramps finish.
     pub voices: usize,
-    /// Peak sounding pool slots.
+    /// Most voices sounding together in a rendered frame, including releases.
     pub peak_voices: usize,
     /// Live emitter count.
     pub emitters: usize,

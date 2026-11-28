@@ -1,4 +1,4 @@
-use thrum_audio::{Config, Fate, Listener, Play, VoiceSettings, Volumes};
+use thrum_audio::{Config, Fate, Handle, Listener, Outcome, Play, VoiceSettings, Volumes};
 
 use crate::support::{
     audio, config, exact, first, mono, outcomes, pcm, place, pull, steps, stereo,
@@ -189,4 +189,69 @@ fn resume_preserves_a_loop_even_when_the_handle_reassigns_its_slot() {
     let frames = pull(&mut mix, 9);
     exact(frames[1], [pcm(13 * 64) / 8.0; 2]);
     exact(frames[8], [pcm(20 * 64); 2]);
+}
+
+#[test]
+fn an_emitter_added_while_stopped_uses_one_resume_ramp_and_can_end() {
+    let config = Config {
+        commands: 1,
+        emitters: 1,
+        ..config()
+    };
+    let (mut handle, mut mix) = audio(config);
+    let sound = mono(&mut handle, vec![8192]);
+    mix.stop_pulling();
+    let emitter = handle
+        .start_emitter(sound, VoiceSettings::default())
+        .expect("valid emitter");
+    handle.update();
+    mix.start_pulling();
+    let frames = pull(&mut mix, 9);
+    exact(frames[0], [0.0; 2]);
+    exact(frames[8], [pcm(8192); 2]);
+    steps(&frames, pcm(8192) / 8.0);
+    handle.end_emitter(emitter);
+    handle.update();
+    let ending = pull(&mut mix, 9);
+    exact(ending[0], [pcm(8192); 2]);
+    exact(ending[8], [0.0; 2]);
+    steps(&ending, pcm(8192) / 8.0);
+    assert_eq!(handle.record().voices, 0);
+}
+
+#[test]
+fn dropping_the_mix_expires_queued_plays_and_closes_the_epoch() {
+    let (mut handle, mut mix) = Handle::new(config()).expect("valid connection");
+    let sound = mono(&mut handle, vec![8192]);
+    mix.start_pulling();
+    let play = Play {
+        tick: Some(12),
+        ..Play::new(sound, 53)
+    };
+    let queued = handle.play(play);
+    drop(mix);
+    assert!(!handle.record().pulling);
+    assert_eq!(handle.record().epoch, 1);
+    let absent = handle.play(play);
+    let expected = Outcome {
+        number: queued,
+        event: 53,
+        tick: Some(12),
+        epoch: 0,
+        fate: Fate::Interrupted,
+    };
+    assert_eq!(
+        outcomes(&mut handle),
+        [
+            expected,
+            Outcome {
+                number: absent,
+                epoch: 1,
+                fate: Fate::NothingPulling,
+                ..expected
+            }
+        ]
+    );
+    assert_eq!(handle.record().plays(Fate::Interrupted), 1);
+    assert_eq!(outcomes(&mut handle), []);
 }

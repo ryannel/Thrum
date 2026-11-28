@@ -195,10 +195,11 @@ impl ReferenceRun {
                             held,
                             samples: self.handle.diagnostic_samples(sound),
                         }),
+                        None,
                     ),
                 )
             }
-            Step::End(slot) => Command::State(0, StateChange::Emitter(slot, None)),
+            Step::End(slot) => Command::State(0, StateChange::Emitter(slot, None, None)),
             Step::Stop(number) => Command::Stop(PlayNumber(number)),
             Step::Listener(listener) => Command::State(0, StateChange::Listener(listener)),
             Step::Volumes(volumes) => Command::State(0, StateChange::Volumes(volumes)),

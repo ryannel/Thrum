@@ -14,8 +14,11 @@ pub(super) struct Voice {
     pitch: f32,
     gains: [f32; 2],
     targets: [f32; 2],
+    // Each stereo output combines its dry channel with the downmix. Mono needs only gains.
+    dry: [f32; 2],
     envelope: Envelope,
     held: bool,
+    outgoing: bool,
 }
 
 impl Voice {
@@ -28,6 +31,7 @@ impl Voice {
         emitter: Option<u64>,
     ) -> Self {
         let targets = spatial::gains(settings, listener);
+        let gains = if emitter.is_some() { [0.0; 2] } else { targets };
         Self {
             sound,
             pending: outcome,
@@ -38,10 +42,16 @@ impl Voice {
             settings,
             position: 0.0,
             pitch: settings.pitch,
-            gains: if emitter.is_some() { [0.0; 2] } else { targets },
+            gains,
             targets,
+            dry: if settings.place.is_none() {
+                gains
+            } else {
+                [0.0; 2]
+            },
             envelope: Envelope::default(),
             held: false,
+            outgoing: false,
         }
     }
 
@@ -70,13 +80,24 @@ impl Voice {
 
     pub(super) fn settle(&mut self) {
         self.gains = self.targets;
+        self.dry = if self.settings.place.is_none() {
+            self.gains
+        } else {
+            [0.0; 2]
+        };
         self.pitch = self.settings.pitch;
         self.envelope.value = if self.held { 0.0 } else { 1.0 };
         self.envelope.remaining = 0;
     }
 
-    pub(super) fn ramp_out(&mut self, frames: u32) {
-        self.targets = self.gains;
+    pub(super) fn ramp_out(&mut self, config: Config, leaving_radius: bool) {
+        let peak = self.gains[0].max(self.gains[1]) * self.envelope.value;
+        let frames = if leaving_radius {
+            range_ramp_frames(config, peak).expect("range ramp fits the validated configuration")
+        } else {
+            config.ramp_frames
+        };
+        self.outgoing = true;
         self.envelope.to(0.0, frames);
     }
 
@@ -84,6 +105,14 @@ impl Voice {
         self.envelope.value != 0.0 && self.gains.iter().any(|&gain| gain > 0.0)
     }
 
+    pub(super) fn sounding(&self) -> bool {
+        !self.held || self.envelope.value != 0.0 || self.envelope.remaining != 0
+    }
+
+    #[expect(
+        clippy::float_cmp,
+        reason = "exact routing endpoints preserve the original sample arithmetic"
+    )]
     pub(super) fn render(&mut self, config: Config, frame: &mut [f32; 2]) -> bool {
         let clip = self.samples.clip();
         if self.envelope.value != 0.0 {
@@ -94,13 +123,23 @@ impl Voice {
             } else {
                 self.read(1, repeated)
             };
-            let sample = if self.settings.place.is_some() && clip.channels == 2 {
-                [f32::midpoint(left, right); 2]
+            let mono = if self.dry == self.gains {
+                0.0
             } else {
-                [left, right]
+                f32::midpoint(left, right)
             };
+            let samples = [left, right];
             for (channel, output) in frame.iter_mut().enumerate() {
-                *output += (sample[channel] * self.gains[channel]) * self.envelope.value;
+                let gain = self.gains[channel];
+                let dry = self.dry[channel];
+                let sample = if clip.channels == 1 || dry == gain {
+                    samples[channel] * gain
+                } else if dry == 0.0 {
+                    mono * gain
+                } else {
+                    samples[channel] * dry + mono * (gain - dry)
+                };
+                *output += sample * self.envelope.value;
             }
         }
 
@@ -108,21 +147,52 @@ impl Voice {
         // the first sample of the release ramp.
         if !self.held {
             let length = f64::from(clip.frames);
-            self.position += f64::from(self.pitch);
-            if self.position >= length {
-                if self.emitter.is_none() {
+            let next = self.position + f64::from(self.pitch);
+            if next < length {
+                self.position = next;
+            } else if self.emitter.is_none() {
+                // When the source runs out during a ramp, sustain its last readable
+                // phase through the remaining release. Natural endings still end here.
+                if !self.outgoing && !self.stop_after_start {
                     return false;
                 }
-                // At most two wraps: the maximum pitch is 2 and a clip has at least one frame.
-                self.position -= length;
+                self.held = true;
+            } else {
+                // At most two wraps: pitch is at most 2 and a clip has at least one frame.
+                self.position = next - length;
                 if self.position >= length {
                     self.position -= length;
                 }
             }
         }
-        self.pitch = spatial::glide(self.pitch, self.settings.pitch, config.glide_step);
-        for (gain, target) in self.gains.iter_mut().zip(self.targets) {
-            *gain = spatial::glide(*gain, target, config.glide_step);
+        if !self.outgoing {
+            let step = config.glide_step;
+            self.pitch = spatial::glide(self.pitch, self.settings.pitch, step);
+            let unplaced = self.settings.place.is_none();
+            for ((gain, dry), target) in self.gains.iter_mut().zip(&mut self.dry).zip(self.targets)
+            {
+                let dry_target = if unplaced { target } else { 0.0 };
+                if clip.channels == 1 || (*dry == *gain && unplaced) {
+                    *gain = spatial::glide(*gain, target, step);
+                    *dry = *gain;
+                } else if *dry == 0.0 && dry_target == 0.0 {
+                    *gain = spatial::glide(*gain, target, step);
+                } else {
+                    let gain_delta = target - *gain;
+                    let dry_delta = dry_target - *dry;
+                    // For the two input coefficients, the sum of the absolute changes
+                    // equals max(|gain_delta|, |dry_delta|).
+                    let distance = gain_delta.abs().max(dry_delta.abs());
+                    if distance <= step {
+                        *gain = target;
+                        *dry = dry_target;
+                    } else {
+                        let fraction = step / distance;
+                        *gain += gain_delta * fraction;
+                        *dry += dry_delta * fraction;
+                    }
+                }
+            }
         }
         self.envelope.advance();
         true
@@ -160,6 +230,18 @@ impl Voice {
             * t
             * ((c - a) + t * ((2.0 * a - 5.0 * b + 4.0 * c - d) + t * (3.0 * (b - c) + d - a)))
     }
+}
+
+pub(super) fn range_ramp_frames(config: Config, gain: f32) -> Option<u32> {
+    let frames = (f64::from(gain) / f64::from(config.glide_step)).ceil();
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "checked frame range"
+    )]
+    (0.0..=f64::from(u32::MAX))
+        .contains(&frames)
+        .then(|| config.ramp_frames.max(frames as u32))
 }
 
 fn next(frame: u32, last: u32, repeated: bool) -> u32 {

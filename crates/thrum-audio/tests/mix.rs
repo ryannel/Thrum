@@ -1,6 +1,8 @@
 use thrum_audio::{Fate, Play};
 
-use crate::support::{audio, close, config, exact, fate, first, mono, pcm, pull, stereo};
+use crate::support::{
+    audio, close, config, exact, fate, first, mono, nonfinite_call, pcm, pull, stereo,
+};
 
 #[test]
 fn silence_and_entire_mono_sounds() {
@@ -119,10 +121,18 @@ fn invalid_plays_drop_and_finite_extremes_clamp() {
     handle.play(play);
     assert_eq!(pull(&mut mix, 5), [[0.0; 2]; 5]);
     assert_eq!(handle.record().clamped, 4);
+    drop(crate::support::outcomes(&mut handle));
     for (volume, pitch) in [(f32::NAN, 1.0), (1.0, f32::INFINITY)] {
         play.settings.volume = volume;
         play.settings.pitch = pitch;
-        handle.play(play);
+        let number = nonfinite_call(|| handle.play(play));
+        let outcome = crate::support::outcomes(&mut handle)
+            .pop()
+            .expect("invalid play outcome");
+        assert_eq!(outcome.fate, Fate::BadValue);
+        if let Some(number) = number {
+            assert_eq!(outcome.number, number);
+        }
     }
     exact(first(&mut mix), [0.0; 2]);
     assert_eq!(handle.record().plays(Fate::BadValue), 2);

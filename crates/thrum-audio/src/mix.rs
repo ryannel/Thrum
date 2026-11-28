@@ -12,7 +12,7 @@ use crate::{
     spatial,
 };
 
-use voice::{Envelope, Voice};
+use voice::{Envelope, Voice, range_ramp_frames};
 
 pub(crate) enum Command {
     Play(Play, Outcome, Lease),
@@ -21,7 +21,7 @@ pub(crate) enum Command {
 }
 
 pub(crate) enum StateChange {
-    Emitter(usize, Option<EmitterVoice>),
+    Emitter(usize, Option<EmitterVoice>, Option<u64>),
     Listener(Listener),
     Volumes(Volumes),
 }
@@ -34,11 +34,70 @@ pub(crate) struct EmitterVoice {
     pub(crate) samples: Lease,
 }
 
+struct VoiceSlots {
+    slots: Box<[Option<Voice>]>,
+    active: Vec<usize>,
+}
+
+impl VoiceSlots {
+    fn new(capacity: usize) -> Self {
+        Self {
+            slots: (0..capacity).map(|_| None).collect(),
+            active: Vec::with_capacity(capacity),
+        }
+    }
+
+    fn take(&mut self, index: usize) -> Option<Voice> {
+        let voice = self.slots[index].take()?;
+        self.active.remove(
+            self.active
+                .binary_search(&index)
+                .expect("occupied slot is active"),
+        );
+        Some(voice)
+    }
+
+    fn pop(&mut self) -> Option<Voice> {
+        let index = self.active.pop()?;
+        self.slots[index].take()
+    }
+
+    fn insert(&mut self, index: usize, voice: Voice) {
+        debug_assert!(self.slots[index].is_none());
+        self.slots[index] = Some(voice);
+        // Preserve slot order so adding or freeing voices cannot change summation order.
+        let offset = self.active.partition_point(|&active| active < index);
+        self.active.insert(offset, index);
+    }
+
+    fn iter(&self) -> impl Iterator<Item = &Voice> {
+        self.active
+            .iter()
+            .map(|&index| self.slots[index].as_ref().expect("active slot is occupied"))
+    }
+
+    fn render(&mut self, config: Config, frame: &mut [f32; 2]) -> usize {
+        let mut sounding = 0;
+        self.active.retain(|&index| {
+            let slot = &mut self.slots[index];
+            let voice = slot.as_mut().expect("active slot is occupied");
+            sounding += usize::from(voice.sounding());
+            let live = voice.render(config, frame);
+            if !live {
+                *slot = None;
+            }
+            live
+        });
+        sounding
+    }
+}
+
 /// The pulling half of an audio connection. It may be handed to an independent thread.
+/// Dropping it closes the connection and expires plays that had yet to start.
 pub struct Mix {
     config: Config,
-    shots: Box<[Option<Voice>]>,
-    emitters: Box<[Option<Voice>]>,
+    shots: VoiceSlots,
+    emitters: VoiceSlots,
     tails: Vec<Voice>,
     started: Vec<Outcome>,
     state_reader: Option<snapshot::Subscriber>,
@@ -48,6 +107,8 @@ pub struct Mix {
     volumes: Volumes,
     resume: Envelope,
     record: Record,
+    last_applied_play: u64,
+    retired: bool,
     commands: Consumer<Command>,
     pub(crate) transport: Arc<Transport>,
     // Keeps sample storage alive when a command or voice releases its lease during a pull,
@@ -65,8 +126,8 @@ impl Mix {
     ) -> Self {
         Self {
             config,
-            shots: (0..config.one_shots).map(|_| None).collect(),
-            emitters: (0..config.emitters).map(|_| None).collect(),
+            shots: VoiceSlots::new(config.one_shots),
+            emitters: VoiceSlots::new(config.emitters),
             tails: Vec::with_capacity(tail_capacity(config).expect("configuration was validated")),
             started: Vec::with_capacity(config.one_shots),
             state_reader: Some(state_reader),
@@ -79,6 +140,8 @@ impl Mix {
                 epoch: transport.state().0,
                 ..Record::default()
             },
+            last_applied_play: 0,
+            retired: false,
             commands,
             transport,
             _sample_bank: bank,
@@ -103,13 +166,11 @@ impl Mix {
         self.record.pulling = false;
         self.record.epoch += 1;
         self.transport.set_state(self.record.epoch, false);
-        for index in 0..self.shots.len() {
-            if let Some(voice) = self.shots[index].take() {
-                if let Some(outcome) = voice.pending {
-                    self.finish(outcome, Fate::Interrupted);
-                } else {
-                    self.record.interrupted_voices += 1;
-                }
+        while let Some(voice) = self.shots.pop() {
+            if let Some(outcome) = voice.pending {
+                self.finish(outcome, Fate::Interrupted);
+            } else {
+                self.record.interrupted_voices += 1;
             }
         }
         self.record.interrupted_voices += self
@@ -143,6 +204,7 @@ impl Mix {
             self.transport.set_state(self.record.epoch, false);
             self.apply_waiting();
         }
+        self.retired = true;
         self.record
     }
 
@@ -153,13 +215,20 @@ impl Mix {
     }
 
     fn publish(&mut self) {
-        self.record.voices = self.voices().count();
-        self.record.peak_voices = self.record.peak_voices.max(self.record.voices);
+        self.record.voices = if self.record.pulling {
+            self.voices().count()
+        } else {
+            0
+        };
         self.transport.stats.publish(&self.record);
     }
 
     fn voices(&self) -> impl Iterator<Item = &Voice> {
-        self.shots.iter().chain(&self.emitters).flatten()
+        self.shots
+            .iter()
+            .chain(self.emitters.iter())
+            .chain(&self.tails)
+            .filter(|v| v.sounding())
     }
 
     fn apply_waiting(&mut self) {
@@ -175,14 +244,17 @@ impl Mix {
 
     pub(crate) fn apply(&mut self, command: Command) {
         match command {
-            Command::Play(play, outcome, samples) => self.play(play, outcome, samples),
+            Command::Play(play, outcome, samples) => {
+                self.last_applied_play = outcome.number.0;
+                self.play(play, outcome, samples);
+            }
             Command::Stop(number) => {
-                if let Some(index) = self.shots.iter().position(|voice| {
-                    voice
+                if let Some(&index) = self.shots.active.iter().find(|&&index| {
+                    self.shots.slots[index]
                         .as_ref()
                         .is_some_and(|voice| voice.number == Some(number))
                 }) {
-                    let voice = self.shots[index]
+                    let voice = self.shots.slots[index]
                         .as_mut()
                         .expect("located a sounding voice");
                     if voice.pending.is_some() {
@@ -198,16 +270,22 @@ impl Mix {
                 }
             }
         }
-        self.record.peak_voices = self.record.peak_voices.max(self.voices().count());
     }
 
     fn change_state(&mut self, change: StateChange) {
         match change {
-            StateChange::Emitter(index, new) => self.emitter(index, new, false),
+            StateChange::Emitter(index, new, range_exit) => {
+                self.emitter(index, new, range_exit, false);
+            }
             StateChange::Listener(listener) => {
                 self.listener = listener;
-                for voice in self.shots.iter_mut().chain(&mut self.emitters).flatten() {
-                    voice.retarget(listener);
+                for group in [&mut self.shots, &mut self.emitters] {
+                    for &index in &group.active {
+                        group.slots[index]
+                            .as_mut()
+                            .expect("active slot is occupied")
+                            .retarget(listener);
+                    }
                 }
             }
             StateChange::Volumes(volumes) => self.volumes = volumes,
@@ -228,16 +306,29 @@ impl Mix {
             // identity before applying the snapshot so their loop positions follow them.
             for (index, emitter) in snapshot.emitters.iter().enumerate() {
                 if let Some(emitter) = emitter
-                    && let Some(previous) = self.emitters.iter().position(|slot| {
+                    && let Some(previous) = self.emitters.slots.iter().position(|slot| {
                         slot.as_ref()
                             .is_some_and(|voice| voice.emitter == Some(emitter.identity))
                     })
                 {
-                    self.emitters.swap(index, previous);
+                    self.emitters.slots.swap(index, previous);
                 }
             }
+            self.emitters.active.clear();
             for (index, emitter) in snapshot.emitters.iter_mut().enumerate() {
-                self.emitter(index, emitter.take(), true);
+                if self.emitters.slots[index].is_some() {
+                    self.emitters.active.push(index);
+                }
+                self.emitter(index, emitter.take(), None, true);
+            }
+        }
+        if self.resume.value == 0.0 {
+            // Every restored voice uses the one output ramp, including newly selected emitters.
+            for &index in &self.emitters.active {
+                self.emitters.slots[index]
+                    .as_mut()
+                    .expect("active slot is occupied")
+                    .settle();
             }
         }
         self.state_reader = Some(reader);
@@ -251,14 +342,14 @@ impl Mix {
     }
 
     fn stop_shot(&mut self, index: usize) {
-        if let Some(voice) = self.shots[index].take() {
-            self.tail(voice);
+        if let Some(voice) = self.shots.take(index) {
+            self.tail(voice, false);
         }
     }
 
-    fn tail(&mut self, mut voice: Voice) {
+    fn tail(&mut self, mut voice: Voice, leaving_radius: bool) {
         if voice.audible() {
-            voice.ramp_out(self.config.ramp_frames);
+            voice.ramp_out(self.config, leaving_radius);
             debug_assert!(self.tails.len() < self.tails.capacity());
             self.tails.push(voice);
         }
@@ -274,53 +365,61 @@ impl Mix {
             return;
         };
         if play.limit.is_some_and(|limit| {
-            self.shots
-                .iter()
-                .flatten()
-                .chain(self.tails.iter().filter(|v| v.emitter.is_none()))
-                .filter(|v| v.sound == play.sound)
-                .count()
-                >= limit.get()
+            self.voices().filter(|v| v.sound == play.sound).count() >= limit.get()
         }) {
             self.finish(outcome, Fate::Limit);
             return;
         }
 
-        let slot = self.shots.iter().position(Option::is_none).or_else(|| {
-            self.shots
-                .iter()
-                .enumerate()
-                .filter_map(|(i, voice)| Some((i, voice.as_ref()?.loudness(self.listener))))
-                .min_by(|a, b| a.1.total_cmp(&b.1))
-                .filter(|(_, quietest)| loudness > *quietest)
-                .map(|(i, _)| i)
-        });
+        let slot = self
+            .shots
+            .slots
+            .iter()
+            .position(Option::is_none)
+            .or_else(|| {
+                self.shots
+                    .active
+                    .iter()
+                    .zip(self.shots.iter())
+                    .map(|(&i, voice)| (i, voice.loudness(self.listener)))
+                    .min_by(|a, b| a.1.total_cmp(&b.1))
+                    .filter(|(_, quietest)| loudness > *quietest)
+                    .map(|(i, _)| i)
+            });
         let Some(index) = slot else {
             self.finish(outcome, Fate::Pool);
             return;
         };
 
-        if let Some(voice) = self.shots[index].take() {
+        if let Some(voice) = self.shots.take(index) {
             if let Some(pending) = voice.pending {
                 self.finish(pending, Fate::Pool);
             } else {
                 self.record.displaced += 1;
-                self.tail(voice);
+                self.tail(voice, false);
             }
         }
-        self.shots[index] = Some(Voice::new(
-            play.sound,
-            samples,
-            play.settings,
-            self.listener,
-            Some(outcome),
-            None,
-        ));
+        self.shots.insert(
+            index,
+            Voice::new(
+                play.sound,
+                samples,
+                play.settings,
+                self.listener,
+                Some(outcome),
+                None,
+            ),
+        );
     }
 
-    fn emitter(&mut self, index: usize, new: Option<EmitterVoice>, restoring: bool) {
-        let mut old = self.emitters[index].take();
-        if let (Some(voice), Some(next)) = (&mut old, &new)
+    fn emitter(
+        &mut self,
+        index: usize,
+        new: Option<EmitterVoice>,
+        range_exit: Option<u64>,
+        restoring: bool,
+    ) {
+        if let (Some(voice), Some(next)) = (&mut self.emitters.slots[index], &new)
             && voice.emitter == Some(next.identity)
         {
             voice.set(
@@ -329,18 +428,15 @@ impl Mix {
                 next.held,
                 self.config.ramp_frames,
             );
-            if restoring {
-                voice.settle();
-            }
-            self.emitters[index] = old;
             return;
         }
-        if let Some(voice) = old
+        if let Some(voice) = self.emitters.take(index)
             && !restoring
         {
-            self.tail(voice);
+            let leaving_radius = range_exit.is_some() && voice.emitter == range_exit;
+            self.tail(voice, leaving_radius);
         }
-        self.emitters[index] = new.map(|next| {
+        if let Some(next) = new {
             let mut voice = Voice::new(
                 next.sound,
                 next.samples,
@@ -355,8 +451,8 @@ impl Mix {
                 next.held,
                 self.config.ramp_frames,
             );
-            voice
-        });
+            self.emitters.insert(index, voice);
+        }
     }
 
     pub(crate) fn render(&mut self, samples: &mut [f32]) {
@@ -365,23 +461,30 @@ impl Mix {
         let Some((first, rest)) = frames.split_first_mut() else {
             return;
         };
-        self.started.extend(
-            self.shots
-                .iter_mut()
-                .flatten()
-                .filter_map(|voice| voice.pending.take()),
-        );
+        for &index in &self.shots.active {
+            if let Some(outcome) = self.shots.slots[index]
+                .as_mut()
+                .expect("active slot is occupied")
+                .pending
+                .take()
+            {
+                self.started.push(outcome);
+            }
+        }
         self.render_frame(first);
         for index in 0..self.started.len() {
             self.finish(self.started[index], Fate::Started);
         }
         if !self.started.is_empty() {
-            for index in 0..self.shots.len() {
-                if self.shots[index]
+            let mut active = 0;
+            while let Some(&slot) = self.shots.active.get(active) {
+                if self.shots.slots[slot]
                     .as_ref()
                     .is_some_and(|voice| voice.stop_after_start)
                 {
-                    self.stop_shot(index);
+                    self.stop_shot(slot);
+                } else {
+                    active += 1;
                 }
             }
             self.started.clear();
@@ -394,13 +497,10 @@ impl Mix {
 
     fn render_frame(&mut self, output: &mut [f32; 2]) {
         let mut frame = [0.0; 2];
-        for slot in self.shots.iter_mut().chain(&mut self.emitters) {
-            if let Some(voice) = slot
-                && !voice.render(self.config, &mut frame)
-            {
-                *slot = None;
-            }
-        }
+        let sounding = self.shots.render(self.config, &mut frame)
+            + self.emitters.render(self.config, &mut frame)
+            + self.tails.len();
+        self.record.peak_voices = self.record.peak_voices.max(sounding);
         self.tails
             .retain_mut(|voice| voice.render(self.config, &mut frame) && !voice.tail_done());
         let scale = (self.current.effects * self.current.master) * self.resume.value;
@@ -419,11 +519,30 @@ impl Mix {
     }
 }
 
+impl Drop for Mix {
+    fn drop(&mut self) {
+        if !self.retired {
+            self.stop_pulling();
+            // There may be a command crossing the stopped-state publication. The handle
+            // resolves any play still in flight after this final bounded drain.
+            self.apply_waiting();
+            self.publish();
+            self.transport.close(self.last_applied_play);
+        }
+    }
+}
+
 pub(crate) fn tail_capacity(config: Config) -> Option<usize> {
-    config
-        .one_shots
-        .checked_add(config.emitters)?
-        .checked_mul(config.ramp_frames as usize)
+    let shots = config.one_shots.checked_mul(config.ramp_frames as usize)?;
+    let emitters = if config.emitters == 0 {
+        0
+    } else {
+        // Equal-power pan can exceed unit gain. Reserve enough frames to leave the
+        // radius at the glide step even from the highest channel gain.
+        let frames = range_ramp_frames(config, std::f32::consts::SQRT_2)?;
+        config.emitters.checked_mul(frames as usize)?
+    };
+    shots.checked_add(emitters)
 }
 
 fn clip(sample: f32, knee: f32) -> f32 {

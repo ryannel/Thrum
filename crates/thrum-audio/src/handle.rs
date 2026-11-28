@@ -21,18 +21,20 @@ use emitters::Emitters;
 /// Game-side state and the single writer of audio commands.
 pub struct Handle {
     config: Config,
-    commands: Producer<Command>,
+    commands: Option<Producer<Command>>,
     transport: Arc<Transport>,
     samples: Samples,
     sounds: Vec<Option<(SoundId, usize)>>,
     next_sound: u64,
     next_play: u64,
+    last_queued_play: Option<Outcome>,
     listener: Listener,
     volumes: Volumes,
     listener_dirty: bool,
     volumes_dirty: bool,
     emitters: Emitters,
-    sent: Vec<Option<(u64, u64)>>,
+    sent: Vec<SentEmitter>,
+    blocked_state: Option<usize>,
     state_writer: snapshot::Publisher,
     state_revision: u64,
     local_outcomes: Outcomes,
@@ -40,6 +42,12 @@ pub struct Handle {
     outcomes_read: [u64; 2],
     local_record: Record,
     mix_record: Cell<Record>,
+}
+
+#[derive(Clone, Copy, Default)]
+struct SentEmitter {
+    value: Option<(EmitterId, u64)>,
+    epoch: u64,
 }
 
 impl Handle {
@@ -82,18 +90,20 @@ impl Handle {
         Ok((
             Self {
                 config,
-                commands,
+                commands: Some(commands),
                 transport,
                 samples,
                 sounds: vec![None; config.sounds],
                 next_sound: 0,
                 next_play: 0,
+                last_queued_play: None,
                 listener: Listener::default(),
                 volumes: Volumes::default(),
                 listener_dirty: false,
                 volumes_dirty: false,
                 emitters: Emitters::new(config.emitters),
-                sent: vec![None; config.emitters],
+                sent: vec![SentEmitter::default(); config.emitters],
+                blocked_state: None,
                 state_writer,
                 state_revision: 0,
                 local_outcomes: Outcomes::new(config.outcomes),
@@ -169,6 +179,7 @@ impl Handle {
 
     /// Requests one play and returns its number immediately.
     pub fn play(&mut self, mut play: Play) -> PlayNumber {
+        self.finish_closed_connection();
         self.samples.collect();
         self.next_play += 1;
         let number = PlayNumber(self.next_play);
@@ -186,6 +197,7 @@ impl Handle {
             if !pulling {
                 Fate::NothingPulling
             } else if self.send(Command::Play(play, base, self.samples.lease(index))) {
+                self.last_queued_play = Some(base);
                 return number;
             } else {
                 Fate::QueueFull
@@ -194,20 +206,41 @@ impl Handle {
             self.local_record.bad_values += 1;
             Fate::BadValue
         };
-        self.local_record.fates[failure as usize] += 1;
-        let serial = self.transport.serial.fetch_add(1, Ordering::SeqCst);
-        self.local_outcomes.push(
-            serial,
-            Outcome {
-                fate: failure,
-                ..base
-            },
+        self.finish_local(base, failure);
+        debug_assert!(
+            spatial::settings_finite(play.settings),
+            "nonfinite audio voice settings"
         );
         number
     }
 
+    fn finish_local(&mut self, outcome: Outcome, fate: Fate) {
+        self.local_record.fates[fate as usize] += 1;
+        let serial = self.transport.serial.fetch_add(1, Ordering::SeqCst);
+        self.local_outcomes
+            .push(serial, Outcome { fate, ..outcome });
+    }
+
+    fn unread_play(&self) -> Option<Outcome> {
+        let drained = self.transport.last_drained_play()?;
+        self.last_queued_play.filter(|play| play.number.0 > drained)
+    }
+
+    fn finish_closed_connection(&mut self) {
+        if self.transport.last_drained_play().is_none() {
+            return;
+        }
+        if let Some(play) = self.unread_play() {
+            self.finish_local(play, Fate::Interrupted);
+        }
+        self.last_queued_play = None;
+        // Release the producer so the abandoned ring cannot keep the last sample lease pinned.
+        self.commands = None;
+    }
+
     /// Requests a ramp to silence for a sounding one-shot. Returns whether it was queued.
     pub fn stop_play(&mut self, number: PlayNumber) -> bool {
+        self.finish_closed_connection();
         self.send(Command::Stop(number))
     }
 
@@ -223,6 +256,10 @@ impl Handle {
         self.sample_index(sound).ok_or(Error::UnknownSound)?;
         if !self.validate_settings(&mut settings) {
             self.local_record.bad_values += 1;
+            debug_assert!(
+                spatial::settings_finite(settings),
+                "nonfinite audio voice settings"
+            );
             return Err(Error::EmitterSettings);
         }
         Ok(self.emitters.start(sound, settings))
@@ -232,6 +269,10 @@ impl Handle {
     pub fn set_emitter(&mut self, emitter: EmitterId, mut settings: VoiceSettings) {
         if !self.validate_settings(&mut settings) {
             self.local_record.bad_values += 1;
+            debug_assert!(
+                spatial::settings_finite(settings),
+                "nonfinite audio voice settings"
+            );
         } else if let Some(entry) = self.emitters.get_mut(emitter) {
             entry.settings = settings;
             entry.revision += 1;
@@ -242,6 +283,7 @@ impl Handle {
     pub fn move_emitter(&mut self, emitter: EmitterId, place: Option<crate::Place>) {
         if !spatial::place_valid(place) {
             self.local_record.bad_values += 1;
+            debug_assert!(spatial::place_finite(place), "nonfinite emitter place");
         } else if let Some(entry) = self.emitters.get_mut(emitter) {
             entry.settings.place = place;
             entry.revision += 1;
@@ -267,10 +309,15 @@ impl Handle {
     pub fn set_listener(&mut self, listener: Listener) {
         if let Some(listener) = spatial::normalized(listener) {
             self.listener = listener;
+            self.listener_dirty = true;
             self.publish_state();
-            self.listener_dirty = !self.send_state(StateChange::Listener(listener));
+            self.try_control(0, StateChange::Listener(listener));
         } else {
             self.local_record.bad_values += 1;
+            debug_assert!(
+                spatial::listener_finite(listener),
+                "nonfinite audio listener"
+            );
         }
     }
 
@@ -281,14 +328,16 @@ impl Handle {
             .all(f32::is_finite)
         {
             self.local_record.bad_values += 1;
+            debug_assert!(false, "nonfinite audio volumes");
             return;
         }
         volumes.master = self.clamp(volumes.master, 0.0, 1.0);
         volumes.music = self.clamp(volumes.music, 0.0, 1.0);
         volumes.effects = self.clamp(volumes.effects, 0.0, 1.0);
         self.volumes = volumes;
+        self.volumes_dirty = true;
         self.publish_state();
-        self.volumes_dirty = !self.send_state(StateChange::Volumes(volumes));
+        self.try_control(1, StateChange::Volumes(volumes));
     }
 
     /// Returns the desired volumes, including updates still waiting for queue space.
@@ -303,6 +352,7 @@ impl Handle {
 
     /// Selects emitter voices and sends any pending state that the mix has room for.
     pub fn update(&mut self) {
+        self.finish_closed_connection();
         self.samples.collect();
         self.emitters
             .update(self.listener, self.config.emitter_margin);
@@ -356,29 +406,79 @@ impl Handle {
         self.transport.state().1 && self.send(Command::State(self.state_revision, change))
     }
 
-    fn flush_state(&mut self) {
-        if !self.transport.state().1 {
-            return;
-        }
-        if self.listener_dirty {
-            self.listener_dirty = !self.send_state(StateChange::Listener(self.listener));
-        }
-        if self.volumes_dirty {
-            self.volumes_dirty = !self.send_state(StateChange::Volumes(self.volumes));
-        }
-        for index in 0..self.sent.len() {
-            let current = self
-                .emitters
-                .get_slot(index)
-                .map(|e| (e.identity.1, e.revision));
-            if current != self.sent[index] {
-                let voice = Self::emitter_voice(&self.emitters, &self.sounds, &self.samples, index);
-                if !self.send_state(StateChange::Emitter(index, voice)) {
-                    break;
-                }
-                self.sent[index] = current;
+    fn try_control(&mut self, state: usize, change: StateChange) {
+        // A frame's immediate listener or volume write must leave room for a state
+        // that was already blocked in the previous update.
+        if self.blocked_state.is_none_or(|blocked| blocked == state) && self.send_state(change) {
+            if state == 0 {
+                self.listener_dirty = false;
+            } else {
+                self.volumes_dirty = false;
+            }
+            if self.blocked_state.is_some() {
+                self.blocked_state = Some((state + 1) % (self.sent.len() + 2));
             }
         }
+    }
+
+    fn flush_state(&mut self) {
+        let (epoch, pulling) = self.transport.state();
+        if !pulling {
+            return;
+        }
+        let count = self.sent.len() + 2;
+        // Continue where the last full queue stopped, even when a setter supplied new state.
+        for offset in 0..count {
+            let state = (self.blocked_state.unwrap_or(0) + offset) % count;
+            let applied = match state {
+                0 if self.listener_dirty => {
+                    self.listener_dirty = !self.send_state(StateChange::Listener(self.listener));
+                    !self.listener_dirty
+                }
+                1 if self.volumes_dirty => {
+                    self.volumes_dirty = !self.send_state(StateChange::Volumes(self.volumes));
+                    !self.volumes_dirty
+                }
+                0 | 1 => true,
+                _ => self.flush_emitter(state - 2, epoch),
+            };
+            if !applied {
+                self.blocked_state = Some(state);
+                return;
+            }
+        }
+        self.blocked_state = None;
+    }
+
+    fn flush_emitter(&mut self, index: usize, epoch: u64) -> bool {
+        let current = self
+            .emitters
+            .get_slot(index)
+            .map(|e| (e.identity, e.revision));
+        let sent = self.sent[index];
+        // Resume can restore a different slot than the last command reached. Republish every
+        // slot once in the new epoch, including empty ones that may need to end a restored voice.
+        if sent.epoch == epoch && current == sent.value {
+            return true;
+        }
+        let range_exit = sent
+            .value
+            .map(|(id, _)| id)
+            .into_iter()
+            .chain(self.emitters.range_exits[index])
+            .filter_map(|id| self.emitters.get(id))
+            .find(|e| spatial::loudness(e.settings, self.listener).is_none())
+            .map(|e| e.identity.1);
+        let voice = Self::emitter_voice(&self.emitters, &self.sounds, &self.samples, index);
+        if !self.send_state(StateChange::Emitter(index, voice, range_exit)) {
+            return false;
+        }
+        self.emitters.range_exits[index] = None;
+        self.sent[index] = SentEmitter {
+            value: current,
+            epoch,
+        };
+        true
     }
 
     /// Replaces the pulling half and restores the handle's desired state. The new mix is stopped
@@ -391,8 +491,9 @@ impl Handle {
             return Err(Error::ForeignMix);
         }
         let record = mix.retire();
+        self.last_queued_play = None;
         let (sender, receiver) = RingBuffer::new(self.config.commands);
-        self.commands = sender;
+        self.commands = Some(sender);
         let (state_writer, state_reader) = snapshot::channel(self.config.emitters);
         self.state_writer = state_writer;
         let mut replacement = Mix::new(
@@ -408,11 +509,15 @@ impl Handle {
         self.publish_state();
         self.listener_dirty = false;
         self.volumes_dirty = false;
+        self.blocked_state = None;
         for (index, sent) in self.sent.iter_mut().enumerate() {
-            *sent = self
-                .emitters
-                .get_slot(index)
-                .map(|e| (e.identity.1, e.revision));
+            *sent = SentEmitter {
+                value: self
+                    .emitters
+                    .get_slot(index)
+                    .map(|e| (e.identity, e.revision)),
+                epoch: record.epoch,
+            };
         }
         *mix = replacement;
         self.samples.collect();
@@ -421,6 +526,7 @@ impl Handle {
 
     /// Drains the retained outcomes without allocating. The callback receives each outcome once.
     pub fn read_outcomes(&mut self, mut read: impl FnMut(Outcome)) {
+        self.finish_closed_connection();
         self.samples.collect();
         let rings = [&self.local_outcomes, &self.transport.outcomes];
         let mut arrivals = 0;
@@ -464,19 +570,25 @@ impl Handle {
         record.clamped = self.local_record.clamped;
         record.bad_values = self.local_record.bad_values;
         record.queue_high_water = self.local_record.queue_high_water;
+        let unread = u64::from(self.unread_play().is_some());
+        record.fates[Fate::Interrupted as usize] += unread;
         let pending = self.local_outcomes.total() + self.transport.outcomes.total()
-            - self.outcomes_read.iter().sum::<u64>();
+            - self.outcomes_read.iter().sum::<u64>()
+            + unread;
         record.outcomes_lost =
             self.local_record.outcomes_lost + pending.saturating_sub(self.config.outcomes as u64);
         record
     }
 
     fn send(&mut self, command: Command) -> bool {
-        let slots = self.commands.slots();
+        let Some(commands) = &mut self.commands else {
+            return false;
+        };
+        let slots = commands.slots();
         if slots == 0 {
             return false;
         }
-        self.commands
+        commands
             .push(command)
             .expect("only this producer occupies free slots");
         self.local_record.queue_high_water = self

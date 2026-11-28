@@ -67,9 +67,25 @@ fn stopping_holding_releasing_and_ending_use_a_frame_ramp() {
 }
 
 #[test]
+fn explicit_stop_sustains_the_last_readable_phase_through_its_ramp() {
+    let config = config();
+    let (mut handle, mut mix) = audio(config);
+    let sound = mono(&mut handle, vec![4096; 2]);
+    let number = handle.play(Play::new(sound, 1));
+    exact(first(&mut mix), [pcm(4096); 2]);
+    assert!(handle.stop_play(number));
+    let frames = pull(&mut mix, 9);
+    exact(frames[0], [pcm(4096); 2]);
+    exact(frames[7], [pcm(512); 2]);
+    exact(frames[8], [0.0; 2]);
+    steps(&frames, pcm(4096) / 8.0);
+}
+
+#[test]
 fn clip_is_exact_below_knee_continuous_monotone_and_bounded() {
     let config = Config {
         one_shots: 8,
+        emitters: 0,
         ..config()
     };
     let (mut handle, mut mix) = audio(config);

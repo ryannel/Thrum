@@ -4,10 +4,11 @@ use std::{
     error::Error,
     hint::black_box,
     io::{self, Write},
+    sync::Arc,
     time::Instant,
 };
 use thrum_audio::{
-    Config, Listener,
+    Config, Handle, Listener, VoiceSettings,
     diagnostics::{Digest, FullPool, MovingEmitters, ReferenceRun},
 };
 
@@ -21,9 +22,48 @@ fn main() -> Result<(), Box<dyn Error>> {
             reference(frames, mode == "reference-bits", &mut output)?;
         }
         "costs" => costs(&mut output)?,
-        _ => return Err("expected reference, reference-bits or costs".into()),
+        "sparse" => sparse(&mut output)?,
+        _ => return Err("expected reference, reference-bits, costs or sparse".into()),
     }
     output.flush()?;
+    Ok(())
+}
+
+fn sparse(output: &mut impl Write) -> Result<(), Box<dyn Error>> {
+    const PULLS: u32 = 3750;
+    const FRAMES_PER_PULL: usize = 128;
+    writeln!(output, "pool_slots,sounding_voices,trial,seconds")?;
+    for count in [0, 1] {
+        for trial in 1..=5 {
+            for capacity in [64, 512] {
+                let (mut handle, mut mix) = Handle::new(Config {
+                    one_shots: 3 * capacity / 4,
+                    emitters: capacity / 4,
+                    ..Config::default()
+                })?;
+                mix.start_pulling();
+                let mut frame = [0.0; FRAMES_PER_PULL * 2];
+                if count == 1 {
+                    let sound = handle.add_sound(Arc::from([8192_i16]), 1)?;
+                    handle.start_emitter(sound, VoiceSettings::default())?;
+                    handle.update();
+                }
+                mix.pull(&mut frame);
+                assert_eq!(handle.record().voices, count);
+                let start = Instant::now();
+                for _ in 0..PULLS {
+                    mix.pull(black_box(&mut frame));
+                }
+                let seconds = start.elapsed().as_secs_f64();
+                assert_eq!(handle.record().voices, count);
+                assert_eq!(
+                    frame[0].to_bits(),
+                    if count == 1 { 0.25_f32 } else { 0.0 }.to_bits()
+                );
+                writeln!(output, "{capacity},{count},{trial},{seconds}")?;
+            }
+        }
+    }
     Ok(())
 }
 

@@ -1,19 +1,27 @@
 use crate::{Listener, Place, VoiceSettings};
 
 pub(crate) fn place_valid(place: Option<Place>) -> bool {
-    place.is_none_or(|p| p.radius.is_finite() && p.radius > 0.0 && finite(p.position))
+    place_finite(place) && place.is_none_or(|p| p.radius > 0.0)
+}
+
+pub(crate) fn place_finite(place: Option<Place>) -> bool {
+    place.is_none_or(|p| p.radius.is_finite() && finite(p.position))
 }
 
 pub(crate) fn settings_valid(settings: VoiceSettings) -> bool {
-    settings.volume.is_finite() && settings.pitch.is_finite() && place_valid(settings.place)
+    settings_finite(settings) && settings.place.is_none_or(|p| p.radius > 0.0)
+}
+
+pub(crate) fn settings_finite(settings: VoiceSettings) -> bool {
+    settings.volume.is_finite() && settings.pitch.is_finite() && place_finite(settings.place)
+}
+
+pub(crate) fn listener_finite(listener: Listener) -> bool {
+    finite(listener.position) && finite(listener.right) && listener.near.is_finite()
 }
 
 pub(crate) fn normalized(mut listener: Listener) -> Option<Listener> {
-    if !finite(listener.position)
-        || !finite(listener.right)
-        || !listener.near.is_finite()
-        || listener.near <= 0.0
-    {
+    if !listener_finite(listener) || listener.near <= 0.0 {
         return None;
     }
     let right = listener.right.map(f64::from);
