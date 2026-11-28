@@ -26,3 +26,8 @@
   move's path has length and no time, so `approach_speed` is defined on a rise, a descent and a snap; a path
   box is cut back to the query domain; a ray's `depth` comes from the depth test.
   [The handoff](DESIGN.md#interfaces) lists them.
+- 2026-11-28 WP1 built the pair tests on one closest-feature routine and a separating-axis depth test.
+  The Mac sweep measurement selected a 1/128-unit contact tolerance and a 1/256-unit half gap.
+  Hand-worked Mac cases and 12,471 retained vectors passed on the Mac (development and release),
+  Chrome Wasm and the iPhone simulator (function). The changed-word control named its differing
+  vector. [Item proofs and measurement](../../../.orchestrate/evidence/SIM-3D/WP1/).

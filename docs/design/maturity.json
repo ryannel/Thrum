@@ -2556,6 +2556,13 @@
     },
     {
       "id": "P3",
+      "sim3d": {
+        "implementation": "SIM-3D WP1 implements pair distance, overlap, depth, ray and one- or two-motion sweeps for the planned shape pairs in the rules profile.",
+        "correctness": "Hand-worked cases pass at the origin and eight corners. The measured contact tolerance is 1/128 unit. All 12,471 retained vectors match bit for bit across the exercised builds, with a one-word mutation detected. Evidence: .orchestrate/evidence/SIM-3D/WP1/.",
+        "visual": "No rendering is part of the collision pair tests.",
+        "device": "Mac development and release, Chrome Wasm release and iPhone 18 Pro simulator release. Simulator evidence covers function.",
+        "performance": "The instrumented Mac sweep cases used up to 29 gap samples. Query and move timings are scheduled for SIM-3D WP5."
+      },
       "sim2d": {
         "implementation": "Reusable circle index, oversize bodies, circle/box/capsule overlaps and nearest-k implemented; rigid-body physics, navigation and non-circle bodies are not built.",
         "correctness": "M2 brute-force oracle, hand-worked predicates and domain refusal tests; M3 preserves Crowd and Mixed retained timelines on all three named targets. Evidence: .orchestrate/evidence/SIM-2D/M3-random-draw.md.",
