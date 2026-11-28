@@ -174,6 +174,27 @@ fn holding_during_entry_fades_from_the_reached_gain_and_keeps_phase() {
 }
 
 #[test]
+fn releasing_a_loop_held_before_its_first_sample_starts_at_its_saved_phase() {
+    let (mut handle, mut mix) = audio(config());
+    let sound = mono(&mut handle, vec![2048, 4096, 8192]);
+    let emitter = handle
+        .start_emitter(sound, VoiceSettings::default())
+        .expect("valid emitter");
+    handle.update();
+    handle.hold_emitter(emitter, true);
+    handle.update();
+    for frame in pull(&mut mix, 3) {
+        exact(frame, [0.0; 2]);
+    }
+    handle.hold_emitter(emitter, false);
+    handle.update();
+    let released = pull(&mut mix, 3);
+    exact(released[0], [0.0; 2]);
+    exact(released[1], [pcm(512); 2]);
+    exact(released[2], [pcm(2048); 2]);
+}
+
+#[test]
 fn entering_and_leaving_radius_switches_voices_and_glides() {
     let config = config();
     let (mut handle, mut mix) = audio(config);

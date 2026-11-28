@@ -73,9 +73,10 @@ impl Voice {
         self.settings = settings;
         self.retarget(listener);
         if held != self.held {
-            if !held && self.envelope.value == 0.0 {
+            if !held && !self.audible() {
                 // Apply changes made in silence before the release fades in at the saved phase.
                 self.settle_settings();
+                self.envelope.value = 0.0;
             }
             self.held = held;
             self.envelope.to(if held { 0.0 } else { 1.0 }, ramp);
