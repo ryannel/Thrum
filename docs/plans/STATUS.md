@@ -419,14 +419,14 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- Sun shadows hold still as the Sun moves, start at the foot of what casts them, and thin out with distance with no line where they stop, on the Mac and in Chrome (ATMOSPHERE WP13): Not Started · [plan](ATMOSPHERE/PLAN.md)
+- Sun shadows hold still as the Sun moves, start at the foot of what casts them, and thin out with distance with no line where they stop, on the Mac and in Chrome (ATMOSPHERE WP13): In Progress · [plan](ATMOSPHERE/PLAN.md)
 - Under water the Sun casts a moving net of light on the bed and plays on the hull, shafts of light stand in the water, and the picture stays readable as the camera goes down (WATERS WP16): In Progress · [plan](WATERS/PLAN.md) · [latest review](../../.orchestrate/evidence/WATERS/WP16-review.md)
 - CLOUDS's design: Design Changes Requested · [design](CLOUDS/DESIGN.md) · [plan](CLOUDS/PLAN.md)
 - A waterfall pours over its lip in a smooth tongue, breaks into white strands as it gathers speed and plunges into its pool, which boils, foams and sends out rings (RIVERS WP6): In Progress · [plan](RIVERS/PLAN.md)
 - GATE-TIME's design: Design Ready for Review · [design](GATE-TIME/DESIGN.md) · [plan](GATE-TIME/PLAN.md)
 - An agent writes a game's scenes, phases and rules in plain Rust against one crate, in the order they run, and proves them in an ordinary test with no window (GAME-SDK WP1): In Progress · [plan](GAME-SDK/PLAN.md) · [latest review](../../.orchestrate/evidence/GAME-SDK/WP1-review.md)
 - A rule asks whether two 3D shapes touch, where a ray meets one and where a moving one is stopped, and gets the same answer on the Mac, in Chrome and on the iPhone simulator (SIM-3D WP1): In Progress · [plan](SIM-3D/PLAN.md) · [latest review](../../.orchestrate/evidence/SIM-3D/WP1-review.md)
-- A program plays sounds into a buffer with no device, placed, pitched, looped and limited, and a test reads exactly what would be heard (AUDIO WP1): In Progress · [plan](AUDIO/PLAN.md) · [latest review](../../.orchestrate/evidence/AUDIO/WP1-review.md)
+- A program plays sounds into a buffer with no device, placed, pitched, looped and limited, and a test reads exactly what would be heard (AUDIO WP1): Ready for Review · [plan](AUDIO/PLAN.md) · [latest review](../../.orchestrate/evidence/AUDIO/WP1-review.md)
 
 ### Recently done
 
@@ -543,7 +543,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - Nothing in a merge's check is built and run twice, and the atmosphere's Monte Carlo reference no longer runs in it (GATE-TIME WP2), 21 Nov · review `.orchestrate/evidence/GATE-TIME/WP2-review.md` (cleared)
 - A merge's check runs only the tests of the packages its change can reach, and the whole workspace's tests run on main after each merge (GATE-TIME WP7), 21 Nov · review `.orchestrate/evidence/GATE-TIME/WP7-review.md` (cleared)
 - The game and the iPhone app hold the engine's frame host directly, a frame can be drawn without reading it back, and there is one way to capture the game to disk (HOST WP3), 21 Nov · review `.orchestrate/evidence/HOST/WP3-review.md` (cleared)
-- A merge's check runs its tests side by side and takes minutes where it took twenty: it says where its time went, and a test that runs over a minute fails it (GATE-TIME WP8), 21 Nov · review `.orchestrate/evidence/GATE-TIME/WP8-review.md` (cleared)
 
 ## All modules
 
@@ -556,7 +555,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE WP0 and WP1, PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 | Done 25 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE WP3 | Done 24 Nov |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13; ATMOSPHERE WP12 and SHOWCASE WP7 for its WP17 | WP17 of 22 · Blocked: Needs Access |
-| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, the air near the camera, where haze, fog and shafts of light are drawn, and the soft darkening where things meet the ground in shade | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6; APPLE-PRESENTATION WP7 for its WP12 | WP13 of 12 · Not Started |
+| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, the air near the camera, where haze, fog and shafts of light are drawn, and the soft darkening where things meet the ground in shade | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6; APPLE-PRESENTATION WP7 for its WP12 | WP13 of 12 · In Progress |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 25 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 | Done 17 Nov |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame, and answer a game's questions every tick even when a frame is skipped | APPLE-TILE WP2 and WP3, APPLE-PRESENTATION WP2, BASELINE-GUARD WP1 | Done 27 Nov |
@@ -587,4 +586,4 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 36 | DEAD-CODE | Engine code that nothing calls is gone, and a scene contribution no longer writes empty methods | GATE-TIME WP1 to start; GATE-TIME WP6 for the contribution's defaults; WATERS WP7 for the water scene's settings; HOST WP3 for the game's projection; REVIEW-RENDER WP3 and GATE-TIME WP6 for the two helpers | Done 22 Nov |
 | 37 | GAME-SDK | A developer or an agent builds a 2D, a 3D or an online game in plain Rust against one documented crate, and the showcase and the swarm game are written on it | Nothing to start: the owner approved its design on 27 November 2026. SESSION WP7 for a game played online; GAME-UI WP4 for menus and status displays and GAME-UI WP6 for the iPhone simulator; APPLE-PRESENTATION WP8 to WP12, RAY-TRACING WP6 and MESH-SHADING WP3 for 3D models that turn between ticks; SIM-3D for a 3D character that walks on the ground and is stopped by walls; AUDIO for sound; GAME-SPLIT WP4 for the showcase on the SDK | WP1 of 19 · In Progress |
 | 38 | SIM-3D | A 3D game's characters and shots find what is near them, what a ray meets and where they are stopped, the same on every device, and a character walks over hills, steps and solid models | SIM-2D WP3 | WP1 of 5 · In Progress |
-| 39 | AUDIO | A game's sounds and music are heard on the Mac, in Chrome and on the iPhone simulator, mixed in one place and never stalling a frame |  | WP1 of 4 · In Progress |
+| 39 | AUDIO | A game's sounds and music are heard on the Mac, in Chrome and on the iPhone simulator, mixed in one place and never stalling a frame |  | WP1 of 4 · Ready for Review |
