@@ -237,7 +237,14 @@ fn rule_draw(mut random: Random) -> u32 {
 
 #[test]
 fn function_pointer_rules_repeat_independently_after_rebuilding() -> Result {
-    let rules: [fn(Random) -> u32; 2] = [condition_draw, rule_draw];
+    fn loot(mut random: Random) -> (&'static str, u32) {
+        ("loot", random.below(u32::MAX))
+    }
+    fn weather(mut random: Random) -> (&'static str, u32) {
+        ("weather", random.below(u32::MAX))
+    }
+    type Callback = fn(Random) -> (&'static str, u32);
+    let rules: [Callback; 2] = [loot, weather];
     let setup = || {
         Game::new("pointer streams")
             .scene(|_: &mut Scene| {})
@@ -250,7 +257,7 @@ fn function_pointer_rules_repeat_independently_after_rebuilding() -> Result {
     for _ in 0..3 {
         let left = first.run(rules[0])?;
         let right = first.run(rules[1])?;
-        assert_ne!(left, right);
+        assert_ne!(left.1, right.1);
         assert_eq!(right, first.run(rules[1])?);
         assert_eq!(left, first.run(rules[0])?);
         assert_eq!(left, second.run(rules[0])?);

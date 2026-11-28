@@ -625,9 +625,10 @@ impl TestGame {
     /// The rule cannot acquire its parameters, returns an error as a rule
     /// result, or proposes an invalid edit.
     ///
-    /// Function pointers get their random stream when first registered or
-    /// run. Repeat manual calls in the same order to reproduce a run in a
-    /// freshly built game.
+    /// Function pointers get their random stream when first registered or run.
+    /// Repeat manual calls in the same order to reproduce a run in a freshly
+    /// built game. If the compiler gives two functions the same pointer, they
+    /// share a stream. Pass named functions directly to preserve their names.
     /// # Panics
     /// Only if an internal harness invariant is broken.
     pub fn run<M, O: Send + 'static>(&mut self, function: impl RuleFunction<M, O>) -> Result<O> {
