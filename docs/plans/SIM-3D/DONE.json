@@ -4,7 +4,7 @@
     {
       "id": "WP1",
       "name": "A rule asks whether two 3D shapes touch, where a ray meets one and where a moving one is stopped, and gets the same answer on the Mac, in Chrome and on the iPhone simulator",
-      "status": "in_progress",
+      "status": "not_started",
       "depends_on": [
         "SIM-2D:WP3"
       ],
@@ -21,10 +21,10 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SIM-3D/WP1/review-2/WP1.1.log",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP1.2",
@@ -39,8 +39,8 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP1.3",
@@ -55,8 +55,8 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP1.4",
@@ -71,8 +71,8 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP1.5",
@@ -88,10 +88,10 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SIM-3D/WP1/review-2/WP1.5.json",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP1.6",
@@ -107,10 +107,10 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SIM-3D/WP1/review-2/WP1.6.log",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP1.7",
@@ -126,10 +126,10 @@
             "Cargo.lock"
           ],
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SIM-3D/WP1/review-2/WP1.7.json",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP1.8",
@@ -145,20 +145,20 @@
             "Cargo.lock"
           ],
           "target": "ios-sim",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SIM-3D/WP1/review-2/WP1.8.json",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP1.9",
           "statement": "The tests are proved by answers that do not come from themselves, the contact tolerance was set from a measurement, a sweep reports no place it has not tested, and what was translated from elsewhere is on record.",
           "ask": "1. Are the expected answers in the distance, overlap, depth, ray and sweep tests written out from geometry, with coordinates the profile holds exactly, and not computed by the functions under test? 2. Does each test's answer depend on its arguments alone: is there no cache, counter or other state that outlives a call? 3. Does each test subtract one reference point from the coordinates it reads before it multiplies, so that a case at a corner of the query domain is computed in a local frame? 4. Does the work package's evidence hold a record, made before the contact tolerance was fixed, of the gap left at the reported place by every sweep case of WP1.4 at the origin and at the corners of the query domain, and by a sweep from one corner of the domain to the opposite one? Is the largest gap recorded for the sweeps asked to stop within the tolerance no more than the tolerance, and for those asked to stop within half of it no more than half? 5. Does a sweep report a hit met on the way only after testing the reported place, with the mover there clear of what it struck and within the gap asked for? When its fixed number of steps runs out, does it go on by halving to such a hit or to a miss, and never report the place it had reached untested? 6. Does `docs/provenance/SIM-3D.md` list every file translated or adapted from another project with its source, revision and licence, or say that none was, and is none GPL or share-alike?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SIM-3D/WP1/review-2/WP1.9.md",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP1.10",
@@ -171,10 +171,10 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SIM-3D/WP1/review-2/WP1.10.log",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP1.11",
@@ -187,39 +187,14 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SIM-3D/WP1/review-2/WP1.11.log",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
-      "failed_reviews": 3,
-      "failed_reviews_with_repeat": 2,
-      "findings": [
-        {
-          "name": "An exactly tangent ray misses a sphere",
-          "item": "WP1.3",
-          "different": "The prior endpoint contacts now hit. This ray misses a sphere at an interior tangency at fraction one half.",
-          "repeat": false
-        },
-        {
-          "name": "Head-on cuboid sweeps return the wrong face normal",
-          "item": "WP1.4",
-          "repeat": true
-        },
-        {
-          "name": "Finite rays report hits beyond their endpoint",
-          "item": "WP1.3",
-          "different": "The earlier false misses on exact endpoints are fixed. A positive representable clearance is lost when changing frames, causing a false hit beyond the closed segment.",
-          "repeat": false
-        },
-        {
-          "name": "Exactly tangent spheres report positive distance from a triangle or capsule",
-          "item": "WP1.2",
-          "different": "The earlier cuboid vertex is correct in both orders. A rounded closest-feature distance rejects an exact tangency in both orders for a sphere against a triangle or capsule.",
-          "repeat": false
-        }
-      ]
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
     },
     {
       "id": "WP2",
