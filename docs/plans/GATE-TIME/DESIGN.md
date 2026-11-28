@@ -4,7 +4,8 @@
 and again that day for [the guard rules](#the-guard-rules) that hold them. Revised 28 November for
 [the feature tests' own processes on main](#feature-tests-in-processes-of-their-own), which WP16 builds, after
 the main-branch check `long-tests` failed about every other run. It changes how `./dev long-tests` runs the
-tests behind a Cargo feature, and nothing WP1 to WP15 built for a merge's check.
+tests behind a Cargo feature. [WP17](#merge-timeouts-under-load) goes first to recover merge checks that
+hit their time limit while builders and other checks share the Mac.
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-6-the-cleanup-of-20-november) ·
 [test tiers](../../../ORCHESTRATE.md#test-tiers), the policy this module applies ·
@@ -94,9 +95,8 @@ Two rules follow from the goal, and [the test tiers](../../../ORCHESTRATE.md#tes
   otherwise is a long test, which runs on main after merges with the fault it leaves unguarded written beside it.
   The owner accepted ten seconds on 21 November.
 - **No number here is a budget for the engine.** The goal is about how long the check takes, and its proof is a
-  record of real merges. The one thing that fails a merge on time is a single test: one that runs for over a
-  minute, and from WP13 one that runs for over ten seconds and does so again when run alone. Nothing fails on how
-  long a whole check takes.
+  record of real merges. From WP17 the first ten-second timeout earns one serial retry with a 30-second
+  limit. A second timeout fails the merge. The five-minute goal is measured across landings.
 
 ## Purpose and who it is for
 
@@ -721,18 +721,18 @@ different CPU and GPU cases across the three runs at 02:45:14, 03:54:31 and 04:0
 ran the same commit. The same sea case passed its rerun in 5.5 s in the earlier check and timed out in the later
 one. The rain and river CPU cases also passed in other runs.
 
-Use the normal ten-second stop for the side-by-side pass of both commands. In `./dev check-all` only, allow up to
-30 seconds for each serial rerun of a timed-out test, after the parallel invocation has exited. Use the same test
-build, features and exact test identity. Apply this to the workspace pass and the draw-probe pass. A successful
+WP14 kept the normal ten-second stop for the side-by-side pass of both commands. It allowed up to 30 seconds
+for each serial rerun in `./dev check-all`, after the parallel invocation exits. Use the same test build,
+features and exact test identity. Apply this to the workspace pass and the draw-probe pass. A successful
 rerun requires a passing result for that exact case. Assertion failures, repeat timeouts, missing results and
 runner errors still fail the check. The report gives the case, both times and the verdict, and calls out reruns
-that passed above ten seconds so they remain visible for speed work. `./dev check` uses ten seconds for both
-attempts, even when its selection runs the whole workspace. The fast-test target, the empty exemption list and
-the guard counts stay as in WP12 and WP13.
+that passed above ten seconds so they remain visible for speed work. At WP14, `./dev check` still used ten
+seconds for both attempts, even when its selection ran the whole workspace. WP17 extends the qualified retry
+policy to merges. The fast-test target, the empty exemption list and the guard counts stay as in WP12 and WP13.
 
 Allowing more time on the workspace rerun covers both CPU scheduling and GPU contention and costs extra wall time
 only for a test that already stopped. A test that now takes more than ten seconds can pass `check-all` within the
-rerun cap and is reported as over the ten-second target. The merge check still enforces that target. Taking a
+rerun cap and is reported as over the ten-second target. WP13 enforced that target on both merge attempts. Taking a
 shared `gpu` slot would still allow other GPU holders to run. Taking `gpu.alone` would queue behind other work,
 leave uncoordinated GPU work running and leave CPU contention in either case. Moving the serial pass to the end of
 the command would release no additional nextest jobs and would leave the same external load. Keep the rerun after
@@ -814,6 +814,53 @@ one place where that is untrue.
 The trial also timed the runs: `thrum-render`'s line took 34 to 47 s through cargo-nextest against 91 s one
 binary at a time, and the game's 20 to 38 s against 48 s, so the check holds its `gpu` slot for less.
 
+<a id="merge-timeouts-under-load"></a>
+
+**17. A merge gets one bounded serial retry for a timed-out test.** In the 28 November merge logs, the first
+run stopped 63 cases and the other stopped 68. On the serial pass, 59 and 64 passed respectively. Each of the
+eight remaining results was another ten-second timeout. The two runs overlapped, with about ten builders active
+and reported load around 15–70. The serial retry starts after that check's parallel test processes have exited.
+The Mac still schedules other checks and builders on the same CPU and Metal device. WP13 introduced the second ten-second
+cutoff in `ad044caea`. WP14 (`9385c8558`) changed it for `check-all` only. Its loaded workspace qualification
+recorded 15 successful serial retries above ten seconds.
+
+Use WP14's 30-second profile **and** its result threshold on the serial pass of `./dev check`, including the
+configured merge launcher, for package and whole-workspace selections and the draw-probe build. Keep the existing
+parallel schedule, groups and ten-second stop on the first attempt. After that process exits, run exactly the
+timed-out binary/test pairs once with one test thread, preserving the build, features and GPU requirement.
+Every case must produce a fresh passing result within the cap. An assertion on either attempt, including one
+alongside a recovered timeout, a repeated timeout, missing retry evidence or a runner error fails the check.
+Report both durations and the verdict for each case, flagging successful retries above the fast-test target.
+
+A clean run finishes on the first pass. A GPU lock would add queue time and covers only participating jobs.
+Lower parallelism would charge quiet runs too. Another ten-second attempt would repeat the condition that
+produced the incident. Reusing the existing retry profile adds time only to stopped cases that need it. A test
+that consistently takes 10–30 seconds on a quiet Mac can now pass on retry. Its reported duration is evidence
+for the existing fast-test policy. WP5 still measures whole-check cost on ordinary landings.
+
+The one-time Mac Metal qualification covers the five distinct cases that timed out twice.
+
+| Binary | Full test name |
+|---|---|
+| `v1-game::cooked_assets_gpu` | `a_fetched_generation_draws_like_the_mapped_store` |
+| `v1-game::it` | `cooked_rows_gpu::edited_rows_equal_fresh_game_direct_with_placement` |
+| `v1-game::it` | `cooked_rows_gpu::edited_rows_equal_fresh_game_direct_without_placement` |
+| `v1-game::it` | `cooked_rows_gpu::visual_rebuild_direct_candidate_prepared_before_the_commit` |
+| `thrum-render::visibility_buckets` | `mixed_field_host::mixed_field_host_surface_resize_and_device_publication_keep_occlusion_hidden` |
+
+Use a candidate that selects Rust tests. Save one passing `THRUM_MERGE_VERIFY=1 ./dev check` within the
+configured command timeout while another test run uses Metal and builders or equivalent work load the CPU.
+Record load through the retry. Account for all five cases by binary and full name and show at least one real
+ten-second stop followed by a reported pass above ten and within thirty seconds. A focused run on the same
+candidate under comparable contention may supply missing cases or the recovery if it goes through the production
+merge runner's first pass, retry and verdict. Trace both attempts of the recovery to one invocation. If the cap
+still loses a case, record its timings and contention for replanning.
+
+For the quiet comparison use a matching Rust selection and warm builds before and after. Record load, coverage,
+nextest invocations, concurrency and test-step wall times. Verify each selected build finishes on its first
+pass at the same parallelism, with no new wait. Keep both trials in WP17 evidence. The recurring guard exercises the runner's
+command selection and verdict with fixture results and needs neither a GPU nor a real-time delay.
+
 ## Cargo cache for merge verification
 
 The pre-rollout WP5 record found 404.6 seconds median across 45 Rust landings, with 37 over five minutes. In the
@@ -875,7 +922,7 @@ test command only after it passes this proof. WP5 measures the real rollout inde
 | A long test: marked `#[ignore]` with a reason that starts `long:`, in a binary the main-tier list names; the main-branch check `long-tests` runs it | Any module with a test that takes over about ten seconds and cannot be made fast. Its builder adds the binary to the list, with the fault the test leaves unguarded before a merge |
 | The main-tier list, `.config/long-tests.txt`: each long-test binary with its package and build, and each package with tests behind a Cargo feature, with those features, whole or by test binary. The docs check fails a test file or target that names a feature the list does not cover | Any module that adds a long test, or a test behind a Cargo feature in a package the list does not cover whole |
 | The merge selection: `./dev check` runs the tests of the packages a change can reach, by Cargo's graph and the path rules and declared edges of mechanism 4; `./dev check-all` runs the whole workspace | Every builder. A module that adds a folder outside a package gets the whole workspace on every change there until it adds a path rule. A module that adds a test reading another package's files at run time declares the edge in the same landing |
-| The runner, from WP8: a test runs in a process of its own, beside tests of every other binary, with cargo-nextest installed. From WP13 a test is stopped at ten seconds and rerun once serially under the same limit. From WP14 only `./dev check-all` gives that serial rerun 30 seconds and reports passes above ten seconds. `.config/nextest.toml` holds the groups of tests that take turns and the tests counted as heavy. From WP16 `./dev long-tests` runs the tests behind a Cargo feature the same way, a process to each test, under the profile `main-tier`, whose only limit is a hang guard of 120 seconds | Every module that writes a test. A test relies on no other test of its binary having run and on no static it shares with one. A test that needs a device to itself joins a group, and one that starts a thread pool is counted as heavy, in the same landing |
+| The runner, from WP8: a test runs in a process of its own, beside tests of every other binary, with cargo-nextest installed. From WP13 a test is stopped at ten seconds and rerun once serially under the same limit. WP14 gives `./dev check-all` a 30-second serial retry and reports passes above ten seconds. WP17 applies the same retry policy to `./dev check`. `.config/nextest.toml` holds the groups of tests that take turns and the tests counted as heavy. From WP16 `./dev long-tests` runs the tests behind a Cargo feature the same way, a process to each test, under the profile `main-tier`, whose only limit is a hang guard of 120 seconds | Every module that writes a test. A test relies on no other test of its binary having run and on no static it shares with one. A test that needs a device to itself joins a group, and one that starts a thread pool is counted as heavy, in the same landing |
 | Two rules for a test written or changed from 21 November 2026, which [the test tiers](../../../ORCHESTRATE.md#test-tiers) state: it uses the smallest world that shows its behaviour, and it tests logic without a device, leaving a GPU test only what a device alone can show | Every module that writes a test, and every planner and reviewer |
 | The guard rules, from WP12: `limit-exempt`, `main-tier` and `test-binary`, each a count that can only fall. `main-tier` rises only through its version, in a landing that a done-when item asks for. `test-binary` counts the lines of `.config/unplanned-test-binaries.txt`, and fails a test target that is neither on that list nor named by a plan | Every builder: no new exemption from the limit, no main-tier test without an item that asks for it, and a new test in a test file that exists. A landing in any module that deletes, renames or folds a target on that list takes its line off the list, whatever files the module's plan gives it. Every planner: an item that adds a main-tier test says what only it can show; a binary a builder is to create is named by an item's check; and the last check naming a binary that exists is not dropped |
 | The check's closing lines, from WP8 and WP12: the time of each step, the ten slowest tests, the summed time of the tests and of the GPU tests. Reports, never a gate | The lead and every builder, and WP5's record |
@@ -922,6 +969,7 @@ everyone's: `.config/shape-baseline.json`, `.config/unplanned-test-binaries.txt`
 | WP4 | `examples/mirror/tests/pool_gpu/` and the result parsing of `scripts/check_mirror_browser.mjs`; `crates/thrum-asset-gpu/src/draw/tests.rs`; `crates/thrum-render/tests/scene_view_absent_gpu.rs` and `tests/pre_record_source/` | `REVIEW-RENDER` WP2, which is extending `pre_record_source` | `CLOUDS` and `RAY-TRACING` edit `thrum-asset-gpu`'s `draw.rs`, not its tests |
 | WP14 | The check runner, its tests and help in `tools/xtask/src/`, `.config/nextest.toml`, and the corresponding timeout text in `ORCHESTRATE.md` and `CONTRIBUTING.md`. Load evidence in the working folder | The landed WP13 runner | `REPO-RULES` owns the check command outside the test runner. WP5 uses the contributor guide's merge timing |
 | WP15 | `dev` and its merge-verification helper and tests under `scripts/`, the check entry point and selection inputs in `tools/xtask/src/` if needed, the test-command line in `ORCHESTRATE.md`, the cache operation notes in `CONTRIBUTING.md`, and the test-profile debug-info setting in `Cargo.toml` only if the paired proof needs it | The landed WP14 check runner | `REPO-RULES` owns the check command. Its guards and callers keep their contracts. The lead coordinates the test-command cutover and verifier cleanup |
+| WP17 | Merge test runner, its help and tests in `tools/xtask/src/`, retry profile comments in `.config/nextest.toml`, timeout guidance in `ORCHESTRATE.md` and `CONTRIBUTING.md`, and qualification records in the working folder | The landed WP14 retry policy | Built before WP16, whose saved changes touch the same runner and profile file. The configured merge command and cache fallback both use the ordinary runner |
 | WP16 | The long-test command, its help text and its tests in `tools/xtask/src/`; the new profile and the comments that say which command runs what in `.config/nextest.toml`; the `./dev long-tests` row of the commands table in `CONTRIBUTING.md`. No test file | Nothing | `.config/nextest.toml` is a shared input, so this landing's own check runs the whole workspace. `REPO-RULES` owns the check command outside the test runner. WP5 edits the same table of `CONTRIBUTING.md`, after it |
 | WP5 | The commands table and test-command text of `CONTRIBUTING.md`, plus the closing record in the working folder | WP15 and `DEAD-TOOLS` WP2 | `DEAD-TOOLS` WP3 edits other text of `CONTRIBUTING.md`. `REPO-RULES` WP3, the one rename, waits for this work package |
 

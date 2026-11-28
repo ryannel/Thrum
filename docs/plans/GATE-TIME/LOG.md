@@ -132,3 +132,7 @@
   The five renderer runs and four other feature-line runs are WP16's one-time Mac qualification record.
   The scheduled `long-tests` check continues device coverage on main. Took the reviewer's suggestion to
   verify in `long_tests()` that a missing or outdated nextest stops execution before the first long binary.
+- 2026-11-28 Planned WP17 before WP16. Merge logs `1b74202a8e22401a813258fe-*-1795866564151477000` and
+  `21bba2010cede89fda69e944-*-1795866627884064000` in the common Git directory's `orchestrate/checks/`
+  show 63 and 68 timeouts, with four still timing out in each serial pass. WP17 applies WP14's 30-second retry
+  to merges and qualifies it under overlapping checks. WP16 resumes its caster-dependent work separately.

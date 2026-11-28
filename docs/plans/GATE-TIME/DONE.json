@@ -878,6 +878,35 @@
       "failed_reviews_with_repeat": 0
     },
     {
+      "id": "WP17",
+      "name": "A busy Mac can verify a merge when fast tests time out on their first attempt",
+      "status": "not_started",
+      "quality_bar": "A clean merge keeps its existing parallel test pass. A timed-out case gets one bounded chance to finish under contention, and the check still exposes test faults and hangs.",
+      "items": [
+        {
+          "id": "WP17.1",
+          "statement": "The merge runner uses the existing parallel selection and 10-second cap on its first pass. Only a timeout gets one serial rerun, by exact binary and test, with the original features and a 30-second cap. A passing 15-second rerun recovers and reports both times and the over-target case. A repeat timeout, over-cap or missing result, assertion on either attempt, mixed assertion and timeout, or runner error fails. A clean pass starts no retry. Guard: fast xtask merge_timeout_policy tests and the limit-exempt rule.",
+          "check": "rustup run stable cargo nextest run --locked --offline -p xtask --no-tests=fail -E 'test(/merge_timeout_policy/)' && python3 scripts/shape_rules.py check --rule limit-exempt",
+          "ask": "Trace the package-selected, whole-workspace and draw-probe merge paths through first pass, retry command, fresh report and verdict. Do the fixtures exercise the production choice of both deadlines, preserve the build and exact case identities, and distinguish every listed outcome? Do the configured launcher and its fallback reach that policy, and do the runner help and test-tier guidance describe it?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP17.2",
+          "statement": "Under overlapping Metal and CPU load comparable to 28 November, the configured merge check passes a Rust candidate within its existing command timeout. The five repeat-timeout cases in mechanism 17 pass under that load. The merge runner records at least one real timeout that passes its single serial retry in more than 10 and at most 30 seconds. On a quiet Mac a clean selection has the same coverage and concurrency before and after and finishes on the first pass without a new wait. Record: loaded merge output, any focused replay, and the matched quiet timings.",
+          "ask": "Using the candidate revisions, commands, exit codes, load samples and concurrent jobs, verify the passing configured merge under contention, the five named results and the reported over-ten-second recovery. If a focused replay supplies any case, does it use the same candidate and the production merge runner's timeout, retry and verdict under comparable load? Compare the quiet warm runs' test selections, concurrency, invocation counts and step times. Is there any added invocation, serialization or wait on the clean path?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
       "id": "WP16",
       "name": "The long tests on main pass every run: each test behind a Cargo feature runs in a process of its own, as tests do before a merge",
       "status": "blocked",

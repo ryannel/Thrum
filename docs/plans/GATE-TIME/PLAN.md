@@ -12,8 +12,7 @@ another module's: change nothing those tests assert about the engine. The work p
 
 - Assumption: merge verification shares a single local Cargo cache across candidate worktrees on this Mac. It starts with an 8 GiB retention cap and honors the lead's 30 GB free-space floor. Cargo keeps the existing checks and test coverage. Test-profile debug-info tuning is available if the cache alone falls short in the paired trial.
 - Assumption: the five-minute goal is judged once on the first 20 qualifying Rust landings after rollout, allowing at most five over 300 seconds under the previous tail-count rule. This sample includes ordinary cold starts and fallbacks.
-- Assumption: the merge check reruns a test stopped at ten seconds once, serially, under the same limit. Load took a test of under ten seconds past it in 8 of the last 18 whole checks, 22 tests in one.
-- Assumption: `./dev check-all` gets a 30-second cap for its one serial rerun, subject to proof under the builder load that caused the failures. Ten seconds remains the fast-test target and the merge limit.
+- Assumption: the 30-second serial retry qualified for the workspace check is long enough for a merge under overlapping CPU and Metal work. WP17 tests that assumption against the 28 November failures. Ten seconds remains the target for a fast test run on a quiet Mac.
 - Assumption: "the number of test binaries can only go down" counts the binaries no plan names, 43 of 275 today, because approved open items name 147 not yet written; WP11 takes the whole number from 263 to about 110. The other choice rewrites the 176 binary names in 17 modules' open items now, and freezes the whole number.
 - Assumption: the stepped hour, the foam's ten-minute moored run, the three field flythroughs and the shore-blend solve run whole on main after merges, like the gale. The other choice keeps a short run of any in every merge's check.
 - Assumption: the whole workspace's tests run on main at most once an hour, with no `gpu` lock, which would hold a GPU slot through the build. The other choice is every four hours under the lock, like the long tests and exact images.
@@ -67,6 +66,13 @@ another module's: change nothing those tests assert about the engine. The work p
 
 ## WP15 Merge verification reuses a bounded local Cargo cache: done
 [review](../../../.orchestrate/evidence/GATE-TIME/WP15-review.md)
+
+## WP17 A busy Mac can verify a merge when fast tests time out on their first attempt
+
+Build this from main before WP16. The caster assertion belongs to ATMOSPHERE and WP16 already has a saved
+implementation. Keep those changes on their branches. Use [the merge retry design](DESIGN.md#merge-timeouts-under-load)
+for the five repeat timeouts and the loaded and quiet qualifications. Bring the runner help, profile comments
+and timeout guidance in the test tiers and contributor guide into line when the policy ships.
 
 ## WP16 The long tests on main pass every run: each test behind a Cargo feature runs in a process of its own, as tests do before a merge
 
