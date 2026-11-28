@@ -13,7 +13,124 @@
   "work_packages": {
     "WP1": {
       "definitions": "6ed860efc93d9cc765f238919487b8870e95b0ab3aa1c070a885b6c1ddbd5cdd",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "2e5b89b56f19ae5c83c08d043033961b3ca8f876",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md",
+          "items": {
+            "WP1.1": "fail",
+            "WP1.2": "fail",
+            "WP1.3": "fail",
+            "WP1.4": "fail",
+            "WP1.5": "fail",
+            "WP1.6": "fail",
+            "WP1.7": "fail"
+          },
+          "findings": [
+            {
+              "name": "A manual rule commits its writes after returning an error",
+              "item": "WP1.1",
+              "repeat": false
+            },
+            {
+              "name": "A read-only four-entry query cannot be used in a condition",
+              "item": "WP1.1",
+              "repeat": false
+            },
+            {
+              "name": "A between-tick call consumes the next tick's held transition",
+              "item": "WP1.2",
+              "repeat": false
+            },
+            {
+              "name": "A clock captured before the expiry rule runs can lose that rule on resume",
+              "item": "WP1.2",
+              "repeat": false
+            },
+            {
+              "name": "A read-only harness call discards retained ticks",
+              "item": "WP1.3",
+              "repeat": false
+            },
+            {
+              "name": "Different rule functions share a random stream",
+              "item": "WP1.3",
+              "repeat": false
+            },
+            {
+              "name": "A scheduled closure can keep gameplay state outside rewind",
+              "item": "WP1.3",
+              "repeat": false
+            },
+            {
+              "name": "The compiler guard can lose a required diagnostic and still pass",
+              "item": "WP1.4",
+              "repeat": false
+            },
+            {
+              "name": "The surface guard misses callable methods on returned types in private modules",
+              "item": "WP1.5",
+              "repeat": false
+            },
+            {
+              "name": "Public method examples do not demonstrate the method they document",
+              "item": "WP1.5",
+              "repeat": false
+            },
+            {
+              "name": "Resource and scene state bypass core's resource admission",
+              "item": "WP1.6",
+              "repeat": false
+            },
+            {
+              "name": "Warm scene-transition ticks allocate",
+              "item": "WP1.6",
+              "repeat": false
+            },
+            {
+              "name": "Queries copy matching rows and write them back per entity",
+              "item": "WP1.6",
+              "repeat": false
+            },
+            {
+              "name": "The SDK requires an undocumented spelling for a single entity",
+              "item": "WP1.7",
+              "repeat": false
+            },
+            {
+              "name": "The Swarm example changes the wave carried to the result scene",
+              "item": "WP1.7",
+              "repeat": false
+            },
+            {
+              "name": "Portable tuple and fixed-array fields are rejected",
+              "repeat": false
+            },
+            {
+              "name": "A derived component does not satisfy the Copy data contract",
+              "repeat": false
+            }
+          ],
+          "summary": "WP1 fails. On the target Mac, a rule called through `game.run` returned an error after writing the score, and the write committed. The scheduled structural barrier passed a one-slot reuse and replay test, but other supported paths lost rewind history, landed a scene transition early, or admitted invalid world state.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 168031,
+            "cached": 5261184,
+            "output": 16933,
+            "turns": 1
+          },
+          "at": "2026-11-28T00:53:44Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 11 Must Fix",
