@@ -973,8 +973,8 @@ async fn record(
         .transpose()?;
     let preview = preview.and_then(|record| record.lock().ok()?.clone());
     let governed = matches!(capture_output, RuntimeCaptureOutput::Governor { .. });
-    if governed && (scenario != "route" || mode != "realtime") {
-        return Err("governor capture requires the real-time moving route".to_owned());
+    if governed && (!matches!(scenario, "route" | "exit-route") || mode != "realtime") {
+        return Err("governor capture requires a real-time camera route".to_owned());
     }
     let motion_capture = mode == "realtime" && (governed || is_motion_capture(scenario));
     let target_wind = scenario == "clouds-wind";

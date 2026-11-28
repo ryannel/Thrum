@@ -344,3 +344,25 @@ fn sun_cascade_layout_membership_uses_smallest_axis_instead_of_bounds() {
         assert!(width >= fit.caster_view(accepted).minimum_cast_width[0]);
     }
 }
+
+#[test]
+fn sun_cascade_layout_packs_height_support_and_solar_lower_limb() {
+    let camera = view(Vec3::ZERO, Vec3::NEG_Z, 0.7, 0.1, 100.0);
+    let direction = Vec3::ONE.normalize();
+    let bounds = ShadowBounds::new([-100.0; 3], [100.0, 2000.0, 100.0]).unwrap();
+    let fit = FitInputs::new(&camera, (&[], None), direction)
+        .unwrap()
+        .fit(Some(bounds))
+        .unwrap();
+    let [height, lower, _, _] = fit.samples.height_support;
+    assert_eq!(height, 2000.0);
+    assert!(lower > 0.0 && lower < direction.y);
+    let tangent = direction.cross(Vec3::Y).normalize();
+    let bitangent = direction.cross(tangent);
+    for i in 0..32 {
+        let phase = i as f32 * std::f32::consts::TAU / 32.0;
+        let ray = direction * SUN_ANGULAR_RADIUS.cos()
+            + (tangent * phase.cos() + bitangent * phase.sin()) * SUN_ANGULAR_RADIUS.sin();
+        assert!(ray.y >= lower - f32::EPSILON);
+    }
+}
