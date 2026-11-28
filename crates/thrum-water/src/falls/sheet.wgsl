@@ -306,8 +306,12 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
         breakup * smoothstep(0.20, 0.72, input.across_fraction.w));
     let glass_alpha = min(mix(0.46, 0.88, below_tongue), fresnel + 0.07 + 1.7 * input.discharge.w + 0.35 * breakout);
     let trickle_film = select(1.0, mix(0.60, 1.0, smoothstep(-0.09, 0.19, fraction)), is_filament);
-    let opacity = (clear * glass_alpha + white * (0.90 + 0.18 * grain))
-        * presence * mix(0.62, 1.0, seam) * contact_cover * streak_cover * trickle_film;
+    let film_opacity = (clear * glass_alpha + white * (0.90 + 0.18 * grain)) * streak_cover;
+    // The aerated body transmits through a similar thickness across its face.
+    // Lighting follows the departing parcels independently of the cover.
+    let mixed_air = select(0.0, smoothstep(0.16, 0.40, fraction), input.closed_strand != 0u);
+    let opacity = mix(film_opacity, 0.62, mixed_air)
+        * presence * mix(0.62, 1.0, seam) * contact_cover * trickle_film;
     let path_distance = select(input.across_fraction.y, -input.across_fraction.y - 2.0, is_filament);
     let last_fraction = input.across_fraction.w - length(input.velocity_along.xyz) * sheet_clock.y
         / max(0.001, path_distance);
