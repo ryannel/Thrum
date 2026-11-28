@@ -1418,6 +1418,12 @@ The replacement command and validator exercised the same comparison with a fresh
   case turns the reviewed reader away by 0.036 or more over its whole stated range. One clause of the
   design was added: the column bound in a band between two levels of the volume. No item changed.
   [The check and its figures](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-28-5/README.md)
+- 2026-11-28 Planner, after WP23's review passed both items and failed on two rules no item held, and the
+  design review asked for changes (four Must Fix findings). The puff form stands as it passed. The deck's
+  erosion is its own under either form (new WP23.3), a cluster is fitted inside its cell (new WP23.4), a
+  change from fair to clear at 60× is inspected (new WP17.6), and the bound and "drawn clear" are stated at
+  centres and across the filters' reach (new WP24.7; WP12.8 and WP24.3 written again).
+  [What changed for each finding](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-28-6/README.md)
 
 ## WP23 bounded puff revision
 

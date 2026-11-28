@@ -27,8 +27,7 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 - Assumption: only the fair preset's sky is held to the refresh. The broken and overcast skies' cost and the finished sky's presented cadence are recorded and investigated (WP12.5, WP12.6), and the rest is the performance phase's.
 - Assumption: "each cloud holds up on its own" is met by a new form for the weather's own clouds (heaps in a 3D volume of about 80 MiB), not by library shapes. Until WP17 passes, main shows it unjudged.
 - Assumption: near heaps are drawn half a second of play behind a query's weather, and past about 25 km a heap loses its overhangs.
-- Assumption: through a preset change a query can call a column clear for up to a second of play while its cloud still draws and shades. No query lags with the picture ([what a game may rely on](DESIGN.md#the-weather-volume)).
-- Assumption: no item inspects a preset change at 60× under the new form, where near clouds may thin part by part with straight edges ([risk 2](DESIGN.md#risks)).
+- Assumption: a query can call a column clear while cloud still draws and shades there: for up to a second of play through a preset change, and within one map texel of a far cloud (1,600 m). No query lags with the picture ([what a game may rely on](DESIGN.md#the-weather-volume)).
 - Assumption: the weather volume's fill cadence is no governor knob, though the brief asks that every cadence be one, because moving it would freeze or jump the near clouds.
 - Assumption: WP25 measures the release V1 game in its 1920×1080 window, on the Apple recipe with TAAU under the fair preset, in one more sitting alone.
 - Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX work packages.
@@ -108,11 +107,11 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 
 ## WP23 The weather's own clouds take a new form, a cluster of rounded heaps, in what a game reads and in stills drawn from it on the CPU
 
-Go on from `build/clouds` at `aa8d61a8d` and
-[the revision's switches](../../../.orchestrate/evidence/CLOUDS/WP23-unblock/README.md): puffs inside
-[the three bounds](DESIGN.md#one-weather-field-in-the-air-frame), density
-[one function of the heaped profile](DESIGN.md#one-density-in-m¹), the cluster cache keyed by the fade
-length. [Risk 2](DESIGN.md#risks): when to end `BLOCKED`.
+Keep the form on main at `9c2708105`. Give its deck
+[the deck's own erosion](DESIGN.md#one-density-in-m¹) (WP23.3) and fit
+[each cluster inside its cell](DESIGN.md#one-weather-field-in-the-air-frame) (WP23.4). The fit moves
+puffs: WP23.1's puff witnesses move with it, and WP23.2's stills are taken again.
+[Risk 2](DESIGN.md#risks): when to end `BLOCKED`.
 
 ## WP24 The engine draws, shades and answers for the new cloud form on the Mac and in Chrome, and the old form is gone
 
@@ -120,7 +119,8 @@ Judge no look here.
 
 ## WP17 Each fair-weather cloud holds up on its own: a cluster of heaps of different heights, with no shelf, fold or repeated outline
 
-[Risk 2](DESIGN.md#risks) says what the builder may tune. Take WP17.1's stills first.
+[Risk 2](DESIGN.md#risks) says what the builder may tune, and what to do if WP17.6 shows a cut. Take
+WP17.1's stills first.
 
 ## WP25 With the new clouds drifting, the player still sees a new frame as steadily as in the same game without them
 
