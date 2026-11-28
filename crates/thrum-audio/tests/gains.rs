@@ -82,6 +82,46 @@ fn explicit_stop_sustains_the_last_readable_phase_through_its_ramp() {
 }
 
 #[test]
+fn hold_during_a_volume_reduction_uses_only_the_ramp_step() {
+    let (mut handle, mut mix) = audio(config());
+    let sound = mono(&mut handle, vec![8192]);
+    let emitter = handle
+        .start_emitter(sound, VoiceSettings::default())
+        .expect("valid emitter");
+    handle.update();
+    drop(pull(&mut mix, 9));
+    handle.set_emitter(
+        emitter,
+        VoiceSettings {
+            volume: 0.5,
+            ..VoiceSettings::default()
+        },
+    );
+    handle.update();
+    exact(first(&mut mix), [pcm(8192); 2]);
+
+    handle.hold_emitter(emitter, true);
+    handle.update();
+    for (frame, gain_eighths) in pull(&mut mix, 9).into_iter().zip((0_i16..=8).rev()) {
+        exact(frame, [pcm(896 * gain_eighths); 2]);
+    }
+    handle.set_emitter(
+        emitter,
+        VoiceSettings {
+            volume: 0.25,
+            ..VoiceSettings::default()
+        },
+    );
+    handle.update();
+    exact(first(&mut mix), [0.0; 2]);
+    handle.hold_emitter(emitter, false);
+    handle.update();
+    for (frame, gain_eighths) in pull(&mut mix, 9).into_iter().zip(0_i16..=8) {
+        exact(frame, [pcm(256 * gain_eighths); 2]);
+    }
+}
+
+#[test]
 fn clip_is_exact_below_knee_continuous_monotone_and_bounded() {
     let config = Config {
         one_shots: 8,

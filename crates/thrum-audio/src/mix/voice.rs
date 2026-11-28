@@ -73,12 +73,22 @@ impl Voice {
         self.settings = settings;
         self.retarget(listener);
         if held != self.held {
+            if !held && self.envelope.value == 0.0 {
+                // Apply changes made in silence before the release fades in at the saved phase.
+                self.settle_settings();
+            }
             self.held = held;
             self.envelope.to(if held { 0.0 } else { 1.0 }, ramp);
         }
     }
 
     pub(super) fn settle(&mut self) {
+        self.settle_settings();
+        self.envelope.value = if self.held { 0.0 } else { 1.0 };
+        self.envelope.remaining = 0;
+    }
+
+    fn settle_settings(&mut self) {
         self.gains = self.targets;
         self.dry = if self.settings.place.is_none() {
             self.gains
@@ -86,8 +96,6 @@ impl Voice {
             [0.0; 2]
         };
         self.pitch = self.settings.pitch;
-        self.envelope.value = if self.held { 0.0 } else { 1.0 };
-        self.envelope.remaining = 0;
     }
 
     pub(super) fn ramp_out(&mut self, config: Config, leaving_radius: bool) {
@@ -165,7 +173,8 @@ impl Voice {
                 }
             }
         }
-        if !self.outgoing {
+        // Only the envelope changes the level during a hold or release ramp.
+        if !self.outgoing && self.envelope.remaining == 0 {
             let step = config.glide_step;
             self.pitch = spatial::glide(self.pitch, self.settings.pitch, step);
             let unplaced = self.settings.place.is_none();

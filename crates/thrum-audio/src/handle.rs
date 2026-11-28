@@ -196,7 +196,7 @@ impl Handle {
         {
             if !pulling {
                 Fate::NothingPulling
-            } else if self.send(Command::Play(play, base, self.samples.lease(index))) {
+            } else if self.send_transient(Command::Play(play, base, self.samples.lease(index))) {
                 self.last_queued_play = Some(base);
                 return number;
             } else {
@@ -241,7 +241,7 @@ impl Handle {
     /// Requests a ramp to silence for a sounding one-shot. Returns whether it was queued.
     pub fn stop_play(&mut self, number: PlayNumber) -> bool {
         self.finish_closed_connection();
-        self.send(Command::Stop(number))
+        self.send_transient(Command::Stop(number))
     }
 
     /// Adds an emitter to the scene. Its voice is selected on the next update.
@@ -409,7 +409,10 @@ impl Handle {
     fn try_control(&mut self, state: usize, change: StateChange) {
         // A frame's immediate listener or volume write must leave room for a state
         // that was already blocked in the previous update.
-        if self.blocked_state.is_none_or(|blocked| blocked == state) && self.send_state(change) {
+        if self.blocked_state.is_some_and(|blocked| blocked != state) {
+            return;
+        }
+        if self.send_state(change) {
             if state == 0 {
                 self.listener_dirty = false;
             } else {
@@ -418,6 +421,8 @@ impl Handle {
             if self.blocked_state.is_some() {
                 self.blocked_state = Some((state + 1) % (self.sent.len() + 2));
             }
+        } else if self.transport.state().1 {
+            self.blocked_state = Some(state);
         }
     }
 
@@ -578,6 +583,14 @@ impl Handle {
         record.outcomes_lost =
             self.local_record.outcomes_lost + pending.saturating_sub(self.config.outcomes as u64);
         record
+    }
+
+    fn send_transient(&mut self, command: Command) -> bool {
+        // A producer that submits a play every frame must give deferred state a turn.
+        if self.blocked_state.is_some() {
+            self.flush_state();
+        }
+        self.send(command)
     }
 
     fn send(&mut self, command: Command) -> bool {

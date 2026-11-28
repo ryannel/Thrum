@@ -143,6 +143,37 @@ fn movement_volume_and_speed_glide_without_resetting_phase() {
 }
 
 #[test]
+fn holding_during_entry_fades_from_the_reached_gain_and_keeps_phase() {
+    let (mut handle, mut mix) = audio(config());
+    let sound = mono(&mut handle, vec![2048, 8192, 4096, 16384]);
+    let emitter = handle
+        .start_emitter(sound, VoiceSettings::default())
+        .expect("valid emitter");
+    handle.update();
+    exact(first(&mut mix), [0.0; 2]);
+
+    handle.hold_emitter(emitter, true);
+    handle.update();
+    let held = pull(&mut mix, 9);
+    for (frame, gain_eighths) in held.into_iter().zip((0_i16..=8).rev()) {
+        exact(frame, [pcm(128 * gain_eighths); 2]);
+    }
+    assert!(handle.emitter_voiced(emitter));
+    assert_eq!(handle.record().voices, 0);
+    for frame in pull(&mut mix, 67) {
+        exact(frame, [0.0; 2]);
+    }
+
+    handle.hold_emitter(emitter, false);
+    handle.update();
+    let released = pull(&mut mix, 3);
+    exact(released[0], [0.0; 2]);
+    exact(released[1], [pcm(512); 2]);
+    exact(released[2], [pcm(4096); 2]);
+    assert_eq!(handle.record().voices, 1);
+}
+
+#[test]
 fn entering_and_leaving_radius_switches_voices_and_glides() {
     let config = config();
     let (mut handle, mut mix) = audio(config);

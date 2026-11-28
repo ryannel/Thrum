@@ -36,6 +36,7 @@ pub(crate) struct EmitterVoice {
 
 struct VoiceSlots {
     slots: Box<[Option<Voice>]>,
+    // Held emitters keep their slot and phase after their last audible frame.
     active: Vec<usize>,
 }
 
@@ -49,11 +50,9 @@ impl VoiceSlots {
 
     fn take(&mut self, index: usize) -> Option<Voice> {
         let voice = self.slots[index].take()?;
-        self.active.remove(
-            self.active
-                .binary_search(&index)
-                .expect("occupied slot is active"),
-        );
+        if let Ok(offset) = self.active.binary_search(&index) {
+            self.active.remove(offset);
+        }
         Some(voice)
     }
 
@@ -64,7 +63,14 @@ impl VoiceSlots {
 
     fn insert(&mut self, index: usize, voice: Voice) {
         debug_assert!(self.slots[index].is_none());
+        let sounding = voice.sounding();
         self.slots[index] = Some(voice);
+        if sounding {
+            self.activate(index);
+        }
+    }
+
+    fn activate(&mut self, index: usize) {
         // Preserve slot order so adding or freeing voices cannot change summation order.
         let offset = self.active.partition_point(|&active| active < index);
         self.active.insert(offset, index);
@@ -77,16 +83,16 @@ impl VoiceSlots {
     }
 
     fn render(&mut self, config: Config, frame: &mut [f32; 2]) -> usize {
-        let mut sounding = 0;
+        let sounding = self.active.len();
         self.active.retain(|&index| {
             let slot = &mut self.slots[index];
             let voice = slot.as_mut().expect("active slot is occupied");
-            sounding += usize::from(voice.sounding());
             let live = voice.render(config, frame);
+            let still_sounding = live && voice.sounding();
             if !live {
                 *slot = None;
             }
-            live
+            still_sounding
         });
         sounding
     }
@@ -228,7 +234,6 @@ impl Mix {
             .iter()
             .chain(self.emitters.iter())
             .chain(&self.tails)
-            .filter(|v| v.sounding())
     }
 
     fn apply_waiting(&mut self) {
@@ -316,7 +321,10 @@ impl Mix {
             }
             self.emitters.active.clear();
             for (index, emitter) in snapshot.emitters.iter_mut().enumerate() {
-                if self.emitters.slots[index].is_some() {
+                if self.emitters.slots[index]
+                    .as_ref()
+                    .is_some_and(Voice::sounding)
+                {
                     self.emitters.active.push(index);
                 }
                 self.emitter(index, emitter.take(), None, true);
@@ -324,11 +332,14 @@ impl Mix {
         }
         if self.resume.value == 0.0 {
             // Every restored voice uses the one output ramp, including newly selected emitters.
-            for &index in &self.emitters.active {
-                self.emitters.slots[index]
-                    .as_mut()
-                    .expect("active slot is occupied")
-                    .settle();
+            self.emitters.active.clear();
+            for (index, slot) in self.emitters.slots.iter_mut().enumerate() {
+                if let Some(voice) = slot {
+                    voice.settle();
+                    if voice.sounding() {
+                        self.emitters.active.push(index);
+                    }
+                }
             }
         }
         self.state_reader = Some(reader);
@@ -422,12 +433,16 @@ impl Mix {
         if let (Some(voice), Some(next)) = (&mut self.emitters.slots[index], &new)
             && voice.emitter == Some(next.identity)
         {
+            let was_sounding = voice.sounding();
             voice.set(
                 next.settings,
                 self.listener,
                 next.held,
                 self.config.ramp_frames,
             );
+            if !was_sounding && voice.sounding() {
+                self.emitters.activate(index);
+            }
             return;
         }
         if let Some(voice) = self.emitters.take(index)
@@ -451,6 +466,9 @@ impl Mix {
                 next.held,
                 self.config.ramp_frames,
             );
+            if next.held {
+                voice.settle();
+            }
             self.emitters.insert(index, voice);
         }
     }

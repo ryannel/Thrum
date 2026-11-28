@@ -415,6 +415,61 @@ fn continuous_control_writes_leave_room_for_pending_emitters() {
 }
 
 #[test]
+fn continuous_plays_leave_room_for_a_master_mute() {
+    let (mut handle, mut mix) = audio(Config {
+        commands: 1,
+        emitters: 1,
+        ..config()
+    });
+    let loop_sound = mono(&mut handle, vec![4096]);
+    let silent_shot = mono(&mut handle, vec![0]);
+    handle
+        .start_emitter(loop_sound, VoiceSettings::default())
+        .expect("valid emitter");
+    handle.update();
+    let settled = pull(&mut mix, 9);
+    exact(settled[8], [pcm(4096); 2]);
+
+    for call in 0..120 {
+        let play = Play {
+            tick: Some(call + 17),
+            ..Play::new(silent_shot, call + 50)
+        };
+        let number = handle.play(play);
+        if call == 0 {
+            handle.set_volumes(Volumes {
+                master: 0.0,
+                ..Volumes::default()
+            });
+            // The setter must register the retry even before the next update.
+        } else {
+            handle.update();
+        }
+        let frames = pull(&mut mix, 1200);
+        exact(
+            frames[1199],
+            if call == 0 { [pcm(4096); 2] } else { [0.0; 2] },
+        );
+        assert_eq!(
+            outcomes(&mut handle),
+            [Outcome {
+                number,
+                tick: play.tick,
+                event: play.event,
+                epoch: 0,
+                fate: if call == 1 {
+                    Fate::QueueFull
+                } else {
+                    Fate::Started
+                },
+            }]
+        );
+    }
+    assert_eq!(handle.record().plays(Fate::QueueFull), 1);
+    assert_eq!(handle.record().plays(Fate::Started), 119);
+}
+
+#[test]
 fn a_releasing_voice_counts_until_its_last_ramp_frame() {
     let (mut handle, mut mix) = audio(config());
     let sound = mono(&mut handle, vec![4096; 64]);
