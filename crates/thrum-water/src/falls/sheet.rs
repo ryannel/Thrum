@@ -603,7 +603,7 @@ fn strand_section([left, centre, right]: [Vertex; 3], spread: f32) -> [Vertex; S
         vertex.velocity_along = interpolate(centre.velocity_along, side.velocity_along, across);
         vertex.discharge = interpolate(centre.discharge, side.discharge, across);
         let point =
-            Vec3::from_slice(&vertex.world_time) + normal * depth * roll * (0.025 + width * 0.37);
+            Vec3::from_slice(&vertex.world_time) + normal * depth * roll * (0.030 + width * 0.58);
         vertex.world_time = point.extend(vertex.world_time[3]).to_array();
         // Rounded sections store their side index and half their blend
         // weight above the flat sheet and trickle edge values.
@@ -614,6 +614,7 @@ fn strand_section([left, centre, right]: [Vertex; 3], spread: f32) -> [Vertex; S
 
 #[expect(
     clippy::cast_possible_truncation,
+    clippy::cast_precision_loss,
     reason = "station and geometry values are emitted as shader floats"
 )]
 fn filament(
@@ -646,15 +647,13 @@ fn filament(
             + outward * lift * (radius + (0.03 + 0.05 * smoothing) * tip);
         let age = vertex.world_time[3];
         vertex.across_fraction[1] = -2.0 - distance;
-        [
-            (0.0, across),
-            (1.0, outward * (0.12 + 0.88 * lift)),
-            (2.0, -across),
-            (3.0, -outward * (0.12 + 0.88 * lift)),
-        ]
-        .map(|(side, normal)| {
-            vertex.world_time = (centre + normal * radius).extend(age).to_array();
-            vertex.edge_receiver[0] = side;
+        let tongue = 1.0 + 0.47 * (1.0 - lift);
+        std::array::from_fn::<_, STRAND_SIDES, _>(|index| {
+            let turn = index as f32 / STRAND_SIDES as f32;
+            let (depth, width) = (std::f32::consts::TAU * turn).sin_cos();
+            let section = across * (width * tongue) + outward * (depth * (0.12 + 0.88 * lift));
+            vertex.world_time = (centre + section * radius).extend(age).to_array();
+            vertex.edge_receiver[0] = 4.0 * turn;
             vertex
         })
     };

@@ -48,12 +48,16 @@ fn strand_breakup(thickness: f32) -> f32 {
     return 1.0 - smoothstep(1.75, 2.48, thickness / FALL_TEAR);
 }
 
-fn strand_offset(parcel: f32, fraction: f32, width_offset: f32,
-    width_axis: vec3<f32>) -> vec3<f32> {
-    let split = smoothstep(0.21 + 0.28 * parcel, 0.77, fraction);
-    let width = mix(0.37, 0.85, parcel);
-    // Narrow each strand around its flow path instead of pushing a bulge out of the fall.
-    return split * width_axis * (0.09 * (parcel - 0.5) - width * width_offset);
+fn strand_offset(parcel: f32, lane: f32, fraction: f32, width_offset: f32,
+    width_axis: vec3<f32>, outward: vec3<f32>) -> vec3<f32> {
+    let opening = smoothstep(0.22 + 0.32 * lane, 0.76, fraction);
+    let width = mix(0.28, 0.93, 0.59 * lane + 0.41 * parcel);
+    let horizontal = width_axis * (0.11 * (parcel - 0.5) - width * width_offset);
+    // Let adjacent strands use different depths once they leave the tongue.
+    // The offset remains small where their contacts enter the plunge.
+    let spread = mix(0.02, 0.31, lane * lane) + 0.11 * (parcel - 0.5);
+    let depth = outward * spread * (1.0 - 0.65 * smoothstep(0.70, 1.0, fraction));
+    return opening * (horizontal + depth);
 }
 
 fn splash_vertex(world_time: vec4<f32>, velocity_along: vec4<f32>, discharge: vec4<f32>,
@@ -107,7 +111,8 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
     let normal = normalize(cross(across, velocity_along.xyz) + vec3(1e-6, 0.0, 0.0));
     let forward = vec3(velocity_along.x, 0.10, velocity_along.z);
     let outward = select(-normal, normal, dot(normal, forward) >= 0.0);
-    let radial = array(across, outward, -across, -outward)[u32(side)];
+    let angle = side * 1.5707963;
+    let radial = across * cos(angle) + outward * sin(angle);
     let pulse = sheet_noise(vec2(velocity_along.w, birth), FALL_LOOP,
         vec2(4.2, 7.3), vec2(47.1, 0.0));
     let fraction = across_fraction.w;
@@ -144,12 +149,15 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
     var strand_motion = vec3(0.0);
     if is_filament { position += strand_swelling(birth, velocity_along, across_fraction, edge); }
     let breakup = strand_breakup(discharge.w);
-    if !is_filament && breakup > 0.0 && across_fraction.w > 0.21 {
+    if closed_strand && breakup > 0.0 && across_fraction.w > 0.21 {
         let parcel = sheet_noise(vec2(edge_receiver.w, birth), FALL_LOOP, vec2(3.5, 3.6), vec2(9.0, 0.0));
+        let lane = noise_hash(vec2(edge_receiver.w * 34.63, 18.0));
+        let face = vec3(-axis.z, 0.0, axis.x);
+        let outward = select(-face, face, dot(face, velocity_along.xyz) >= 0.0);
         let offset = velocity_along.w - edge_receiver.w;
         let last_fraction = across_fraction.w - length(velocity_along.xyz) * sheet_clock.y / across_fraction.y;
-        let current = breakup * strand_offset(parcel, across_fraction.w, offset, axis);
-        let previous = breakup * strand_offset(parcel, last_fraction, offset, axis);
+        let current = breakup * strand_offset(parcel, lane, across_fraction.w, offset, axis, outward);
+        let previous = breakup * strand_offset(parcel, lane, last_fraction, offset, axis, outward);
         position += current;
         strand_motion = current - previous;
     }
@@ -311,7 +319,7 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let churn = foam * translucence * (0.60 + 0.72 * smoothstep(-0.44, 0.32, grain));
     let glint = pow(max(dot(reflect(-light, face), look), 0.0), 160.0) * 0.055 * direct;
     let glass = mirror * (0.18 + 0.82 * fresnel) + glint * below_tongue;
-    let trickle_tongue = select(0.0, 0.32 * (1.0 - below_tongue), is_filament);
+    let trickle_tongue = select(0.0, 0.44 * (1.0 - below_tongue), is_filament);
     let clear_light = mix(glass, diffuse * 0.22, trickle_tongue);
     let uv = input.clip.xy * view_aux.viewport_inv_viewport.zw;
     let aerial = environment_aerial(point, uv);
@@ -322,8 +330,12 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let parcel_light = mix(0.16, 1.38, pulse);
     let broken_light = mix(churn, aerated * parcel_light, max(rolled, breakup * below_tongue));
     let mixed_air = smoothstep(0.10, 0.33, fraction) * smoothstep(0.0, 0.55, input.strand_strength);
-    let round_light = 0.08 * packet_core;
-    let diffuse_streaks = 0.11 * coarse + 0.13 * fine + 0.12 * grain;
+    let radial = normalize(input.strand_normal - tangent * dot(input.strand_normal, tangent)
+        + vec3(1e-7, 0.0, 0.0));
+    let view_across = normalize(look - tangent * dot(look, tangent) + vec3(1e-7, 0.0, 0.0));
+    let chord = smoothstep(0.02, 0.83, abs(dot(radial, view_across)));
+    let round_light = 0.11 * chord;
+    let diffuse_streaks = 0.12 * coarse + 0.19 * fine + 0.17 * grain;
     let packet_light = aerated * (0.26 + round_light + diffuse_streaks + 0.78 * packet);
     let sheet_colour = mix(mix(clear_light, broken_light, white), packet_light, mixed_air);
     let spray_light = mix(sheet_colour, aerated,
@@ -332,12 +344,13 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let streak_cover = mix(1.0, mix(0.48, 1.0, pulse),
         breakup * smoothstep(0.20, 0.72, input.across_fraction.w));
     let glass_alpha = min(mix(0.46, 0.88, below_tongue), fresnel + 0.07 + 1.7 * input.discharge.w + 0.35 * breakout);
-    let trickle_film = select(1.0, mix(0.60, 1.0, smoothstep(-0.09, 0.19, fraction)), is_filament);
+    let trickle_film = select(1.0, mix(0.70, 1.0, smoothstep(-0.09, 0.19, fraction)), is_filament);
     let film_opacity = (clear * glass_alpha + white * (0.90 + 0.18 * grain)) * streak_cover;
     // The aerated body transmits through a similar thickness across its face.
     // Lighting follows the departing parcels independently of the cover.
     let glass_cover = film_opacity * presence * mix(0.62, 1.0, seam) * contact_cover * trickle_film;
-    let aerated_cover = 0.58 * foot;
+    let breaking = smoothstep(0.53, 0.94, fraction) * (1.0 - smoothstep(0.28, 0.73, 0.52 * fine + 0.48 * coarse));
+    let aerated_cover = 0.66 * foot * mix(0.62, 1.0, chord) * (1.0 - 0.35 * breaking);
     let opacity = mix(glass_cover, aerated_cover, mixed_air);
     let path_distance = select(input.across_fraction.y, -input.across_fraction.y - 2.0, is_filament);
     let last_fraction = input.across_fraction.w - length(input.velocity_along.xyz) * sheet_clock.y
