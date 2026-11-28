@@ -581,10 +581,7 @@ fn stitch_strand(vertices: &mut Vec<Vertex>, top: [Vertex; 3], bottom: [Vertex; 
 #[expect(clippy::cast_precision_loss, reason = "the strand has eight sides")]
 fn strand_section([left, centre, right]: [Vertex; 3], spread: f32) -> [Vertex; STRAND_SIDES] {
     let [ax, _, az, fraction] = centre.across_fraction;
-    let axis = Vec3::new(ax, 0.0, az);
-    let velocity = Vec3::from_slice(&centre.velocity_along);
-    let normal = axis.cross(velocity).normalize_or_zero();
-    let outward = normal * normal.dot(Vec3::new(velocity.x, 0.12, velocity.z)).signum();
+    let normal = Vec3::new(az, 0.0, -ax);
     let width =
         0.5 * Vec3::from_slice(&left.world_time).distance(Vec3::from_slice(&right.world_time));
     // Keep one connected shell from crest to contact. It is flat until the
@@ -593,12 +590,9 @@ fn strand_section([left, centre, right]: [Vertex; 3], spread: f32) -> [Vertex; S
     let roll = amount * amount * (3.0 - 2.0 * amount) * spread;
     let interpolate = |a, b, t| Vec4::from_array(a).lerp(Vec4::from_array(b), t).to_array();
     std::array::from_fn(|i| {
-        // Follow the actual flow orientation so the shell winds outwards at either bank.
-        let index = if normal.dot(outward) >= 0.0 {
-            (STRAND_SIDES - i) % STRAND_SIDES
-        } else {
-            i
-        };
+        // The ellipse is symmetric. Keep the same winding when the path
+        // follows the rock or turns into free fall.
+        let index = (STRAND_SIDES - i) % STRAND_SIDES;
         let angle = index as f32 / STRAND_SIDES as f32;
         let (depth, width_phase) = (std::f32::consts::TAU * angle).sin_cos();
         let side = if width_phase < 0.0 { left } else { right };
@@ -608,7 +602,7 @@ fn strand_section([left, centre, right]: [Vertex; 3], spread: f32) -> [Vertex; S
         vertex.velocity_along = interpolate(centre.velocity_along, side.velocity_along, across);
         vertex.discharge = interpolate(centre.discharge, side.discharge, across);
         let point =
-            Vec3::from_slice(&vertex.world_time) + outward * depth * roll * (0.025 + width * 0.37);
+            Vec3::from_slice(&vertex.world_time) + normal * depth * roll * (0.025 + width * 0.37);
         vertex.world_time = point.extend(vertex.world_time[3]).to_array();
         vertex.edge_receiver[0] = STRAND_EDGE + angle;
         vertex

@@ -117,10 +117,8 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
     let edge = select(edge_receiver.x, abs(cos(angle)), closed_strand);
     var strand_normal = vec3(0.0);
     if closed_strand {
-        let normal = normalize(cross(axis, velocity_along.xyz) + vec3(1e-6, 0.0, 0.0));
-        let forward = vec3(velocity_along.x, 0.12, velocity_along.z);
-        let outward = select(-normal, normal, dot(normal, forward) >= 0.0);
-        strand_normal = axis * cos(angle) + outward * sin(angle);
+        let normal = vec3(axis.z, 0.0, -axis.x);
+        strand_normal = axis * cos(angle) + normal * sin(angle);
     }
     let weight = fold_weight(across_fraction.w) * select(1.0, 0.18, is_filament);
     let fold = sheet_fold(velocity_along.w, birth, across_fraction.xz) * weight;
