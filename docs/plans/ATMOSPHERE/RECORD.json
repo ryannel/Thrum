@@ -1075,7 +1075,108 @@
     },
     "WP13": {
       "definitions": "4ec81e85c68281c3f259992fff0e8aaf40413a55bf18968d398bebf3ecef7c0a",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "01c3f28472c0950e8bbe9650347d0b46fd28e554",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP13-review.md",
+          "items": {
+            "WP13.1": "fail",
+            "WP13.2": "fail",
+            "WP13.3": "fail",
+            "WP13.4": "pass",
+            "WP13.5": "pass",
+            "WP13.6": "pass",
+            "WP13.7": "pass",
+            "WP13.8": "fail",
+            "WP13.9": "pass",
+            "WP13.10": "pass",
+            "WP13.11": "fail"
+          },
+          "findings": [
+            {
+              "name": "The V1 ray caster proof expects ten volumes and receives eleven",
+              "repeat": false
+            },
+            {
+              "name": "Secondary contributions cull shifted drawings against the first drawing",
+              "repeat": false
+            },
+            {
+              "name": "The CPU membership guard never exercises production admission",
+              "item": "WP13.1",
+              "repeat": false
+            },
+            {
+              "name": "The low-Sun radial reach fixture omits its secondary view",
+              "item": "WP13.2",
+              "repeat": false
+            },
+            {
+              "name": "The far-penumbra receiver is outside the finest cascade",
+              "item": "WP13.2",
+              "repeat": false
+            },
+            {
+              "name": "The selected Metal guard omits behind-camera and beyond-reach casters",
+              "item": "WP13.2",
+              "repeat": false
+            },
+            {
+              "name": "The no-history fixture cannot observe stale outer-cascade depth",
+              "item": "WP13.2",
+              "repeat": false
+            },
+            {
+              "name": "The distant pyramid fixture no longer requires a past-reach height shadow",
+              "item": "WP13.3",
+              "repeat": false
+            },
+            {
+              "name": "The last-cascade culling guard accepts culling in any cascade",
+              "item": "WP13.3",
+              "repeat": false
+            },
+            {
+              "name": "The usable Chrome timing pairs both run the before arm first",
+              "item": "WP13.8",
+              "repeat": false
+            },
+            {
+              "name": "The cost investigation skips reducing the number of four-drawing cascades",
+              "item": "WP13.8",
+              "repeat": false
+            },
+            {
+              "name": "The maturity ledger overstates caster admission and history coverage",
+              "item": "WP13.11",
+              "repeat": false
+            },
+            {
+              "name": "The full-screen p95 claim omits opposing paired results",
+              "item": "WP13.11",
+              "repeat": false
+            }
+          ],
+          "summary": "WP13 fails. The Mac and Chrome takes show attached, steady prop shadows and a gradual distance fade, but the landing breaks the V1 ray-caster proof and supplies the wrong clip volume to a secondary contribution in shifted Sun passes. Five items also need work on their regression tests, cost investigation or maturity claims.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 312999,
+            "cached": 15564032,
+            "output": 44938,
+            "turns": 1
+          },
+          "at": "2026-11-28T06:15:33Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 7 Must ",
