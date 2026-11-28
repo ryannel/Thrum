@@ -42,3 +42,8 @@
   The Mac release suite passed 44 tests, and Node matched the native reference digest at both required pull
   sizes. The [proof record](../../../.orchestrate/evidence/AUDIO/WP1/README.md) includes the full-pool and sparse
   timings. The later output work packages own the device routes.
+- 2026-11-28 Second WP1 review repair. Deferred state gets a queue turn during continuous play and stop
+  requests. A hold and release preserve the loop phase and use one envelope while voice gain glides wait.
+  A settled hold keeps its slot and sample lease outside the per-frame voice list.
+  [Mac, Node and source proof](../../../.orchestrate/evidence/AUDIO/WP1/hold-repair/README.md)
+  includes all ten automated checks and the held-voice cost under shared load.

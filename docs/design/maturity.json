@@ -3630,10 +3630,10 @@
       "name": "Audio and spatial sound",
       "buffer_mixer": {
         "implementation": "AUDIO WP1 provides a device-free 48 kHz stereo mix, a game-side handle and an import-free WebAssembly build.",
-        "correctness": "Mac buffer tests and the source audit cover sample arithmetic, voice selection, fades, interruption, command pressure and outcomes. The native and Node pull sizes retain one reference digest. Independent work package review is pending.",
+        "correctness": "Mac buffer tests and the source audit cover sample arithmetic, voice selection, fades, interruption, command pressure and outcomes. Deferred controls reach the mix during continuous play calls, and holds preserve phase through a single fade. The native and Node pull sizes retain one reference digest. Independent review of the repair is pending.",
         "visuals": "This work package has no visual proof.",
-        "device": "Shared Apple M3 Max CPU timing rendered one minute of full-pool audio in 1.719 s natively and 2.891 s in Node. Node stands in for Chrome in WP1. The audio output devices and listening evaluation are scoped to later work.",
-        "evidence": "../../.orchestrate/evidence/AUDIO/WP1/README.md"
+        "device": "Under shared load on the Apple M3 Max, one minute of full-pool audio rendered in 8.896 s natively and 9.997 s in Node. The median for 480,000 silent frames was 2.96 ms with zero, 16 or 128 fully held emitters in a 128-slot pool. Node stands in for Chrome in WP1. Audio output devices and listening evaluation are scoped to later work.",
+        "evidence": "../../.orchestrate/evidence/AUDIO/WP1/hold-repair/README.md"
       },
       "scope": "selectable",
       "design": "modules/AUDIO-UI.md",
