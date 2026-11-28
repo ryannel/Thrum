@@ -2805,7 +2805,76 @@
     },
     "WP16": {
       "definitions": "ba6d2f420bca8ac52b1f6eb7c3749b84a9f0f48546024338b10d8444e03122cd",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "05c9f5f75e999d1d02d487b4b0373e6c1f8f9a58",
+          "review": ".orchestrate/evidence/WATERS/WP16-review.md",
+          "items": {
+            "WP16.1": "pass",
+            "WP16.2": "pass",
+            "WP16.4": "pass",
+            "WP16.14": "fail",
+            "WP16.5": "pass",
+            "WP16.6": "fail",
+            "WP16.7": "pass",
+            "WP16.8": "pass",
+            "WP16.9": "pass",
+            "WP16.10": "fail",
+            "WP16.11": "pass",
+            "WP16.12": "fail"
+          },
+          "findings": [
+            {
+              "name": "The Metal bed shadow changes position with the camera",
+              "item": "WP16.14",
+              "repeat": false
+            },
+            {
+              "name": "Chrome separates the bed and shaft shadows outside the caustic window",
+              "item": "WP16.10",
+              "repeat": false
+            },
+            {
+              "name": "The pond bed lacks a readable fine net",
+              "item": "WP16.6",
+              "repeat": false
+            },
+            {
+              "name": "The beach cost camera looks into the sky",
+              "item": "WP16.12",
+              "repeat": false
+            },
+            {
+              "name": "The comparison lacks WP15 records for the measured views",
+              "item": "WP16.12",
+              "repeat": false
+            },
+            {
+              "name": "Tripped pass comparisons have no recorded investigation of their cause",
+              "item": "WP16.12",
+              "repeat": false
+            }
+          ],
+          "summary": "WP16 fails four of its twelve items. On Metal and Chrome, moving the caustic window past a submerged receiver moves the bed shadow from the refracted Sun ray to the air ray, while the shafts continue to follow the refracted ray. The pond also misses the required shallow net, and the cost record measures the sky at the beach and lacks the specified WP15 comparison.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 318622,
+            "cached": 19310592,
+            "output": 47273,
+            "turns": 1
+          },
+          "at": "2026-11-28T01:51:20Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "WATERS WP16 is Blocked again (handoff .claude/worktrees/waters/.orchestrate/evidence/WATERS/WP16-handoff.md, branch buil",
