@@ -262,18 +262,18 @@ fn tongue_shade(input: SheetVertex, look: vec3<f32>) -> FallOutput {
     return FallOutput(vec4(colour, alpha), vec2(0.0), 0.0);
 }
 
-fn falling_packet_shade(input: SheetVertex, solid: bool) -> FallOutput {
+@fragment fn packet_shade(input: SheetVertex) -> FallOutput {
     let corner = input.across_fraction.xz;
     let body = vec2(corner.x + 0.23 * corner.y * (input.discharge.y - 0.5), corner.y);
     let radius = dot(body, body);
     let profile = exp(-3.2 * radius) * (1.0 - smoothstep(0.52, 1.0, radius));
     let grain = 0.63 + 0.37 * sheet_noise(corner, 2.0, vec2(3.0, 2.4), vec2(input.discharge.y * 19.0, 0.0));
-    let alpha = input.discharge.x * profile * grain;
-    if alpha < 0.021 || (alpha > 0.5) != solid { discard; }
+    let alpha = 0.60 * input.discharge.x * profile * grain;
+    if alpha < 0.016 { discard; }
     let point = input.world_time.xyz;
     let up = vec3(0.0, 1.0, 0.0);
     let sunlight = sun_irradiance(point) * fall_cloud(point) * max(0.0, environment_sun_direction().y);
-    let colour = (environment_diffuse(up) + sunlight) * vec3(0.57, 0.66, 0.69) / 3.14159265;
+    let colour = (environment_diffuse(up) + sunlight) * vec3(0.66, 0.75, 0.78) / 3.14159265;
     let air = environment_aerial(point, input.clip.xy * view_aux.viewport_inv_viewport.zw);
     let now = view.unjittered_view_proj * vec4(point, 1.0);
     let previous = view.previous_view_proj * vec4(point - input.strand_motion, 1.0);
@@ -303,9 +303,6 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     if input.across_fraction.y < 0.0 && input.across_fraction.y > -1.5 {
         if solid { discard; }
         return splash_shade(input);
-    }
-    if input.across_fraction.y == -1.75 {
-        return falling_packet_shade(input, solid);
     }
     if input.strand_strength < 0.0 {
         if solid { discard; }

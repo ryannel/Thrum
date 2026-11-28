@@ -46,8 +46,10 @@ pub(crate) struct Sheet {
     mesh: wgpu::Buffer,
     clock: wgpu::Buffer,
     group: wgpu::BindGroup,
-    pipelines: [wgpu::RenderPipeline; 2],
+    pipelines: [wgpu::RenderPipeline; 3],
     vertices: Vec<Vertex>,
+    packets: Vec<Vertex>,
+    sheet_vertices: u32,
     key: Option<([u64; 2], u32)>,
     levels: Vec<u64>,
     next_levels: Vec<u64>,
@@ -166,10 +168,15 @@ impl Sheet {
                 write_mask: wgpu::ColorWrites::ALL,
             })
         });
-        let pipelines = [true, false].map(|depth| {
+        let pipelines = [
+            ("sheet_solid", true, true),
+            ("sheet_thin", false, false),
+            ("packet_shade", false, true),
+        ]
+        .map(|(entry, depth, motion)| {
             let mut targets = targets.clone();
             targets[0].as_mut().expect("colour").blend = Some(wgpu::BlendState::ALPHA_BLENDING);
-            if !depth {
+            if !motion {
                 targets[1].as_mut().expect("motion").write_mask = wgpu::ColorWrites::empty();
             }
             let maximum = wgpu::BlendComponent {
@@ -205,7 +212,7 @@ impl Sheet {
                 multisample: wgpu::MultisampleState::default(),
                 fragment: Some(wgpu::FragmentState {
                     module: &shader,
-                    entry_point: Some(if depth { "sheet_solid" } else { "sheet_thin" }),
+                    entry_point: Some(entry),
                     compilation_options: wgpu::PipelineCompilationOptions::default(),
                     targets: &targets,
                 }),
@@ -219,6 +226,8 @@ impl Sheet {
             group,
             pipelines,
             vertices: Vec::new(),
+            packets: Vec::new(),
+            sheet_vertices: 0,
             key: None,
             levels: Vec::new(),
             next_levels: Vec::new(),
@@ -253,14 +262,19 @@ impl Sheet {
         if self.key != Some(key) || self.levels != self.next_levels {
             std::mem::swap(&mut self.levels, &mut self.next_levels);
             self.vertices.clear();
+            self.packets.clear();
             for segments in active(&falls.records, map, falls.profile.sheet) {
                 mesh(
                     &mut self.vertices,
+                    &mut self.packets,
                     &segments,
                     f64::from(spacing) * 0.001,
                     falls.profile.sheet,
                 );
             }
+            self.sheet_vertices =
+                u32::try_from(self.vertices.len()).expect("prepared sheet vertices");
+            self.vertices.append(&mut self.packets);
             if !self.vertices.is_empty() {
                 queue.write_buffer(&self.mesh, 0, bytemuck::cast_slice(&self.vertices));
             }
@@ -303,9 +317,13 @@ impl Sheet {
         );
         pass.set_bind_group(3, &self.group, &[]);
         pass.set_vertex_buffer(0, self.mesh.slice(..));
-        for pipeline in &self.pipelines {
+        for pipeline in &self.pipelines[..2] {
             pass.set_pipeline(pipeline);
-            pass.draw(0..count, 0..1);
+            pass.draw(0..self.sheet_vertices, 0..1);
+        }
+        if self.sheet_vertices < count {
+            pass.set_pipeline(&self.pipelines[2]);
+            pass.draw(self.sheet_vertices..count, 0..1);
         }
     }
 
@@ -350,6 +368,7 @@ fn point_at(segment: &Segment, fraction: f64) -> (DVec3, DVec3, f64, f64) {
 )]
 fn mesh(
     vertices: &mut Vec<Vertex>,
+    packets: &mut Vec<Vertex>,
     segments: &[Segment],
     spacing: f64,
     sheet: thrum_water_model::SheetProfile,
@@ -481,7 +500,13 @@ fn mesh(
             let tongue = |fraction| {
                 strip(fraction).map(|mut vertex| {
                     vertex.edge_receiver[0] = TONGUE_EDGE + 0.25 * vertex.edge_receiver[0];
-                    vertex.world_time[1] += 0.012;
+                    let forward =
+                        Vec3::from_slice(&vertex.velocity_along) * Vec3::new(1.0, 0.0, 1.0);
+                    let roll = (fraction as f32 / 0.19).clamp(0.0, 1.0);
+                    let lifted = Vec3::from_slice(&vertex.world_time)
+                        + 0.016 * Vec3::Y
+                        + 0.15 * roll * roll * forward.normalize_or_zero();
+                    vertex.world_time = lifted.extend(vertex.world_time[3]).to_array();
                     vertex
                 })
             };
@@ -493,7 +518,7 @@ fn mesh(
             }
             filament(vertices, |fraction| at(fraction, 1), stations());
             fall_packets(
-                vertices,
+                packets,
                 [at(0.09, 1), at(0.49, 1), at(0.98, 1)],
                 0.029,
                 0.85,
@@ -522,7 +547,7 @@ fn mesh(
                 let paths = [0.15, 0.53, 0.98].map(|t| ribbons(strip(t), spread, count));
                 for lane in 0..count {
                     let radius = 0.044 + 0.032 * (lane as f32 * 12.316).sin().abs();
-                    fall_packets(vertices, paths.map(|row| row[lane][1]), radius, spread);
+                    fall_packets(packets, paths.map(|row| row[lane][1]), radius, spread);
                 }
             }
         }
@@ -543,14 +568,17 @@ fn fall_packets(
     cover: f32,
 ) {
     let p0 = Vec3::from_slice(&start.world_time);
-    let pm = Vec3::from_slice(&middle.world_time);
-    let p1 = Vec3::from_slice(&end.world_time);
+    let end_point = Vec3::from_slice(&end.world_time);
+    let forward = ((end_point - p0) * Vec3::new(1.0, 0.0, 1.0)).normalize_or_zero();
+    let seed = start.velocity_along[3];
+    let spread = cover * (0.31 + 0.18 * (seed * 38.17).sin());
+    let pm = Vec3::from_slice(&middle.world_time) + forward * spread;
+    let p1 = end_point + forward * (0.55 * spread);
     let duration = (end.world_time[3] - start.world_time[3]).max(0.001);
     let t = ((middle.world_time[3] - start.world_time[3]) / duration).clamp(0.05, 0.95);
     // A quadratic in flight time shares three points of the prepared path.
     let quadratic = (pm - p0 - (p1 - p0) * t) / (t * (t - 1.0));
     let linear = p1 - p0 - quadratic;
-    let seed = start.velocity_along[3];
     for slot in 0..PACKET_SLOTS {
         let phase = slot as f32 / PACKET_SLOTS as f32;
         for [x, y] in [
