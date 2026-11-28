@@ -113,8 +113,8 @@ for a cuboid and a triangle.
 
 | Test | Answer |
 |---|---|
-| Distance | The gap between two shapes: the distance between the hulls less both radii, and zero when they overlap |
-| Overlap | Whether they touch or cross: true exactly where the distance is zero, so shapes that just touch overlap |
+| Distance | The computed gap in world units, the distance between the hulls less both radii, clamped to zero |
+| Overlap | True when that computed gap is zero. At geometric tangency the profile can resolve a small positive gap instead |
 | Depth | For two shapes that overlap, how far the first stands inside the second, and the normal of **the shallowest way out**: the unit direction along which the least movement of the first parts them. Zero for two that do not overlap |
 | Ray | Where a point moved along a motion first meets a shape, by each shape's closed form |
 | Sweep | Where a shape moved along a motion is stopped by another, which may have a motion of its own |
@@ -159,7 +159,7 @@ of half a unit in any direction, against the reported normal too, leaves them on
 motion leads deeper is asked of the depth test at a place along the motion, as
 [the move](#6-the-kinematic-move) asks it, and is never read from the motion's sign against the normal.
 
-A ray that hits gives a **fraction** of the motion from 0 to 1, a point on what was struck, and a **normal** of
+A ray that hits gives a **fraction** of the motion from 0 to 1, the point on the segment at that fraction, and a **normal** of
 unit length that points out of what was struck, toward the mover. A sweep's hit gives those and a **depth**.
 A ray's depth is the depth test's: a ray that begins inside a sphere, a capsule or a cuboid reports fraction
 zero and the normal of the shallowest way out, and how deep it began is what the depth test gives for a sphere
@@ -169,10 +169,28 @@ The mover's place at a hit is its start plus the motion times the fraction, one 
 coordinate, which is how every consumer and every test computes it. A triangle is met from either side, with
 the normal toward the side the mover came from.
 
+**Finite rays.** The segment is closed at both ends. For a nonzero motion, resolve the first forward
+intersection in the rules profile. Include an entry at the far endpoint. Allow one contact tolerance of
+overrun, measured **along the ray in world units**. If the computed entry lies beyond the end by at most
+that distance, report fraction one and the endpoint, with the outward normal at the entry. A farther entry
+misses. An earlier entry keeps its fraction. This bounds how far a shot can reach independently of its
+length. The allowance applies only to forward travel. A stationary ray uses the start test alone.
+
+An interior graze of a curved surface can round to either side. Where closest approach is inside the segment
+and differs from tangency by at most the contact tolerance, a miss or a grazing hit is admissible, with the choice and
+all hit words reproducible for the same input. An exterior hit reports a point within the tolerance of the
+surface and an outward unit normal. A definite crossing reports the first entry. Parallel rays and triangles
+of zero area keep their miss rule.
+
 **What touching means, here and in the SDK.** Two shapes *touch* where the gap between them, or the depth of
 one in the other, is no more than **the contact tolerance**, one constant of the rule set. That is
 [the SDK's meaning](../GAME-SDK/DESIGN.md#7-space-and-the-level) word for word, and the distance and depth
-tests are how either side measures it.
+tests are how either side measures it. Write **T** for the measured contact tolerance, 1/64 of a world
+unit. For separation greater than T the pair is apart. For penetration deeper than T it overlaps at distance
+zero. Within T of geometric tangency the nonnegative reported gap may be zero or positive, within T of the
+geometric gap. The overlap bit follows the reported gap and agrees in both argument orders. Thus two shapes
+can touch for gameplay while a sweep still has a measured positive gap to stop in, even at half T. The
+inputs to these comparisons are the coordinates the game actually supplies in the rules profile.
 
 A sweep, of a pair or asked of an index or a level, is asked with **the gap to stop within**. It is the
 tolerance, which the SDK's sweeps ask, or half the tolerance, which [the move](#6-the-kinematic-move) asks and
@@ -184,7 +202,7 @@ meets a thing in one of three ways, which asked with the tolerance are the SDK's
 |---|---|---|---|
 | **Begins inside it**, deeper than the tolerance | Zero | What the depth test gives | The shallowest way out |
 | **Begins touching it**: within the gap asked for, which asked with the tolerance is every start that touches, or overlapping by no more than the tolerance | Zero | Exactly zero | The direction between the closest points, or the shallowest way out where the two overlap |
-| **Meets it on the way** | Where the mover first stands within the gap asked for | Exactly zero | The direction between the closest points there |
+| **Meets it on the way** | Where the mover first stands within the gap asked for | Exactly zero | The struck face's outward normal for contact in the interior of a flat face, or the separating direction at a curved surface, edge or corner |
 
 - **A contact there from the start is reported whichever way the motion leads**: in, along, away, or nowhere.
   The mover's place is its start, and nothing moves it. A motion of no length reports exactly the contacts
@@ -194,20 +212,22 @@ meets a thing in one of three ways, which asked with the tolerance are the SDK's
   a sphere or at a corner, that place is the point. Where a whole patch is equally near, as between two faces
   that meet flat, the point is one place of the patch, by a rule the crate's documentation states, the same on
   every device. A place inside a solid, behind its surface, is never given.
-- **The overlap test keeps its exact meaning.** It is true where the distance is zero, so a pair that stands
-  within the tolerance and apart touches and does not overlap.
+- **A flat face has a direction even at zero gap.** Use its plane to resolve a face normal. Subtracting
+  two nearly coincident witnesses and normalizing the residual can turn a level floor into a slope. Edges and
+  corners can have several supporting faces. The hand-worked sweep cases below give their expected directions.
 
 **On the way, a sweep steps by the gap.** It asks the distance, moves the shape along its motion by the gap
 divided by the speed at which the motion closes it, and asks again. A convex gap cannot close faster than that
 speed, so no step passes the first contact. This is conservative advancement, the method of Box2D's and
 Bullet's continuous collision. The rules a hit met on the way holds:
 
-1. **Never late.** The mover at the reported place does not overlap what it struck. The sweep tests the place
-   it is about to report, so this holds by check and not by arithmetic.
+1. **Never late.** Reconstruct the mover at the reported fraction. The pair test there must give a positive
+   gap and overlap false.
 2. **Close.** The distance test at the reported place gives no more than the gap asked for, by the same check,
    anywhere in the query domain.
-3. **First.** The reported place is short of the first contact along the motion, never beyond it. A sweep
-   that passes right through a thing reports where it went in, not where it came out.
+3. **First.** A sweep that crosses a shape reports the approach to its entry face. Against a hand-worked
+   time of first contact, the reported fraction may exceed it by at most 2⁻²⁰ and must still pass rules
+   1 and 2. The same checks use both reconstructed poses when both shapes move.
 4. **Never through, and nothing from nothing.** A motion of any length that brings the two shapes to overlap
    reports a hit. A motion on which the distance test never gives as little as the gap asked for reports
    nothing. One that only grazes, coming within the gap asked for and never overlapping, may report or not,
@@ -241,6 +261,50 @@ within the tolerance, and every case asked to stop within half of it, keeps rule
 ([Rapier's guide](https://rapier.rs/docs/user_guides/rust/character_controller) and Avian's default are both
 0.01). If the record needs more, the mechanism has failed its range and the builder stops
 ([handoff](#proof-and-builder-handoff)).
+
+#### WP1 boundary cases
+
+WP1.2–WP1.4 use the hand-worked inputs in `overlap_cases`, `ray_cases` and `sweep_cases` in
+[`tests/cases.rs`](../../../crates/thrum-sim3d/tests/cases.rs) at revision `b945839c1b27`, plus the
+rows below. Together they are the complete boundary acceptance set. The original inputs cover the nine
+unordered shape pairs, the twelve directed sweep pairs, the degenerate shapes, both sides of a triangle
+and the clear-ended thin crossings. Each row uses the existing origin and eight reflected corner frames,
+with the placement details below. Expected values come from the geometry. The comparison of actual words
+across builds and devices also covers answers for which the geometry admits either classification.
+
+**Tangent pairs (WP1.2).** A sphere at (2,11,10) of radius 15 meets the centroid of the triangle with
+vertices b = (11,−2,0)/16, c = (20,110,−125)/16 and −(b+c). A sphere at (5,10,10) of radius 15 meets
+the midpoint of a zero-radius capsule with ends ±(50,100,−125). Divide the capsule endpoints by 16
+before corner placement to keep them in the domain. In each case the radius to the origin is perpendicular
+to the feature. In both orders the gap is in [0,T] and overlap agrees with zero measured gap. Changing
+the sphere radius to 14 gives a unit gap, and 16 gives penetration and zero gap.
+
+**Grazing sphere (WP1.3).** From (−6,4,0) by (12,−8,0), the closest approach to (2,3,6) is the origin
+at ½. Radius 6 misses. Radius 7 may miss or report a point within T of the origin, with outward normal
+along (−2,−3,−6)/7. Radius 8 hits on entry at ½ − √(15/208), with the radial normal there.
+
+**Finite endpoints (WP1.3).** From (−L,0,0) to zero, put the first surface at x = d. Use a unit sphere
+and a cuboid of unit half-extents centred at (1+d,0,0), a unit-radius capsule with ends (1+d,±1,0), and a
+triangle with corners (d,−1,−1), (d,1,−1), (d,0,1). Use (L,δ) = (32,2⁻²⁰) and (16384,1/2048).
+For d = −2T, enter at 1 − 2T/L. For d = 0, δ or T, hit at one. For d = 2T, miss. All hits face −x
+in the origin frame. At a corner δ rounds away, so that input is a flush endpoint there. The origin
+inputs distinguish the positive overruns.
+
+**Turned faces (WP1.4).** The retained two-cuboid case has half-edges u = (1,4,3), v = (4,−1,0) and
+u × v. The mover at 4u travels by −6u and first meets the face at ⅓ with normal u/√26. For the cuboid
+against a triangle use half-edges a = (1,2,5)/8, b = (40,−20,0)/8 and c = (100,200,−100)/8.
+From 4a by −8a it meets the triangle (b,c,−(b+c)) at ⅜ with normal (1,2,5)/√30. Both contacts have
+a face patch. Apply WP1.4's face-direction, time, witness and measured-gap bounds at both gap requests.
+
+The retained oblique solid endpoint inputs use the same finite-ray rule. Their flush, one-grid-short and
+sub-grid-short entries all lie within the allowance and report fraction one. Their half-length rays miss
+and their doubled rays enter at ½. For a clamped hit the point is the supplied segment's endpoint. The
+WP1.9 measurement covers the named sweeps, including the new face row at both gaps, before retaining T
+for the revised build.
+
+The choice of a world-space tolerance follows the practice of expressing collision accuracy in the units a
+game can observe. Jolt, for example, gives its GJK test a collision tolerance in metres. Thrum's value
+comes from its own sweep measurements. [Jolt collision settings](https://jrouwe.github.io/JoltPhysics/class_collide_settings_base.html)
 
 **Checked before building on it, by a stand-in.**
 [The probe](../../../.orchestrate/evidence/SIM-3D/planning-probe.md) swept spheres against triangles in Python
