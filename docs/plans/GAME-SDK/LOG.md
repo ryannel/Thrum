@@ -635,3 +635,18 @@
   result after the last wave with its existing wave number. Rockfall constructs the original half-width
   from integers. The fixtures use `*entity` for the reference's entity-valued `Single`.
   [Mac evidence](../../../.orchestrate/evidence/GAME-SDK/WP1/)
+
+### WP1 follow-up review fixes
+
+- Component undo and manual resource admission compare the exact encoded field representation, including
+  the sign of zero. Leaving a scene retires its held phase request before enter functions of the next
+  scene can queue their own. Harness event reads retain the collector's capacity.
+- A function pointer gets a stream on first registration or manual use. Replay uses the same
+  registration order without using addresses as seeds. The optimized Mac probe observed Rust folding
+  identical bodies into one pointer value. Named functions passed directly and distinct pointer values
+  kept independent streams.
+- Derived component schemas now include resolved field schemas. A Mac build with a four-byte alias and
+  one with an eight-byte alias reported different fingerprints and empty-world digests. The Mac probes
+  also confirmed exact rollback and replay and zero calling-thread allocations during warmed event ticks
+  with a harness read after each step. SDK and derive documentation examples exercise their own items.
+  [Mac proofs](../../../.orchestrate/evidence/GAME-SDK/WP1/)

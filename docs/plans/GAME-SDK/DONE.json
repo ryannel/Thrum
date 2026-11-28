@@ -17,8 +17,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SDK/WP1/review2-WP1.1.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
@@ -32,8 +32,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SDK/WP1/review2-WP1.2.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
@@ -47,8 +47,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SDK/WP1/review2-WP1.3.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
@@ -62,8 +62,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SDK/WP1/review2-WP1.4.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
@@ -79,8 +79,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SDK/WP1/review2-WP1.5.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
@@ -89,8 +89,8 @@
           "statement": "The SDK is a layer over the engine's simulation and adds no second one.",
           "ask": "Read `thrum` and the tests' games. 1. Is world state held anywhere but `thrum-core`'s registered simulation: is there a second store, clock or undo? Which scene and phase run are world state there too? 2. Are a rule's structural edits applied when the rule ends inside the tick's one transaction, so that a refused tick undoes them with everything else, and does a rule that staged none pay nothing for the barrier? 3. Is the loop over entities inside a rule monomorphised for that rule's parameters, with no dynamic call and no allocation for each entity, and no allocation for each tick once warm? One call for each rule each tick through the engine's registered callback is as designed. 4. Does a component's schema identity come from its name and fields, and never from a Rust type ID? 5. Are the changes made in `thrum-core` additions only, with its existing tests unedited and passing? 6. Does any test's game name a crate other than `thrum`, or a schema number, permit, executor, page or device?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SDK/WP1/review2-WP1.6-engine-layer.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
