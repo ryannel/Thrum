@@ -261,14 +261,13 @@ fn tongue_shade(input: SheetVertex, look: vec3<f32>) -> FallOutput {
 }
 
 fn falling_packet_shade(input: SheetVertex, solid: bool) -> FallOutput {
-    if !solid { discard; }
     let corner = input.across_fraction.xz;
     let body = vec2(corner.x + 0.23 * corner.y * (input.discharge.y - 0.5), corner.y);
     let radius = dot(body, body);
     let profile = exp(-3.2 * radius) * (1.0 - smoothstep(0.52, 1.0, radius));
     let grain = 0.63 + 0.37 * sheet_noise(corner, 2.0, vec2(3.0, 2.4), vec2(input.discharge.y * 19.0, 0.0));
     let alpha = input.discharge.x * profile * grain;
-    if alpha < 0.021 { discard; }
+    if alpha < 0.021 || (alpha > 0.37) != solid { discard; }
     let point = input.world_time.xyz;
     let up = vec3(0.0, 1.0, 0.0);
     let sunlight = sun_irradiance(point) * fall_cloud(point) * max(0.0, environment_sun_direction().y);
@@ -347,7 +346,7 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let wet_pockets = max(packet, air_breaks * (0.42 + 0.58 * chord));
     let middle_cover = mix(1.0, 0.075 + 0.925 * wet_pockets, dispersed * mixed_air);
     let filament_cover = mix(0.09, 1.0, smoothstep(0.05, 0.59, packet + 0.13 * pulse));
-    let leaving_sheet = 1.0 - 0.82 * smoothstep(0.25, 0.61, fraction)
+    let leaving_sheet = 1.0 - smoothstep(0.24, 0.58, fraction)
         * smoothstep(0.0, 0.55, input.strand_strength);
     let passing_cover = middle_cover * leaving_sheet * select(1.0, 0.12 * filament_cover, is_filament);
     let filament_white = smoothstep(0.06, 0.48, input.across_fraction.w)
@@ -393,8 +392,7 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let contact_cover = foot
         * mix(1.0, smoothstep(0.18, 0.71, tear + 0.54 * fine),
         smoothstep(0.51, 0.90, input.across_fraction.w));
-    let writes_depth = presence > 0.5 && foot > 0.35 && passing_cover > 0.28;
-    if writes_depth != solid || presence * contact_cover * passing_cover < 0.015 {
+    if presence * contact_cover * passing_cover < 0.015 {
         discard;
     }
     let seam = smoothstep(0.0, 0.05, input.world_time.w);
@@ -407,6 +405,22 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     face = normalize(face + ripples * below_tongue);
     let nv = max(0.0, dot(face, look));
     let fresnel = 0.02 + 0.98 * pow(1.0 - nv, 5.0);
+    let streak_cover = mix(1.0, mix(0.48, 1.0, pulse),
+        breakup * smoothstep(0.20, 0.72, input.across_fraction.w));
+    let glass_alpha = min(mix(0.46, 0.88, below_tongue), fresnel + 0.07 + 1.7 * input.discharge.w + 0.35 * breakout);
+    let trickle_film = select(1.0, mix(0.70, 1.0, smoothstep(-0.09, 0.19, fraction)), is_filament);
+    let film_opacity = (clear * glass_alpha + white * (0.90 + 0.18 * grain)) * streak_cover;
+    let glass_cover = film_opacity * presence * mix(0.62, 1.0, seam) * contact_cover * trickle_film;
+    let breaking = smoothstep(0.47, 0.90, fraction)
+        * (1.0 - smoothstep(0.28, 0.73, 0.40 * fine + 0.39 * coarse + 0.21 * droplets));
+    let pool_fade = 1.0 - 0.67 * smoothstep(0.64 + 0.16 * fine, 0.96, fraction);
+    let aerated_cover = 0.71 * foot * mix(0.16, 1.0, chord) * (1.0 - 0.54 * breaking) * pool_fade;
+    let opacity = mix(glass_cover, aerated_cover, mixed_air) * passing_cover;
+    // Faint water must not occlude the pool. The dense sheet keeps its
+    // original depth rule, and the transparent pass tests that depth.
+    let sheet_depth = presence > 0.5 && foot > 0.35;
+    let writes_depth = select(sheet_depth, opacity > 0.37, rounded || is_filament);
+    if writes_depth != solid || opacity < 0.012 { discard; }
     let roughness = mix(0.12, mix(0.055, 0.39, white), below_tongue);
     let mirror = environment_reflection(reflect(-look, face), roughness, nv).radiance;
     let light = environment_sun_direction();
@@ -436,19 +450,6 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let spray_light = mix(sheet_colour, aerated,
         mixing * (1.0 - thinness) * mix(0.32 + 0.58 * contact_foam + 0.10 * fine, 0.93, breakup));
     let colour = (spray_light * aerial.transmission + aerial.scatter) * environment_storage_scale();
-    let streak_cover = mix(1.0, mix(0.48, 1.0, pulse),
-        breakup * smoothstep(0.20, 0.72, input.across_fraction.w));
-    let glass_alpha = min(mix(0.46, 0.88, below_tongue), fresnel + 0.07 + 1.7 * input.discharge.w + 0.35 * breakout);
-    let trickle_film = select(1.0, mix(0.70, 1.0, smoothstep(-0.09, 0.19, fraction)), is_filament);
-    let film_opacity = (clear * glass_alpha + white * (0.90 + 0.18 * grain)) * streak_cover;
-    // The aerated body transmits through a similar thickness across its face.
-    // Lighting follows the departing parcels independently of the cover.
-    let glass_cover = film_opacity * presence * mix(0.62, 1.0, seam) * contact_cover * trickle_film;
-    let breaking = smoothstep(0.47, 0.90, fraction)
-        * (1.0 - smoothstep(0.28, 0.73, 0.40 * fine + 0.39 * coarse + 0.21 * droplets));
-    let pool_fade = 1.0 - 0.67 * smoothstep(0.64 + 0.16 * fine, 0.96, fraction);
-    let aerated_cover = 0.71 * foot * mix(0.16, 1.0, chord) * (1.0 - 0.54 * breaking) * pool_fade;
-    let opacity = mix(glass_cover, aerated_cover, mixed_air) * passing_cover;
     let path_distance = select(input.across_fraction.y, -input.across_fraction.y - 2.0, is_filament);
     let last_fraction = input.across_fraction.w - length(input.velocity_along.xyz) * sheet_clock.y
         / max(0.001, path_distance);

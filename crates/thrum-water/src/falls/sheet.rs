@@ -166,7 +166,7 @@ impl Sheet {
                 write_mask: wgpu::ColorWrites::ALL,
             })
         });
-        let pipelines = [false, true].map(|depth| {
+        let pipelines = [true, false].map(|depth| {
             let mut targets = targets.clone();
             targets[0].as_mut().expect("colour").blend = Some(wgpu::BlendState::ALPHA_BLENDING);
             if !depth {
