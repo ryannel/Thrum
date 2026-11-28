@@ -373,6 +373,18 @@ Defined in [CLOUDS' design](CLOUDS/DESIGN.md#one-weather-field-in-the-air-frame)
 Proposed: the planner chose "puff" over "sphere", "lobe" and "turret", which the design used for the form
 this replaces.
 
+### Heaped profile
+
+The one number the weather's own heaped clouds give a point, from 0 at a cloud's surface and outside it to
+1 in its core: how deep the point lies inside a cell's cluster of puffs, as a share of the fade length,
+scaled by the cell's **strength**, and the greatest of those where cells overlap. A heaped cloud's density
+is made from it and the noise at the point, and a voxel of the weather volume holds it. Defined in
+[CLOUDS' design](CLOUDS/DESIGN.md#one-weather-field-in-the-air-frame).
+
+- **Source** — Nubis's dimensional profile, the gradient that shipped voxel clouds erode with noise.
+
+Proposed: the planner chose the name, to keep "profile" for one cell's and for the deck's.
+
 ### Weather volume
 
 The 3D grid near the camera that holds where the weather's own clouds stand, beside the 2D weather map that

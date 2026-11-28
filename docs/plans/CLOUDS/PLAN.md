@@ -107,11 +107,11 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 
 ## WP23 The weather's own clouds take a new form, a cluster of rounded heaps, in what a game reads and in stills drawn from it on the CPU
 
-Go on from `build/clouds` at `aa8d61a8d`: bring the puffs inside
-[the three bounds](DESIGN.md#one-weather-field-in-the-air-frame) and the erosion to
-[its two rules](DESIGN.md#one-density-in-m¹), from
-[the revision's switches](../../../.orchestrate/evidence/CLOUDS/WP23-unblock/README.md), and take the stills
-again. [Risk 2](DESIGN.md#risks) says when to end `BLOCKED`.
+Go on from `build/clouds` at `aa8d61a8d` and
+[the revision's switches](../../../.orchestrate/evidence/CLOUDS/WP23-unblock/README.md): puffs inside
+[the three bounds](DESIGN.md#one-weather-field-in-the-air-frame), density
+[one function of the heaped profile](DESIGN.md#one-density-in-m¹), the cluster cache keyed by the fade
+length, the stills again. [Risk 2](DESIGN.md#risks) says when to end `BLOCKED`.
 
 ## WP24 The engine draws, shades and answers for the new cloud form on the Mac and in Chrome, and the old form is gone
 
@@ -119,7 +119,7 @@ Judge no look here.
 
 ## WP17 Each fair-weather cloud holds up on its own: a cluster of heaps of different heights, with no shelf, fold or repeated outline
 
-[Risk 2](DESIGN.md#risks) says what is the builder's to tune. Take WP17.1's stills first.
+[Risk 2](DESIGN.md#risks) says what the builder may tune. Take WP17.1's stills first.
 
 ## WP25 With the new clouds drifting, the player still sees a new frame as steadily as in the same game without them
 
@@ -133,5 +133,5 @@ the owner's attended sitting; do every other item first.
 
 ## WP22 Below broken cloud, shafts of sunlight stand in the valley's mist
 
-Follow [the broken-cloud shaft follow-up](DESIGN.md#the-broken-cloud-shaft-follow-up-wp22). Take the
-starting arms of WP22.6's cost record first, and note that commit for WP22.8.
+Follow [the broken-cloud shaft follow-up](DESIGN.md#the-broken-cloud-shaft-follow-up-wp22). Take
+WP22.6's starting cost arms first, and note that commit for WP22.8.

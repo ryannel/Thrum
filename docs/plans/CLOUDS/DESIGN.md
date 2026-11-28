@@ -97,6 +97,15 @@ model, one rule at a time, they come from the size of the puffs and from nothing
 fade length and by its thermal's height, and [a heaped cell's erosion](#one-density-in-m¹) carries finer
 lobes and a firm edge. The form, its union, its rise through the base and what a query answers stand. No
 item and no interface changed.
+Revised once more that day after [the review of that unblock](../../../.orchestrate/evidence/CLOUDS/design-review.md)
+(three findings), each about one number that the query, the drawn cloud and its shade must share.
+[A cluster's interior depth](#one-weather-field-in-the-air-frame) is the deepest of its puffs' own depths,
+and not the distance to their union's exposed surface. A cell's strength scales its profile before anything
+erodes it, so [the heaped profile](#one-weather-field-in-the-air-frame) is all a heaped cell's
+[density](#one-density-in-m¹) takes from the field, and it is what a voxel of the weather volume holds.
+And [a reader](#the-weather-volume) filters that profile, makes a density from each key and blends the two
+densities ([part XXIV](#check-that-it-can-work)). WP23.1, WP24.1, WP24.3 and WP24.6 are written again. No
+interface with another module changed.
 
 ## The request
 
@@ -503,18 +512,33 @@ with no GPU:
   which the cell's hash places inside the cell's radius and depth: a few thermals, each a short stack of
   shrinking spheres that leans as it climbs, taller toward the cell's centre, and on the upper surface of each
   sphere a few smaller ones. It is the rule clouds are modelled by for film and games
-  ([research](#research-and-selection)). A cluster is a function of its cell's identity alone and is fixed in
-  the air frame for the cell's life, so every reader gets the same puffs. Its **signed distance** is the
-  distance to the union of its spheres, cut off level at the condensation level, which is the cloud's flat
-  base. The union is exact, so the heights at which a column enters and leaves the surface are each
-  sphere's closed form ([what a query promises](#one-weather-field-in-the-air-frame)); rounding it removed
+  ([research](#research-and-selection)). A cluster is a function of its cell's identity and the profile's
+  constants alone and is fixed in the air frame for the cell's life, so every reader gets the same puffs.
+  The fade length is one of those constants, because it bounds a puff's radius, so whatever keeps
+  clusters from one evaluation to the next keeps them by every constant their geometry reads, and one
+  field's clusters never answer for another's. A cluster's **surface** is the union of its spheres, cut off
+  level at the condensation level, which is the cloud's flat base. The union is exact, so the heights at
+  which a column enters and leaves the surface are each sphere's closed form
+  ([what a query promises](#one-weather-field-in-the-air-frame)); rounding it removed
   no flaw and smoothed the cloud's body ([part XXIII](#check-that-it-can-work)). A puff whose underside
   stands above the base keeps it, so
-  a cloud's rim is a rounded underside and never a wedge thinning onto the base. The cell's **profile** at a
-  point is its depth inside that surface as a share of the **fade length** (300 m in parts XX and XXIII),
-  and no more than 1: 0 at the surface and outside it, 1 in the core. It is measured in metres along the
-  surface's own normal, so [the noise that erodes it](#one-density-in-m¹) moves a crown, a flank and a rim
-  in by the same distance. One fade length serves every puff and the base: a fade of a puff's own made
+  a cloud's rim is a rounded underside and never a wedge thinning onto the base.
+- **Interior depth: the deepest of the puffs' own.** A cluster's **interior depth** at a point is one
+  field, which the CPU's column, the GPU's fill and the view all read. It is the greatest, over the
+  cluster's puffs, of the point's depth inside that puff, which is the puff's radius less the point's
+  distance from its centre, and it is no more than the point's height over the base. It is zero on the
+  surface and outside it, so the outline is the union's. Inside one puff it is the distance to that puff's
+  surface. Where puffs overlap it is the deeper of their own depths. It is not the distance to the union's
+  exposed surface, which is further there: midway between two puffs of 300 m radius whose centres are 360 m
+  apart, well over the base, a point is 120 m inside each and 240 m from the circle where they meet, and
+  its interior depth is 120 m ([part XXIV](#check-that-it-can-work)). So the depth falls toward every join
+  between two puffs, and the noise cuts a crease there, which keeps the puffs' relief on a cloud's body.
+  It is the depth part XXIII's stills were drawn from, and a column integrates it a sphere's chord at a
+  time. The cell's **profile** at a point is its interior depth as a share of the **fade length** (300 m
+  in parts XX and XXIII), and no more than 1: 0 at the surface and outside it, 1 in the core. It is
+  measured in metres along each puff's own radius, so [the noise that erodes it](#one-density-in-m¹)
+  moves a crown, a flank and a rim in by the same distance. One fade length serves every puff and the
+  base: a fade of a puff's own made
   small puffs solid balls, and a shorter one at the base drew level plates under the large clouds. The rule
   this replaces stretched a profile to each column's height, which moved a tall column's
   top by hundreds of metres and a rim by none: caps, lenses and skirts with a smooth skin
@@ -536,18 +560,33 @@ with no GPU:
   through first, and each stage is a smaller cloud of the same kind. What shows first and last is the top
   of the tallest stacks, and at any moment about half the live cells are under half risen, so the bounds
   on a puff's size are what make a young cloud, a dying one and a part-selected one tufts on the base and
-  not lenses. The envelope also scales the cell's
-  density, and over the last part of a life the erosion deepens, so a dying cloud frays and thins while it
-  subsides. Nothing moves sideways and no puff changes size, because a heap's edge that swept over a point
-  would step the column's top there. A type's share of cells scales the rise and the density the same way.
+  not lenses. Nothing moves sideways and no puff changes size, because a heap's edge that swept over a
+  point would step the column's top there. A type's share of cells scales the envelope, and through it the
+  rise and the strength below.
+- **A cell's strength scales its profile, before anything erodes it.** The envelope also gives the cell
+  its **strength**, a number from 0 to 1 that is continuous in weather time and in every parameter, and
+  zero where the envelope is zero. The **heaped profile** at a point is the greatest, over the cells whose clusters hold
+  the point, of the cell's strength times its profile. It is one number from 0 to 1, and it is all that
+  heaped cells give a point: [the density](#one-density-in-m¹) is made from it and the noise at the point,
+  and from nothing that is one cell's own. So a weak cell is no faint copy of a strong one. The noise's
+  threshold stands where it was and removes more of a lower profile, and a cell whose strength falls frays
+  from its surface inward and thins while it subsides. Late-life fraying is the strength's, and no erosion
+  reads a cell's age. A density that eroded each cell's profile and then scaled it by the strength would
+  need both numbers at every point, and more where cells overlap, which
+  [a volume of one number a voxel](#the-weather-volume) cannot hold
+  ([part XXIV](#check-that-it-can-work)). How the strength follows the envelope and the cell's age is a
+  profile constant, the builder's to tune inside those two conditions. Part XXIV drew two: the envelope
+  itself, under which a young and a dying cloud are frayed tufts, and one that is whole from 0.15 of the
+  rise, under which the sky is the one part XXIII's record found the same to the eye as its revision.
 - **The deck.** Layered cloud is a sheet whose thickness follows a smooth evolving noise against a threshold set
   by coverage and type: gaps at a broken deck, none at overcast.
 - **Types** are game data: a table along the type axis giving base height, depth range, liquid water content,
   droplet radius, the shares of cells and deck, and a vertical profile. The engine interpolates it. Extinction
   is physical: `σ = 3·LWC / (2·ρ_water·r_droplet)` in m⁻¹, about 0.06 m⁻¹ for 0.4 g/m³ and 10 µm.
 - **Continuity.** Under cells and the deck the field is continuous in space, in weather time and in every
-  parameter: its density at every point, and its column's optical depth and coverage. Where cells overlap,
-  and where a cell stands in the deck, a point takes the greatest profile, never a switch: two cells'
+  parameter: its density at every point, and its column's optical depth and coverage. Where cells overlap
+  a point takes the heaped profile, the greatest of theirs with each cell's strength in it, and where a
+  cell stands in the deck it takes the greater of the two densities, never a switch: two cells'
   clusters join as one cell's puffs do. At a fixed point of the air frame the top and the thickness are
   continuous in weather time too. From one point to the next the top steps at a heap's edge, where a puff
   overhangs the column beside it.
@@ -569,8 +608,8 @@ with no GPU:
   [placed shape](#placed-volumes) they are the lowest and the highest height of the shape's own column, and
   where a shape and weather share a column, the lower base and the higher top.
 - **Coverage** is the column's profile, and **age** the dominant cell's life phase. Over a heaped cell the
-  coverage is the greatest profile anywhere on the column's line, found from the puffs the line crosses and
-  never from samples of it, so it is above zero wherever the line passes inside a puff. Where a cell stands
+  coverage is the greatest heaped profile anywhere on the column's line, found from the puffs the line
+  crosses and never from samples of it, so it is above zero wherever the line passes inside a puff. Where a cell stands
   in the deck it is the greater of the two.
 - **A clear column** has no thickness: its top is exactly its base, at the type's condensation level, and its
   coverage, age and column optical depth are exactly zero. A consumer asks whether a column is clear by its
@@ -607,7 +646,7 @@ leaves the cluster's surface above the base, which for a sphere are a closed for
 them. Its answer is **conservative**: never less than the integral of the uneroded point density up that
 column, more than it by no more than a share its test states, and above zero wherever the column passes
 inside a puff. How it integrates between those heights is the builder's. Where a cell stands in the deck the
-integral is of the greater of the two profiles at each height, taken the same way. The GPU's map evaluates
+integral is of the greater of the two uneroded densities at each height, taken the same way. The GPU's map evaluates
 the same rule at its texel centres.
 
 The column optical depth is an upper **bound** on the column that is drawn there, because
@@ -706,10 +745,12 @@ Every consumer (the view, the Sun's path, the sky overlay, the CPU reference) ev
 `σ(point) = σ_type · erode(profile(point), noise(point))`
 
 The **profile** is the field's interior gradient at the point, from 0 at a cloud's surface to 1 in its core.
-For a heaped cell it is the [cluster's](#one-weather-field-in-the-air-frame), in metres on every side, and
-takes no vertical profile: its surface is the cluster's above, beside and below. For the deck it is the
+For heaped cells it is the [heaped profile](#one-weather-field-in-the-air-frame), each cluster's interior
+depth in metres on every side with its cell's strength in it, and takes no vertical profile: its surface is
+the cluster's above, beside and below. For the deck it is the
 deck's own coverage times the type's vertical profile over the deck's own thickness, and never over the
-height of a puff that stands in it. Where a cell stands in the deck a point takes the greater. A heaped cell
+height of a puff that stands in it. Each condensate's density is made from its own profile, and where a
+cell stands in the deck a point takes the greater of the two densities. A heaped cell
 too far for its cluster to be held is read in a **column form**, which
 [the weather volume](#the-weather-volume) defines: it keeps the column's optical depth.
 
@@ -720,8 +761,28 @@ and each octave is two to three times finer. The threshold it sets spans the pro
 of the core, so a puff's interior stays solid and its surface moves in by up to most of the fade length:
 lobes on a puff, and smaller lobes on those. A finer detail noise erodes only the edge. Noise can remove
 extinction and never add it beyond the column's bound: any shaping of the eroded value is one rising function
-applied to the uneroded profile alike. As a cluster rises through fixed noise, and as a dying cell's erosion
-deepens, billows appear and dissolve as structure and nothing slides.
+applied to the uneroded profile alike. As a cluster rises through fixed noise, and as a dying cell's
+strength falls under it, billows appear and dissolve as structure and nothing slides.
+
+**Heaped density is one function of one number.** With `H` the heaped profile at a point and `t` the
+threshold the noise sets there:
+
+`σ_heaped(point) = σ_type · firm((H − t) / (1 − t))`, its argument held between 0 and 1
+
+`firm` is the firm edge's curve below: it rises, it is concave, and it takes 0 to 0 and 1 to 1. The
+threshold comes from the noise at the point alone, and never from a cell: not its age, its strength or its
+identity. With nothing eroded `t` is 0 and the density is `σ_type · firm(H)`, which is what a query
+integrates up a column. The full and the coarse density differ only in `t`. Because the function rises with
+`H`, it passes through the greatest: the greatest of the cells' densities at a point is the density of
+their greatest profile. So two points with the same heaped profile and the same noise have the same density
+at every threshold, whatever cells gave it, and a reader that holds `H` holds all the field has there.
+[The weather volume](#the-weather-volume) rests on that. The order matters. In units of the type's
+extinction, with `firm` a 0.6 power, a rule that eroded a cell's own profile and then scaled it by the
+strength would give a half-strength core and a full-strength rim of profile 0.315 the same uneroded 0.5,
+and at a threshold of 0.4 leave the first at 0.5 and clear the second: one number could not tell them
+apart. Under this rule the first has a heaped profile of 0.5 and the second of 0.315, their uneroded
+densities are 0.66 and 0.5, and at that threshold they are 0.34 and nothing
+([part XXIV](#check-that-it-can-work)).
 
 Two things hold of a heaped cell's erosion, from the form's first stills
 ([part XXIII](#check-that-it-can-work)), where an erosion without them drew every puff as a smooth ball.
@@ -729,9 +790,10 @@ Two things hold of a heaped cell's erosion, from the form's first stills
 **finer term** about a quarter of that size and smaller, which carries about a quarter of the threshold.
 **And the eroded surface is firm:** past the threshold the density rises to the type's steeply, as a
 concave function of the depth past it, and never in proportion to the profile, which lays a soft skin a
-fade length deep over every puff. That function is the one rising function of the rule above: it shapes
-the uneroded profile too, so the column's optical depth is the integral of the shaped profile and still
-bounds every eroded density. The coarse density takes the finer term at its mean, as it takes the
+fade length deep over every puff. That function is `firm`, the one rising function of the rule above: it
+shapes the uneroded profile too, so the column's optical depth is the integral of the shaped profile and
+still bounds every eroded density. A density in m⁻¹ is what a column integrates, so it is also what
+[two keys are blended in](#the-weather-volume), and never the profile under the curve. The coarse density takes the finer term at its mean, as it takes the
 detail noise. Where the finer term comes from is the builder's: the stills read the shape volume a second
 time, 4.3 times finer, and a detail volume made of billows is the other way. It costs the full density no
 more than one read a sample beyond today's, WP24.5's and WP17.5's records carry what it does cost, and it
@@ -776,9 +838,10 @@ the column of cells and the deck with no placed shape in it: the deck's own thic
 heaped cells' own top, and the **heaped part** of its optical depth, which is the procedural column's
 optical depth less the deck's own and is never below zero. The model gives the map's passes and its check
 the same four values; a game's query is unchanged. Every reader draws the deck from the deck's own column at
-every distance and takes the greater of it and the heaped profile at each point, as the model does: near
-the camera the heaped profile is [the weather volume](#the-weather-volume)'s, and past it the column
-form's, made from the heaped part between the type's condensation level and the heaped cells' own top.
+every distance and takes the greater of its density and the heaped one at each point, as the model does:
+near the camera the heaped density is made from [the weather volume](#the-weather-volume)'s heaped profile,
+and past it it is the column form's, made from the heaped part between the type's condensation level and
+the heaped cells' own top.
 
 **A placed shape is in neither.** The field's column, which a game reads, adds a
 [placed shape's](#placed-volumes) footprint to the weather's, and its base and top may be the shape's. The
@@ -852,8 +915,13 @@ that WP2 measured and its test states; that no part is older than its bound is a
 A column says how much cloud stands over a point and between which heights. It cannot say where in the column
 the cloud lies, and a cluster of puffs overhangs. So near the camera the GPU reads a heaped cell's profile
 from a **weather volume**: a few world-anchored wrapping levels of voxels in the air frame, beside the map's
-and built like them, whose voxel doubles outward. A voxel holds the field's heaped profile at its own centre:
-the model's value there, with puffs, rise and overlapping cells in it, and never an average over the voxel.
+and built like them, whose voxel doubles outward. A voxel holds the
+[heaped profile](#one-weather-field-in-the-air-frame) at its own centre: the model's one number there, with
+puffs, rise, each cell's strength and overlapping cells in it, before any erosion and before the firm
+edge's curve, and never an average over the voxel. That number is all
+[a heaped cell's density](#one-density-in-m¹) takes from the field. So a reader that has it, and the noise
+at its own sample, has the model's full and coarse density there, eroded or not, in a part-strength cell
+and where cells overlap as in a lone cell's core.
 It holds nothing of the deck, the ground or a placed shape, which keep their own forms. Like the map it lives
 in the air frame, so wind costs nothing.
 
@@ -869,15 +937,33 @@ in the air frame, so wind costs nothing.
   work is the same on every tick at every time scale.
 - **One shown tick.** The volume shows the weather of one tick, the **shown tick** `S = max(C − K, R)`: the
   committed tick `C` less the key interval, and never before `R`, the tick of the last reset. A reader
-  blends a part's two keys by where `S` lies between their key ticks `a ≤ b`, with a weight of
-  `(S − a) / (b − a)` toward the newer. Where `S` is at or before `a`, or the two ticks are one, it takes
+  blends the densities it makes from a part's two keys by where `S` lies between their key ticks `a ≤ b`,
+  with a weight of `(S − a) / (b − a)` toward the newer. Where `S` is at or before `a`, or the two ticks are one, it takes
   the older key whole. The weight is made from the ticks the keys hold, and never from a count of ticks
   since a write. In steady running a part's keys are `K` apart and its next turn comes as `S` reaches the
   newer, so nothing steps when a part is written. Every part shows the weather of the same tick: the
-  model's at a key, and between two keys a straight line between two of the model's own states. That
+  model's at a key, and between two keys a straight line between the model's densities at two of its own
+  states. That
   weather is **one key interval of ticks late**: half a second of weather at 1× and 30 seconds at 60×. The
   weight advances on the tick and never within one, as
   [evolution](#time-drift-at-the-displays-time-evolution-on-the-tick) does.
+- **A reader filters the profile, makes a density from each key, and blends the two densities.** In that
+  order. At its sample it takes each key's heaped profile through the volume's filter in space. From each
+  it makes that key's density by [the one function](#one-density-in-m¹), with the threshold of the noise
+  at the sample, which is read once. Then it blends the two densities by the part's weight. The filter
+  works on the profile because a profile is close to linear in distance, which a linear filter keeps,
+  where the curve's steep rise from a surface is what it would flatten: midway between a voxel's centre on
+  a surface and the next, 50 m inside it, the model's uneroded density is 0.225 of the type's, which the
+  filtered profile gives and a filter of the two centres' densities makes 0.171. The blend works on the density because a
+  density is what a column integrates. At every point the reader's density, eroded or not, is then a
+  straight line between the two keys' densities there, which at a voxel's centre are the model's. So its
+  integral up a column is the same line between two columns, and [the bound](#the-weather-volume) below
+  follows. Blending the two profiles and
+  shaping the blend is not this rule, because the curve is concave and gives more. A layer that holds a
+  full core at one key and clear air at the other has 0.5 of the core's density halfway between them, and
+  a 0.6 power of the blended profile makes it 0.66: 32% over the blend of the two keys' optical depths, at
+  voxel centres, with nothing eroded and no deck ([part XXIV](#check-that-it-can-work)). The order costs
+  the function's arithmetic twice a sample and no read more.
 - **A reset.** On a cut, a weather seek, a backward tick, a new timeline, a replaced device and the first
   frame, the states the keys held are gone or no longer lead to the committed one. Both keys of every part
   are written at the committed tick in that frame, and `R` is that tick. The volume then shows the
@@ -935,22 +1021,23 @@ in the air frame, so wind costs nothing.
   [its age](#the-weather-map) bounds. A part of the volume holds its two keys' states, `A` and `B`, with
   the part's weight `w` between them. So over a point the deck, a placed shape and a heaped cell's column
   form are drawn at `M`, and heaped cloud inside the volume at `A` and `B`. They are joined as the model
-  joins them: the deck's profile and the heaped one by the greater at each point, whichever form or blend
+  joins them: the deck's density and the heaped one by the greater at each point, whichever form or blend
   gives the heaped one, and a shape's coefficient added. Every reader draws from those products alone. None
   scales or gates what it reads by the committed state or by the map's column, so the view, the Sun's
   path, the overlay and the medium coefficients show one sky and its own shade, and a heap that
   [every map centre misses](#the-weather-map) is still drawn.
 - **The bound: the column of two states.** The model's column rule takes the deck and the heaped cells
   from one state. Given the deck from `M` and the heaped cells from `X`, it is the **column of two
-  states**, `τ(M, X)`: the integral up the column of the greater of `M`'s deck profile and `X`'s heaped
-  profile at each height, with `M`'s placed column added. `τ(M, M)` is the query's column at `M`. The
-  model gives each condensate's profile at a point for a state, so a test forms `τ(M, X)` by its own sum.
+  states**, `τ(M, X)`: the integral up the column of the greater of `M`'s deck density and `X`'s heaped
+  density at each height, with nothing eroded and `M`'s placed column added. `τ(M, M)` is the query's
+  column at `M`. The model gives each condensate's uneroded density at a point for a state, so a test
+  forms `τ(M, X)` by its own sum.
   With nothing eroded, the column the GPU draws at a point is no more than, within the allowance for
   filtering that the test states:
   - past the volume, `τ(M, M)`, and exactly it where the column holds heaped cloud alone or with a placed
     shape;
-  - inside the volume, `(1 − w) · τ(M, A) + w · τ(M, B)`, because the greater of the deck and a blend is
-    no more than the same blend of the two greaters;
+  - inside the volume, `(1 − w) · τ(M, A) + w · τ(M, B)`, because the reader blends densities, and the
+    greater of the deck's density and a blend of two is no more than the same blend of the two greaters;
   - in the band, the band's blend of those two, because its weight is one number up the column.
 - **Through a preset change.** While the weather stands still `M`, `A` and `B` give one column, and the
   bound is the query's at the committed tick. While a preset ramps they differ, and the picture follows
@@ -978,15 +1065,18 @@ in the air frame, so wind costs nothing.
 - **Its size.** Its reach, its voxels and its key interval are profile constants, and none is a
   [knob](#recipes-limits-and-knobs). The first profile starts
   from 50 m voxels to about 12 km and 100 m voxels to about 25 km, over the heaped type's depth: about
-  72 MiB at one byte a key.
+  72 MiB at one byte a key. A byte holds the heaped profile in steps of 1/255. The curve is steepest just
+  inside an eroded surface, so there half a step is up to 0.07 of the type's extinction under the deepest
+  threshold, 0.85, and 0.03 under one of 0.4. A test that compares eroded densities at voxel centres
+  states a tolerance that allows for it, or takes its centres clear of an eroded surface.
   At 12 km a 50 m voxel is 7 pixels of a 2560×1440 frame, and a profile changes over a fade length of 300 m,
   so the filter draws the cluster and the noise draws everything finer. Past 25 km a heap is a few layer
   texels wide, which the column form holds.
 - **What fills it.** Compute passes in `simulate` evaluate the model's rule at the voxel centres of the
   parts whose turn it is. Whether a pass makes a cell's puffs from the hash or reads a list the model made
   for each live cell, and how it passes over a part no live cell stands in, are the builder's choice. The
-  check is each key's voxel centres against the model at that key's key tick, at a tolerance the test
-  states.
+  check is each key's voxel centres against the model's heaped profile at that key's key tick, at a
+  tolerance the test states.
 
 The map still holds every column to the horizon. It is what a game's query is checked against, it steps a ray
 across the air its own texels call empty, and it draws the deck and the column form.
@@ -1648,12 +1738,13 @@ The owner's bar of 17 November 2026 ([the request](#the-request), and
   what a server reads. So the GPU's weather map and ground condensate are tested against the query, at a
   tolerance the test states: cloud and mist stand where the query has them and not where it is clear (WP2, WP4.1,
   WP6.2, WP6.9, WP7.6, WP14.2), and [the weather volume](#the-weather-volume)'s voxels hold the model's
-  profile at their centres, each key at its key tick, and its reader shows one shown tick (WP24.1). WP24.6
-  holds the five places where a column, or one state, alone misleads a reader: an overhang in its volume
-  form, its column form and their blend; a puff over a shallow deck; a heap that every map centre misses;
-  a preset ramp with the two keys at different ticks, held to
-  [the column of two states](#the-weather-volume); and a directed shape under a clear sky, drawn once on
-  both sides of the volume's edge. Presence is not enough. A GPU that draws twice the query's extinction puts mist at
+  heaped profile at their centres, each key at its key tick, and its reader shows one shown tick (WP24.1).
+  WP24.6 holds the six places where a column, one state or the uneroded density alone misleads a reader:
+  an overhang in its volume form, its column form and their blend; a puff over a shallow deck; a heap that
+  every map centre misses; a preset ramp with the two keys at different ticks, held to the blend of the
+  model's densities at the two keys and to [the column of two states](#the-weather-volume); a directed
+  shape under a clear sky, drawn once on both sides of the volume's edge; and the eroded density at voxel
+  centres in a part-strength cell, where two cells overlap and in a fade. Presence is not enough. A GPU that draws twice the query's extinction puts mist at
   every probe the query does, and a player loses sight of a thing at half the range the game works with. So
   the test of each GPU path that WP2's map test does not reach also compares the amount, at a point inside the
   condensate: through ground condensate, the optical depth along a sight line, summed from the GPU's coarse
@@ -2198,7 +2289,10 @@ is a toy. It shows outline and relief, and nothing of the engine's light, map or
   threshold. On the same weather: heaps of different heights with billowed crowns and ragged bases, tufts
   and small heaps in the middle distance, and no shelf, fold, squared break, lens, curtain or cylinder.
   Three cells followed alone through twelve ages from 0.06 to 0.94 begin as tufts, rise into a heap and
-  fray back to tufts, with no cap at any age and no late-life fraying added. A second weather, 2,700 s
+  return to tufts, with no cap at any age. Each strip's six ages of decay are its six ages of growth in
+  reverse, pixel for pixel, because the diagnostic's density has no term for the end of a life: the
+  strips show that the cap is gone, and nothing of how a dying cloud frays, which is part XXIV's and
+  WP23.2's to show. A second weather, 2,700 s
   and 17 km away, reads the same, where the build's form has slabs and domes overhead. Taken out of the
   revision alone, the 600 m bound brings back a dome, a slab and a lens; the share of the reach, soft
   lenses where a shallow cell is part risen; the erosion, smooth balls; the lean, upright stacks that
@@ -2209,6 +2303,30 @@ is a toy. It shows outline and relief, and nothing of the engine's light, map or
   *Not shown:* the planner read these alone. In the second weather two near clouds seen from almost below
   are soft rounded masses, and a thermal that stands clear of its cluster reads as a small tower, three or
   four to a frame. WP23.2's builder and its reviewer judge both.
+- **XXIV, one number for the query, the drawn cloud and its shade**, 28 November, from the review of part
+  XXIII's revision ([what changed for each finding, the stills and the
+  tool](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-28-3/README.md)). Three cases worked
+  by hand, in units of the type's extinction with the firm edge a 0.6 power, and one drawn. *Two puffs
+  that overlap.* Radius 300 m, centres 360 m apart, well over the base. The midpoint is 180 m from each
+  centre, so 120 m inside each, and 240 m from the circle where the spheres meet, which is the nearest
+  exposed surface of their union. At a 300 m fade the two depths give profiles of 0.4 and 0.8, and a
+  threshold of 0.6 clears the join by the first and leaves cloud by the second. The interior depth is the
+  first, which the model at `aa8d61a8d` computes and part XXIII's stills were drawn from. *Strength and
+  erosion.* A half-strength cell's core and a full-strength cell's rim at a profile of 0.315. Eroding
+  each cell's profile and then scaling by the strength: both are 0.5 uneroded, and at a threshold of 0.4
+  the first is 0.5 and the second nothing, so a voxel that held one number, the uneroded density or the
+  depth, would lose one of them. Scaling the profile by the strength first: the heaped profiles are 0.5
+  and 0.315, the uneroded densities 0.66 and 0.5, and at that threshold 0.34 and nothing, each a function
+  of its one number. *Blend and curve.* A layer with a full core at one key and clear air at the other,
+  halfway: the blend of the two densities is 0.5, and the curve of the blended profile is 0.66. *Drawn:*
+  part XXIII's revision again by its tool, with the strength scaling the profile before the erosion. With
+  a strength that is whole from 0.15 of the rise, the three views differ from the same strength scaling
+  the density after the erosion in at most 0.01% of pixels, and part XXIII's record found that sky the
+  same to the eye as its revision, from which 0.6 to 2.2% of its pixels differ. With the strength the envelope itself, 2.5 to 5.6% of pixels differ from the revision's: grown
+  clouds are the same, and a young or a dying cloud is smaller and broken into frayed tufts where the
+  revision drew a pale rounded mass. One cell through twelve ages frays into tufts toward both ends of
+  its life with no cap at any age. *Not shown:* the planner read these alone, and no still here is from
+  a volume or a blend of two keys.
 - **Unrun:** the engine's light and its noise on the form; the weather volume's filter at 50 and 100 m
   voxels, where the toy's grid is 25 m; the column form past the volume and the band between them; a dying
   cloud, in motion; the blend of two keys 30 seconds of weather apart, where a fast cloud's two surfaces
@@ -2430,8 +2548,8 @@ with no largest fill, is turned away too (WP24.5).
    from part XXIII's revision, and every later look is held to the same order: no GPU work on the form
    until its stills from the model pass. Inside [the three bounds](#one-weather-field-in-the-air-frame)
    and [the two rules of the erosion](#one-density-in-m¹), the profile constants are the builder's to tune
-   on whatever cue the stills show: puff counts, sizes and lean, the fade length, the erosion's strengths
-   and the noise's lobe sizes. Part XXIII names two to look for: a soft rounded mass where a near cloud is
+   on whatever cue the stills show: puff counts, sizes and lean, the fade length, the erosion's strengths,
+   the noise's lobe sizes and how a cell's strength follows its envelope. Part XXIII names two to look for: a soft rounded mass where a near cloud is
    seen from almost below, and a thermal that stands clear of its cluster as a small tower. Before
    changing a constant for a cue, find which rule makes it, as part XXIII did: its switches are kept with
    its record, and a still costs seconds. The builder ends `BLOCKED` with `needs_context` and the stills,
@@ -2444,7 +2562,10 @@ with no largest fill, is turned away too (WP24.5).
    the query, the map, the weather volume, the Sun's path and the trace read one density, which WP24 holds;
    a column the query does not give, such as a share standing in for heaps a far level cannot resolve or a
    field smoothed for it; a puff that moves sideways or changes size in its cell's life; a puff larger
-   than twice the fade length, or a thermal that is one dome on the base.
+   than twice the fade length, or a thermal that is one dome on the base; an erosion or a scale that is
+   one cell's own once the heaped profile is formed, such as a threshold that reads a cell's age or a
+   strength applied after the erosion, since a voxel holds one number: fraying is tuned through the
+   strength.
 
    **The fallback**, a planner's decision from the record and not a builder's: every heaped cell near the
    camera becomes a [placed cell](#placed-volumes) on a slab from a set of forms the engine generates. The

@@ -1391,3 +1391,10 @@ The replacement command and validator exercised the same comparison with a fresh
   the size of the puffs, so the design bounds a puff and firms a heaped cell's erosion. No item changed, and
   the builder goes on from `build/clouds` at `aa8d61a8d`. The 13 tests that stopped at 10 s were load.
   [Causes, revision, stills and the test record](../../../.orchestrate/evidence/CLOUDS/WP23-unblock/README.md)
+- 2026-11-28 Planner, after the design review of that unblock asked for changes (three Must Fix findings).
+  A cluster's interior depth is the deepest of its puffs' own depths, not the distance to their union's
+  exposed surface. A cell's strength scales its profile before the erosion, so the heaped profile is all a
+  heaped cell's density takes from the field and is what a voxel holds. A reader filters that profile,
+  makes a density from each key and blends the two densities. WP23.1, WP24.1, WP24.3 and WP24.6 written
+  again. Both suggestions taken. No interface with another module changed.
+  [What changed for each finding, and the stills](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-28-3/README.md)
