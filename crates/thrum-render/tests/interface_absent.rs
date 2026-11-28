@@ -21,7 +21,7 @@ fn presented_metalfx_and_its_twin_match_before_the_interface() {
     let (revision, expected) = include_str!("fixtures/interface_presented.txt")
         .split_once('\n')
         .expect("baseline revision and graph records");
-    assert_eq!(revision, "1cc1565ad");
+    assert_eq!(revision, "b96e70604");
     let actual = support::interface_presented_snapshot::snapshot(&gpu);
     for (line, (before, after)) in expected.lines().zip(actual.lines()).enumerate() {
         assert_eq!(before, after, "no-interface presented graph line {line}");
@@ -47,7 +47,7 @@ fn unchanged_graphs_are_the_main_prerequisite_and_only_the_control_allocates_int
     let (revision, expected) = baseline
         .split_once('\n')
         .expect("baseline has a commit and graph records");
-    assert_eq!(revision, "1cc1565ad");
+    assert_eq!(revision, "b96e70604");
     let actual = support::interface_absent_snapshot::snapshot(&gpu);
     for (index, (before, after)) in expected.lines().zip(actual.lines()).enumerate() {
         assert_eq!(before, after, "no-interface graph record line {index}");

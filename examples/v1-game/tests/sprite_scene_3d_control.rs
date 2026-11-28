@@ -304,7 +304,7 @@ fn compare_presentation(recipe: &str, format: wgpu::TextureFormat, baseline: &st
         return;
     };
     let (commit, expected) = baseline.split_once('\n').expect("baseline revision");
-    assert_eq!(commit, "1cc1565ad");
+    assert_eq!(commit, "b96e70604");
     let actual = snapshot(&gpu, &[recipe], format, false);
     for (line, (before, after)) in expected.lines().zip(actual.lines()).enumerate() {
         assert_eq!(
