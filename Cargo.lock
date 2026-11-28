@@ -3473,6 +3473,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "thrum-sim3d"
+version = "0.1.0"
+dependencies = [
+ "thrum-core",
+]
+
+[[package]]
 name = "thrum-starter"
 version = "0.1.0"
 dependencies = [
@@ -3484,13 +3491,6 @@ name = "thrum-stones"
 version = "0.1.0"
 dependencies = [
  "thrum-app",
-]
-
-[[package]]
-name = "thrum-sim3d"
-version = "0.1.0"
-dependencies = [
- "thrum-core",
 ]
 
 [[package]]
