@@ -111,7 +111,7 @@
     {
       "id": "WP11",
       "name": "A game names a reusable thing, spawns it and variants of it, attaches one thing to another and takes a thing out of play",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "Reuse as plain as Unity's prefab variants and Godot's scenes, in Rust with no editor: a variant is a base and a difference, and a child is one line. The reference for how game code reads is the design's worked examples E and G, which the owner approves.",
       "items": [
         {
