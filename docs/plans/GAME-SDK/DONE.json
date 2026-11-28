@@ -4,7 +4,7 @@
     {
       "id": "WP1",
       "name": "An agent writes a game's scenes, phases and rules in plain Rust against one crate, in the order they run, and proves them in an ordinary test with no window",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "Game code that reads as plainly as Bevy's `breakout` example with less ceremony: a scene function reads top to bottom as one tick, and no line names engine plumbing. Compiler and startup messages as useful as Rust's own, each naming the object, the cause and the next step. Correctness held as `SIM-2D` holds it: one trace, one digest. The reference for how game code reads is the design's worked examples, which the owner approves.",
       "items": [
         {
