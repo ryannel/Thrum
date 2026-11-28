@@ -629,8 +629,8 @@
           "ask": "Is the sheet's pass before the water's gather, so that the pool's surface reads it as it reads the land?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/advected-parcels/checks/WP6.1.log",
           "verdict": "",
           "review": ""
         },
@@ -640,8 +640,8 @@
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test falls_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/advected-parcels/checks/WP6.2.log",
           "verdict": "",
           "review": ""
         },
@@ -652,8 +652,8 @@
           "ask": "Do the rings and births stop when the lip is dry, and not merely fade?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/advected-parcels/checks/WP6.3.log",
           "verdict": "",
           "review": ""
         },
@@ -683,8 +683,8 @@
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test falls_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/advected-parcels/checks/WP6.6.log",
           "verdict": "",
           "review": ""
         },
@@ -694,8 +694,8 @@
           "check": "node scripts/check_water_browser.mjs --case fall",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/advected-parcels/checks/chrome-run.json",
           "verdict": "",
           "review": ""
         },
@@ -705,8 +705,8 @@
           "check": "python3 scripts/water_cost.py check --scene fall",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/advected-parcels/checks/fall-cost.json",
           "verdict": "",
           "review": ""
         },
@@ -717,8 +717,8 @@
           "ask": "Are both ring sets raised at once in one region, and does the test show one mean current, plain or weighted, failing both centres there? Is the surviving ring raised where the step's own weights are split between carriage currents, on the straight stretch and on the bend, and would a step that damps blended cells to nothing fail it?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/advected-parcels/checks/README.md",
           "verdict": "",
           "review": ""
         },
@@ -728,8 +728,8 @@
           "check": "cargo test --locked --offline -p water-scene --test current_ladder_gpu && cargo test --locked --offline -p thrum-water --test interaction_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/advected-parcels/checks/WP6.11.log",
           "verdict": "",
           "review": ""
         },
@@ -740,8 +740,8 @@
           "ask": "Does preparation decide a drowned fall for a sea, a basin and a reach alike by one comparison of the lip's bed with the highest level the map itself gives at the foot over the whole of the declared ranges, the stages and gauges between their ends included, and not by a rule written for one kind of receiver or by the levels at the ends of the ranges alone?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/advected-parcels/checks/WP6.12.log",
           "verdict": "",
           "review": ""
         }
