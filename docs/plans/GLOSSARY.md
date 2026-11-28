@@ -126,8 +126,9 @@ Proposed: the planner chose it for AUDIO.
 
 ### Emitter
 
-A looping sound that a thing makes, with a place, a volume and a pitch. It lasts until it is ended, and holds
-a voice only while it can be heard. The game SDK's `Sound` look becomes one.
+A looping sound that a thing makes, with a place or none, a volume and a pitch. It lasts until it is ended.
+Only some emitters hold a voice at a time: the loudest of those inside their radius or with no place, and a
+held one keeps its voice while it is silent. The game SDK's `Sound` look becomes one.
 
 - **Source** — the field's term (Unreal, FMOD).
 
@@ -161,10 +162,21 @@ Proposed: the planner chose it for AUDIO.
 
 ### Outcome
 
-What became of one play of a sound: its event identity, its tick, its output epoch and its fate, which is
-started or the one cause it never started. A game reads outcomes from the mix's handle.
+What became of one play of a sound: its play number, its event identity, its tick, its output epoch and its
+fate, which is started or the one cause it never started. A game reads outcomes from the mix's handle and
+matches each to its play by the play number.
 
 - **Source** — coined for AUDIO, for C11's "rendered-or-expired" bookkeeping.
+
+Proposed: the planner chose the name.
+
+### Play number
+
+The count the mix's handle gives one call to play a sound: 1 for its first play and one more for each after,
+never used twice. The call returns it, and the play's outcome carries it. It names the call, where C11's
+event identity names the event, which may make several plays.
+
+- **Source** — coined for AUDIO.
 
 Proposed: the planner chose the name.
 

@@ -1,6 +1,7 @@
 # AUDIO: a game's sounds and music are heard on the Mac, in Chrome and on the iPhone simulator
 
-27 November 2026, revised 28 November 2026 after [design review 1](../../../.orchestrate/evidence/AUDIO/design-review.md). [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
+27 November 2026, revised 28 November 2026 after [design review 1](../../../.orchestrate/evidence/AUDIO/design-review-1.md)
+and [design review 2](../../../.orchestrate/evidence/AUDIO/design-review.md). [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-7-the-game-sdk) · [the vision and scope document](../VISION.md).
 [C11 in CONTRACTS](../../design/CONTRACTS.md#c11-input-audio-and-ui-lifecycle--p1a1u1-with-f1) governs, and
 [the Game SDK's audio entry](../GAME-SDK/DESIGN.md#audio) is what the first consumer expects.
@@ -63,10 +64,10 @@ Each behaviour has its range, and the wrong substitute that would look right to 
 | Behaviour | Range it must hold over | Plausible wrong substitute, and what rejects it |
 |---|---|---|
 | **B1 A sound that happens** plays once, from its first frame to its last | Any cooked sound, mono or stereo, from one frame long to longer than many pulls; volume 0 to 1; pitch 0.5 to 2; forty plays a second of one sound (the SDK's example) | One voice a sound, so a new play cuts the last. Rejected by two plays that overlap and must sum. A pitch snapped to a few ratios. Rejected by a ratio inside the SDK's 0.9 to 1.1, whose frames are stated |
-| **B2 A limit** keeps at most `n` voices of one sound | `n` from 1 up; forty plays a second under a limit of 4 | Counting plays, not voices that are still sounding. Rejected by plays spread over longer than the sound lasts. A cap that ignores `n`. Rejected by naming exactly which of the forty plays start, for three lengths of sound |
+| **B2 A limit** keeps at most `n` voices of one sound | `n` from 1 up; forty plays a second under a limit of 4 | Counting plays, not voices that are still sounding. Rejected by plays spread over longer than the sound lasts. A cap that ignores `n`. Rejected by naming exactly which of the forty plays start, for three lengths of sound. A limited sound that keeps its count right and mixes only its newest voice. Rejected by frames that must hold the sum of every play that started |
 | **B3 A sound a thing makes** loops while the thing exists, follows it, and is turned up, down, held and stopped | 10,000 things with a sound of which 1,000 to 2,000 move each frame, the representative scene of decision 1; a loop from one frame long; updates every frame | Restarting the loop on each update. Rejected by position continuity across an update. A loop with a gap or a repeated frame at its wrap. Rejected by an exact comparison across three wraps |
 | **B4 A place** makes a sound quieter with distance and puts it on the side it stands | From the listener's own position to the sound's radius and beyond; the place, the listener and the listener's facing all moving between pulls; a place passing through the listener | Gains worked out once, when the sound starts. Rejected by a moving thing and a turning listener. Left and right swapped. Rejected by a place on the listener's left that must be louder in the first channel |
-| **B5 Music** plays from its compressed form, loops from its loop point for ever, and cross-fades to the next track | Tracks of minutes; a loop point anywhere in the track; a change made part-way through a fade; the same track asked for again; no track | The whole track decoded when it is added. Rejected by what adding a long track allocates. A cut, a fade to silence and back, or a fade squeezed into a few frames. Rejected by each track's gain at five points across the fade. A restart when the same track is said again. Rejected by position continuity |
+| **B5 Music** plays from its compressed form, loops from its loop point for ever, and cross-fades to the next track | Tracks of minutes; a loop point anywhere in the track; a change made part-way through a fade; the same track asked for again; no track | The whole track decoded when it is added. Rejected by what adding a long track allocates. A cut, a fade to silence and back, or a fade squeezed into a few frames. Rejected by each track's gain at five points across the fade. A change part-way through a fade that drops the track fading out, which leaves a hole in the music. Rejected by the squares of the gains, which must sum to 1 across both fades. A restart when the same track is said again. Rejected by position continuity |
 | **B6 Three volumes**, master, music and effects, each move what they govern | 0 to 1, changed at any moment | A volume applied when a voice starts. Rejected by a change while a loop sounds |
 | **B7 Nothing waits.** A call from a frame returns at once, and a pull never blocks | A pull with every voice sounding; a page held for half a second; a sound added while others play; a track of minutes arriving in Chrome while a menu clicks | Mixing on the page's own thread in Chrome, which is what the usual Rust device crate does. Rejected by a held page during which the mix must keep its rate |
 | **B8 The same sound everywhere, and with no device** | The Mac, Chrome and the simulator; a pull split into any sizes; no device at all | A second mixer for the browser built from Web Audio nodes. Rejected because Chrome must render [the reference script](#12-the-reference-script-and-the-handle-run) to the same digest. An output that ignores a game's calls, or hands the device silence. Rejected by a sound played through the handle and found in [the output tap](#10-sound-outputs) |
@@ -126,22 +127,30 @@ has room for it. Natively it sees the queue's room. In Chrome it learns it from 
 ([mechanism 10](#10-sound-outputs)). The rule for a full queue, in the table below, is the one rule for
 pressure on every route.
 
-**A play has an identity, an epoch and one fate.** A play carries **an event identity**, 64 bits that its
+**A play has a number, an identity, an epoch and one fate.** The handle gives every play call **a play
+number**: a 64-bit count that is 1 for a handle's first play and rises by one with each call, so it is never
+used twice, across output epochs and rebuilt mixes alike. The call returns it at once. It names that one call
+and nothing else.
+
+A play also carries **an event identity**, 64 bits that its
 caller chooses, and the tick its event belongs to, or none. These are C11's durable event identity and
 simulation time. The SDK gives its event's. A caller with no event, such as a menu's click, gives any number.
 AUDIO carries both and gives them back, and reads no meaning into either: it never compares two plays by
 identity, never refuses a repeat and never schedules by the tick. Which predicted event is heard, and that it
-is heard once, stays the SDK's.
+is heard once, stays the SDK's. Two plays made for one event share its identity and its tick, and differ by
+their play numbers.
 
 The handle stamps each play with [**the output epoch**](#10-sound-outputs) in which it was called, which is
 C11's audio-device epoch. A play is given a voice only in the epoch it was called in.
 
 Each play ends in exactly one **fate**. It is `started`, when the mix gave it a voice and rendered its first
 frame, or it is the one cause it never started: `limit`, `pool`, `out of range`, `nothing pulling`,
-`interrupted`, `queue full` or `bad value`. The fate is published as **an outcome**: the play's event
-identity, its tick, its epoch and its fate. This is the bookkeeping C11 asks of audio: the call is the event
+`interrupted`, `queue full` or `bad value`. The fate is published as **an outcome**: the play's number, its
+event identity, its tick, its epoch and its fate. This is the bookkeeping C11 asks of audio: the call is the event
 seen, the command is the event queued, and the outcome says rendered or expired. The handle gathers outcomes,
-its own and the mix's, into a list of a fixed size that the game drains when it chooses. If more arrive
+its own and the mix's, into a list of a fixed size that the game drains when it chooses. Outcomes come from two producers, and the
+order they are listed in is not promised. A reader matches each outcome to its play by the play number, and
+never by its place in the list or by the event identity. If more arrive
 between two drains than the list holds, the oldest are lost and the loss is counted, and
 [the record](#11-the-record)'s counts by cause stay exact. An outcome says a play was mixed. It cannot say a
 speaker played it.
@@ -243,7 +252,9 @@ ramps it out.
 sound that are still sounding when the command is applied, and drops the play if there are `n`. A voice stops
 counting once its last frame has been rendered, so a play applied at the very next frame is admitted, and a
 play is admitted whenever fewer than `n` are sounding. It is counted in the mix because only the mix knows
-when a voice ended.
+when a voice ended. A limit decides only whether a play starts. Each play it admits is a voice of its own,
+summed with the others from its first frame to its last, so while four plays of a sound are sounding a frame
+holds four copies of it.
 
 **The pool** is the fixed number of voices a mix was made with, in two shares: one for emitters, which the
 handle gives out by the policy above, and one for sounds that happen. When that share is full, a new play
@@ -278,22 +289,29 @@ values, and the knee's, are the builder's and are tuned by ear after
 A music track plays from its compressed form: what is added to the mix is the cooked bytes, and a stream
 decodes only the samples each pull asks for. Nothing holds a track decoded.
 
-- **Three stream slots: the current, the outgoing and the tail.** One track is current. On a change the
-  current stream becomes the outgoing one and the new track starts as the current. The fade runs over the
-  time the call gives, counted in frames, with `t` going from 0 to 1 across it. The outgoing stream's gain is
-  the gain it had at the change times `sqrt(1 - t)`, and the new stream's is `sqrt(t)`. From a steady track
-  that is `sqrt(1 - t)` against `sqrt(t)`: both tracks sound all the way across the fade, each gain moves one
-  way only, and the squares of the two sum to 1 at every frame.
-- **A change during a fade.** The stream that was already outgoing moves to the tail, and goes from the gain
-  it has to silence by a ramp of [mechanism 7](#7-glides-ramps-and-the-clip). The stream that was fading in
-  becomes the outgoing one and falls from the gain it had reached, and the new track fades in, both by the
-  rule above. No gain steps, and no gain that was falling rises. The tail holds one stream. A change that
-  arrives while the tail is still ramping waits until it is silent, which is at most one ramp, and only the
-  track asked for last waits. So three streams decode together for at most one ramp, and otherwise no more
-  than two.
-- **Saying the current track again does nothing.** Saying no track fades the current one out by the same
-  rule, with nothing fading in. A track asked for while it is the outgoing stream is a change like any other:
-  a new stream of it starts from its first frame.
+- **Three stream slots.** One stream is current, and up to two are outgoing. On a change, every stream that
+  is sounding becomes outgoing, and the new track starts as the current one from its first frame. The fade
+  runs over the time the call gives, counted in frames, with `t` going from 0 to 1 across it. Each outgoing
+  stream's gain is the gain it had at the change times `sqrt(1 - t)`, and the new stream's is `sqrt(t)`. From
+  a steady track that is `sqrt(1 - t)` against `sqrt(t)`: both tracks sound all the way across the fade, each
+  gain moves one way only, and the squares of the two sum to 1 at every frame. A fade time shorter than one
+  ramp of [mechanism 7](#7-glides-ramps-and-the-clip) is run over one ramp.
+- **A change during a fade carries the level through.** Both streams of the fade under way become outgoing.
+  Each falls from the gain it had reached, by the rule above, across the whole of the new fade, while the
+  third track fades in. Neither is cut short. If the squares of the gains summed to `P` at the change, they
+  sum to `P × (1 - t) + t` across the new fade. That is 1 throughout when the change interrupts a cross-fade
+  between two tracks, however early in it, and it rises steadily to 1 when the change interrupts a fade in
+  from silence. So a change part-way never takes level out of the music, no gain steps, and no gain that was
+  falling rises. The two outgoing streams reach silence together, at the end of the new fade, and their slots
+  are then free.
+- **A change while three streams sound waits.** It waits until fewer than three sound, which is at the latest
+  the end of the fade under way, and then runs as a change like any other, with the fade time it was given.
+  Only the change asked for last waits: a later one takes its place, and asking for the current track
+  withdraws it. So no more than three streams ever decode together.
+- **Saying the current track again does nothing** to what sounds. Saying no track is a change with nothing
+  fading in: every sounding stream falls from the gain it has, by the rule above. It needs no slot, so it
+  never waits, and it withdraws a change that was waiting. A track asked for while it is an outgoing stream
+  is a change like any other: a new stream of it starts from its first frame.
 - **A loop point.** A track that loops plays to its end and goes on from its loop point, for ever, with the
   frames of the cooked track in exactly that order. The cooked form is laid out so that going back to the
   loop point decodes nothing that is not played.
@@ -307,8 +325,10 @@ minute for 48 kHz stereo. Its decoder is integer arithmetic of a few operations 
 so it runs inside a pull on every target, including the worklet's module, and needs no decoding thread and
 no buffer between a decoder and the mix. The specification fixes the stream and the samples a decoder gives,
 and leaves an encoder free to choose among valid streams. So the engine's decoder is held to the reference
-decoder's samples exactly, and the cook's encoder is held only to writing streams that decode that way. How
-close its choices come to the reference encoder's is not a pass condition. The cooked form names its codec, so another can be added without
+decoder's samples exactly, and the cook's encoder is held to two things: its streams decode that way, and a
+cooked track decodes to what its source holds, channel for channel, by a tone's frequency and level in each
+channel. The second is compared with the source and not with another encoder, at margins any encoder that
+follows its input meets. How close its choices come to the reference encoder's is not a pass condition. The cooked form names its codec, so another can be added without
 changing what a game writes. [Techniques and evidence](#techniques-and-evidence) gives the account.
 
 ### 9. Cooked sounds and the cook
@@ -478,8 +498,8 @@ builder's; the calls and their meaning are fixed here.
 | Make a mix, from a configuration | Fixed capacities. Gives the handle |
 | Add a sound, add a music track, from a cooked product | Validates. A typed error if it does not, or if the table is full. Gives an identity |
 | Replace or remove a sound | Voices already sounding finish on the data they started with. New plays use the new data. The old data is released on the game side, after the mix has let go of it |
-| Play a sound | Volume 0 to 1, pitch 0.5 to 2, a place or none, a limit or none, an event identity, and a tick or none. One voice, [B1](#what-a-game-must-be-able-to-hear) and [B2](#what-a-game-must-be-able-to-hear). No result to wait for: its fate comes later, as an outcome |
-| Read the outcomes | Drains the outcomes gathered since the last read: for each play its event identity, tick, epoch and fate ([mechanism 2](#2-the-game-side-says-what-should-be-heard)) |
+| Play a sound | Volume 0 to 1, pitch 0.5 to 2, a place or none, a limit or none, an event identity, and a tick or none. One voice, [B1](#what-a-game-must-be-able-to-hear) and [B2](#what-a-game-must-be-able-to-hear). Gives the play's number at once. No result to wait for: its fate comes later, as an outcome under that number |
+| Read the outcomes | Drains the outcomes gathered since the last read: for each play its play number, event identity, tick, epoch and fate, in no promised order ([mechanism 2](#2-the-game-side-says-what-should-be-heard)) |
 | Start an emitter | A sound, volume, pitch, a place or none. Gives an identity |
 | Set an emitter's volume or pitch; move it; hold it or let it go; end it | [Mechanism 5](#5-emitters) |
 | Set the listener | Position, right, `near` |
@@ -492,7 +512,9 @@ builder's; the calls and their meaning are fixed here.
 | Cook a source | In `thrum-cook`: source bytes and "sound" or "music with this loop point" give product bytes or a named refusal |
 
 What stays the consumer's: which events make a sound, the event identity and tick each play is given, and
-that a predicted event is heard once, since AUDIO plays what it is told and never chooses between plays; what a pause
+that a predicted event is heard once, since AUDIO plays what it is told and never chooses between plays;
+keeping, under each play's number, whatever it wants to say about that play when its outcome arrives, such as
+the place and volume `screen.sounds()` reports; what a pause
 holds; the camera a listener is taken from and the `near` it is given; the radius of a sound played at a
 place with none said; the catalog and the `Music(..)` file; forwarding the lifecycle; and the web build step
 that puts the mix module beside the game's own, for which AUDIO gives one documented command.
@@ -594,7 +616,7 @@ No agent can hear. An agent proves what was mixed and what the device was handed
 | B9 and C11's interruption: a play caught by an interruption expires under its identity, one-shots are cut, and what is continuous goes on | CPU tests on the buffer, through the calls an output uses to say pulling stopped and started | WP1 |
 | B7, a pull's bounded work | A test that counts allocations in a pull with every mechanism at work; a test that watches replaced data being released on the game's side, since the test kit's counter does not count frees; and a reviewer's question on locks, frees and system calls | WP1 |
 | B8, one mix | The reference script's digest: natively, and by the mix module under Node | WP1, WP2 |
-| Cooked forms | Each source format cooked and compared with its source; a resampled tone's image and alias held 40 dB down; hostile products refused; the decoder exact against QOA's reference, and the cook's streams decoded by the reference | WP2 |
+| Cooked forms | Each source format cooked and compared with its source; a resampled tone's image and alias held 40 dB down; hostile products refused; the decoder exact against QOA's reference, the cook's streams decoded by the reference, and a cooked track's two channels compared with its source's | WP2 |
 | Each output | [The handle run](#12-the-reference-script-and-the-handle-run): a sound played through the handle, found in the output tap. The reference script through the device, silenced, to the kept digest folded from the tap. The format read back from the device; suspend and resume, with a play caught by the suspend expired; in Chrome a held page and a first press | WP3, WP4 |
 | Chrome's port stays bounded | A track of minutes transferred while a script plays sounds and moves the listener each frame: every play is in the tap or has an outcome that says why not, the listener applied last is the last one set, the most commands, pieces and messages in flight stay inside their bounds, and no pull is skipped | WP4 |
 | B11 | The dependency closure of a package without sound, and of the audio crate without the cook | WP2 |
@@ -665,7 +687,7 @@ Adding a sound decodes nothing.
 **Tripwires**, recorded with the load on the machine and investigated while building goes on. None is a pass
 condition beyond a missing measurement or a collapse:
 
-- the time to render a minute of sound with the pool full and two music streams, natively and in the mix
+- the time to render a minute of sound with the pool full and three music streams, natively and in the mix
   module, as a share of real time. A collapse is a mix slower than real time;
 - the handle's update with 10,000 emitters of which 2,000 moved;
 - in Chrome, the longest a message keeps the worklet from a pull, and the longest a play waits from its call

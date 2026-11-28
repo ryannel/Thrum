@@ -30,7 +30,8 @@ source built a second way; a mix core that is `no_std` makes "imports nothing" h
 whether that core is a crate of its own is yours to choose. `scripts/audio.py` is new, and its `module`
 command is the documented build a web game's build step will call, so keep what it builds stable.
 
-The order matters in two places. Write the reference script and keep its digest once WP1.1 to WP1.6 and
+WP1.3 reads the limit from the frames: its sound is one constant value, so a frame holds that value times
+the number of voices mixed. The order matters in two places. Write the reference script and keep its digest once WP1.1 to WP1.6 and
 WP1.11 hold, then make the module reproduce it. Choose the defaults WP1.9 records before recording, and record at the
 commit being claimed.
 
@@ -52,7 +53,9 @@ second or less, track them beside the tests, and list each in `docs/provenance/A
 that made it. The QOA reference is a single C header; pin its revision, confirm its licence is permissive
 before using it, and use it to write the fixture streams and the kept digest of WP2.3. If its licence is not
 permissive, stop and end `BLOCKED`. The cook's encoder may choose any valid stream: no item compares its
-error with the reference encoder's. The digest of the reference script changes here on purpose, and the log
+error with the reference encoder's. WP2.3(3) compares a cooked track with its own source instead, by each
+channel's tone and level, so make that source by arithmetic in the test or keep it as a fixture. WP2.4 needs
+up to five tracks it can tell apart in the output. The digest of the reference script changes here on purpose, and the log
 says so.
 
 ## WP3 A game's sound comes out of the Mac's output and the iPhone simulator's, and stops and starts with the app
