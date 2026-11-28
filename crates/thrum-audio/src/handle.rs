@@ -587,7 +587,17 @@ impl Handle {
 
     fn send_transient(&mut self, command: Command) -> bool {
         // A producer that submits a play every frame must give deferred state a turn.
-        if self.blocked_state.is_some() {
+        if self.blocked_state.is_some() && self.transport.state().1 {
+            if self
+                .commands
+                .as_ref()
+                .is_none_or(|queue| queue.slots() == 0)
+            {
+                return false;
+            }
+            // An emitter can change between updates. Publish before retrying so the
+            // command and its revision describe state that a resume can actually restore.
+            self.publish_state();
             self.flush_state();
         }
         self.send(command)

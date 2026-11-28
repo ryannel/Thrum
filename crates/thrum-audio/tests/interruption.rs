@@ -220,6 +220,119 @@ fn an_emitter_added_while_stopped_uses_one_resume_ramp_and_can_end() {
 }
 
 #[test]
+fn deferred_emitter_changes_survive_a_play_before_the_first_resumed_update() {
+    for commands in [1, Config::default().commands] {
+        for (held, end, while_stopped) in [
+            (false, true, true),
+            (false, true, false),
+            (true, false, false),
+            (false, false, true),
+        ] {
+            let (mut handle, mut mix) = audio(Config {
+                commands,
+                emitters: 1,
+                ..config()
+            });
+            let signal = mono(&mut handle, vec![8192]);
+            let silent = Play::new(mono(&mut handle, vec![0]), 0);
+            let emitter = handle
+                .start_emitter(signal, VoiceSettings::default())
+                .expect("valid emitter");
+            handle.hold_emitter(emitter, held);
+            handle.update();
+            drop(pull(&mut mix, 16));
+            for _ in 0..commands {
+                handle.play(silent);
+            }
+            handle.set_emitter(
+                emitter,
+                VoiceSettings {
+                    volume: 0.5,
+                    ..VoiceSettings::default()
+                },
+            );
+            handle.update();
+            mix.stop_pulling();
+            if !while_stopped {
+                mix.start_pulling();
+            }
+            if end {
+                handle.end_emitter(emitter);
+            } else if held {
+                handle.hold_emitter(emitter, false);
+            } else {
+                handle.set_emitter(
+                    emitter,
+                    VoiceSettings {
+                        volume: 0.25,
+                        ..VoiceSettings::default()
+                    },
+                );
+            }
+            if while_stopped {
+                mix.start_pulling();
+            }
+            handle.play(silent);
+            handle.update();
+            let expected = if end {
+                0.0
+            } else if held {
+                pcm(4096)
+            } else {
+                pcm(2048)
+            };
+            let frames = pull(&mut mix, 32);
+            for frame in &frames[16..] {
+                exact(*frame, [expected; 2]);
+            }
+            assert_eq!(handle.record().voices, usize::from(!end));
+            assert_eq!(handle.emitter_voiced(emitter), !end);
+        }
+    }
+}
+
+#[test]
+fn deferred_state_is_restored_if_interrupted_again_before_the_queue_drains() {
+    let (mut handle, mut mix) = audio(Config {
+        commands: 1,
+        emitters: 1,
+        ..config()
+    });
+    let signal = mono(&mut handle, vec![8192]);
+    let silent = Play::new(mono(&mut handle, vec![0]), 0);
+    let emitter = handle
+        .start_emitter(signal, VoiceSettings::default())
+        .expect("valid emitter");
+    handle.update();
+    drop(pull(&mut mix, 16));
+    let interrupted = handle.play(silent);
+    handle.set_emitter(
+        emitter,
+        VoiceSettings {
+            volume: 0.5,
+            ..VoiceSettings::default()
+        },
+    );
+    handle.update();
+    mix.stop_pulling();
+    mix.start_pulling();
+    handle.set_emitter(
+        emitter,
+        VoiceSettings {
+            volume: 0.25,
+            ..VoiceSettings::default()
+        },
+    );
+    // A stop request, like a play, gives the deferred emitter the open queue slot.
+    assert!(!handle.stop_play(interrupted));
+    mix.stop_pulling();
+    mix.start_pulling();
+    let frames = pull(&mut mix, 16);
+    exact(frames[0], [0.0; 2]);
+    exact(frames[8], [pcm(2048); 2]);
+}
+
+#[test]
 fn dropping_the_mix_expires_queued_plays_and_closes_the_epoch() {
     let (mut handle, mut mix) = Handle::new(config()).expect("valid connection");
     let sound = mono(&mut handle, vec![8192]);
