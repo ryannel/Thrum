@@ -11,6 +11,7 @@ struct SheetVertex {
     @location(6) foam: vec2<f32>,
     @location(7) strand_motion: vec3<f32>,
     @location(8) @interpolate(flat) closed_strand: u32,
+    @location(9) strand_normal: vec3<f32>,
 }
 
 fn sheet_age(age: f32) -> f32 { return age - floor(age / FALL_LOOP) * FALL_LOOP; }
@@ -36,7 +37,7 @@ fn strand_offset(parcel: f32, fraction: f32, width_offset: f32,
     width_axis: vec3<f32>, outward: vec3<f32>) -> vec3<f32> {
     let split = smoothstep(0.21 + 0.28 * parcel, 0.77, fraction);
     let width = mix(0.37, 0.85, parcel);
-    let spread = mix(0.014, 0.32, parcel * parcel) * (1.0 - 0.5 * smoothstep(0.8, 1.0, fraction));
+    let spread = mix(0.021, 0.64, parcel * parcel) * (1.0 - 0.69 * smoothstep(0.65, 1.0, fraction));
     return split * (width_axis * (0.24 * (parcel - 0.5) - width * width_offset) + outward * spread);
 }
 
@@ -82,7 +83,7 @@ fn splash_vertex(world_time: vec4<f32>, velocity_along: vec4<f32>, discharge: ve
     let world = vec4(point, phase);
     return SheetVertex(view.view_proj * vec4(point, 1.0), world, velocity_along,
         vec4(random, kick, strength, select(0.0, 1.0, impact)),
-        vec4(corner.x, -1.0, corner.y, phase), 0.0, vec3(0.0), foam, vec3(0.0), 0u);
+        vec4(corner.x, -1.0, corner.y, phase), 0.0, vec3(0.0), foam, vec3(0.0), 0u, vec3(0.0));
 }
 
 fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<f32>,
@@ -110,8 +111,17 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
     if is_splash { return splash_vertex(world_time, velocity_along, discharge, across_fraction); }
     let birth = sheet_age(sheet_clock.x - world_time.w);
     let is_filament = across_fraction.y <= -2.0;
-    let closed_strand = edge_receiver.x >= 4.0;
-    let edge = edge_receiver.x - select(0.0, 4.0, closed_strand);
+    let closed_strand = edge_receiver.x >= FALL_STRAND_EDGE;
+    let axis = vec3(across_fraction.x, 0.0, across_fraction.z);
+    let angle = (edge_receiver.x - FALL_STRAND_EDGE) * 6.2831853;
+    let edge = select(edge_receiver.x, abs(cos(angle)), closed_strand);
+    var strand_normal = vec3(0.0);
+    if closed_strand {
+        let normal = normalize(cross(axis, velocity_along.xyz) + vec3(1e-6, 0.0, 0.0));
+        let forward = vec3(velocity_along.x, 0.12, velocity_along.z);
+        let outward = select(-normal, normal, dot(normal, forward) >= 0.0);
+        strand_normal = axis * cos(angle) + outward * sin(angle);
+    }
     let weight = fold_weight(across_fraction.w) * select(1.0, 0.18, is_filament);
     let fold = sheet_fold(velocity_along.w, birth, across_fraction.xz) * weight;
     var position = world_time.xyz + fold;
@@ -120,7 +130,6 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
     let breakup = strand_breakup(discharge.w);
     if !is_filament && breakup > 0.0 && across_fraction.w > 0.21 {
         let parcel = sheet_noise(vec2(edge_receiver.w, birth), FALL_LOOP, vec2(3.5, 3.6), vec2(9.0, 0.0));
-        let axis = vec3(across_fraction.x, 0.0, across_fraction.z);
         let face = vec3(-across_fraction.z, 0.0, across_fraction.x);
         let outward = select(-face, face, dot(face, velocity_along.xyz) >= 0.0);
         let offset = velocity_along.w - edge_receiver.w;
@@ -147,7 +156,7 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
     let world = vec4(position, world_time.w);
     return SheetVertex(view.view_proj * vec4(world.xyz, 1.0), world, velocity_along, discharge,
         across_fraction, edge, vec3(receiving_motion, position.y - receiving_level, edge_receiver.z),
-        foam, strand_motion, u32(closed_strand));
+        foam, strand_motion, u32(closed_strand), strand_normal);
 }
 
 struct FallOutput {
@@ -202,8 +211,9 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let is_filament = input.across_fraction.y <= -2.0;
     let normal = normalize(cross(vec3(across.x, 0.0, across.y), tangent));
     let geometric = select(-geometry_normal, geometry_normal, dot(geometry_normal, normal) > 0.0);
-    let contour = normalize(mix(normal, geometric,
-        select(0.38 * smoothstep(0.34, 0.76, input.across_fraction.w), 1.0, is_filament)));
+    let contour = normalize(select(mix(normal, geometric,
+        select(0.38 * smoothstep(0.34, 0.76, input.across_fraction.w), 1.0, is_filament)),
+        input.strand_normal, input.closed_strand != 0u));
     var face = select(-contour, contour, dot(contour, look) >= 0.0);
     let breakout = input.discharge.y;
     let breakup = select(strand_breakup(input.discharge.w), 0.0, is_filament);
@@ -215,8 +225,8 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let streak_white = smoothstep(0.42, 0.89, input.across_fraction.w)
         * smoothstep(0.23, 0.78, 0.65 * coarse + 0.35 * fine);
     let parcel = sheet_noise(vec2(lip, birth), FALL_LOOP, vec2(2.1, 5.25), vec2(117.0, 0.0));
-    let pulse = smoothstep(0.35, 0.73, 0.82 * parcel + 0.18 * fine);
-    let parcel_foam = breakup * below_tongue * (0.12 + 0.35 * pulse);
+    let pulse = smoothstep(0.40, 0.72, 0.86 * parcel + 0.14 * fine);
+    let parcel_foam = breakup * below_tongue * (0.12 + 0.53 * pulse);
     let sheet_white = max(max(mix(pow(breakout, 1.18), broken, 0.74), 0.63 * streak_white), parcel_foam);
     let white = select(sheet_white * below_tongue, filament_white, is_filament);
     let clear = 1.0 - white;
@@ -283,7 +293,7 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
         1.0 - smoothstep(0.05, 0.58, input.receiving.y), meets_pool);
     let aerated = (environment_diffuse(vec3(0.0, 1.0, 0.0)) + direct * max(0.0, light.y))
         * vec3(0.84, 0.90, 0.89) / 3.14159265;
-    let parcel_light = mix(0.23, 1.26, pulse);
+    let parcel_light = mix(0.16, 1.38, pulse);
     let broken_light = mix(churn, aerated * parcel_light, breakup * below_tongue);
     let sheet_colour = mix(glass, broken_light, white);
     let spray_light = mix(sheet_colour, aerated,

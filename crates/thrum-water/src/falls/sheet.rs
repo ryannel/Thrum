@@ -16,8 +16,10 @@ pub(in crate::falls) const ROWS: usize = 32;
 pub(crate) const PASS: &str = "waterfall sheet";
 const SPLASHES_PER_SEGMENT: usize = 24;
 const RIBBONS_PER_SEGMENT: usize = 6;
+const STRAND_SIDES: usize = 8;
+const STRAND_EDGE: f32 = 4.0;
 const VERTICES_PER_SEGMENT: usize =
-    12 * RIBBONS_PER_SEGMENT * (2 * ROWS + 3) + 6 * SPLASHES_PER_SEGMENT;
+    RIBBONS_PER_SEGMENT * (6 * STRAND_SIDES * ROWS + 36) + 6 * SPLASHES_PER_SEGMENT;
 const ATTRIBUTES: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4, 4 => Float32x4];
 
 #[repr(C)]
@@ -140,7 +142,7 @@ impl Sheet {
                 + "fn fall_foam(point: vec2<f32>) -> vec2<f32> { return foam_at(point, vec4(0.0)).stocks.xy; }",
         );
         let source = format!(
-            "{library}\n{}\nconst FALL_LOOP: f32 = {:?};\nconst FALL_CONTACT_DROPS: f32 = {}.0;\nconst FALL_TEAR: f32 = {:?};\nfn fall_cloud(point: vec3<f32>) -> f32 {{ return {cloud}; }}\n{}\n{stocks}\n{}\n{}",
+            "{library}\n{}\nconst FALL_LOOP: f32 = {:?};\nconst FALL_CONTACT_DROPS: f32 = {}.0;\nconst FALL_TEAR: f32 = {:?};\nconst FALL_STRAND_EDGE: f32 = {STRAND_EDGE:?};\nfn fall_cloud(point: vec3<f32>) -> f32 {{ return {cloud}; }}\n{}\n{stocks}\n{}\n{}",
             crate::VIEW_RECORDS,
             thrum_sea_model::LOOP_SECONDS,
             SPLASHES_PER_SEGMENT / 2,
@@ -546,13 +548,11 @@ fn ribbons(section: [Vertex; 3], spread: f32) -> [[Vertex; 3]; RIBBONS_PER_SEGME
             } else {
                 -1.0
             };
-        let bulge = (4.0 * (fraction - 0.21)).clamp(0.0, 1.0) * spread;
         let depth = (0.034 + 0.24 * fold) * split * (1.0 - fraction).max(0.0).sqrt();
         [-1.0_f32, 0.0, 1.0].map(|edge| {
             let mut vertex = at(edge.mul_add(narrowed, middle));
-            let position = Vec3::from_slice(&vertex.world_time)
-                + outward
-                    * (depth * (1.0 - 0.42 * edge.abs()) + 0.085 * bulge * (1.0 - edge.abs()));
+            let position =
+                Vec3::from_slice(&vertex.world_time) + outward * depth * (1.0 - 0.42 * edge.abs());
             vertex.world_time = position.extend(vertex.world_time[3]).to_array();
             vertex.edge_receiver[0] = edge.abs();
             vertex.edge_receiver[3] = along;
@@ -561,41 +561,54 @@ fn ribbons(section: [Vertex; 3], spread: f32) -> [[Vertex; 3]; RIBBONS_PER_SEGME
     })
 }
 
-fn back_of_strand(mut section: [Vertex; 3], spread: f32) -> [Vertex; 3] {
-    let [left, middle, right] = section.map(|vertex| Vec3::from_slice(&vertex.world_time));
-    let centre = left.midpoint(right);
-    let vertex = &mut section[1];
-    let crown = (4.0 * (vertex.across_fraction[3] - 0.21)).clamp(0.0, 1.0) * spread;
-    let back = middle.lerp(centre * 2.0 - middle, crown);
-    vertex.world_time = back.extend(vertex.world_time[3]).to_array();
-    section
+fn stitch_strand(vertices: &mut Vec<Vertex>, top: [Vertex; 3], bottom: [Vertex; 3], spread: f32) {
+    let top = strand_section(top, spread);
+    let bottom = strand_section(bottom, spread);
+    for (side, &first) in top.iter().enumerate() {
+        let next = (side + 1) % STRAND_SIDES;
+        vertices.extend([
+            first,
+            top[next],
+            bottom[side],
+            top[next],
+            bottom[next],
+            bottom[side],
+        ]);
+    }
 }
 
-fn stitch_strand(vertices: &mut Vec<Vertex>, top: [Vertex; 3], bottom: [Vertex; 3], spread: f32) {
-    let [ax, _, az, _] = bottom[1].across_fraction;
-    let velocity = Vec3::from_slice(&bottom[1].velocity_along);
-    let normal = Vec3::new(ax, 0.0, az).cross(velocity);
-    let front_faces_out = normal.dot(Vec3::new(velocity.x, 0.12, velocity.z)) >= 0.0;
-    let face = |mut section: [Vertex; 3], flip| {
-        if flip {
-            section.reverse();
-        }
-        for vertex in &mut section {
-            // The shader still draws an unsplit sheet from both sides.
-            vertex.edge_receiver[0] += 4.0;
-        }
-        section
-    };
-    stitch(
-        vertices,
-        face(top, !front_faces_out),
-        face(bottom, !front_faces_out),
-    );
-    stitch(
-        vertices,
-        face(back_of_strand(top, spread), front_faces_out),
-        face(back_of_strand(bottom, spread), front_faces_out),
-    );
+#[expect(clippy::cast_precision_loss, reason = "the strand has eight sides")]
+fn strand_section([left, centre, right]: [Vertex; 3], spread: f32) -> [Vertex; STRAND_SIDES] {
+    let [ax, _, az, fraction] = centre.across_fraction;
+    let axis = Vec3::new(ax, 0.0, az);
+    let velocity = Vec3::from_slice(&centre.velocity_along);
+    let normal = axis.cross(velocity).normalize_or_zero();
+    let outward = normal * normal.dot(Vec3::new(velocity.x, 0.12, velocity.z)).signum();
+    let width =
+        0.5 * Vec3::from_slice(&left.world_time).distance(Vec3::from_slice(&right.world_time));
+    let roll = (4.0 * (fraction - 0.21)).clamp(0.0, 1.0) * spread;
+    let interpolate = |a, b, t| Vec4::from_array(a).lerp(Vec4::from_array(b), t).to_array();
+    std::array::from_fn(|i| {
+        // Follow the actual flow orientation so the shell winds outwards at either bank.
+        let index = if normal.dot(outward) >= 0.0 {
+            (STRAND_SIDES - i) % STRAND_SIDES
+        } else {
+            i
+        };
+        let angle = index as f32 / STRAND_SIDES as f32;
+        let (depth, width_phase) = (std::f32::consts::TAU * angle).sin_cos();
+        let side = if width_phase < 0.0 { left } else { right };
+        let across = width_phase.abs();
+        let mut vertex = centre;
+        vertex.world_time = interpolate(centre.world_time, side.world_time, across);
+        vertex.velocity_along = interpolate(centre.velocity_along, side.velocity_along, across);
+        vertex.discharge = interpolate(centre.discharge, side.discharge, across);
+        let point =
+            Vec3::from_slice(&vertex.world_time) + outward * depth * roll * (0.025 + width * 0.37);
+        vertex.world_time = point.extend(vertex.world_time[3]).to_array();
+        vertex.edge_receiver[0] = STRAND_EDGE + angle;
+        vertex
+    })
 }
 
 #[expect(
@@ -626,15 +639,17 @@ fn filament(
         let before = Vec3::from_slice(&sample((fraction - 0.09).max(0.0)).world_time);
         let after = Vec3::from_slice(&sample((fraction + 0.09).clamp(0.0, 1.0)).world_time);
         let smoothing = (1.0 - 4.0 * (fraction - 0.5).powi(2)).max(0.0) as f32;
+        let leave_lip = ((fraction as f32 + 0.11) / 0.38).clamp(0.0, 1.0);
+        let lift = leave_lip * leave_lip * (3.0 - 2.0 * leave_lip);
         let centre = world.lerp((before + after) * 0.5, 0.66 * smoothing)
-            + outward * (radius + (0.03 + 0.05 * smoothing) * tip);
+            + outward * lift * (radius + (0.03 + 0.05 * smoothing) * tip);
         let age = vertex.world_time[3];
         vertex.across_fraction[1] = -2.0 - distance;
         [
             (0.0, across),
-            (1.0, outward),
+            (1.0, outward * (0.12 + 0.88 * lift)),
             (2.0, -across),
-            (3.0, -outward),
+            (3.0, -outward * (0.12 + 0.88 * lift)),
         ]
         .map(|(side, normal)| {
             vertex.world_time = (centre + normal * radius).extend(age).to_array();
