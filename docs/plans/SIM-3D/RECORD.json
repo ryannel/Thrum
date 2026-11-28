@@ -18,6 +18,32 @@
         "by": "plan",
         "task": "The design review of SIM-3D at .orchestrate/evidence/SIM-3D/design-review.md asked for changes, with its 6 Must Fix find",
         "at": "2026-11-28T03:34:37Z"
+      },
+      "ready_for_review": {
+        "commit": "f616054c816004421ae2ea5da173792f8d830fce",
+        "checked": "7e3873e1d8c044bc9f818d43e762093f64c8ab9b",
+        "at": "2026-11-28T05:35:03Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "headless",
+        "usage": {
+          "input": 274639,
+          "cached": 54478720,
+          "output": 98026,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 274639,
+          "cached": 54478720,
+          "output": 98026,
+          "turns": 1
+        }
       }
     },
     "WP2": {
