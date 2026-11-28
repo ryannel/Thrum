@@ -125,3 +125,10 @@
   ([workspace reruns](DESIGN.md#workspace-reruns-under-builder-load),
   [the Cargo cache](DESIGN.md#cargo-cache-for-merge-verification)) and their records are in
   `.orchestrate/evidence/GATE-TIME/WP14/` and `WP15/`.
+- 2026-11-28 WP16 design review, Must Fix 1. Mechanism 16 and WP16.1 now compare each qualification run's
+  passing test names by binary against the same revision's non-ignored inventory with the profile filter
+  disabled. Each renderer run must show passes for all three native provider tests from the incident.
+- 2026-11-28 WP16 design review, Must Fix 2. The fast xtask command-construction test is the merge guard.
+  The five renderer runs and four other feature-line runs are WP16's one-time Mac qualification record.
+  The scheduled `long-tests` check continues device coverage on main. Took the reviewer's suggestion to
+  verify in `long_tests()` that a missing or outdated nextest stops execution before the first long binary.

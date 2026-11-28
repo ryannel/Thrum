@@ -793,6 +793,14 @@ one place where that is untrue.
   counts of the default profile apply to these runs as they do to a merge's.
 - *It needs the runner installed.* `./dev long-tests` stops before any step when cargo-nextest is missing or
   older than `./dev check` accepts, with the same message.
+- *Qualifying the selection.* At the revision under test, list the non-ignored cases for each feature line
+  using its package, features and targets with `cargo nextest list --ignore-default-filter`. For each
+  qualification run, the set of (binary, full test name) pairs reported as passing must equal that inventory.
+  In each of the five renderer runs the library must report PASS for these cases in
+  `runtime::tests::device::native::provider`:
+  - `native_provider_crop_changes_inside_one_generation_and_owns_timing`
+  - `native_provider_native_discard_and_rejection_reset_private_history`
+  - `native_provider_twin_history_only_advances_on_submission`
 - *No test file changes.* A test that fails only because tests of its binary now run at once in separate
   processes joins a group in `.config/nextest.toml`, by WP8's rule. The planner's trial needed none: with a
   30-second limit all 601 tests of `thrum-render`'s line passed in both of two runs, both lines of
@@ -992,10 +1000,10 @@ reference is proved by the test that replaces it, which the reviewer reads. WP15
 candidate runs, a committed candidate with a failing test and its passing revert, and cache-pressure and
 concurrent-use cases. With the cache warm, it also runs the configured command on a passing commit with a failing
 assertion edited locally, then restores the file and checks that it passes. A replay of the configured command on
-a known-good pre-M15 revision proves the invocation works across activation. WP16 is proved by five runs in
-a row of `thrum-render`'s feature line under the new profile and one of each other line, by the runner's own
-test of the command it builds for a line, which a reviewer reads, and afterwards by the main-branch check
-`long-tests` on main, which no item waits for. WP5 uses the saved wall times in
+a known-good pre-M15 revision proves the invocation works across activation. WP16 keeps the fast xtask test of
+feature-line command construction in the merge check. Its one-time Mac qualification compares five consecutive
+renderer runs and one run of each other feature line against the inventories described in mechanism 16.
+After qualification, the scheduled `long-tests` check runs the device tests on main. WP5 uses the saved wall times in
 [the fixed post-rollout window](#the-goal).
 
 One test binary a package is proved by the names of every test before and after, which a reviewer lists again; by
