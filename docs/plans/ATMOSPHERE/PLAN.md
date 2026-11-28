@@ -13,7 +13,8 @@
 - Assumption: WP12 judges the knob at 4 in the Mac window and at 8 in Chrome, the longest spread at the slower display. Chrome at 4 is not captured.
 - Assumption: under WP13 a small thing stops casting a shadow where its thickest part, such as a cactus's trunk, would be under about a texel and a half, and every Sun shadow fades out by 2,048 m from the camera into the caster height map's ground shadows. The other choice is every prop casting to the horizon, which costs more maps or a different technique.
 - Assumption: WP13 leaves two faint things out: the soft tip of a small prop's long shadow at a low Sun is trimmed, and a flat sheet the Sun grazes edge-on may shimmer. The showcase has no sheet that casts.
-- Assumption: WP13 starts from nine 2048² cascades, about 150 MB of depth against 12 MB today, and the builder tunes count, size and reach by eye and by the cost record.
+- Assumption: WP13 starts from ten 2048² cascades, the three nearest the camera drawn four times a frame, about 320 MB of depth, and the builder tunes them by eye and by the cost record.
+- Assumption: steady edges within 16 m are worth about half a millisecond more of Sun work, an estimate. Beyond that an edge along the shadow grid still moves a texel at a time, up to 4.6 pixels at full screen. The other choices are every cascade drawn four times, or smoothing over time, which trails behind a balloon's shadow.
 - Assumption: "mind the cost" is a paired cost record with named ways to cut it, not a budget, for the Sun's shadows (WP13.8) and for occlusion (WP14.6). The Apple rows are full screen at the 67% output scale. `APPLE-PRESENTATION` WP17 owns 120 Hz at full screen and waits for neither. If its closing sitting predates one of them and that record shows the full-screen frame slower, the builder asks the lead for the sitting again. The other choice makes WP17 wait, in `APPLE-PRESENTATION`'s plan.
 - Assumption: WP13 is not behind a selection and has no governor knob. A cascade redrawn every few frames would judder under a balloon's shadow at about 20 m/s.
 - Assumption: "the default path" means the showcase. The valley and the exit scene show screen-space ambient occlusion in every launch, on the Mac and in Chrome, and an engine scene that does not ask gets none. The other choice turns it on for every 3D scene. The starter scene and the SDK's 3D scenes are left to `CREATOR` and `GAME-SDK`.
@@ -53,6 +54,11 @@ are the "before" of each inspection and its `routes/` are the ones the items nam
 and keep any changed copy in WP13's evidence folder. A route's `render_extent` must equal the take's game
 grid, so a row that draws another grid needs a copy with only that field changed. WP13.7's Chrome takes come
 from `scripts/capture_v1_browser.mjs --route-file`.
+
+WP13 resumes from `build/atmosphere` at `6a49b48df`, unmerged. Keep that build and add
+[rule 7](DESIGN.md#rule-7), the 4 m cascade and WP13.6's test, `sun_outline_gpu`, starting from
+[the cause](../../../.orchestrate/evidence/ATMOSPHERE/WP13-edge-cause/README.md). Only WP13.6 changed. Make
+the takes, the cost record, the baselines and their difference images again at the commit that is claimed.
 
 WP13.1 and WP13.2 select tests by name: `sun_cascade_layout` and `sun_cascades_gpu`. `WATERS` WP16 builds in
 the same Sun files, so whichever lands second carries the other's change. The cost record goes to

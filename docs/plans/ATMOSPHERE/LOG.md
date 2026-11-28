@@ -982,3 +982,26 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   the Chrome arm of `scripts/run_v1_showcase.py moving` keeps images at its five checkpoint holds alone, which
   is why WP13.7 takes the T2 capture. The rest is in the design: the hours the charts take the knob's full
   value, WP3's later proposal, and how WP14's off copies and shared read work.
+- 2026-11-28 WP13's first build stopped on WP13.6 with ten items passing by its own records, on
+  `build/atmosphere` at `6a49b48df`, unmerged: the C1 sphere's shadow edge jumped forward about two pixels and
+  crept back, with the camera held and reconstruction off. The planner found the cause from that take and
+  the build's shader, with no new capture. A cascade keeps one depth a texel and the read counts whole
+  texels, so an outline along the grid moves a texel at a time whatever the filter's width. The Sun's frame
+  turns about the world's origin, 240 m below the valley, so the finest grid passes 3.2 texels under the
+  sphere each tick and the edge rides with what is left over. A model written from the build's code gives the
+  measured creep, jump and period. [Record](../../../.orchestrate/evidence/ATMOSPHERE/WP13-edge-cause/README.md)
+- 2026-11-28 The design's response is [rule 7](DESIGN.md#rule-7): each cascade of radius up to 16 m is drawn
+  four times a frame, shifted by parts of a texel, and the outline's filter takes its samples from all four.
+  The starting set gained a 4 m cascade. In the model four samples bring the sphere's edge from about ±1 px
+  of steady travel to within ±0.31 px. WP13.6 was written again with a small Metal test of an outline's place
+  and the builder's own measurement repeated on the new take, to 0.4 px. No other item changed.
+- 2026-11-28 Changed in the design: the claim that a filter two and a half texels wide makes redrawing at a
+  new Sun angle harmless, and the stop rule's claim that crawl outlasting the tuned set is not texel density.
+  Both exclusions stand: the Sun is not held still for the maps, and no pass smooths shadows over time.
+  Weighed and left: turning the Sun's frame about the camera, which leaves the jump; finer maps alone; maps
+  that filter before the compare; and one multisampled drawing in place of four.
+- 2026-11-28 Left for the lead. One multisampled drawing would replace rule 7's four at less cost and needs the
+  contribution interface to carry a sample count, which is a planner of the whole project's to change if
+  WP13.8's record asks for it. `APPLE-PRESENTATION` WP17's sitting is still to be taken again on WP13's frame,
+  which now holds more Sun work. Beyond 16 m an outline along the grid still moves a texel at a time, which is
+  in the plan file for the owner.
