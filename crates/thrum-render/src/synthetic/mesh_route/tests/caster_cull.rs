@@ -72,7 +72,11 @@ impl Gpu {
     /// Compare the actual depth bits of every texel and read each layer's
     /// mismatch count. Keeping the comparison on-device avoids transferring
     /// both full shadow arrays for every pose.
-    fn depth_differences(&self, direct: &OffscreenTarget, culled: &OffscreenTarget) -> Vec<u32> {
+    pub(super) fn depth_differences(
+        &self,
+        direct: &OffscreenTarget,
+        culled: &OffscreenTarget,
+    ) -> Vec<u32> {
         let layers = direct
             .shadow
             .as_ref()

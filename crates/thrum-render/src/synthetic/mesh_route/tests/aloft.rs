@@ -8,9 +8,6 @@ use crate::synthetic::{
 };
 use crate::visibility::CullMode;
 
-const ROW_BYTES: u32 = shadow::SIZE * 4;
-const LAYER_BYTES: usize = (ROW_BYTES * shadow::SIZE) as usize;
-
 fn scene() -> SyntheticScene {
     let mut scene = SyntheticScene::grid(3).expect("three slots");
     scene.sun_shadows = true;
@@ -56,7 +53,7 @@ fn scene() -> SyntheticScene {
     scene
 }
 
-fn read_layers(gpu: &Gpu, scene: &SyntheticScene) -> Vec<u8> {
+fn draw_layers(gpu: &Gpu, scene: &SyntheticScene) -> OffscreenTarget {
     let light = FrameLighting::Diagnostic(SyntheticLight {
         direction_to_light: [0.0, 1.0, 0.0],
         irradiance: [4.0; 3],
@@ -76,25 +73,14 @@ fn read_layers(gpu: &Gpu, scene: &SyntheticScene) -> Vec<u8> {
     prepared
         .update_frame(&gpu.queue, &mut target, scene, light, 1.0)
         .expect("update");
-    let maps = target
-        .textures
-        .texture(target.ids.shadow.as_ref().expect("map resource"))
-        .expect("Sun maps");
     let mut encoder = gpu
         .device
         .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     prepared
         .encode(&mut encoder, gpu.capabilities.generation(), &target, None)
         .expect("draw scene");
-    let readback = thrum_test_support::readback::Readback::texture(
-        &gpu.device,
-        &mut encoder,
-        maps,
-        thrum_test_support::readback::Mip::level(0),
-        ..,
-    );
-    let submission = gpu.queue.submit([encoder.finish()]);
-    readback.wait(&gpu.device, submission)
+    gpu.queue.submit([encoder.finish()]);
+    target
 }
 
 #[test]
@@ -127,33 +113,27 @@ fn sun_cascades_gpu_aloft_casters_draw_into_cascades_only() {
     for mode in [CullMode::Direct, CullMode::Frustum, CullMode::Occlusion] {
         let mut scene = scene();
         scene.camera_culling = mode;
-        let unmarked = read_layers(&gpu, &scene);
+        let unmarked = draw_layers(&gpu, &scene);
         scene.aloft_mesh_rows = vec![0];
-        let marked = read_layers(&gpu, &scene);
+        let marked = draw_layers(&gpu, &scene);
         scene.aloft_mesh_rows.clear();
         scene.instances[2].deactivate();
-        let absent = read_layers(&gpu, &scene);
-        for (layer, ((marked, unmarked), absent)) in marked
-            .as_chunks::<LAYER_BYTES>()
-            .0
-            .iter()
-            .zip(unmarked.as_chunks::<LAYER_BYTES>().0)
-            .zip(absent.as_chunks::<LAYER_BYTES>().0)
-            .enumerate()
-        {
-            let control_changes = super::differing(unmarked, absent);
+        let absent = draw_layers(&gpu, &scene);
+        let control = gpu.depth_differences(&unmarked, &absent);
+        let marked_against_unmarked = gpu.depth_differences(&marked, &unmarked);
+        let marked_against_absent = gpu.depth_differences(&marked, &absent);
+        for (layer, control_changes) in control.into_iter().enumerate() {
             assert!(
                 control_changes > 0,
                 "{mode:?} layer {layer}: unmarked caster must draw"
             );
-            let expected = if layer == shadow::HEIGHT_LAYER {
-                absent
+            let differences = if layer == shadow::HEIGHT_LAYER {
+                marked_against_absent[layer]
             } else {
-                unmarked
+                marked_against_unmarked[layer]
             };
             assert_eq!(
-                super::differing(marked, expected),
-                0,
+                differences, 0,
                 "{mode:?} layer {layer}: depth texels differ from the expected run"
             );
             eprintln!(
