@@ -1071,3 +1071,36 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
 - 2026-11-28 The plan file was shortened. What left it is in the design: WP13.7's Chrome takes come from
   `scripts/capture_v1_browser.mjs --route-file`, and WP14's copies are named in
   [the design's two tables](DESIGN.md#what-occlusion-adds).
+
+- 2026-11-28 ATMOSPHERE WP13 regenerated the native and two Chrome day exact references using
+  APPLE-TILE's existing capture code on render commit `1cc1565ad`. Camera-centred Sun
+  cascades, casts filtered by width, and texel-scaled contact bias moved the Sun shadows.
+  Both Chrome night sets were byte-identical across all 481 captures. The native night stills and
+  route sample identities were also byte-identical.
+
+  | Reference under `examples/v1-game/tests/fixtures/exact-images/` | Old SHA-256 | New SHA-256 |
+  |---|---|---|
+  | `chrome/chrome-prechange-linear-3/manifest.json.gz` | `3d01ea3580e614c5deb4ea0bf3a2cc13e792e7c1b674c5029ad93dae9002d7f0` | `f08cebd8714ab4686e8de3dcdbbc8347d2584a8faff584add7f6858e12ba90ca` |
+  | `chrome/prechange-chrome-fixed-manifest.json.gz` | `19f75ffb486246f29554120f8ce8fa5b5abaa4132ff32139d114e8757b2fcbe9` | `8223ecb015aa7af0c4e6587d25bd2f36930da19d84ce838d5448c2038038685e` |
+  | `native/letterbox-bgra8-1/mirror-light-present.png` | `08b0b381e68cce570a833a9992eea0c05178db243589b3666aacb8840d427e83` | `b34e875381a11dcb8053416b6c7b2e66c874bd1909df869acde651717d7b595f` |
+  | `native/letterbox-bgra8-1/mirror-light.surface-bgra8.gz` | `b887390b59751882b5d790c6c0b93e8a67b09c875bf2bfd02a37cc72a1cc9c45` | `c1f7c4cb4844913d1795326dedb9a884540090ee89bd06d0842c2005c7a52084` |
+  | `native/letterbox-bgra8-srgb-1/mirror-light-present.png` | `08b0b381e68cce570a833a9992eea0c05178db243589b3666aacb8840d427e83` | `b34e875381a11dcb8053416b6c7b2e66c874bd1909df869acde651717d7b595f` |
+  | `native/letterbox-bgra8-srgb-1/mirror-light.surface-bgra8.gz` | `b887390b59751882b5d790c6c0b93e8a67b09c875bf2bfd02a37cc72a1cc9c45` | `c1f7c4cb4844913d1795326dedb9a884540090ee89bd06d0842c2005c7a52084` |
+  | `native/scene-linear-1/approach.rgba16f.gz` | `e6457ff07fab60120d441e0fae3a7e60d98205c267c28487f6cf5359f4db6db5` | `ec9b0ba7ea35c38941bc0bb97112379115533699926bddb31545dffcff9caf48` |
+  | `native/scene-linear-1/approach.surface-bgra8.gz` | `2cd35faec952bdba77acdc888c28aede78898a1a96853652e3710ad1c55e0807` | `411a3f272f7696641b676d1a6c6cebdb15a260e09f02e534ed2b2817d83e13ff` |
+  | `native/scene-linear-1/mirror-light.rgba16f.gz` | `51f01a26fd9a10f7c656b3f4cfa451abf783a03bcbc55e18ba5dccb847d8f89b` | `cc9fc9603641b14c113e7da0f6a8d673c944060f82b575df64012750af760e26` |
+  | `native/scene-linear-1/mirror-light.surface-bgra8.gz` | `934a6bdbd6e9c09126ccaf6bad03c13ba91d9483fb5e782b490d2981ce46eef5` | `aa3692900f10416d7f8b773f912a78001214f0afeb87ad0e72b10c29b01f97ca` |
+  | `native/scene-linear-1/post-cut.rgba16f.gz` | `b448b7f6efe8b0c793c97d07022ab28f04f077ab2c5ba1e4d11018fd03e2d942` | `9c78b36eb52aef5ae1eaefae682495c22e47213657579f115b4ee327aa473877` |
+  | `native/scene-linear-1/post-cut.surface-bgra8.gz` | `cd59002d914d1eff1b724dd56658ef6de7409cd15a51cdbacffae73019cd2642` | `99eea50ad8979824d6b7508c8c460925dfc77cf81abac40b46e98ed5dbdff0da` |
+  | `native/scene-linear-1/pre-cut.rgba16f.gz` | `5bb15f54aabe4d76cbe0554836a63a8ae9fbcf464e7031071772f625390e0577` | `125ca9b00c536e8297f2cfeba8602646bf6d4ca79faab8d18d345bf81e67fa3b` |
+  | `native/scene-linear-1/pre-cut.surface-bgra8.gz` | `ae18d5691db5b72eb767d80dd2daa395176961a3a3e8715df9b69bc9a7a09244` | `f35cb08a483444a169dfee5f3fa09d5400e3188e26a2a92d64d5fa4287d11952` |
+  | `native/sdr-1/approach.png` | `809ba76fc94bb1a2b46293c5643e4d860336d44638d182af7dcbbbca989411a1` | `786c8b5a19dec0e8c8ae029f1c3d344d1b01cf93a8dfdb3fbf0177333cf87def` |
+  | `native/sdr-1/approach.surface-bgra8.gz` | `2cd35faec952bdba77acdc888c28aede78898a1a96853652e3710ad1c55e0807` | `411a3f272f7696641b676d1a6c6cebdb15a260e09f02e534ed2b2817d83e13ff` |
+  | `native/sdr-1/mirror-light.png` | `74215dfbe907701675d76a0a9fd78bcc62867a5cc558420ba9863ac25163b9eb` | `0abc57e719602e3d8f8388e078dde9a85a959fde9be3048fb8ecdd31803caf24` |
+  | `native/sdr-1/mirror-light.surface-bgra8.gz` | `934a6bdbd6e9c09126ccaf6bad03c13ba91d9483fb5e782b490d2981ce46eef5` | `aa3692900f10416d7f8b773f912a78001214f0afeb87ad0e72b10c29b01f97ca` |
+  | `native/sdr-1/post-cut.png` | `8b4b7ae010bec957b64079f98ca5afbfe8a3e02b952a581e2d5d908574a28bca` | `767d93eeeb04d20acaa36ebfb7bfcf5bc87a21d773b71cce9c478ed60bc33746` |
+  | `native/sdr-1/post-cut.surface-bgra8.gz` | `cd59002d914d1eff1b724dd56658ef6de7409cd15a51cdbacffae73019cd2642` | `99eea50ad8979824d6b7508c8c460925dfc77cf81abac40b46e98ed5dbdff0da` |
+  | `native/sdr-1/pre-cut.png` | `2b5c8522e79a38c663bcfe3a6da0bbadbe3575d9179ee6e6111c558b808b14c2` | `75a20f8fba0e20a28c0ec87b3732a2b3d6fcd6fd345078eba88eb12d46c1c5c6` |
+  | `native/sdr-1/pre-cut.surface-bgra8.gz` | `ae18d5691db5b72eb767d80dd2daa395176961a3a3e8715df9b69bc9a7a09244` | `f35cb08a483444a169dfee5f3fa09d5400e3188e26a2a92d64d5fa4287d11952` |
+  | `native/sun-linear/checkpoint-0.rgba16f.gz` | `073c6ac95ed8952597cc97a483e399ed2898b68357dd65782ef6d0e0430e1254` | `3fa34613503d249b7505582da669ca9fc735aa0537e09e04b1bb0483f804cce8` |
+  | `native/sun-sdr/checkpoint-0.png` | `3a69a89679180afe8d8045b917cbf5408a1c41d9d2b7667bbfd494b263f9e005` | `d8f049d12c8e4525f6b109ac744cf215b7a3f4d20b14ed3819b8737a955e3cb9` |

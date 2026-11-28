@@ -231,9 +231,13 @@ fn scene() -> SyntheticScene {
     scene.instances[1] = box_instance(1, [0.0, 2.0, -15.0], [0.8, 2.0, 0.8]);
     scene.instances[2] = box_instance(2, [0.0, -0.5, 30.0], [12.0, 0.5, 12.0]);
     scene.instances[3] = box_instance(3, [2.0, 3.0, 30.0], [-1.0, 3.0, 1.0]);
+    // One caster lies between the two radii of each request.
+    scene.instances[4] = box_instance(4, [45.0, 2.0, 0.0], [1.0; 3]);
+    scene.instances[5] = box_instance(5, [90.0, 2.0, 0.0], [1.0; 3]);
+    scene.instances[6] = box_instance(6, [145.0, 2.0, 0.0], [1.0; 3]);
     // Every outlier is far outside both light volumes, but still inside the
     // shared height field, so admission cannot silently remove it first.
-    for (slot, instance) in scene.instances.iter_mut().enumerate().take(68).skip(4) {
+    for (slot, instance) in scene.instances.iter_mut().enumerate().take(68).skip(7) {
         *instance = box_instance(
             u32::try_from(slot).expect("small scene"),
             [4000.0 + slot as f32 * 10.0, 0.0, 4000.0],
@@ -326,7 +330,7 @@ fn secondary_caster_lists_preserve_off_camera_members_and_match_direct() {
                 for (layer, members) in lists.iter().enumerate() {
                     assert_ne!(members.as_slice(), &[0_u32; 0]);
                     assert!(
-                        members.iter().all(|&member| member < 4),
+                        members.iter().all(|&member| member < 7),
                         "outside light volume: {members:?}"
                     );
                     eprintln!(
@@ -376,12 +380,12 @@ fn secondary_caster_lists_preserve_off_camera_members_and_match_direct() {
                 zero.casters, idle_after.casters,
                 "zero cascades do no compaction"
             );
-            asks.requests[0] = Some(requests[0].with_shadows(1, 64.0).expect("far only"));
+            asks.requests[0] = Some(requests[0].with_shadows(1, 64.0).expect("one cascade"));
             let one = gpu.frame(&prepared, &target, &mut asks);
             assert_eq!(
                 one.casters[0].as_ref().expect("lists")[0],
-                idle_after.casters[0].as_ref().expect("lists")[0],
-                "one cascade skips near work"
+                idle_after.casters[0].as_ref().expect("lists")[1],
+                "one cascade covers the whole reach"
             );
             // Rebuild the member groups after crossing a workgroup boundary.
             let changed: Vec<_> = (0..68).collect();

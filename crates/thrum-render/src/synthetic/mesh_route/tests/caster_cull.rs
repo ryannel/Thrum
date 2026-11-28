@@ -17,24 +17,24 @@ use crate::visibility::CullMode;
 
 const CUBE: SyntheticMeshChoice = SyntheticMeshChoice::Cube;
 const PYRAMID: SyntheticMeshChoice = SyntheticMeshChoice::Mesh(0);
-const TEXELS: usize = (shadow::SIZE * shadow::SIZE) as usize;
 
-/// One frame's evidence: pixels, each map's depth bits, and each Sun pass's
-/// culled caster count (Frustum only).
+/// One frame’s pixels and the number of casters in each compacted list.
 struct Frame {
     pixels: Vec<u8>,
-    depth: Vec<u32>,
     casters: Option<Vec<u32>>,
 }
 
 const DEPTH_WGSL: &str = "
-@group(0) @binding(0) var maps: texture_depth_2d_array;
-@group(0) @binding(1) var<storage, read_write> out: array<f32>;
+@group(0) @binding(0) var direct: texture_depth_2d_array;
+@group(0) @binding(1) var culled: texture_depth_2d_array;
+@group(0) @binding(2) var<storage, read_write> differences: array<atomic<u32>>;
 @compute @workgroup_size(16, 16)
 fn main(@builtin(global_invocation_id) id: vec3<u32>) {
-    let size = textureDimensions(maps);
-    if id.x >= size.x || id.y >= size.y { return; }
-    out[(id.z * size.y + id.y) * size.x + id.x] = textureLoad(maps, id.xy, id.z, 0);
+    let a = bitcast<u32>(textureLoad(direct, id.xy, id.z, 0));
+    let b = bitcast<u32>(textureLoad(culled, id.xy, id.z, 0));
+    if a != b {
+        atomicAdd(&differences[id.z], 1u);
+    }
 }
 ";
 
@@ -69,37 +69,17 @@ impl Gpu {
             .expect("poll");
     }
 
-    /// Every map's depth, read through a texel load (the maps are not copy
-    /// sources).
-    fn depth_bits(&self, target: &OffscreenTarget) -> Vec<u32> {
-        let maps = target
-            .textures
-            .texture(target.ids.shadow.as_ref().unwrap())
-            .unwrap();
-        let layer_bytes = (TEXELS * 4) as u64;
-        let group_size = u32::try_from(
-            (self.device.limits().max_storage_buffer_binding_size / layer_bytes)
-                .min(u64::from(shadow::LAYERS)),
-        )
-        .unwrap();
-        assert!(group_size > 0);
-        let mut all_depth = Vec::with_capacity(TEXELS * shadow::MAPS);
-        for first in (0..shadow::LAYERS).step_by(group_size as usize) {
-            let layers = (shadow::LAYERS - first).min(group_size);
-            let view = maps.create_view(&wgpu::TextureViewDescriptor {
-                base_array_layer: first,
-                array_layer_count: Some(layers),
-                dimension: Some(wgpu::TextureViewDimension::D2Array),
-                ..Default::default()
-            });
-            all_depth.extend(self.depth_group(&view, layers, layer_bytes * u64::from(layers)));
-        }
-        all_depth
-    }
-
-    fn depth_group(&self, maps: &wgpu::TextureView, layers: u32, bytes: u64) -> Vec<u32> {
+    /// Compare the actual depth bits of every texel and read each layer's
+    /// mismatch count. Keeping the comparison on-device avoids transferring
+    /// both full shadow arrays for every pose.
+    fn depth_differences(
+        &self,
+        direct: &OffscreenTarget,
+        culled: &OffscreenTarget,
+    ) -> [u32; shadow::MAPS] {
+        let bytes = (shadow::MAPS * 4) as u64;
         let out = self.device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("caster cull test depth"),
+            label: Some("caster cull depth mismatch counts"),
             size: bytes,
             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
             mapped_at_creation: false,
@@ -107,29 +87,35 @@ impl Gpu {
         let shader = self
             .device
             .create_shader_module(wgpu::ShaderModuleDescriptor {
-                label: Some("caster cull test depth"),
+                label: Some("caster cull depth comparison"),
                 source: wgpu::ShaderSource::Wgsl(DEPTH_WGSL.into()),
             });
         let pipeline = self
             .device
             .create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-                label: Some("caster cull test depth"),
+                label: None,
                 layout: None,
                 module: &shader,
                 entry_point: Some("main"),
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
                 cache: None,
             });
+        let [direct_view, culled_view] = [direct, culled]
+            .map(|target| &target.shadow.as_ref().expect("shadowed target").array_view);
         let group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("caster cull test depth"),
+            label: None,
             layout: &pipeline.get_bind_group_layout(0),
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: wgpu::BindingResource::TextureView(maps),
+                    resource: wgpu::BindingResource::TextureView(direct_view),
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
+                    resource: wgpu::BindingResource::TextureView(culled_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
                     resource: out.as_entire_binding(),
                 },
             ],
@@ -141,18 +127,13 @@ impl Gpu {
             let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
             pass.set_pipeline(&pipeline);
             pass.set_bind_group(0, &group, &[]);
-            pass.dispatch_workgroups(shadow::SIZE / 16, shadow::SIZE / 16, layers);
+            pass.dispatch_workgroups(shadow::SIZE / 16, shadow::SIZE / 16, shadow::LAYERS);
         }
         let readback =
             thrum_test_support::readback::Readback::buffer(&self.device, &mut encoder, &out, ..);
         let submission = self.queue.submit([encoder.finish()]);
-        readback
-            .wait(&self.device, submission)
-            .as_chunks::<4>()
-            .0
-            .iter()
-            .map(|bytes| u32::from_le_bytes(*bytes))
-            .collect()
+        let read = readback.wait(&self.device, submission);
+        std::array::from_fn(|index| u32::from_le_bytes(read.as_chunks::<4>().0[index]))
     }
 
     /// One committed frame of `scene` into `target`.
@@ -189,11 +170,7 @@ impl Gpu {
             .caster_culling
             .as_ref()
             .map(|(culling, _)| culling.lists().map(|(_, args)| self.drawn(args)).collect());
-        Frame {
-            pixels,
-            depth: self.depth_bits(target),
-            casters,
-        }
+        Frame { pixels, casters }
     }
 }
 
@@ -328,12 +305,11 @@ fn compare(
         frustum_scene.view = view;
         let oracle = gpu.frame(&mut direct, direct_target, &direct_scene);
         let culled = gpu.frame(&mut frustum, frustum_target, &frustum_scene);
-        let depth = oracle
-            .depth
-            .iter()
-            .zip(&culled.depth)
-            .filter(|(a, b)| a != b)
-            .count();
+        let depth = gpu
+            .depth_differences(direct_target, frustum_target)
+            .into_iter()
+            .map(|count| count as usize)
+            .sum();
         rows.push((
             depth,
             differing(&oracle.pixels, &culled.pixels),
