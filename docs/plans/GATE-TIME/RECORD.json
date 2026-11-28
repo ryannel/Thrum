@@ -1397,12 +1397,12 @@
       }
     },
     "WP16": {
-      "definitions": "cc42e41bd6afad1cec7a877470e3f6c809a23ef7c3a305df8d1ec6dd9f5a08e4",
+      "definitions": "20a559fd184046d51bf5391b25e0387cdc033a21c65de93ffdd127ca1e387640",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The main-branch check long-tests fails, and the script couldn't tell which commit broke it. Find what breaks it, and pla",
-        "at": "2026-11-28T00:20:23Z"
+        "task": "The design review of GATE-TIME at .orchestrate/evidence/GATE-TIME/design-review.md asked for changes, with its 2 Must Fi",
+        "at": "2026-11-28T06:38:11Z"
       }
     }
   },
@@ -1466,11 +1466,15 @@
     {
       "task": "The main-branch check long-tests fails, and the script couldn't tell which commit broke it. Find what breaks it, and plan the fix in the module whose code it is, in its plan or as its next work package. Lead's reading: the one failing test is thrum-render runtime::tests::device::native::provider::native_provider_twin_history_only_advances_on_submission (feature creation-counters), panicking with Gpu { operation: \"scene timings\", error: Timing(TimestampQuerySetsExhausted) } at crates/thrum-render/src/runtime/tests/device.rs:305 and provider.rs:381. It failed the same way in the long-tests runs of 15:07, 19:14, 23:14 and 23:33 today (logs in .git/orchestrate/main-checks/long-tests/logs/), so it recurs rather than being a one-off. Work out whether timestamp query sets leak or are pooled too small, or whether the test depends on how many other GPU tests share the process, and plan a fix that keeps the long suite reliable.",
       "at": "2026-11-28T00:20:23Z"
+    },
+    {
+      "task": "The design review of GATE-TIME at .orchestrate/evidence/GATE-TIME/design-review.md asked for changes, with its 2 Must Fix findings.",
+      "at": "2026-11-28T06:38:11Z"
     }
   ],
   "planner": {
-    "host": "claude",
-    "at": "2026-11-28T00:20:23Z"
+    "host": "codex",
+    "at": "2026-11-28T06:38:11Z"
   },
   "design_history": [
     {
