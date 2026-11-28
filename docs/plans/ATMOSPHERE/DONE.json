@@ -806,7 +806,7 @@
     {
       "id": "WP13",
       "name": "Sun shadows hold still as the Sun moves, start at the foot of what casts them, and thin out with distance with no line where they stop, on the Mac and in Chrome",
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "Sun shadows as in Red Dead Redemption 2's open country, this module's shadow reference since WP6, and as Horizon Forbidden West holds them while its time of day runs: edges that slide and never step, crawl or shimmer, shadows that start at the foot of what casts them, sharper at contact and softer with the blocker's distance, and small shadows that thin out with distance with no line where they stop. Judged in words from the running game against each item's list and beside the takes from before, never against a target image. Grounding is judged in sunlight: the darkening of contact in shade is WP14's, and a cube inside another shadow is not judged here.",
       "items": [
         {
@@ -815,8 +815,8 @@
           "check": "cargo nextest run --locked --offline -p thrum-render --lib -E 'test(/sun_cascade_layout/)' --no-tests=fail",
           "ask": "Read the tests. Do they compare matrices from the production fit at different camera orientations, fields of view and positions, and call the production membership rule, the production cast width and the production bias terms, not a copy of any of them in the test? Is each shape's expected cast width worked out from the shape, and not taken from the engine's own answer? Would the membership case of design review 1 fail a rule that measured a caster by its bounds?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP13/WP13.1-final.log",
           "verdict": "",
           "review": ""
         },
@@ -827,8 +827,8 @@
           "lock": "gpu",
           "ask": "Read the tests. Is each expected answer taken from geometry the test states, or from another run of the scene, and never from the shader's own answer for the same case? Do the hand-over case and the size-and-blend case cover every neighbouring pair of the default set? In the reach case, does the far receiver lie inside the cascade's square with a caster drawn into the cascade in its ray, so that a read chosen by the square would shade it? In the near-and-far case, is the wide box's outline wholly outside the finest cascade's square? Would the no-history case fail if any cascade kept depth from an earlier frame? In the code, do the surface read and the view volume's read take the cascade, the blend and the fade from one function of the point's distance from the eye?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP13/orchestrate-candidate.json",
           "verdict": "",
           "review": ""
         },
@@ -837,8 +837,8 @@
           "statement": "Each rendered behaviour that the two-cascade tests guarded and the design keeps is still guarded by a test of the production code that `./dev check` runs: caster bounds enclose every corner of an affine box, at both translation endpoints of a moving caster; the Sun maps are 32-bit float depth, reverse-Z; on the device, the shader's shadow edge is wider the farther its blocker stands, on level and tilted receivers; a caster keeps occluding across a cascade boundary; an off-camera caster casts its own shape in a cascade and shades through the height layer past the reach; an aloft caster stays out of the height layer; the caster lists of every Sun pass draw the unculled depth and image; a secondary view's caster lists keep off-camera members; and a secondary view's Sun profile draws what the ordinary main draw does at the same camera and profile. The caster height map's horizon and anchor tests are as they were. The test that two overlapping half-disc casters leave one quarter of the Sun open stays as a check of the offline finite-disk reference, which traces rays in test code and never runs the shader. Where it stands it is described as that, nothing cites it as protecting a rendered shadow, and no test holds the shader to the reference's fraction. Only the tests of what the design removes are deleted with it: the near map's partition and bounded blocker range, whose successor is WP13.2's case of near and far blockers; the last cascade's padding for the Sun's cone; and the split formula.",
           "ask": "For each of the nine behaviours, name the test that guards it at the claimed commit, and say whether it runs the production fit, cull or shader and whether it would fail if the behaviour broke. From `git diff` between the starting commit and the claimed one, is every deleted or shortened test either one of the three removed mechanisms' or replaced by a named successor? Are the horizon and anchor tests unchanged? Is the half-disc test described where it stands as a check of the offline reference, and does any test, comment or record cite it for a rendered shadow or hold the shader to its fraction?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP13/WP13.3.md",
           "verdict": "",
           "review": ""
         },
@@ -847,8 +847,8 @@
           "statement": "On the Mac, in the exit scene, the shadows of rocks, cacti, scrub and balloons are steady at the size the take plays at. With the game's clock running from 16 h, flying toward the balloons (`balloons.json`), with the camera held high over the valley (`e2-held-sunruns.json`) and with it held beside the props (`exit-props-near.json`), no shadow's edge crawls, no shadow drops out and comes back or breaks up and re-forms, and none jumps in sharpness or darkness from one frame to the next. Beside the props, where the feet of a cactus, a standing rock and a boulder are within 30 m of the eye, each one's shadow starts at its foot, and so does the shadow of a prop at about 50 m. On the two high routes, no shadow of a rock, a cactus or scrub is seen apart from what casts it. A shadow changes only continuously: it slides with the Sun, moves with a drifting balloon, bends over what it crosses, is hidden by what stands in front of it, and fades with distance. No line or ring on the ground marks where shadows change. Turning in place with the Sun held (`e4-turn-sunheld.json`), the shadows of the still props keep their shape and their place on the ground.",
           "inspect": "Capture four routes with T2 `realtime` on the Mac at 1280 \u00d7 720, portable recipe, reconstruction off: `balloons.json`, `e2-held-sunruns.json` and `e4-turn-sunheld.json` from `.orchestrate/evidence/ATMOSPHERE/WP13-diagnosis/routes/`, and `exit-props-near.json` from `.orchestrate/evidence/ATMOSPHERE/exit-near-props/routes/`. Capture `balloons.json` once more on the exit's Apple row (MetalFX, governor on). Set them beside the takes from before in `.orchestrate/evidence/ATMOSPHERE/WP13-diagnosis/frames/` (`balloons-rock-16-frames.png`, `e2-camera-held-sun-running-16-frames.png` and the native frames beside them). `balloons.json`, `e2-held-sunruns.json` and `e4-turn-sunheld.json` stay 150 m or more from the nearest foot in frame: they show crawl, drop-out and the far ground, and the near pose shows contact. Beside the near take is the builder's list of the feet in its frame with their distances from the eye, by projection of the layout. It names a cactus, a standing rock and a boulder within 30 m and one prop between 35 and 65 m; a near take whose list lacks them is cut again before it is judged. First play each take at its captured rate at 1x and judge the motion there. Then read native-size crops of at least 16 consecutive frames, naming the frames: on the near pose, the foot and the shadow of the nearest cactus, standing rock and boulder and of one prop at about 50 m; on `balloons.json` and `e2-held-sunruns.json`, a rock's, a cactus's and a balloon's shadow at about 150 m and at about 400 m, wherever that kind still casts. The balloons drift in every take, with the Sun held or not, so their shadows move. A shadow that slides, bends over a rock, passes behind a prop or grows fainter steadily over many frames is not at fault. 1. With the camera held and the clock running, high over the valley and beside the props, no shadow's edge crawls or shimmers at 1x, and in the crops no notch or step travels along an edge from frame to frame, as it does in the take from before. 2. No shadow drops out and comes back, or breaks into pieces and re-forms, between consecutive frames. 3. Flying toward the balloons, no shadow jumps in sharpness or darkness between consecutive frames as the camera closes on it, and no line or ring where shadows change is seen on the ground or travelling with the camera. 4. On the near pose, the shadow of the nearest cactus, standing rock and boulder, and of the prop at about 50 m, starts at the foot of its caster in every frame, with no lit gap between the foot and the shadow. On `balloons.json` and `e2-held-sunruns.json`, no rock's, cactus's or scrub's shadow is seen apart from its caster. 5. Turning in place with the Sun held, the shadows of rocks, cacti and scrub keep their shape and place on the ground through the turn, and a balloon's shadow moves only as its balloon drifts. 6. A balloon's shadow moves smoothly over the ground and over rocks, without stepping, and its edge is soft all the way round, with no hard core and no cut edge. Where it passes beside a rock or cactus still in sunlight, that prop keeps its own sharper shadow at its foot. 7. On the Apple row at 1x, nothing in the shadows flickers, shimmers or pops.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP13/motion/README.md",
           "verdict": "",
           "review": ""
         },
@@ -857,8 +857,8 @@
           "statement": "On the Mac, in the exit scene with the game's clock running, no line or band across the ground marks where shadows end, on `valley-floor.json` and on `balloons.json`. Shadows thin out with distance by the size of what casts them. Ridges and mesas shade the far ground where they did before. A balloon's shadow fades out with distance and is never cut by an edge.",
           "inspect": "Capture both routes, in `.orchestrate/evidence/ATMOSPHERE/WP13-diagnosis/routes/`, with T2 `realtime` on the Mac at 1280 \u00d7 720, portable recipe, reconstruction off, and `valley-floor.json` once more on the exit's Apple row. Set them beside `valley-floor-clock-running.png`, `e5-distance-line-000740.png` and `balloons-000700.png` in `.orchestrate/evidence/ATMOSPHERE/WP13-diagnosis/frames/`, which show the line. Judge stills from five moments along each route, whole and in native-size crops of the ground from the camera out to the ridges, and each take in motion at 1x. 1. In no still can you point to a row along the ground beyond which props cast no shadow. 2. Say at about what distance cacti, standing rocks and boulders stop casting. Where each stops, its shadows grow fainter over a depth of ground, and larger props beside it still cast. 3. In motion, no shadow appears or vanishes abruptly as the camera advances, and no band where shadows fade is seen travelling with the camera. 4. The ridges' and mesas' shadows on the far ground are where the takes from before show them. 5. Balloons' shadows on the far ground fade with distance; none ends at a straight edge.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP13/motion/README.md",
           "verdict": "",
           "review": ""
         },
@@ -867,8 +867,8 @@
           "statement": "On the Mac, at the valley's cubes beside the sphere (the `proof` overlay), where nothing moves but the Sun and the camera, the sphere's shadow edge and the cubes' shadows are smooth and slide with no stepping or crawling that can be seen, with the game's clock running from 15 h (`c1-held-sunruns.json`) and from 17.3 h to sunset (`cubes.json`). Through 16 consecutive frames of the 15 h take at native size, the sphere's shadow edge and the shadow edges of the nearest and the farthest sunlit cube each move steadily the way the Sun carries them, and none is seen to step back or to jump forward, as the first build's sphere edge does. With the Sun held and the camera moving (`c2-moving-sunheld.json`), each shadow keeps its outline on the ground: no edge steps, crawls or changes sharpness as the view changes. Each sunlit cube's shadow starts at the edge or corner on which the cube rests, at 15 h and at 17.3 h. No speckle, stripes or pale stretch lies in a shadow beside its caster. A shadow is sharper at contact than far from what casts it. The item is decided by what is seen in the takes: no measured figure, in pixels or in texels, passes or fails it.",
           "inspect": "Capture the three routes, in `.orchestrate/evidence/ATMOSPHERE/WP13-diagnosis/routes/`, with T2 `realtime` on the Mac at 1280 \u00d7 720, portable recipe, reconstruction off, and `c1-held-sunruns.json` once more on the Apple recipe with MetalFX. Set them beside the frames from before in `.orchestrate/evidence/ATMOSPHERE/WP13-diagnosis/frames/` (`c1-sphere-edge-sun-running-8-frames.png`, `c1-cube-base-gap-4x.png`, `cubes-low-sun-bases-4x.png`, `cubes-low-sun-speckle-8x.png`) and beside the first build's crop of the sphere's edge, `.orchestrate/evidence/ATMOSPHERE/WP13/c1-edge-witness/16-frame-native-crop.png`, in which the edge jumps forward about two pixels and creeps back. First play each take at its captured rate at 1x, then read native-size crops, not enlarged, of at least 16 consecutive frames, naming the frames. The design's three diagnostics, which are that crop, the crossing measurement of `c1-edge-witness.py` in its folder and a placement probe, find and size a step that has been seen. If the builder ran one on these takes, its figures show where to look. They decide no point below, whether they are small or large, and a take with no measurement beside it is judged the same. The overlay's cubes are tilted and rest on an edge or a corner: judge contact there. A cube inside the sphere's shadow gets no contact darkening and is not judged. Toward sunset the shadows lengthen and fade steadily, which is not at fault. 1. From 15 h with the camera held, the sphere's shadow edge and each cube's shadow edge are smooth in every frame, with no steps, and at 1x they slide without crawling. 2. In native-size crops of 16 consecutive frames of the portable 15 h take, the sphere's edge and the edges of the nearest and the farthest sunlit cube each advance steadily with the Sun, and you cannot see any of them step back or jump forward, as the sphere's edge does in the first build's crop. 3. At 15 h no lit strip separates a sunlit cube's resting edge or corner from its shadow. 4. From 17.3 h to sunset each sunlit cube's shadow is solid from the cube outward: no speckle, stripes or pale stretch, and no gap. 5. The sphere's shadow is softer far from the sphere than a cube's shadow is at the cube, and no shadow is a blur wider than the cube that casts it at its base. 6. Moving the camera with the Sun held, each shadow keeps its outline on the ground: no edge steps, crawls or changes sharpness as the view changes, and no shadow shifts against the ground under it. 7. On the Apple recipe with MetalFX at 1x, the shadows do not flicker and the cubes in sunlight read as standing on the ground.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP13/motion/README.md",
           "verdict": "",
           "review": ""
         },
@@ -877,8 +877,8 @@
           "statement": "In Chrome the same holds, on the same routes. In the exit scene on `balloons.json` with the game's clock running, no shadow's edge crawls, none drops out and comes back or jumps in sharpness, and no line marks where shadows end. At the valley's cubes on `cubes.json`, from 17.3 h to sunset, the sphere's and the cubes' shadow edges are smooth and slide without stepping, each sunlit cube's shadow starts where the cube rests, and no speckle lies beside a caster. At matching poses on both routes the Chrome shadows have the shape and place of the Mac's portable take.",
           "inspect": "Capture `balloons.json` and `cubes.json`, in `.orchestrate/evidence/ATMOSPHERE/WP13-diagnosis/routes/`, in Chrome with the T2 capture of submitted images (`scripts/capture_v1_browser.mjs --route-file`, `realtime`), which keeps every submitted image with its tick, eye, heading and solar hour. They are the files WP13.4 and WP13.6 take on the Mac's portable recipe, and `cubes.json` carries the `proof` overlay. Play each take at its captured rate at 1x, then read native-size crops of at least 16 consecutive submitted images, naming them. The balloons drift, and a shadow that slides, bends over a rock or fades steadily is not at fault. 1. On the exit route at 1x, no shadow's edge crawls and none drops out and comes back. In the crops, a rock's and a balloon's shadow at about 150 m show no notch or step travelling along an edge. 2. In five stills along the exit route you cannot point to a row beyond which props cast no shadow. 3. At the cubes, the sphere's and the cubes' shadow edges are smooth in every image and slide from one image to the next without stepping. 4. Each sunlit cube's shadow starts where the cube rests, with no speckle or pale stretch beside it. 5. For three poses on each route, name a Chrome image and a Mac portable frame whose recorded eye, heading and solar hour agree to within one tick of the route. In each pair the shadows have the same shape and place.",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP13/motion/README.md",
           "verdict": "",
           "review": ""
         },
@@ -887,8 +887,8 @@
           "statement": "The cost of the change is on record before and after, from takes paired in one session between the starting commit and the claimed one, order alternated, capture off, each with the host's load. There are three rows, all on the exit flythrough. The Mac's Apple recipe with MetalFX, EDR and the governor on, at full screen on the built-in display at the 67% output scale, with the output extent it resolved, whether a launch setting forced the scale or the frame rate, and the governor's render scale and drawn extent through each take. The Mac's portable recipe with the governor off, in a 1920 \u00d7 1080 window. Chrome, at the extent the record states. Each row gives the median and 95th percentile GPU time of every Sun cascade's pass, the caster height map, the air's shadow pass, the Sun's caster cull and the forward opaque pass; the sum of the Sun's work, with the caster cull in it; the draws and triangles each Sun pass issued; and the number of lists the caster cull prepared. Where the Sun's summed work, the caster cull alone or the forward pass is more than about a quarter over its time before, its investigation is beside it, naming each lever of the design's cost section that was tried and what it bought. The record ends with the hand-off to `APPLE-PRESENTATION` WP17. On the full-screen row it gives the whole frame's timed span at the median and the 95th percentile and the 120 Hz refresh intervals served and missed, before and after, and the commit of WP17's closing sitting, or that none has been taken. It states which of the design's three cases holds: the sitting is still to come; it predates this change and stands; or it predates this change and is to be taken again, in which case the builder's handoff asks the lead for it. No figure in the record decides this item. Record: paired pass timings in the working folder.",
           "ask": "Is the record in `.orchestrate/evidence/ATMOSPHERE/WP13/cost.md` paired on the two commits in one session, order alternated, capture off, with the host's load, for the two Mac rows and Chrome? Is the Apple row taken at full screen at the 67% output scale, with the resolved output extent and the governor's render scale and drawn extent through each take? Does every row time the Sun's caster cull and count it in the Sun's sum, with each Sun pass's draws and triangles beside the times? Where a figure is more than about a quarter over its time before, is the investigation there with the levers tried and what each bought? Does the record end with the hand-off to WP17, stating one of the three cases from the spans it gives, and where the sitting predates the change and the span rose, does the builder's handoff ask the lead for the sitting again? Does the record claim no budget?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP13/cost.md",
           "verdict": "",
           "review": ""
         },
@@ -898,8 +898,8 @@
           "check": "python3 scripts/exact_baselines.py guard",
           "ask": "Read the landing's diff of `.config/exact-baselines.json` with `git diff`: does it change only the `pin` and the `refresh` of the baselines whose references moved, each refresh naming `ruling-on-atmosphere-wp13`, `ATMOSPHERE` and `WP13`? Do both logs list each moved reference's old and new SHA-256 and say which sets did not move? Did the landing leave the comparison scripts, their sampling and `SHOWCASE`'s two baseline files as they were?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP13/exact-guard.log",
           "verdict": "",
           "review": ""
         },
@@ -908,8 +908,8 @@
           "statement": "Only the Sun's shadows moved the references. Where a refreshed Mac reference differs from the one it replaces, a Sun shadow or its soft edge falls there in one of the two frames, or the pixel is at the foot of the sphere, the rock or a cube. The sky, the stars and the letterbox bars hold their old bytes. Sunlit ground away from any shadow shows no difference beyond scattered single pixels of one stored step, and the ridges' shadows on the far ground keep their place. In Chrome, where only digests are retained, the same is shown between captures of the starting commit and of the claimed one.",
           "inspect": "From the retained Mac references at the starting commit and at the claimed one, make an amplified image of where the bytes differ, for the route's checkpoints and the Sun and night stills, in SDR and in scene-linear. Judge each beside its two frames, whole and in native-size crops. 1. Every difference lies where a Sun shadow or its soft edge falls in one of the two frames, or at the foot of the sphere, the rock or a cube. 2. None lies in the sky, on a star or in the bars. 3. Sunlit ground away from any shadow shows no difference apart from scattered single pixels of one stored step. 4. The ridges' shadows on the far ground are in the same place. 5. The builder's Chrome difference images for the day and night checkpoints show the same, with the count of differing pixels and the largest difference for each reference.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP13/WP13.10.md",
           "verdict": "",
           "review": ""
         },
@@ -918,8 +918,8 @@
           "statement": "The maturity ledger's rows for the Sun's shadows (the Sun cascades slice, the aloft casters entry and the technique register's cascaded Sun shadows entry) say what this work package built and proved, with implementation, correctness, visuals and device measurements apart and the cost labelled as taken under load. They still name as open: contact darkening in shade on the default path, the moving edge on the west-lookout spur, the exact finite-disk match, and prop shadows past the reach.",
           "ask": "Do the three rows describe the nested cascades and claim only what WP13.1 to WP13.8 proved, on the targets they ran on? Are the four open things still named?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP13/check-docs.log",
           "verdict": "",
           "review": ""
         }
