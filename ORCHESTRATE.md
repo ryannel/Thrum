@@ -335,7 +335,7 @@ judges the record and reruns what it retains.
 
 | Role            | Codex              | Antigravity | Claude                 |
 |-----------------|--------------------|-------------|------------------------|
-| Planner         |                    | -           | claude-fable-5-2 high  |
+| Planner         | gpt-6.2-astra high | -           | claude-fable-5-2 high  |
 | Builder         | gpt-6.2-sol medium | -           | claude-opus-5-5 medium |
 | Reviewer        | gpt-6.2-astra high |             |                        |
 | Design reviewer | gpt-6.2-astra high |             |                        |
