@@ -16,6 +16,8 @@ was measured before the design was written; its code is a stand-in, so build fro
 - Assumption: the sizes proved are 10,000 colliders with up to 2,000 of them asking each tick, V1's representative scene, and worlds within 32,768 units of the origin, which holds the showcase's 36 km terrain. A question asked farther out is refused, because a contact there would be coarser than the game is told it is.
 - Assumption: a shape stops within about 1.5 cm of what it meets (1/64 of a unit at most), and a walking character rests that near the ground. The exact figure is measured and set by the first work package.
 - Assumption: a character's move covers at most 4,096 units in one tick. Farther than that is a teleport, which the game writes.
+- Assumption: a character that climbs a step, or is set back down on the ground, covers the climb at one even speed, within the time its travel over the step took. So a trigger on the way up or down is met at a moment and at a speed, and a plain slide or stop keeps the times the game SDK's design gives.
+- Assumption: a character rides about 1 cm (three quarters of the stopping distance above) off the ground and walls it moves along, so the joins between floor pieces never stop it. In a gap less than about 2 cm wider than the character it may stop at a join.
 - Assumption: the devices are the Mac, Chrome and the iPhone simulator, and devices agree for one build of one rule set, as in `SIM-2D`. The simulator proves the code runs there, never speed.
 
 ## WP1 A rule asks whether two 3D shapes touch, where a ray meets one and where a moving one is stopped, and gets the same answer on the Mac, in Chrome and on the iPhone simulator

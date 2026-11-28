@@ -1,6 +1,7 @@
 # SIM-3D: 3D collision queries and a character move that agree on every device
 
-27 November 2026, revised 28 November 2026 after [its first design review](../../../.orchestrate/evidence/SIM-3D/design-review.md). [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
+27 November 2026, revised 28 November 2026 after [its first](../../../.orchestrate/evidence/SIM-3D/design-review-1.md)
+and [its second design review](../../../.orchestrate/evidence/SIM-3D/design-review.md). [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-7-the-game-sdk) · [the vision and scope document](../VISION.md). C01, C02,
 C03 and C13 in [CONTRACTS](../../design/CONTRACTS.md), [the rules profile](../SIM-2D/DESIGN.md#mechanisms) and
 [what the game SDK asks](../GAME-SDK/DESIGN.md#3d-space-and-a-kinematic-character) govern.
@@ -59,9 +60,9 @@ alone.
 |---|---|---|
 | **N1 Get the same answer on every target** | Every test, query and move below; anywhere in [the query domain](#1-numbers-frames-and-the-query-domain); development and release builds; whatever was asked before | Equality between the Mac and the simulator only, which share a processor. Rejected by the Wasm row, and by a run with one retained value changed, which must fail |
 | **N2 Ask of two shapes whether they touch, how deep one stands in the other, where a ray meets one and where a moving one is stopped** | Sphere, capsule and cuboid against each other and against a triangle; a radius from zero; a capsule of no length; a flat cuboid; a cuboid at any angle; a motion from nothing to 10,000 times the mover's size; a sweep that begins clear, touching or inside; one shape moving or both; anywhere in the query domain, 32,768 units from the origin | A sweep that tests places along the path, which a fast shape steps over. Rejected by a thin triangle crossed in one motion. A sweep whose reported place overlaps once it is rounded onto the world's grid. Rejected by the same cases at a corner of the query domain. A sweep that reports where it came out of a thing it passed through. Rejected by the hand-worked fraction of first contact |
-| **N3 Find colliders near a point, along a ray and in a moving shape's path** | From an empty index to 10,000 colliders, [the representative scene](../VISION.md#goal-and-exit-rule)'s entity count; sizes from a point to larger than the whole crowd; all at one point; a query from a point to wider than everything; rebuilt whenever a layer changes; asked from serial and parallel rules | The right set in an order that depends on how the tree was built. Rejected by comparing the whole sequence with a brute-force search sorted by the stated key. A tree whose boxes, through rounding, skip a pair that just touches. Rejected by exactly-touching scenes at a corner of the query domain. A tree that narrows nothing and tests every collider. Rejected by a count of pair tests on a spread scene |
+| **N3 Find colliders near a point, along a ray and in a moving shape's path** | From an empty index to 10,000 colliders, [the representative scene](../VISION.md#goal-and-exit-rule)'s entity count; sizes from a point to larger than the whole crowd; all at one point; a query from a point to wider than everything; rebuilt whenever a layer changes; asked from serial and parallel rules | The right set in an order that depends on how the tree was built. Rejected by comparing the whole sequence with a brute-force search sorted by the stated key. A tree whose boxes, through rounding, skip a pair that just touches. Rejected by exactly-touching scenes at a corner of the query domain. A tree that narrows nothing: one that tests every collider, or looks at every leaf's box and tests the few it overlaps. Rejected on a spread scene by two counts, of the pair tests made and of the tree's boxes examined |
 | **N4 Ask the same of a level's fixed collision, and the height of the ground** | Pieces from none to the 257 a level's recipe holds by default in the SDK (one terrain and 256 added), and more; a mesh piece from one triangle to the showcase terrain's 61,664, turned and scaled when placed, with slivers and triangles of no area; a heightfield of 2 by 2 heights upward; boxes; 64 layers; a piece added or removed between ticks | Fixed collision rebuilt whole when a gate opens. Rejected by a count of pieces built. A ground height that disagrees with what a ray straight down meets. Rejected by comparing the two |
-| **N5 Move a character** | A sphere, a capsule or a cuboid; a motion from nothing to a fall of many times its height in one tick; ground from flat through the slope limit to vertical and overhanging; steps from nothing to the step height and taller; creases, corners and narrowing gaps; ground made of many triangles in one plane; a start that already overlaps; fixed collision alone, and with collider indexes | A move that ends inside a wall at speed, or stops dead on the seam between two triangles of a flat floor. Rejected by fast moves through thin pieces and by long slides across a floor of many triangles. A shape that creeps down a slope it stands on. Rejected by standing on one for 600 ticks. A path given as its two ends, which loses the crossing of a climbed step and the rest after a stop. Rejected by the legs and their times |
+| **N5 Move a character** | A sphere, a capsule or a cuboid; a motion from nothing to a fall of many times its height in one tick; ground from flat through the slope limit to vertical and overhanging; steps from nothing to the step height and taller; creases, corners and narrowing gaps; ground made of many triangles in one plane; a start that already overlaps; fixed collision alone, and with collider indexes | A move that ends inside a wall at speed, or stops dead on the seam between two triangles of a flat floor or between two boxes whose tops are level. Rejected by fast moves through thin pieces, by long slides across a floor of many triangles, and by a cuboid that stands exactly on one box and is moved across the seam onto the next. A shape that creeps down a slope it stands on. Rejected by standing on one for 600 ticks. A path given as its two ends, which loses the crossing of a climbed step and the rest after a stop. Rejected by the legs and their times. A climb crossed in no time, on which a thing met has no speed. Rejected by every leg that has length ending later than it began |
 | **N6 Know what it costs** | 2,000, 5,000 and 10,000 colliders with up to 2,000 of them asking each tick, the representative scene's movers; the tracked meshes of 224, 8,192 and 61,664 triangles; on the Mac and in Chrome | A figure for a sparse world. Each row names what was visited beside its time. A record with no `SIM-2D` figure beside it, which the module list asks for. The figures are baselines: none decides whether a work package passes |
 
 ## Mechanisms
@@ -85,10 +86,13 @@ every coordinate it reads, and multiplies only after. The difference of two near
 a shape 30,000 units from the origin is tested with the precision it was stored with, and no product of large
 coordinates is formed.
 
-**The query domain** is the cube 32,768 units from the origin on each axis. A shape with a point outside it, a
-point or a motion's end outside it, a non-finite value and a negative radius are refused with an error that
-names what was wrong. The refusal depends only on the values, so every peer makes it, and a rule set treats it
-as a fault.
+**The query domain** is the cube 32,768 units from the origin on each axis, its faces included: a point on a
+face is inside. A shape with a point outside it, a point or a motion's end outside it, a non-finite value and a
+negative radius are refused with an error that names what was wrong. The refusal depends only on the values,
+so every peer makes it, and a rule set treats it as a fault. Only what a caller gives is judged. A box the
+crate widens for its own use, such as a box of [the tree](#3-one-tree-used-three-times), may pass the bound
+and refuses nothing, so every shape that lies inside the domain can be indexed and asked about, one that
+stands against a face too.
 
 Inside the domain positions step by 2⁻⁹ units at the coarsest, about 2 mm at one unit to the metre (C01), and
 every promise of closeness below holds everywhere in it. There is no outer range where answers are given and
@@ -120,18 +124,47 @@ for a cuboid and a triangle.
 - *The hulls are apart and only the radii cross.* The depth is both radii less the distance between the hulls,
   along the line between the closest points. Two unit spheres with centres one unit apart along an axis stand
   exactly one deep, along that axis.
-- *The hulls themselves cross*, as two cuboids do, or a capsule's line through a cuboid. The closest points
-  coincide and give no direction. The hulls are a point, a segment, a box and a triangle, so the shallowest way
-  to part two of them lies along one of a short fixed list of directions: the normals of each one's faces and
-  the cross products of an edge of one with an edge of the other. The test tries each by closed form, takes the
-  least, and adds both radii. Nothing iterates.
+- *The hulls themselves touch or cross*, as two cuboids do, a capsule's line through a cuboid, or a sphere
+  whose centre lies on a capsule's line. The closest points coincide and give no direction. Parting the two
+  along a direction costs how far the hulls overlap along it, and both radii. So the shallowest way out is the
+  direction along which the hulls overlap least, and the depth is that overlap and both radii. The hulls are a
+  point, a segment, a box and a triangle, so the direction is one of a short closed list: **every cross
+  product of two edges that has length, both edges of one hull or one of each**, in either sense. Two edges of
+  one hull give the normal of one of its faces, for a cuboid squashed flat too. One edge of each gives the
+  direction square to both. That list is whole: the hulls overlap least along the normal of a face of their
+  difference, and each such face is a face of one hull or an edge of one carried along an edge of the other.
+  The test tries each by closed form and takes the least. Nothing iterates.
+  - *Where the two hulls lie in one plane*, as two capsules' lines that cross or a capsule lying in a flat
+    cuboid, the only directions on the list are that plane's two normals. The hulls overlap by nothing along
+    them, so the depth is the two radii exactly.
+  - *Where no direction on the list has length*, the two hulls lie along one line or at one point: a sphere
+    centred on a capsule's line, two capsules along one line, two spheres at one place. Every direction square
+    to that line, and every direction at all where there is no line, parts the hulls with no travel. The depth
+    is the two radii exactly, and the normal is one of those directions and never one along the line.
 
-A tie goes to the first direction in an order the crate's documentation states, and so does a pair with no
-shallowest way, such as a shape met with itself, so the normal is never zero. A triangle is a surface, so the
-way out of one is to whichever side is nearer.
+**A tie is broken only among the ways that tie.** Where several ways out are equally shallow, the normal is the
+first of them in an order the crate's documentation states: among directions on the list, their order in it;
+among the directions square to a line, one made from the line and the world's axes by a stated rule, so it is
+square to the line however the line is turned; and where there is no line, a stated axis. So the normal is
+never zero, it is always a shallowest way out, and the mover set at its place plus the normal times the depth
+always touches what it struck. A unit sphere centred on the middle of a capsule of radius one, whose line runs
+from x = −2 to x = 2, stands exactly two deep along a direction square to x. Moved two that way it touches the
+capsule. Moved two along x it would still stand two deep, so a direction along the line is never given, and
+when the capsule is turned the normal turns with it. A triangle is a surface, so the way out of one is to
+whichever side is nearer.
+
+**The normal says which way is out, and not which motions lead in.** At a tie it is one shallowest way of
+several, and a motion against it can lead out as well. Two unit spheres at one place stand two deep, and a move
+of half a unit in any direction, against the reported normal too, leaves them one and a half deep. So whether a
+motion leads deeper is asked of the depth test at a place along the motion, as
+[the move](#6-the-kinematic-move) asks it, and is never read from the motion's sign against the normal.
 
 A ray that hits gives a **fraction** of the motion from 0 to 1, a point on what was struck, and a **normal** of
 unit length that points out of what was struck, toward the mover. A sweep's hit gives those and a **depth**.
+A ray's depth is the depth test's: a ray that begins inside a sphere, a capsule or a cuboid reports fraction
+zero and the normal of the shallowest way out, and how deep it began is what the depth test gives for a sphere
+of no radius at the ray's start. The SDK's ray asks that for its hit's `depth`, and takes a depth of no more
+than the tolerance as zero, as a sweep's is.
 The mover's place at a hit is its start plus the motion times the fraction, one multiply and one add for each
 coordinate, which is how every consumer and every test computes it. A triangle is met from either side, with
 the normal toward the side the mover came from.
@@ -156,8 +189,11 @@ meets a thing in one of three ways, which asked with the tolerance are the SDK's
 - **A contact there from the start is reported whichever way the motion leads**: in, along, away, or nowhere.
   The mover's place is its start, and nothing moves it. A motion of no length reports exactly the contacts
   there from the start.
-- **The point** is on what was struck, nearest the mover as it stands at its place plus the normal times the
-  depth. A shape set there touches what it struck.
+- **The point** is on the surface of what was struck, at a place nearest the mover as the mover stands at its
+  place plus the normal times the depth, where it touches what it struck. Where one place is nearest, as under
+  a sphere or at a corner, that place is the point. Where a whole patch is equally near, as between two faces
+  that meet flat, the point is one place of the patch, by a rule the crate's documentation states, the same on
+  every device. A place inside a solid, behind its surface, is never given.
 - **The overlap test keeps its exact meaning.** It is true where the distance is zero, so a pair that stands
   within the tolerance and apart touches and does not overlap.
 
@@ -257,9 +293,12 @@ pieces of a level.
   could not change the answer: what that test would reject, and, where only the first hit is wanted, what the
   motion cannot reach before the hit already found. Its boxes are widened by more than the contact tolerance,
   so rounding in a box cannot hide a pair that just touches.
-- **It does narrow.** A query the size of a few colliders, among colliders spread apart, tests few of them. A
-  tree that visits every leaf gives right answers and is not this mechanism. Each query counts the pair tests
-  it made ([mechanism 4](#4-the-collider-index)), and WP2 holds a spread scene of 10,000 to a count.
+- **It does narrow.** A query the size of a few colliders, among colliders spread apart, tests few of them
+  and looks at few of the tree's boxes, because it passes over a whole subtree whose box it cannot touch. A
+  traversal that looks at every leaf's box and tests only the few the query overlaps makes few pair tests and
+  gives right answers, and is not this mechanism: at 10,000 colliders it examines 10,000 boxes for each
+  query. So each query gives two counts ([mechanism 4](#4-the-collider-index)), the pair tests it made and
+  the tree's boxes it examined, and WP2 holds a spread scene of 10,000 to both.
 - **The order of answers never comes from the tree.** It comes from a stated key
   ([mechanism 4](#4-the-collider-index)) and nothing else: the answers are sorted by it, or, where only the
   first is wanted, the least key among the candidates visited is kept, which gives the same first answer with
@@ -292,8 +331,10 @@ derived state: it is in no digest and no undo journal, and after a rewind the ne
 
 **Queries**, all read-only and usable from parallel rules. Each may leave one slot out, for a shape that asks
 about its own layer. A query writes its answers into storage its caller keeps, so a warmed query is designed
-to allocate nothing; WP2 counts what it does. With its answers a query gives the number of pair tests it made,
-which is how narrowing is judged and what a cost row names as visited.
+to allocate nothing; WP2 counts what it does. With its answers a query gives two counts: the pair tests it
+made, and the boxes of the tree it examined, meaning every box it tested against the query, inner boxes and
+leaves alike. They are how narrowing is judged and what a cost row names as visited. They are returned with
+the answers and kept nowhere, so a query stays a function of its arguments.
 
 | Query | Returns | Order |
 |---|---|---|
@@ -317,12 +358,19 @@ far outside the box the other swept. No overlap asked at either's start or end f
 takes the paths, and the paths are the SDK's, kept as its tick's working memory. So:
 
 - **The SDK supplies the paths, as boxes.** For a layer whose colliders it sweeps by their motion, the SDK
-  builds a second index of that layer: one cuboid for each collider, the axis-aligned box of every place the
-  collider's shape stood along its path this tick, widened by the contact tolerance.
+  builds a second index of that layer: one cuboid for each collider, its **path box**. A path box is the
+  axis-aligned box of every place the collider's shape stood along its path this tick, widened by the contact
+  tolerance on every side and then cut back to the query domain. Every place on a valid path lies inside the
+  domain, so the cut takes away nothing a shape stood in, and the box that is left lies inside the domain and
+  is admitted like any cuboid. A sphere of radius ½ that travels along the domain's face with its centre at
+  x = 32,767½ has a path box that ends at x = 32,768, the face, and not at the 32,768 and a tolerance that
+  widening alone would give and the build would refuse.
 - **Candidates are an overlap of boxes.** For a mover the SDK asks that index for the overlap with the mover's
-  own path box, widened the same way. Two shapes that come within the tolerance of each other at some moment
-  both lie in their path boxes at that moment, so the two widened boxes overlap with room to spare, and the
-  pair is among the answers whatever the two paths were.
+  own path box, made the same way. Two shapes that come within the tolerance of each other at some moment
+  both lie in their unwidened boxes at that moment, inside the domain. On each axis those two boxes are then
+  no more than the tolerance apart, and widening both by the tolerance and cutting both at the same faces
+  leaves them overlapping by the tolerance or more on that axis, at a face of the domain as anywhere. So the
+  pair is among the answers whatever the two paths were and wherever in the domain they ran.
 - **Each candidate is settled by the pair sweep with two motions**, leg against leg by time, which is the SDK's
   to drive. The pair tests are public for this and for any question the index has no name for.
 
@@ -383,6 +431,7 @@ refused with an error that names it: farther than that in one tick is a teleport
 - **the path it took**: its legs in order, up to a fixed number the crate states. A leg is a straight line with
   where it began, where it ended, and the share of the step at which it began and at which it ended. The first
   begins where the shape stood, each begins where the last ended, and the last ends where the shape ends.
+  Every leg that has length ends later than it began, so the shape has a speed along it.
   [Legs and their times](#legs-and-their-times) says which legs a slide, a stop, a step and a snap leave. The
   path is what the SDK's `follow` takes;
 - **each contact**, earliest first, up to a fixed number the crate states: what was struck (a piece and its
@@ -407,8 +456,9 @@ rounds of one sweep each, a fixed number of them. Its sweeps are asked to stop w
    contact, by one of two routes:
    - *It was already touching.* A thing within the tolerance of the shape as the round begins, which the
      motion would bring within half the tolerance, takes its part of the motion where the shape stands. So
-     does a thing already nearer than half, and a thing the shape began inside, where the motion has a part
-     into it. The contact is at the place the round began, and no leg is travelled to it.
+     does a thing already nearer than half, and a thing the shape began inside, where the motion leads deeper
+     into it by the measure of step 3. The contact is at the place the round began, and no leg is travelled
+     to it.
    - *It is met on the way.* Otherwise the shape goes to the place the sweep reports, within half the
      tolerance of what stopped it and clear of it. That is a leg, and the contact is at its end.
 
@@ -422,12 +472,31 @@ rounds of one sweep each, a fixed number of them. Its sweeps are asked to stop w
    - *Into a wall or a ceiling, along the normal.*
    - *A wall that leans back does not lift a shape that stood on a floor:* a slope steeper than the limit
      stops it as an upright wall would. A shape not on a floor slides down such a slope.
-   - *Out of a thing the shape began inside, only the part that leads deeper.* The shape leaves by its own
-     motion, or by the game's line with the depth, and goes no deeper.
-4. **Slide, riding at three quarters of the tolerance.** The next leg follows what is left of the motion. Where
-   it begins nearer than three quarters of the tolerance to a surface met in this move, it gains along that
-   surface's normal what brings the shape out to three quarters by the leg's end. Nothing is gained away from
-   a thing the shape began inside.
+   - *Out of a thing the shape began inside, only where the motion leads deeper, and then the part against
+     the normal.* Deeper is measured, not read from the normal. The depth test is asked with the shape moved
+     along the motion by the contact tolerance, or by the whole motion where that is shorter. Where it gives
+     more than the depth where the shape stands, the motion leads deeper and its part against the normal is
+     taken out. Where it gives no more, nothing is taken out for that thing, whichever way its normal points.
+     So a sphere that begins at the very place of another, where every way out ties, leaves by any motion it
+     is given, against the reported normal too. And a shape that stands one deep inside a wide box cannot
+     cross the box's middle to its far side. The shape leaves by its own motion, or by the game's line with
+     the depth, and goes no deeper.
+4. **Set out, then slide, riding at three quarters of the tolerance.** Before a leg is travelled, the shape is
+   set out to **the ride**, three quarters of the tolerance, from each thing it touches where the leg begins
+   and stands nearer than that. This holds for a thing that took part of the motion and for a thing the
+   motion only leads along, such as the floor under a shape moved level across it. Setting out is a sweep
+   along that thing's normal, by what the shape lacks of the ride, so it is stopped short of a ceiling or a
+   facing wall as any sweep is. The leg then follows what is left of the motion from there.
+   - *Setting out is part of the leg, not a leg of its own.* The leg returned runs straight from where the
+     shape stood to where the slide ended. That line lies within three quarters of the tolerance of the way
+     the shape was checked along, on the side of the thing it was set out from, and is never nearer that
+     thing than the shape began.
+   - *Nothing is set out without travel to follow.* A shape asked for no motion, or one whose whole motion
+     goes into what it stands on, stays exactly where it is.
+   - *Nothing is set out from a thing the shape began inside*, or from a thing the motion leads away from.
+   - *One limit is stated.* In a gap less than a tolerance and a half wider than the shape, the shape cannot
+     ride clear of both sides. It is set out as far as the sweep allows, and may be stopped at a seam there
+     as at a lip.
 5. **Step.** Where a wall stopped a shape that started on a floor, and the step height is more than nothing,
    the move tries the same motion from the step height up: up, along, and down again. It takes that result if
    it ends on a floor and went farther along the level.
@@ -438,8 +507,8 @@ rounds of one sweep each, a fixed number of them. Its sweeps are asked to stop w
    skin of the end is gathered and classed.
 
 **Every place is checked.** A leg's end is accepted only where the overlap test says the shape is clear of
-everything it was clear of when the leg began, and the depth test says it is no deeper in anything it began
-inside. A leg that fails is cut back by halving, a fixed number of times, and at worst the shape stays where
+everything it was clear of once it was set out for the leg, and the depth test says it is no deeper in
+anything it began inside. A leg that fails is cut back by halving, a fixed number of times, and at worst the shape stays where
 the leg began. So a move that starts clear ends clear anywhere in the domain, and one that starts inside a
 thing ends no deeper in it. Every sub-step is a public sweep, overlap, distance or depth, so the move is one
 more function of the same pair tests.
@@ -453,17 +522,31 @@ quarters, and touching ends at the whole.
 - *The shape ends within the tolerance of what it slid along and of what stopped it*, so the next move begins
   touching it and slides along it as any does. The skin is not a gap the shape keeps. It is only how far the
   report of what the shape rests against reaches.
-- *Nothing catches on a floor of many triangles.* The shape rides at three quarters of the tolerance above the
-  plane. The next triangle in that plane, or the next box of a floor made of boxes, is never nearer than the
-  plane itself, and a leg stops only within half the tolerance. So a seam stops nothing and bends no leg,
-  however many of them one motion crosses.
+- *Nothing catches on a floor of many pieces.* Before it travels along a floor the shape stands the ride above
+  it, three quarters of the tolerance. The next triangle in that plane, or the next box whose top is level, is
+  never nearer than the plane itself, and a leg stops only within half the tolerance. So a seam stops nothing
+  and bends no leg, however many of them one motion crosses. It holds from the first leg, because the shape is
+  set out before it travels and not as it goes: a shape that drew away from the floor only along the leg would
+  still be within half the tolerance of the plane when it reached a near seam, with the next piece's edge
+  ahead of it, and would be stopped by that edge as by a wall.
+- *The seam between two boxes, worked.* Two solid boxes with their tops at y = 0 meet along x = 0. A unit
+  cuboid stands exactly on the first, centred at x = −1 with its bottom at y = 0, and is moved by (2, 0, 0)
+  with a step height of nothing. It touches the first box, which takes no part of a level motion, and the
+  motion leads along it, so the cuboid is first set out to three quarters of the tolerance above y = 0. Its
+  sweep then passes the seam that far above both tops and meets nothing. Its end, centred at x = 1, is clear
+  of both boxes and is accepted. The move is one leg over the whole step, nothing kept it from its motion, and
+  it ends resting on the second box as a floor. Raise the second box's top by more than the tolerance and the
+  same move meets that box's side as a wall: it is stopped there, or climbs it where the step height allows.
+  A lip lower than a quarter of the tolerance is passed over, and one between the two stops the shape or
+  does not, the same on every device.
 - *A walker's step is one leg.* Its weight presses a floor it already touches. The floor takes that part where
   the shape stands, and what is left is one straight leg along the floor, the path for which the SDK keeps
-  nothing more than a written position gives.
+  nothing more than a written position gives. A walker that already rides is set out by nothing, and one that
+  rounding carried nearer is set out by the small difference, inside the same leg.
 - *Rounding has room.* At a corner of the domain places step by about 2 mm. With the tolerance at 1/64 of a
   unit, the quarter between where a leg stops and where a slide rides is about 4 mm, and so is the quarter
   between the ride and the tolerance. A motion of at most 4,096 units drifts by less than a millimetre from
-  its line. A shape that rounding carries nearer than the ride is brought back by its next slide. One carried
+  its line. A shape that rounding carries nearer than the ride is set out again before its next leg. One carried
   out past the tolerance no longer touches the floor, meets it on the way in its next step as a fall does, and
   rides again.
 
@@ -474,31 +557,57 @@ rolls over a lip that low as a ball does, whatever the step height.
 
 <a id="legs-and-their-times"></a>
 
-**Legs and their times.** The share of the step is the SDK's time along the tick. One rule gives every leg its
-time: **a leg takes the share of the step that it spends of the motion.**
+**Legs and their times.** The share of the step is the SDK's time along the tick. Two rules give every leg its
+time, and between them **every leg that has length ends later than it began**. So a thing met anywhere on the
+path is met at a moment of the tick, at a place on a leg and at that leg's speed, its length over its time.
+
+**Rule 1: a leg that spends motion takes the share of the step that it spends of the motion.**
 
 - *A leg that ends at a contact* met a fraction of the way through the motion that was left takes that
   fraction of the share that was left. Taking out the part that goes into a surface spends nothing, so the
   slide that follows has all the share still left. A step of (3, 0, 3) that meets a wall a third of the way
   along and slides along it is two legs, the first over the first third of the step and the second over the
   other two thirds.
-- *A rest* is a leg of no length. A shape with no way left rests where it stopped for the share still left,
-  and a rest is always the last leg. A shape that a wall stops head-on a quarter of the way through its step
-  has one leg over the first quarter and a rest over the other three.
-- *A climbed step* is the leg to the wall, then the rise, the crossing and the descent. The rise and the
-  descent spend none of the motion, so each begins and ends at one moment: the rise at the moment the wall
-  was met, the descent at the moment the crossing ended. The crossing spends the motion that was left at the
-  wall, as one leg or as several where it meets a thing and slides, each with its time by this rule.
-- *A snap* is one leg straight down that spends none of the motion. It stands at the moment the travel before
-  it ended, and before the rest where there is one.
+- *A rest* is a leg of no length that takes time. A shape with no way left rests where it stopped for the
+  share still left, and a rest is always the last leg. A shape that a wall stops head-on a quarter of the way
+  through its step has one leg over the first quarter and a rest over the other three.
+
+**Rule 2: a leg that spends none of the motion takes its time from the travel it belongs with, by length.**
+There are three such legs, the rise and the descent of a climbed step and a snap. Each covers a distance, and
+a distance covered in no time has no speed, so none is left without time.
+
+- *A climbed step* is the leg to the wall, then the rise, the crossing and the descent. Rule 1 gives the
+  crossing a span of time: from the moment the wall was met to the moment the crossing's motion was spent or
+  stopped. The rise, the crossing and the descent share that span in that order, each in proportion to its
+  length, so the shape goes over the step at one even speed. The crossing may be several legs, where it meets
+  a thing and slides. Its length is the sum of theirs, and they divide the crossing's part of the span in the
+  proportions rule 1 gave them. A shape that meets a wall half-way through its step, rises one unit, crosses
+  two and comes down one covers four units in the second half of the step: the rise is from ½ to ⅝, the
+  crossing from ⅝ to ⅞ and the descent from ⅞ to 1. A trigger half-way up the rise is met at 9⁄16 of the
+  step, by a shape rising at eight units a step.
+- *A snap* is one leg straight down, after the last leg travelled and before the rest where there is one. It
+  shares that last leg's time with it, each in proportion to its length. A snap is taken only by a shape that
+  has left the floor it started on, so a travelled leg always comes before it. A shape that travels three
+  units over the whole step and is snapped down one has its leg from 0 to ¾ and its snap from ¾ to 1.
+- An ordinary slide and a stop have no such leg, so their times are rule 1's alone.
+
+**Whatever the rounding.**
+
+- *A leg of no length and no time is not returned*, such as a descent that had nowhere to fall.
+- *A leg that has length is never returned with no time.* A leg's two moments are the profile's numbers, and
+  a time shorter than their step, about 2⁻²⁴ of the step, rounds to nothing. Such a leg is joined to the leg
+  after it, or to the leg before it where none follows: the path runs straight from where the first of the
+  two began to where the second ended, over the time of both.
 - *A contact taken where the shape stood* ends no leg. The leg after it begins at the same place and moment.
+- *A contact's share of the step* is the moment, on these legs, at which the shape stood where it was met.
 - The first leg begins at 0 and the last ends at 1. A motion that met nothing is one leg from 0 to 1, and no
   motion is one rest from 0 to 1.
 - Only the legs of the path taken are returned. A step that was tried and not taken leaves none.
 
-So a trigger on the crossing of a climbed step lies on a leg of the path, and a sweep along the path meets it
-where the straight line between the two ends passes beneath it. And a thing that crosses, in the last
-three quarters of a tick, the line a stopped shape travelled in the first quarter is not met.
+So a trigger anywhere on a climbed step, on its rise and its descent as on its crossing, is met by a sweep
+along the path at a moment of the tick, with a speed the SDK's `approach_speed` can be worked from. And a
+thing that crosses, in the last three quarters of a tick, the line a stopped shape travelled in the first
+quarter is not met.
 
 **Evidence.** Sweep, slide and step is what Rapier's controller, Godot's `move_and_slide`, Unreal's character
 movement and Avian's move-and-slide do; Avian's sweeps with a skin of 0.01, gathers surfaces within
@@ -574,9 +683,9 @@ module's byte form. At load the SDK decodes them, builds pieces and assembles th
 | Interface | What it is |
 |---|---|
 | **The pair tests** | [Mechanism 2](#2-shapes-and-the-pair-tests): shapes, distance, overlap, depth, ray and sweep, a sweep with one motion or two and with the gap to stop within, and the contact tolerance and the query domain as public constants |
-| **The collider index** | [Mechanism 4](#4-the-collider-index), with its orders and each query's count of pair tests |
+| **The collider index** | [Mechanism 4](#4-the-collider-index), with its orders and each query's counts of pair tests and of boxes examined |
 | **Fixed collision** | [Mechanism 5](#5-fixed-collision): pieces, a level assembled from them, its queries, the height of the ground, a heightfield's triangles, and the byte form of sources |
-| **The kinematic move** | [Mechanism 6](#6-the-kinematic-move): the end, the path as legs with their times, the contacts with their depth, and what the shape rests against, with the skin, the longest motion and the numbers of contacts and legs as public constants |
+| **The kinematic move** | [Mechanism 6](#6-the-kinematic-move): the end, the path as legs with their times, each leg with length taking time, the contacts with their depth, and what the shape rests against, with the skin, the longest motion and the numbers of contacts and legs as public constants |
 | **The conformance command and the guide** | [Mechanism 7](#7-the-proof-on-three-targets), and `docs/SIM3D.md` from WP5 |
 
 Results are promised equal across devices for one build of one rule set, as `SIM-2D`'s are, and not across
@@ -587,16 +696,24 @@ half-edges, a capsule's ends and a mesh's placement; an `Angle` into a cosine; l
 ties by spawn order, by giving slots in that order; the level's recipe, `LevelPiece`, marks and which built
 levels are kept; the path each entity took in a tick, which `follow` keeps from a move's legs;
 `motion_of` sweeps over those paths, with their candidates from
-[an index of path boxes](#4-the-collider-index) and each settled by a sweep with two motions; `approach_speed`,
-from the two motions and the normal; `solid_at`, which this module answers as a point's overlap; and a camera
+[an index of path boxes](#4-the-collider-index), each box widened by the tolerance and cut back to the query
+domain, and each candidate settled by a sweep with two motions; `approach_speed`, from the two motions and the
+normal; a ray's `depth`, from [the depth test](#2-shapes-and-the-pair-tests) at the ray's start; `solid_at`, which this module answers as a point's overlap; and a camera
 boom, which may ask the same queries from a frame function.
 
 **For `GAME-SDK`'s planner.** The work package that delivers the move is `SIM-3D:WP4`. WP5 proves the whole
 module on the three targets and writes the guide; a fault it finds is fixed here, behind the same interface.
-Four things in this design are the SDK's to read when WP16 gets its items:
+Six things in this design are the SDK's to read when WP16 gets its items:
 
-- The rise and the descent of a climbed step, and a snap, are legs that begin and end at one moment. They are
-  in the path so a sweep meets what stands on them, and a speed along one has no meaning.
+- Every leg of a move's path that has length takes time, the rise and the descent of a climbed step and a snap
+  among them. So a hit on any leg has a `fraction`, a `mover_position` on that leg and an `approach_speed`
+  from the leg's length over its time, as on a slide, and the SDK divides by no leg's time that is nothing.
+  The crossing of a climbed step takes less of the tick than its motion alone would give, because the rise
+  and the descent share its time, and the last leg before a snap likewise. A slide and a stop keep the times
+  [section 7 of the SDK's design](../GAME-SDK/DESIGN.md#7-space-and-the-level) works through.
+- A path box for the index of colliders that moved is widened by the tolerance and then cut back to the query
+  domain, for the boxes built and for the box asked with.
+- A ray's hit takes its `depth` from the depth test, asked with a sphere of no radius at the ray's start.
 - A move's `contacts()` are what the shape began inside and what took part of its motion. A thing it only
   touched, and led along or away from, is in what it rests against and not among them.
 - A motion longer than 4,096 units, and anything outside the query domain, is refused.
@@ -616,14 +733,15 @@ No budget is set ([decision 3](../VISION.md#decisions)). The account, by design:
 | A query | The tree's depth, then a pair test for each candidate, then the answers put in key order, or the least key kept where only the first is wanted |
 | A mesh piece | Built once when its level first needs it: its triangles placed and a tree made. 61,664 triangles is the largest tracked mesh |
 | A level | Assembled from its pieces when the recipe changes: a tree over at most a few hundred boxes |
-| A move | A fixed number of rounds, each one sweep against the level and the indexes named and a check of the place reached, with up to three more for a step and one for a snap |
+| A move | A fixed number of rounds, each one sweep against the level and the indexes named, a short sweep to set out from each thing the shape rides too near, and a check of the place reached, with up to three more for a step and one for a snap |
 | A capability left out | Nothing: a game with no 3D space does not link the crate |
 
 WP5 records, on the Mac and in Chrome, from two runs with the build and the load: an index build and each
 query at 2,000, 5,000 and 10,000 colliders with 2,000 asking; a piece built from each of the tracked meshes of
 224, 8,192 and 61,664 triangles (`examples/starter`'s rock, `examples/mirror`'s hill and the showcase terrain)
 and from a 65 by 65 heightfield; a level of 257 pieces assembled; and 2,000 moves a tick over each ground.
-Every row names what it visited beside its time: for a query and a move, the pair tests made.
+Every row names what it visited beside its time: for a query, the pair tests made and the tree's boxes
+examined, and for a move, the pair tests made.
 
 **Beside `SIM-2D`'s.** The module list asks for "the cost of a query and a move recorded beside `SIM-2D`'s as
 a tripwire", so WP5's record carries `SIM-2D`'s figures on each target and is not complete without them. They
@@ -665,9 +783,12 @@ a missing measurement or a missing `SIM-2D` figure:
   within half the tolerance, and later the move's long slides at a corner of the domain.
   [What would change the decision](#6-the-kinematic-move) names the next step, and a tolerance that would pass
   1/64 of a unit stops the builder.
-- **The SDK reads a leg of no duration as a division by nothing.** The rise, the descent and a snap take no
-  time by the one rule for times. Early sign: `GAME-SDK` WP16's sweep of a followed step. The handoff below
-  tells its planner.
+- **A leg's time rounds to nothing**, and the SDK divides by it. [Legs and their times](#legs-and-their-times)
+  gives the rise, the descent and a snap time by length, and joins a leg whose time rounds away to its
+  neighbour, so none is returned with length and no time. Early sign: the move's legs for a step climbed
+  late in a tick, and `GAME-SDK` WP16's sweep of a followed step.
+- **A shape in a gap too tight to ride catches on a seam.** The limit is stated in
+  [step 4](#6-the-kinematic-move) and goes in the guide. Early sign: the move's cases in narrowing gaps.
 - **A convincing fake of N1:** vectors compared inside one process. Each target is a separate process on its
   own runtime, and a changed value must fail.
 - **Word size.** Wasm's `usize` is 32 bits. An order or a key that passes through one could differ there.

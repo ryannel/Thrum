@@ -235,6 +235,17 @@ game code it is `move_shape`.
 
 Proposed: the planner chose the name.
 
+### Path box
+
+The box around every place a collider's shape stood along its path in one tick, widened by the contact
+tolerance and cut back to the query domain. The game SDK indexes one for each collider that moved, so a sweep
+finds two things that crossed where neither began nor ended. Defined in
+[SIM-3D's design](SIM-3D/DESIGN.md#4-the-collider-index).
+
+- **Source** — SIM-3D's design; the field's term is a swept bounding box (swept AABB).
+
+Proposed: the planner chose the name.
+
 ### Setting
 
 A named value a game shows on the tuning panel, in the Mac window and on the Chrome page: a slider, a toggle, a
