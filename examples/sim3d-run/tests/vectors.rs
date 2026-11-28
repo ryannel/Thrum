@@ -36,15 +36,18 @@ fn changed_word_names_the_vector() {
 fn first_difference(expected: &str, actual: &str) -> Option<String> {
     let mut expected = expected.lines();
     let mut actual = actual.lines();
+    let mut number = 0;
     loop {
+        number += 1;
         match (expected.next(), actual.next()) {
             (None, None) => return None,
             (a, b) if a == b => (),
             (a, b) => {
-                return a
-                    .or(b)
-                    .and_then(|row| row.split_ascii_whitespace().next())
-                    .map(str::to_owned);
+                let name = [a, b]
+                    .into_iter()
+                    .flatten()
+                    .find_map(|row| row.split_ascii_whitespace().next());
+                return Some(name.map_or_else(|| format!("row {number}"), str::to_owned));
             }
         }
     }

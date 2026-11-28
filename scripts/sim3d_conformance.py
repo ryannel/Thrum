@@ -82,7 +82,7 @@ def compare(expected, actual):
     for number, (want, got) in enumerate(
             itertools.zip_longest(expected.splitlines(), actual.splitlines()), start=1):
         if want != got:
-            vector = (want or got).split(" ", 1)[0]
+            vector = (want or got or "<empty>").split(" ", 1)[0]
             raise ValueError(f"vector {vector} differs at row {number}: retained {want!r}, got {got!r}")
 
 
