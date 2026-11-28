@@ -630,7 +630,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP6/feathered-packets/checks/WP6.1.log",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/joined-roll/checks/WP6.1.log",
           "verdict": "",
           "review": ""
         },
@@ -641,7 +641,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP6/feathered-packets/checks/WP6.2.log",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/joined-roll/checks/WP6.2.log",
           "verdict": "",
           "review": ""
         },
@@ -653,7 +653,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP6/feathered-packets/checks/WP6.3.log",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/joined-roll/checks/WP6.3.log",
           "verdict": "",
           "review": ""
         },
@@ -662,8 +662,8 @@
           "statement": "At its lowest and middle gauges the fall reads as falling water. At the lip it is a smooth tongue that shows the rock behind it, at the lowest, the middle and the highest gauge; it whitens down its length and breaks into strands that stretch as they gather speed, with gaps where it is thin; at the lowest gauge it is a few strands and at the middle gauge a fuller fall of them. No pattern slides at one speed, nothing tiles or repeats, and it does not read as a card. Below the lip at the highest gauge the fall draws, and its look there is WP11's and decides nothing here.",
           "inspect": "`realtime` sequences of the fall from 2 m and 5 m in front, from beside it, from behind it and from 60 m and 200 m off, at the gauge's lowest and middle, at noon, with stills cropped at native size of the lip, the middle and the foot; and one `realtime` sequence from 2 m in front at the gauge's highest, at noon, with a still of the lip cropped at native size. 1. At the lip the water is a smooth tongue and the rock behind shows through it, at the lowest, the middle and the highest gauge. 2. Down its length the fall whitens and breaks into strands, with gaps where it is thin. 3. Followed through a sequence, a streak stretches and moves faster near the foot than near the lip, and no pattern slides at one speed. 4. At the lowest gauge the fall is a few strands; at the middle gauge it is fuller, and still strands with gaps. 5. Nothing tiles or repeats across the fall, and from no view does it read as a card. Points 2 to 5 are judged at the lowest and middle gauges. At the highest gauge only the lip is judged, by point 1: a curtain below it, or strands that end hard, is WP11's cue.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/joined-roll/README.md",
           "verdict": "",
           "review": ""
         },
@@ -673,7 +673,7 @@
           "inspect": "`realtime` sequences of the plunge pool from its bank at 2 m, looking along the foot of the cliff, and from 15 m above, with the interaction windows on the pool, at the gauge's middle and highest; one as the gauge falls to a dry lip and the pool calms. 1. A white boil stands at the foot of the fall and pale water spreads from it. 2. Foam is drawn off downstream in streaks. 3. Rings leave the foot, cross the pool and die at its banks. 4. The fall on screen shows in the pool's calmer water. 5. The pool lies against the rock at the foot of the cliff, behind the falling water and to each side of it, with a waterline like any bank's. 6. As the gauge falls to a dry lip the pool calms and keeps that waterline. 7. At the middle gauge no hard line shows where the sheet meets the pool. At the highest gauge judge points 1 to 5 only: the ends of the falling water there, and any line they draw above or through the boil, are WP11.3's cue and do not decide this item.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP6/path-strands/pool-inspection.md",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/joined-roll/pool-inspection.md",
           "verdict": "",
           "review": ""
         },
@@ -684,7 +684,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP6/feathered-packets/checks/WP6.6.log",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/joined-roll/checks/WP6.6.log",
           "verdict": "",
           "review": ""
         },
@@ -695,7 +695,7 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP6/feathered-packets/checks/chrome-run.json",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/joined-roll/checks/WP6.7.log",
           "verdict": "",
           "review": ""
         },
@@ -706,7 +706,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP6/feathered-packets/checks/fall-cost.json",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/joined-roll/checks/WP6.8.log",
           "verdict": "",
           "review": ""
         },
@@ -729,7 +729,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP6/feathered-packets/checks/WP6.11.log",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/joined-roll/checks/WP6.11.log",
           "verdict": "",
           "review": ""
         },
@@ -741,7 +741,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP6/feathered-packets/checks/WP6.12.log",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/joined-roll/checks/WP6.12.log",
           "verdict": "",
           "review": ""
         }
