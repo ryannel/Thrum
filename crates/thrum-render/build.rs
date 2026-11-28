@@ -29,6 +29,45 @@ fn emit(out: &std::path::Path, name: &str, integers: &[(&str, u32)], floats: &[(
     std::fs::write(out.join(name), prelude).expect("write WGSL prelude");
 }
 
+fn emit_scene_shadows(out: &std::path::Path, shader_tangent: f32) {
+    emit(
+        out,
+        "scene_shadows.wgsl",
+        &[
+            ("SHADOW_HEIGHT_LAYER", SHADOW_HEIGHT_LAYER),
+            ("SHADOW_HEIGHT_SIZE", SHADOW_HEIGHT_SIZE),
+        ],
+        &[
+            ("SUN_TAN_RADIUS", shader_tangent),
+            ("SUN_OUTLINE_RADIUS", SUN_OUTLINE_RADIUS),
+            (
+                "SUN_OUTLINE_X1",
+                SUN_OUTLINE_OFFSETS[1][0] - SUN_OUTLINE_OFFSETS[0][0],
+            ),
+            (
+                "SUN_OUTLINE_Y1",
+                SUN_OUTLINE_OFFSETS[1][1] - SUN_OUTLINE_OFFSETS[0][1],
+            ),
+            (
+                "SUN_OUTLINE_X2",
+                SUN_OUTLINE_OFFSETS[2][0] - SUN_OUTLINE_OFFSETS[0][0],
+            ),
+            (
+                "SUN_OUTLINE_Y2",
+                SUN_OUTLINE_OFFSETS[2][1] - SUN_OUTLINE_OFFSETS[0][1],
+            ),
+            (
+                "SUN_OUTLINE_X3",
+                SUN_OUTLINE_OFFSETS[3][0] - SUN_OUTLINE_OFFSETS[0][0],
+            ),
+            (
+                "SUN_OUTLINE_Y3",
+                SUN_OUTLINE_OFFSETS[3][1] - SUN_OUTLINE_OFFSETS[0][1],
+            ),
+        ],
+    );
+}
+
 fn main() {
     println!("cargo:rerun-if-changed=src/shader_constants.rs");
     println!("cargo:rerun-if-changed=build.rs");
@@ -93,42 +132,7 @@ fn main() {
         reason = "The shader constant is f32"
     )]
     let shader_tangent = ((sun_tangent * 1e9).round() / 1e9) as f32;
-    emit(
-        &out,
-        "scene_shadows.wgsl",
-        &[
-            ("SHADOW_HEIGHT_LAYER", SHADOW_HEIGHT_LAYER),
-            ("SHADOW_HEIGHT_SIZE", SHADOW_HEIGHT_SIZE),
-        ],
-        &[
-            ("SUN_TAN_RADIUS", shader_tangent),
-            ("SUN_OUTLINE_RADIUS", SUN_OUTLINE_RADIUS),
-            (
-                "SUN_OUTLINE_X1",
-                SUN_OUTLINE_OFFSETS[1][0] - SUN_OUTLINE_OFFSETS[0][0],
-            ),
-            (
-                "SUN_OUTLINE_Y1",
-                SUN_OUTLINE_OFFSETS[1][1] - SUN_OUTLINE_OFFSETS[0][1],
-            ),
-            (
-                "SUN_OUTLINE_X2",
-                SUN_OUTLINE_OFFSETS[2][0] - SUN_OUTLINE_OFFSETS[0][0],
-            ),
-            (
-                "SUN_OUTLINE_Y2",
-                SUN_OUTLINE_OFFSETS[2][1] - SUN_OUTLINE_OFFSETS[0][1],
-            ),
-            (
-                "SUN_OUTLINE_X3",
-                SUN_OUTLINE_OFFSETS[3][0] - SUN_OUTLINE_OFFSETS[0][0],
-            ),
-            (
-                "SUN_OUTLINE_Y3",
-                SUN_OUTLINE_OFFSETS[3][1] - SUN_OUTLINE_OFFSETS[0][1],
-            ),
-        ],
-    );
+    emit_scene_shadows(&out, shader_tangent);
     for (file, name, size) in [
         ("history.wgsl", "HISTORY_WORKGROUP", HISTORY_WORKGROUP),
         (

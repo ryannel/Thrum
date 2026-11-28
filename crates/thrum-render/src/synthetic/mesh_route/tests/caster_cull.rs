@@ -85,7 +85,7 @@ impl Gpu {
                 .depth_or_array_layers()
         });
         assert_eq!(layers, culled_layers);
-        let bytes = (layers * 4) as u64;
+        let bytes = u64::from(layers) * 4;
         let out = self.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("caster cull depth mismatch counts"),
             size: bytes,
