@@ -2,8 +2,9 @@ struct ShadowCascades {
     light_view_proj: array<mat4x4<f32>, SUN_CASCADE_COUNT>,
     // Receiver radius, texel metres, inverse depth span, minimum receiver bias.
     cascade_metrics: array<vec4<f32>, SUN_CASCADE_COUNT>,
-    // Cascade count, distance reach, and fade start.
+    // Cascade count, distance reach, fade start, and first extra outline layer.
     profile: vec4<f32>,
+    eye: vec4<f32>,
     height_support: vec4<f32>,
     height_view_proj: mat4x4<f32>,
     // Depth = x*height + y; uv per metre; texel metres. Zero x disables it.

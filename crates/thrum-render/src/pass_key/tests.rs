@@ -77,8 +77,8 @@ fn indexed_keys() -> impl Iterator<Item = PassKey> {
                 SecondaryStage::Opaque,
                 SecondaryStage::Clusters,
                 SecondaryStage::Aerial,
-                SecondaryStage::SunNear,
-                SecondaryStage::SunFar,
+                SecondaryStage::Sun(0),
+                SecondaryStage::Sun(1),
                 SecondaryStage::Visibility,
                 SecondaryStage::Casters,
             ]

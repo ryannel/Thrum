@@ -1,29 +1,31 @@
 //! Per-view cascade uniforms reuse the scene's caster pipelines and global
 //! caster bounds. The distant height map keeps the main scene's fit.
 use super::{
-    CASTER_VIEW_RANGE, Cascade, FitInputs, RenderError, SAMPLE_BYTES, ShadowBounds, ShadowPrepared,
-    SyntheticView,
+    CASTER_VIEW_RANGE, Cascade, FitInputs, RenderError, SAMPLE_BYTES, SECONDARY_CASCADES,
+    SECONDARY_LAYERS, ShadowBounds, ShadowPrepared, SyntheticView,
 };
 
 impl ShadowPrepared {
     pub(in crate::synthetic) fn secondary(&self, device: &crate::runtime::DeviceSite) -> Self {
-        let cascades = std::array::from_fn(|_| {
-            let buffer = device.create_buffer(&wgpu::BufferDescriptor {
-                label: Some("secondary Sun caster view"),
-                size: CASTER_VIEW_RANGE,
-                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                mapped_at_creation: false,
-            });
-            let view_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("secondary Sun caster view"),
-                layout: &self.view_layout,
-                entries: &[wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: buffer.as_entire_binding(),
-                }],
-            });
-            Cascade { buffer, view_group }
-        });
+        let cascades = (0..SECONDARY_LAYERS)
+            .map(|_| {
+                let buffer = device.create_buffer(&wgpu::BufferDescriptor {
+                    label: Some("secondary Sun caster view"),
+                    size: CASTER_VIEW_RANGE,
+                    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                    mapped_at_creation: false,
+                });
+                let view_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some("secondary Sun caster view"),
+                    layout: &self.view_layout,
+                    entries: &[wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: buffer.as_entire_binding(),
+                    }],
+                });
+                Cascade { buffer, view_group }
+            })
+            .collect();
         Self {
             pipeline: self.pipeline.clone(),
             pipeline_two_sided: self.pipeline_two_sided.clone(),
@@ -60,7 +62,10 @@ impl ShadowPrepared {
         fitted.matrices[super::HEIGHT_LAYER] = world_fit.matrices[super::HEIGHT_LAYER];
         fitted.samples.height_view_proj = world_fit.samples.height_view_proj;
         fitted.samples.horizon = world_fit.samples.horizon;
-        for (index, cascade) in self.cascades.iter().enumerate() {
+        fitted.samples.profile[3] = SECONDARY_CASCADES as f32;
+        let active_drawings = SECONDARY_CASCADES
+            + super::outline_count(profile.0, profile.1) as usize * super::OUTLINE_EXTRA;
+        for (index, cascade) in self.cascades.iter().take(active_drawings).enumerate() {
             self.queue.write_buffer(
                 &cascade.buffer,
                 0,

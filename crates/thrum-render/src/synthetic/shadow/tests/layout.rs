@@ -62,7 +62,14 @@ fn sun_cascade_layout_is_radial_snapped_and_has_upstream_depth() {
                 (half_width - radius - (CASCADE_GUARD_TEXELS + CASCADE_SNAP_TEXELS) * texel).abs()
                     < 5e-4
             );
-            let centre_in_texels = matrix.project_point3(eye).abs() * (SIZE as f32 * 0.5);
+            let drawing_offset = if radius <= SUN_OUTLINE_RADIUS {
+                let [x, y] = SUN_OUTLINE_OFFSETS[0];
+                Vec3::new(-x, y, 0.0)
+            } else {
+                Vec3::ZERO
+            };
+            let centre_in_texels =
+                (matrix.project_point3(eye) * (SIZE as f32 * 0.5) - drawing_offset).abs();
             let movement =
                 (translated.matrices[index].w_axis - matrix.w_axis) * (SIZE as f32 * 0.5);
             for axis in 0..2 {
@@ -73,6 +80,43 @@ fn sun_cascade_layout_is_radial_snapped_and_has_upstream_depth() {
                 assert!(bound <= SIZE as f32 * 0.5 - CASCADE_GUARD_TEXELS + 0.001);
             }
             assert!((0.0..=1.0).contains(&matrix.project_point3(upstream).z));
+        }
+    }
+}
+
+#[test]
+fn sun_cascade_layout_places_the_four_drawings_on_a_rotated_grid() {
+    let camera = view(Vec3::ZERO, Vec3::NEG_Z, 0.7, 0.1, 100.0);
+    let fit = FitInputs::new(&camera, (&[], None), Vec3::Y)
+        .unwrap()
+        .fit(None)
+        .unwrap();
+    assert_eq!(outline_count(SUN_CASCADE_COUNT, RECEIVER_REACH), 3);
+    assert_eq!(outline_count(1, 128.0), 0);
+    assert_eq!(outline_count(2, 16.0), 2);
+
+    let expected = [
+        [-0.125, -0.375],
+        [0.375, -0.125],
+        [-0.375, 0.125],
+        [0.125, 0.375],
+    ];
+    for cascade in 0..3 {
+        let mut drawings = [0; 4];
+        drawings[0] = cascade;
+        for (sample, layer) in drawings.iter_mut().enumerate().skip(1) {
+            *layer = MAPS + 3 * cascade + sample - 1;
+        }
+        for (layer, [x, y]) in drawings.into_iter().zip(expected) {
+            let draw = fit.caster_view(layer);
+            let matrix = Mat4::from_cols_array_2d(&draw.light_view_proj);
+            let phase = matrix.w_axis * (SIZE as f32 / 2.0);
+            assert_eq!([-phase.x, phase.y], [x, y]);
+            assert_eq!(matrix.row(2), fit.matrices[cascade].row(2));
+            assert_eq!(
+                draw.minimum_cast_width,
+                fit.caster_view(cascade).minimum_cast_width
+            );
         }
     }
 }

@@ -106,10 +106,8 @@ pub(crate) enum SecondaryStage {
     Clusters,
     /// Its aerial perspective volume.
     Aerial,
-    /// Its near Sun cascade.
-    SunNear,
-    /// Its far Sun cascade.
-    SunFar,
+    /// One layer of its Sun cascades.
+    Sun(u32),
     /// Its visibility compaction.
     Visibility,
     /// Its Sun caster cull.
@@ -118,17 +116,18 @@ pub(crate) enum SecondaryStage {
 
 impl SecondaryStage {
     /// Pipeline roles a view reserves, one per stage.
-    pub(crate) const COUNT: u32 = 7;
+    pub(crate) const COUNT: u32 = 13;
 
     const fn offset(self) -> u32 {
         match self {
             Self::Opaque => 0,
             Self::Clusters => 1,
             Self::Aerial => 2,
-            Self::SunNear => 3,
-            Self::SunFar => 4,
+            Self::Sun(0) => 3,
+            Self::Sun(1) => 4,
             Self::Visibility => 5,
             Self::Casters => 6,
+            Self::Sun(layer) => 5 + layer,
         }
     }
 
@@ -137,7 +136,7 @@ impl SecondaryStage {
             Self::Opaque => "secondary view opaque",
             Self::Clusters => "secondary view clusters",
             Self::Aerial => "secondary view aerial perspective",
-            Self::SunNear | Self::SunFar => "secondary view Sun cascade",
+            Self::Sun(_) => "secondary view Sun cascade",
             Self::Visibility => "secondary view visibility",
             Self::Casters => "secondary view Sun caster cull",
         }
@@ -388,7 +387,7 @@ pub(crate) enum PassKey {
     Surface,
 }
 
-const SUN_CASCADE_NAMES: [&str; 7] = [
+const SUN_CASCADE_NAMES: [&str; 8] = [
     "synthetic Sun cascade 2",
     "synthetic Sun cascade 3",
     "synthetic Sun cascade 4",
@@ -396,6 +395,40 @@ const SUN_CASCADE_NAMES: [&str; 7] = [
     "synthetic Sun cascade 6",
     "synthetic Sun cascade 7",
     "synthetic Sun cascade 8",
+    "synthetic Sun cascade 9",
+];
+
+const SUN_OUTLINE_NAMES: [&str; 30] = [
+    "synthetic Sun cascade 0 outline 1",
+    "synthetic Sun cascade 0 outline 2",
+    "synthetic Sun cascade 0 outline 3",
+    "synthetic Sun cascade 1 outline 1",
+    "synthetic Sun cascade 1 outline 2",
+    "synthetic Sun cascade 1 outline 3",
+    "synthetic Sun cascade 2 outline 1",
+    "synthetic Sun cascade 2 outline 2",
+    "synthetic Sun cascade 2 outline 3",
+    "synthetic Sun cascade 3 outline 1",
+    "synthetic Sun cascade 3 outline 2",
+    "synthetic Sun cascade 3 outline 3",
+    "synthetic Sun cascade 4 outline 1",
+    "synthetic Sun cascade 4 outline 2",
+    "synthetic Sun cascade 4 outline 3",
+    "synthetic Sun cascade 5 outline 1",
+    "synthetic Sun cascade 5 outline 2",
+    "synthetic Sun cascade 5 outline 3",
+    "synthetic Sun cascade 6 outline 1",
+    "synthetic Sun cascade 6 outline 2",
+    "synthetic Sun cascade 6 outline 3",
+    "synthetic Sun cascade 7 outline 1",
+    "synthetic Sun cascade 7 outline 2",
+    "synthetic Sun cascade 7 outline 3",
+    "synthetic Sun cascade 8 outline 1",
+    "synthetic Sun cascade 8 outline 2",
+    "synthetic Sun cascade 8 outline 3",
+    "synthetic Sun cascade 9 outline 1",
+    "synthetic Sun cascade 9 outline 2",
+    "synthetic Sun cascade 9 outline 3",
 ];
 
 impl PassKey {
@@ -422,8 +455,7 @@ impl PassKey {
     pub(crate) fn name(self) -> Option<Cow<'static, str>> {
         if let Self::Secondary { view, stage } = self {
             return Some(Cow::Owned(match stage {
-                SecondaryStage::SunNear => format!("{} {view} 0", stage.prefix()),
-                SecondaryStage::SunFar => format!("{} {view} 1", stage.prefix()),
+                SecondaryStage::Sun(layer) => format!("{} {view} {layer}", stage.prefix()),
                 _ => format!("{} {view}", stage.prefix()),
             }));
         }
@@ -438,6 +470,9 @@ impl PassKey {
             Self::DisplayReferred => "display-referred tone encode",
             Self::ShadowNear => "synthetic Sun shadow near",
             Self::ShadowFar => "synthetic Sun shadow far",
+            Self::SunCascade(index) if index >= crate::shader_constants::SHADOW_MAP_LAYERS => {
+                SUN_OUTLINE_NAMES[(index - crate::shader_constants::SHADOW_MAP_LAYERS) as usize]
+            }
             Self::SunCascade(index) => SUN_CASCADE_NAMES[index as usize - 2],
             Self::HorizonHeights => "synthetic Sun horizon heights",
             Self::AirShadow => "synthetic Sun air shadow heights",

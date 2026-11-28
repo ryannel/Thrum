@@ -243,8 +243,9 @@ fn cascade_receiver(index: u32, receiver: ShadowReceiver, size: f32) -> CascadeR
     return CascadeReceiver(uv, p.z, gradient, bias, epsilon, metrics.z, metrics.y, tolerance);
 }
 
-fn caster_gap(index: u32, receiver: CascadeReceiver, texel: vec2<i32>, size: f32) -> f32 {
-    let uv = (vec2<f32>(texel) + 0.5) / size;
+fn caster_gap(index: u32, receiver: CascadeReceiver, texel: vec2<i32>, size: f32,
+    phase: vec2<f32>) -> f32 {
+    let uv = (vec2<f32>(texel) + 0.5 + phase) / size;
     let delta = uv - receiver.uv;
     let depth = textureLoad(shadow_maps, texel, i32(index), 0);
     let gap = depth - receiver.depth - dot(receiver.gradient, delta);
@@ -263,7 +264,7 @@ fn nearest_blocker(index: u32, receiver: CascadeReceiver, size: f32, radius: f32
         let offset = select(SHADOW_DISK[(tap * 4u + 1u) % 32u], vec2(0.0), tap == 0u);
         let pixel = receiver.uv * size + offset * radius;
         if any(pixel < vec2(0.0)) || any(pixel >= vec2(size)) { continue; }
-        let gap = caster_gap(index, receiver, vec2<i32>(pixel), size);
+        let gap = caster_gap(index, receiver, vec2<i32>(pixel), size, vec2(0.0));
         if tap == 0u { centre_gap = gap; }
         if gap > lower && gap <= upper { nearest = min(nearest, gap); }
     }
@@ -272,8 +273,9 @@ fn nearest_blocker(index: u32, receiver: CascadeReceiver, size: f32, radius: f32
 
 // For the minimum footprint each map texel is integrated once. Fractional
 // footprint coverage keeps the ramp continuous across the snapped raster.
-fn contact_filter(index: u32, receiver: CascadeReceiver, size: f32, lower: f32, upper: f32) -> f32 {
-    let centre = receiver.uv * size;
+fn contact_filter(layer: u32, receiver: CascadeReceiver, size: f32, lower: f32, upper: f32,
+    phase: vec2<f32>) -> f32 {
+    let centre = receiver.uv * size - phase;
     let lo = centre - SUN_MIN_FILTER_RADIUS;
     let hi = centre + SUN_MIN_FILTER_RADIUS;
     let first = floor(lo);
@@ -283,7 +285,7 @@ fn contact_filter(index: u32, receiver: CascadeReceiver, size: f32, lower: f32, 
             let sample = first + vec2(f32(x), f32(y));
             let weight = max(vec2(0.0), min(hi, sample + 1.0) - max(lo, sample));
             let texel = vec2<i32>(clamp(sample, vec2(0.0), vec2(size - 1.0)));
-            let gap = caster_gap(index, receiver, texel, size);
+            let gap = caster_gap(layer, receiver, texel, size, phase);
             lit += weight.x * weight.y * select(0.0, 1.0, gap <= lower || gap > upper);
         }
     }
@@ -291,25 +293,47 @@ fn contact_filter(index: u32, receiver: CascadeReceiver, size: f32, lower: f32, 
     return lit / (width * width);
 }
 
-fn filtered_shadow(index: u32, receiver: CascadeReceiver, size: f32, radius: f32,
-    lower: f32, upper: f32) -> f32 {
-    if radius <= SUN_MIN_FILTER_RADIUS { return contact_filter(index, receiver, size, lower, upper); }
+fn filter_outline(layer: u32, receiver: CascadeReceiver, size: f32, radius: f32,
+    lower: f32, upper: f32, phase: vec2<f32>) -> f32 {
+    if radius <= SUN_MIN_FILTER_RADIUS {
+        return contact_filter(layer, receiver, size, lower, upper, phase);
+    }
     var visible = 0.0;
     // Nine bilinear taps spread the minimum footprint over neighbouring texels.
     for (var tap = 0u; tap < 9u; tap++) {
         let offset = select(SHADOW_DISK[(tap * 4u + 1u) % 32u], vec2(0.0), tap == 0u);
-        let pixel = receiver.uv * size + offset * radius - 0.5;
+        let pixel = receiver.uv * size + offset * radius - phase - 0.5;
         let first = floor(pixel);
         let blend = fract(pixel);
         for (var corner = 0u; corner < 4u; corner++) {
             let step = vec2(f32(corner & 1u), f32(corner >> 1u));
             let texel = vec2<i32>(clamp(first + step, vec2(0.0), vec2(size - 1.0)));
             let weights = mix(1.0 - blend, blend, step);
-            let gap = caster_gap(index, receiver, texel, size);
+            let gap = caster_gap(layer, receiver, texel, size, phase);
             visible += weights.x * weights.y * select(0.0, 1.0, gap <= lower || gap > upper);
         }
     }
     return visible / 9.0;
+}
+
+// The first layer owns the projection and blocker search. Integrate each
+// shifted outline in that same coordinate system before averaging coverage.
+const SUN_OUTLINE_PHASES = array(
+    vec2(SUN_OUTLINE_X1, SUN_OUTLINE_Y1),
+    vec2(SUN_OUTLINE_X2, SUN_OUTLINE_Y2),
+    vec2(SUN_OUTLINE_X3, SUN_OUTLINE_Y3),
+);
+
+fn filtered_shadow(index: u32, receiver: CascadeReceiver, size: f32, radius: f32,
+    lower: f32, upper: f32) -> f32 {
+    var visible = filter_outline(index, receiver, size, radius, lower, upper, vec2(0.0));
+    if shadows.cascade_metrics[index].x > SUN_OUTLINE_RADIUS { return visible; }
+    let first = u32(shadows.profile.w) + 3u * index;
+    for (var sample = 0u; sample < 3u; sample++) {
+        visible += filter_outline(first + sample, receiver, size, radius, lower, upper,
+            SUN_OUTLINE_PHASES[sample]);
+    }
+    return visible * 0.25;
 }
 
 fn penumbra_layer(first: u32, world_radius: f32) -> u32 {
@@ -356,7 +380,7 @@ fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
     if far.x == NO_BLOCKER && near.y > split && far_filtered >= 1.0 {
         // A small caster omitted from the broader search keeps its soft core
         // where the fine map saw it in the receiver's own texel.
-        return min(near_filtered, contact_filter(index, local, size, split, NO_BLOCKER));
+        return min(near_filtered, filtered_shadow(index, local, size, SUN_MIN_FILTER_RADIUS, split, NO_BLOCKER));
     }
     return min(near_filtered, far_filtered);
 }

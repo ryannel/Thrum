@@ -54,6 +54,7 @@ pub(crate) struct SyntheticTargetInputs {
     pub(super) cluster_index_bytes: u64,
     pub(super) shadow: Option<wgpu::Buffer>,
     pub(super) sun_cascade_count: u32,
+    pub(super) sun_outline_count: u32,
     pub(super) air_shadow: Option<AirShadowPrepared>,
     pub(super) atmosphere: Option<AtmospherePrepared>,
     pub(super) contribution_passes: ContributionPasses,
@@ -118,6 +119,7 @@ impl PreparedSynthetic {
                 .as_ref()
                 .map(|shadow| shadow.sample_buffer.clone()),
             sun_cascade_count: self.shadow_cascade_count(),
+            sun_outline_count: self.shadow_outline_count(),
             air_shadow: self.air_shadow.clone(),
             atmosphere: self.atmosphere.clone(),
             contribution_passes: self.contribution_passes,

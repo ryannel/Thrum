@@ -5,7 +5,15 @@ pub(crate) const CLUSTER_Y: usize = 18;
 pub(crate) const CLUSTER_Z: usize = 16;
 pub(crate) const CLUSTER_WORKGROUP: u32 = 64;
 pub(crate) const AIR_SHADOW_SIZE: u32 = 512;
-pub(crate) const SUN_CASCADE_COUNT: u32 = 9;
+pub(crate) const SUN_CASCADE_COUNT: u32 = 10;
+pub(crate) const SUN_OUTLINE_RADIUS: f32 = 16.0;
+// Rotated-grid positions relative to the texel centre, in texture XY.
+pub(crate) const SUN_OUTLINE_OFFSETS: [[f32; 2]; 4] = [
+    [-0.125, -0.375],
+    [0.375, -0.125],
+    [-0.375, 0.125],
+    [0.125, 0.375],
+];
 pub(crate) const SHADOW_MAP_LAYERS: u32 = SUN_CASCADE_COUNT + 1;
 pub(crate) const SHADOW_HEIGHT_SIZE: u32 = 1024;
 pub(crate) const SHADOW_HEIGHT_LAYER: u32 = SHADOW_MAP_LAYERS - 1;

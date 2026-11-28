@@ -15,7 +15,7 @@ use constants::{
     OVERLAY_TEMPORAL_INPUTS, OVERLAY_UNDITHERED, PHASE_FINAL, PHASE_FRUSTUM, PHASE_PREPASS,
     PLANET_RADIUS, PYRAMID_WORKGROUP_EDGE, REC709_LUMA, RECONSTRUCTION_WORKGROUP_EDGE,
     SHADOW_HEIGHT_LAYER, SHADOW_HEIGHT_SIZE, SUN_ANGULAR_RADIUS, SUN_CASCADE_COUNT,
-    TONE_MAP_NEUTRAL_HIGHLIGHTS, VISIBILITY_WORKGROUP,
+    SUN_OUTLINE_OFFSETS, SUN_OUTLINE_RADIUS, TONE_MAP_NEUTRAL_HIGHLIGHTS, VISIBILITY_WORKGROUP,
 };
 
 fn emit(out: &std::path::Path, name: &str, integers: &[(&str, u32)], floats: &[(&str, f32)]) {
@@ -100,7 +100,34 @@ fn main() {
             ("SHADOW_HEIGHT_LAYER", SHADOW_HEIGHT_LAYER),
             ("SHADOW_HEIGHT_SIZE", SHADOW_HEIGHT_SIZE),
         ],
-        &[("SUN_TAN_RADIUS", shader_tangent)],
+        &[
+            ("SUN_TAN_RADIUS", shader_tangent),
+            ("SUN_OUTLINE_RADIUS", SUN_OUTLINE_RADIUS),
+            (
+                "SUN_OUTLINE_X1",
+                SUN_OUTLINE_OFFSETS[1][0] - SUN_OUTLINE_OFFSETS[0][0],
+            ),
+            (
+                "SUN_OUTLINE_Y1",
+                SUN_OUTLINE_OFFSETS[1][1] - SUN_OUTLINE_OFFSETS[0][1],
+            ),
+            (
+                "SUN_OUTLINE_X2",
+                SUN_OUTLINE_OFFSETS[2][0] - SUN_OUTLINE_OFFSETS[0][0],
+            ),
+            (
+                "SUN_OUTLINE_Y2",
+                SUN_OUTLINE_OFFSETS[2][1] - SUN_OUTLINE_OFFSETS[0][1],
+            ),
+            (
+                "SUN_OUTLINE_X3",
+                SUN_OUTLINE_OFFSETS[3][0] - SUN_OUTLINE_OFFSETS[0][0],
+            ),
+            (
+                "SUN_OUTLINE_Y3",
+                SUN_OUTLINE_OFFSETS[3][1] - SUN_OUTLINE_OFFSETS[0][1],
+            ),
+        ],
     );
     for (file, name, size) in [
         ("history.wgsl", "HISTORY_WORKGROUP", HISTORY_WORKGROUP),

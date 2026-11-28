@@ -48,7 +48,7 @@ pub(super) use crate::pass_key::SecondaryStage as Stage;
 impl Stage {
     pub(super) fn kind(self) -> crate::graph::PassKind {
         match self {
-            Self::Opaque | Self::SunNear | Self::SunFar => crate::graph::PassKind::Render,
+            Self::Opaque | Self::Sun(_) => crate::graph::PassKind::Render,
             Self::Clusters | Self::Aerial | Self::Visibility | Self::Casters => {
                 crate::graph::PassKind::Compute
             }
@@ -838,9 +838,7 @@ impl SceneContext<'_> {
                     .then_some(())
                     .ok_or(RenderError::GraphPassMismatch)
             }
-            Stage::SunNear | Stage::SunFar => {
-                self.secondary_sun(index, usize::from(matches!(stage, Stage::SunFar)), compiled)
-            }
+            Stage::Sun(layer) => self.secondary_sun(index, layer as usize, compiled),
             Stage::Clusters => {
                 let prepared = self.prepared;
                 let slot = &prepared.secondary[index];

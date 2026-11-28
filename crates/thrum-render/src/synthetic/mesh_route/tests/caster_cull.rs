@@ -72,12 +72,21 @@ impl Gpu {
     /// Compare the actual depth bits of every texel and read each layer's
     /// mismatch count. Keeping the comparison on-device avoids transferring
     /// both full shadow arrays for every pose.
-    fn depth_differences(
-        &self,
-        direct: &OffscreenTarget,
-        culled: &OffscreenTarget,
-    ) -> [u32; shadow::MAPS] {
-        let bytes = (shadow::MAPS * 4) as u64;
+    fn depth_differences(&self, direct: &OffscreenTarget, culled: &OffscreenTarget) -> Vec<u32> {
+        let layers = direct
+            .shadow
+            .as_ref()
+            .expect("shadowed target")
+            .layer_count();
+        assert_eq!(
+            layers,
+            culled
+                .shadow
+                .as_ref()
+                .expect("shadowed target")
+                .layer_count()
+        );
+        let bytes = (layers * 4) as u64;
         let out = self.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("caster cull depth mismatch counts"),
             size: bytes,
@@ -127,13 +136,18 @@ impl Gpu {
             let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
             pass.set_pipeline(&pipeline);
             pass.set_bind_group(0, &group, &[]);
-            pass.dispatch_workgroups(shadow::SIZE / 16, shadow::SIZE / 16, shadow::LAYERS);
+            pass.dispatch_workgroups(shadow::SIZE / 16, shadow::SIZE / 16, layers as u32);
         }
         let readback =
             thrum_test_support::readback::Readback::buffer(&self.device, &mut encoder, &out, ..);
         let submission = self.queue.submit([encoder.finish()]);
         let read = readback.wait(&self.device, submission);
-        std::array::from_fn(|index| u32::from_le_bytes(read.as_chunks::<4>().0[index]))
+        read.as_chunks::<4>()
+            .0
+            .iter()
+            .copied()
+            .map(u32::from_le_bytes)
+            .collect()
     }
 
     /// One committed frame of `scene` into `target`.

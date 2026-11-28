@@ -14,7 +14,7 @@ const CULL_PASS: &str = "secondary view Sun caster cull";
 #[derive(Clone)]
 pub(super) struct Sun {
     pub(super) prepared: shadow::ShadowPrepared,
-    pub(super) target: shadow::ShadowTarget<2>,
+    pub(super) target: shadow::ShadowTarget,
     texture: wgpu::Texture,
     pub(super) culling: Option<(CasterCulling, Vec<wgpu::BindGroup>)>,
 }
@@ -38,7 +38,11 @@ impl Sun {
                         instances: scene.instance_upload.buffer(),
                         serials: scene.history.serial_buffer(),
                         members: route.member_inputs(),
-                        views: prepared.caster_views().into_iter().take(2).collect(),
+                        views: prepared
+                            .caster_views()
+                            .into_iter()
+                            .take(shadow::SECONDARY_CASCADES)
+                            .collect(),
                     },
                 );
                 culling.set_member_groups(route.groups());
@@ -68,7 +72,7 @@ impl Sun {
             size: wgpu::Extent3d {
                 width: shadow::SIZE,
                 height: shadow::SIZE,
-                depth_or_array_layers: 2,
+                depth_or_array_layers: shadow::SECONDARY_LAYERS as u32,
             },
             mip_level_count: 1,
             sample_count: 1,
@@ -100,7 +104,7 @@ impl Sun {
                 dimension: crate::graph::TextureKind::D2,
                 width: shadow::SIZE,
                 height: shadow::SIZE,
-                layers: 2,
+                layers: shadow::SECONDARY_LAYERS as u32,
                 mips: 1,
                 samples: 1,
                 format: shadow::FORMAT,
@@ -108,7 +112,7 @@ impl Sun {
             },
             imported,
         )?;
-        let matrices = (0..2)
+        let matrices = (0..shadow::SECONDARY_LAYERS)
             .map(|_| {
                 graph.resource(
                     ResourceDescriptor::Buffer {
@@ -121,13 +125,18 @@ impl Sun {
             .collect::<Result<Vec<_>, _>>()?;
         let lists = if let Some((culling, _)) = &self.culling {
             let mut accesses = shared.to_vec();
-            accesses.extend(matrices.iter().map(|matrix| {
-                Access::new(
-                    matrix.clone(),
-                    0..shadow::CASTER_VIEW_RANGE,
-                    AccessKind::UniformRead,
-                )
-            }));
+            accesses.extend(
+                matrices
+                    .iter()
+                    .take(shadow::SECONDARY_CASCADES)
+                    .map(|matrix| {
+                        Access::new(
+                            matrix.clone(),
+                            0..shadow::CASTER_VIEW_RANGE,
+                            AccessKind::UniformRead,
+                        )
+                    }),
+            );
             let serials = graph.resource(
                 ResourceDescriptor::Buffer {
                     bytes: history_gpu::SERIAL_BYTES,
@@ -164,21 +173,19 @@ impl Sun {
         } else {
             None
         };
-        for (layer, matrix) in (0..2_u32).zip(matrices) {
+        for (layer, matrix) in (0..).zip(matrices) {
+            let (cascade, _) = shadow::layer_sample(layer as usize, shadow::SECONDARY_CASCADES);
+            let stage = SecondaryStage::Sun(layer);
             let key = PipelineRole::Secondary {
                 view: crate::pass_key::pass_index(index),
-                stage: if layer == 0 {
-                    SecondaryStage::SunNear
-                } else {
-                    SecondaryStage::SunFar
-                },
+                stage,
             }
             .key(key);
             keys.insert(key);
             let mut accesses = shared.to_vec();
             if let Some(ids) = &lists {
                 let (culling, _) = self.culling.as_ref().expect("declared cull lists");
-                accesses.extend(culling.list_reads(&ids.lists[layer as usize]));
+                accesses.extend(culling.list_reads(&ids.lists[cascade]));
             }
             accesses.extend([
                 Access::new(
@@ -195,11 +202,7 @@ impl Sun {
             graph.declare(
                 PassKey::Secondary {
                     view: crate::pass_key::pass_index(index),
-                    stage: if layer == 0 {
-                        SecondaryStage::SunNear
-                    } else {
-                        SecondaryStage::SunFar
-                    },
+                    stage,
                 },
                 PassBody {
                     scope: PassScope::View(index as u64 + 2),
@@ -217,7 +220,11 @@ impl Sun {
             imported,
         )?;
         opaque.extend([
-            Access::new(maps.clone(), 0..2, AccessKind::SampledRead),
+            Access::new(
+                maps.clone(),
+                0..shadow::SECONDARY_LAYERS as u64,
+                AccessKind::SampledRead,
+            ),
             Access::new(
                 samples,
                 0..shadow::SAMPLE_BYTES as u64,
@@ -277,7 +284,12 @@ impl SceneContext<'_> {
         let Some(request) = slot.handle.asked() else {
             return Ok(());
         };
-        if layer >= request.cascades as usize {
+        let (cascade, sample) = shadow::layer_sample(layer, shadow::SECONDARY_CASCADES);
+        if cascade >= request.cascades as usize
+            || (sample != 0
+                && cascade
+                    >= shadow::outline_count(request.cascades, request.shadow_reach) as usize)
+        {
             return Ok(());
         }
         let sun = slot.sun.as_ref().ok_or(RenderError::GraphPassMismatch)?;
@@ -311,10 +323,10 @@ impl SceneContext<'_> {
             members: prepared.shadow_members.as_ref(),
             culled: match &sun.culling {
                 Some((culling, groups)) => Some((
-                    &groups[layer],
+                    &groups[cascade],
                     culling
                         .lists()
-                        .nth(layer)
+                        .nth(cascade)
                         .ok_or(RenderError::GraphPassMismatch)?
                         .1,
                 )),
@@ -342,7 +354,8 @@ impl SceneContext<'_> {
                 .as_deref()
                 .filter(|entry| entry.secondary_views_enabled())
                 .map(|entry| {
-                    let cascade = crate::contribution::SecondaryShadowCascade::new(matrices[layer]);
+                    let cascade =
+                        crate::contribution::SecondaryShadowCascade::new(matrices[cascade]);
                     shadow::CasterContribution::Secondary(entry, index, cascade)
                 }),
         )

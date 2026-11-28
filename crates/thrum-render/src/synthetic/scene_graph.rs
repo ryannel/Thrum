@@ -1195,12 +1195,13 @@ impl super::SyntheticTargetInputs {
             return Ok(None);
         }
 
+        let layers_end = shadow::LAYERS + self.sun_outline_count * shadow::OUTLINE_EXTRA as u32;
         let maps = graph.resource(
             ResourceDescriptor::Texture {
                 dimension: crate::graph::TextureKind::D2,
                 width: shadow::SIZE,
                 height: shadow::SIZE,
-                layers: shadow::LAYERS,
+                layers: layers_end,
                 mips: 1,
                 samples: 1,
                 format: shadow::FORMAT,
@@ -1230,7 +1231,7 @@ impl super::SyntheticTargetInputs {
             ResourceScope::Imported { initialized: true },
         )?;
         // Each pass's caster view: light matrix and upstream clip flag.
-        let matrices = (0..shadow::LAYERS)
+        let matrices = (0..layers_end)
             .map(|_| {
                 graph.resource(
                     ResourceDescriptor::Buffer {
@@ -1288,7 +1289,15 @@ impl super::SyntheticTargetInputs {
             }
             None => None,
         };
-        for index in layers() {
+        let draw_layers = || {
+            (0..count)
+                .chain(shadow::LAYERS..layers_end)
+                .chain(std::iter::once(
+                    crate::shader_constants::SHADOW_HEIGHT_LAYER,
+                ))
+        };
+        for index in draw_layers() {
+            let (cascade, _) = shadow::layer_sample(index as usize, shadow::MAPS);
             let matrix = matrices[index as usize].clone();
             // Unculled casters read the route's member list; culled ones
             // read their own pass's list and records.
@@ -1296,7 +1305,7 @@ impl super::SyntheticTargetInputs {
                 Some(lists) => mesh
                     .iter()
                     .cloned()
-                    .chain(lists[index as usize].iter().cloned())
+                    .chain(lists[cascade].iter().cloned())
                     .collect(),
                 None => mesh.iter().chain(route.first()).cloned().collect(),
             };
@@ -1356,7 +1365,7 @@ impl super::SyntheticTargetInputs {
             0..shadow::SAMPLE_BYTES as u64,
             AccessKind::UniformRead,
         ));
-        accesses.extend(layers().map(|index| {
+        accesses.extend(draw_layers().map(|index| {
             Access::new(
                 maps.clone(),
                 u64::from(index)..u64::from(index + 1),

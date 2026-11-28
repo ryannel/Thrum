@@ -151,8 +151,9 @@ fn observe(device: &wgpu::Device, queue: &wgpu::Queue, slope: f32, kind: u8) -> 
     let span = 2.0 * SCALE / crate::shader_constants::SUN_ANGULAR_RADIUS.tan();
     for layer in 0..2 {
         let index = metrics + layer * 4;
+        // This analytic fixture binds only one drawing per cascade.
         samples[index..index + 4].copy_from_slice(&[
-            1.0,
+            32.0,
             2.0 / SIDE as f32,
             span.recip(),
             0.000_03,

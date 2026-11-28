@@ -35,7 +35,7 @@ fn casts(slot: u32, mesh: MeshRecord) -> bool {
     let r0 = caster_row(0u);
     let r1 = caster_row(1u);
     let r2 = caster_row(2u);
-    let r3 = caster_row(3u);
+    let r3 = caster_row(3u) * (1.0 + caster_view.minimum_cast_width.y);
     return !(caster_outside(r3 + r0, center, extent) || caster_outside(r3 - r0, center, extent)
         || caster_outside(r3 + r1, center, extent) || caster_outside(r3 - r1, center, extent)
         || caster_outside(r2, center, extent));

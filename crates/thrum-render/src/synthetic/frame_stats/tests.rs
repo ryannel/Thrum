@@ -21,6 +21,7 @@ const TRANSFORMS: SceneTimingLayout = SceneTimingLayout {
     star_pass: None,
     shadows: Shadows::Off,
     cascades: 0,
+    outlines: 0,
     clusters: false,
     culling: culling_passes(CullMode::Direct),
 };

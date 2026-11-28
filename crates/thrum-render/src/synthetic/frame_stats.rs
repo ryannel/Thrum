@@ -49,6 +49,7 @@ impl OffscreenTarget {
 pub(crate) struct SceneTimingLayout {
     shadows: Shadows,
     cascades: u32,
+    outlines: u32,
     clusters: bool,
     transforms: bool,
     sdr_tone: Option<PassKey>,
@@ -97,6 +98,7 @@ impl From<&PreparedSynthetic> for SceneTimingLayout {
                 (true, true) => Shadows::Culled,
             },
             cascades: prepared.shadow_cascade_count(),
+            outlines: prepared.shadow_outline_count(),
             clusters: prepared.gpu_clustered(),
             transforms: prepared.active_instance_count() != 0,
             sdr_tone: Some(PassKey::Display),
@@ -156,7 +158,10 @@ pub(crate) fn validate_pass_timings(
         PassKey::History,
         PassKey::Display,
     ];
+    let shadow_layers = super::shadow::LAYERS;
+    let outline_end = shadow_layers + layout.outlines * super::shadow::OUTLINE_EXTRA as u32;
     let mut names = (0..layout.cascades)
+        .chain(shadow_layers..outline_end)
         .map(PassKey::sun_cascade)
         .chain(REST.into_iter().filter(|&key| match key {
             PassKey::HorizonHeights => layout.shadows != Shadows::Off,

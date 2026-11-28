@@ -757,6 +757,7 @@ impl SceneContext<'_> {
             .shadow
             .as_ref()
             .ok_or(RenderError::GraphPassMismatch)?;
+        let (cascade, _) = shadow::layer_sample(index, shadow::MAPS);
         let prepared = &self.prepared;
         let arena = &prepared.mesh_arena;
         let buffers = arena.buffers().ok_or(RenderError::GraphPassMismatch)?;
@@ -777,8 +778,8 @@ impl SceneContext<'_> {
             culled: match &prepared.caster_culling {
                 Some((culling, groups)) => Some(
                     groups
-                        .get(index)
-                        .zip(culling.lists().nth(index).map(|(_, args)| args))
+                        .get(cascade)
+                        .zip(culling.lists().nth(cascade).map(|(_, args)| args))
                         .ok_or(RenderError::GraphPassMismatch)?,
                 ),
                 None => None,
@@ -1256,6 +1257,13 @@ impl PreparedSynthetic {
             .as_ref()
             .filter(|_| self.cascade_casters())
             .map_or(0, ShadowPrepared::count)
+    }
+
+    fn shadow_outline_count(&self) -> u32 {
+        self.shadow
+            .as_ref()
+            .filter(|_| self.cascade_casters())
+            .map_or(0, ShadowPrepared::outline_count)
     }
 
     pub(crate) fn lamp_quality(&self) -> &[crate::contribution::QualityKnob] {

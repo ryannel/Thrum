@@ -399,6 +399,8 @@ impl SceneSurface<'_> {
     pub fn sun_path_visibility_shader(&self) -> &'static str {
         if self.sun_path.is_some() && self.shadow.is_some() {
             concat!(
+                include_str!(concat!(env!("OUT_DIR"), "/sun_cascade_layout.wgsl")),
+                include_str!(concat!(env!("OUT_DIR"), "/air_shadow.wgsl")),
                 crate::shaders::wgsl!("records/shadow_cascades.wgsl"),
                 "@group(0) @binding(2) var<uniform> shadows: ShadowCascades;
 ",

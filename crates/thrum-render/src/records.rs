@@ -145,6 +145,7 @@ records! {
         light_view_proj: [Matrix; crate::shader_constants::SUN_CASCADE_COUNT as usize],
         cascade_metrics: [[f32; 4]; crate::shader_constants::SUN_CASCADE_COUNT as usize],
         profile: [f32; 4],
+        eye: [f32; 4],
         height_support: [f32; 4],
         height_view_proj: Matrix,
         horizon: [f32; 4],

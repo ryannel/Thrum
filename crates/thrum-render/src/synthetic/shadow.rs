@@ -17,6 +17,7 @@ use crate::graph::{CompiledPass, GraphDepthAttachment, ResourceId};
 use crate::records::{ShadowCascades, ShadowView};
 use crate::shader_constants::{
     SHADOW_HEIGHT_LAYER, SHADOW_HEIGHT_SIZE, SUN_ANGULAR_RADIUS, SUN_CASCADE_COUNT,
+    SUN_OUTLINE_OFFSETS, SUN_OUTLINE_RADIUS,
 };
 
 pub(super) const SIZE: u32 = 2048;
@@ -39,6 +40,33 @@ const CASCADE_SNAP_TEXELS: f32 = 0.5;
 const MINIMUM_DEPTH_BIAS: f32 = 4e-7;
 pub(super) mod cast_width;
 mod secondary;
+
+pub(super) const OUTLINE_EXTRA: usize = SUN_OUTLINE_OFFSETS.len() - 1;
+pub(super) const SECONDARY_CASCADES: usize = 2;
+pub(super) const SECONDARY_LAYERS: usize = SECONDARY_CASCADES * SUN_OUTLINE_OFFSETS.len();
+
+pub(super) fn layer_sample(index: usize, base: usize) -> (usize, usize) {
+    if index < base {
+        (index, 0)
+    } else {
+        let offset = index - base;
+        (offset / OUTLINE_EXTRA, offset % OUTLINE_EXTRA + 1)
+    }
+}
+
+pub(super) fn cascade_radius(count: u32, reach: f32, index: u32) -> f32 {
+    reach / (1u32 << (count - index - 1)) as f32
+}
+
+pub(super) fn outline_count(count: u32, reach: f32) -> u32 {
+    (0..count)
+        .take_while(|&index| cascade_radius(count, reach, index) <= SUN_OUTLINE_RADIUS)
+        .count() as u32
+}
+
+fn shifted_matrix(matrix: Mat4, offset: [f32; 2]) -> Mat4 {
+    Mat4::from_translation(Vec3::new(-offset[0], offset[1], 0.0) * (2.0 / SIZE as f32)) * matrix
+}
 
 const CAST_WIDTH_TEXELS: f32 = 1.5;
 
@@ -151,14 +179,26 @@ impl FittedShadow {
     }
 
     fn caster_view(&self, index: usize) -> ShadowView {
+        let (cascade, sample) = layer_sample(index, self.samples.profile[3] as usize);
+        let metrics = self.samples.cascade_metrics.get(cascade);
+        let multisampled =
+            metrics.is_some_and(|metrics| metrics[0] > 0.0 && metrics[0] <= SUN_OUTLINE_RADIUS);
+        let matrix = if sample == 0 {
+            self.matrices[cascade]
+        } else {
+            let first = SUN_OUTLINE_OFFSETS[0];
+            let sample = SUN_OUTLINE_OFFSETS[sample];
+            shifted_matrix(
+                self.matrices[cascade],
+                [sample[0] - first[0], sample[1] - first[1]],
+            )
+        };
         ShadowView {
-            light_view_proj: self.matrices[index].to_cols_array_2d(),
+            light_view_proj: matrix.to_cols_array_2d(),
             minimum_cast_width: [
-                self.samples
-                    .cascade_metrics
-                    .get(index)
-                    .map_or(0.0, |metrics| CAST_WIDTH_TEXELS * metrics[1]),
-                0.0,
+                metrics.map_or(0.0, |metrics| CAST_WIDTH_TEXELS * metrics[1]),
+                // Cull against the union of this cascade's shifted clip rectangles.
+                if multisampled { 2.0 / SIZE as f32 } else { 0.0 },
                 0.0,
                 0.0,
             ],
@@ -188,7 +228,7 @@ pub(super) struct ShadowPrepared {
     /// For scenes that select meshes: the member list's layout, and culled
     /// and two-sided pipelines that fetch each instance from it.
     members: Option<(wgpu::BindGroupLayout, [wgpu::RenderPipeline; 2])>,
-    cascades: [Cascade; MAPS],
+    cascades: Vec<Cascade>,
     queue: wgpu::Queue,
     view_layout: crate::runtime::PipelineInput<wgpu::BindGroupLayout>,
     inputs: FitInputs,
@@ -197,8 +237,8 @@ pub(super) struct ShadowPrepared {
 }
 
 #[derive(Clone)]
-pub(super) struct ShadowTarget<const MAP_COUNT: usize = MAPS> {
-    views: [wgpu::TextureView; MAP_COUNT],
+pub(super) struct ShadowTarget {
+    views: Vec<wgpu::TextureView>,
     pub(super) array_view: wgpu::TextureView,
 }
 
@@ -207,6 +247,14 @@ impl ShadowPrepared {
         self.inputs
             .profile
             .map_or(SUN_CASCADE_COUNT, |(count, _)| count)
+    }
+
+    pub(super) fn outline_count(&self) -> u32 {
+        let (count, reach) = self
+            .inputs
+            .profile
+            .unwrap_or((SUN_CASCADE_COUNT, RECEIVER_REACH));
+        outline_count(count, reach)
     }
 
     pub(super) fn contains_caster(&self, instance: &InstanceRecord, caster: CasterBox) -> bool {
@@ -234,24 +282,30 @@ impl ShadowPrepared {
                 CASTER_VIEW_RANGE,
             )],
         });
-        let cascades = std::array::from_fn(|index| {
-            let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("synthetic Sun cascade matrix"),
-                contents: bytemuck::bytes_of(&fitted.caster_view(index)),
-                usage: wgpu::BufferUsages::UNIFORM
-                    | wgpu::BufferUsages::COPY_DST
-                    | super::draw_witness_usage(),
-            });
-            let view_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("synthetic Sun cascade view"),
-                layout: &view_layout,
-                entries: &[wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: buffer.as_entire_binding(),
-                }],
-            });
-            Cascade { buffer, view_group }
-        });
+        let (count, reach) = inputs
+            .profile
+            .unwrap_or((SUN_CASCADE_COUNT, RECEIVER_REACH));
+        let layers = MAPS + outline_count(count, reach) as usize * OUTLINE_EXTRA;
+        let cascades = (0..layers)
+            .map(|index| {
+                let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("synthetic Sun cascade matrix"),
+                    contents: bytemuck::bytes_of(&fitted.caster_view(index)),
+                    usage: wgpu::BufferUsages::UNIFORM
+                        | wgpu::BufferUsages::COPY_DST
+                        | super::draw_witness_usage(),
+                });
+                let view_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some("synthetic Sun cascade view"),
+                    layout: &view_layout,
+                    entries: &[wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: buffer.as_entire_binding(),
+                    }],
+                });
+                Cascade { buffer, view_group }
+            })
+            .collect();
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("synthetic Sun shadow"),
             bind_group_layouts: &[Some(&view_layout), Some(instance_layout)],
@@ -352,6 +406,7 @@ impl ShadowPrepared {
     pub(super) fn caster_views(&self) -> Vec<&wgpu::Buffer> {
         self.cascades
             .iter()
+            .take(MAPS)
             .map(|cascade| &cascade.buffer)
             .collect()
     }
@@ -375,7 +430,15 @@ impl ShadowPrepared {
         let cooked = bounds.and_then(|bounds| self.inputs.fit(Some(bounds)).ok());
         let fitted = cooked.as_ref().unwrap_or(&self.fitted);
         let count = if cascades { self.count() as usize } else { 0 };
-        for index in (0..count).chain(std::iter::once(HEIGHT_LAYER)) {
+        let extra = if cascades {
+            self.outline_count() as usize * OUTLINE_EXTRA
+        } else {
+            0
+        };
+        for index in (0..count)
+            .chain(MAPS..MAPS + extra)
+            .chain(std::iter::once(HEIGHT_LAYER))
+        {
             let cascade = &self.cascades[index];
             self.queue.write_buffer(
                 &cascade.buffer,
@@ -403,10 +466,10 @@ impl ShadowPrepared {
             .collect()
     }
 
-    pub(super) fn encode_cascade<const MAP_COUNT: usize>(
+    pub(super) fn encode_cascade(
         &self,
         encoder: &mut wgpu::CommandEncoder,
-        target: &ShadowTarget<MAP_COUNT>,
+        target: &ShadowTarget,
         instances: &wgpu::BindGroup,
         casters: &CasterDraws<'_>,
         generation: u64,
@@ -427,8 +490,8 @@ impl ShadowPrepared {
                 [],
                 Some(GraphDepthAttachment {
                     resource,
-                    range: u64::try_from(index).expect("three maps")
-                        ..u64::try_from(index + 1).expect("three maps"),
+                    range: u64::try_from(index).expect("Sun map layer index")
+                        ..u64::try_from(index + 1).expect("Sun map layer index"),
                     view,
                     clear: 0.0,
                 }),
@@ -483,17 +546,24 @@ impl ShadowPrepared {
     }
 }
 
-impl<const MAP_COUNT: usize> ShadowTarget<MAP_COUNT> {
+impl ShadowTarget {
+    #[cfg(test)]
+    pub(super) fn layer_count(&self) -> usize {
+        self.views.len()
+    }
+
     pub(super) fn new(texture: &wgpu::Texture) -> Self {
-        let views = std::array::from_fn(|index| {
-            texture.create_view(&wgpu::TextureViewDescriptor {
-                label: Some("synthetic Sun cascade layer"),
-                dimension: Some(wgpu::TextureViewDimension::D2),
-                base_array_layer: u32::try_from(index).expect("Sun map layer index"),
-                array_layer_count: Some(1),
-                ..Default::default()
+        let views = (0..texture.depth_or_array_layers())
+            .map(|index| {
+                texture.create_view(&wgpu::TextureViewDescriptor {
+                    label: Some("synthetic Sun cascade layer"),
+                    dimension: Some(wgpu::TextureViewDimension::D2),
+                    base_array_layer: index,
+                    array_layer_count: Some(1),
+                    ..Default::default()
+                })
             })
-        });
+            .collect();
         let array_view = texture.create_view(&wgpu::TextureViewDescriptor {
             label: Some("synthetic Sun cascade array"),
             dimension: Some(wgpu::TextureViewDimension::D2Array),
@@ -558,15 +628,20 @@ impl FitInputs {
         let mut matrices = [Mat4::IDENTITY; MAPS];
         matrices[HEIGHT_LAYER] = heights;
         let mut samples = ShadowCascades {
-            profile: [count as f32, reach, reach * 0.6, 0.0],
+            profile: [count as f32, reach, reach * 0.6, MAPS as f32],
+            eye: self.camera.extend(0.0).to_array(),
             height_view_proj: heights.to_cols_array_2d(),
             ..bytemuck::Zeroable::zeroed()
         };
         for (index, matrix) in matrices.iter_mut().enumerate().take(count as usize) {
-            let radius = reach / (1u32 << (count as usize - index - 1)) as f32;
+            let radius = cascade_radius(count, reach, index as u32);
             let cascade = cascade_matrix(self.camera, radius, rotation, caster_depth)?;
-            *matrix = cascade.matrix;
-            samples.light_view_proj[index] = cascade.matrix.to_cols_array_2d();
+            *matrix = if radius <= SUN_OUTLINE_RADIUS {
+                shifted_matrix(cascade.matrix, SUN_OUTLINE_OFFSETS[0])
+            } else {
+                cascade.matrix
+            };
+            samples.light_view_proj[index] = matrix.to_cols_array_2d();
             samples.cascade_metrics[index] = [
                 radius,
                 cascade.texel,
