@@ -6,18 +6,18 @@
 
 - Assumption: WP3 ends with a CPU diagnosis. The authored-spur replay and an in-game correction remain open under G3s.
 - Assumption: WP4 compares the reconstructed geometry cases in one bounded CPU trial. The original ray inputs and exact finite-disk match remain open under G3s.
-- Assumption: the governor's chart knob (4, 6 and 8 by tier) is the longest a chart refresh may be spread, and the atmosphere chooses each refresh's spread from how fast the Sun, the camera's altitude and the Sun's light are changing. The governor's registry and policy are unchanged. A scrub shortens the spread, to every frame at 1.5° of Sun a frame, at the governor-off cost while it lasts.
+- Assumption: the governor's chart knob (4, 6 and 8 by tier) is the longest a chart refresh may be spread, and the atmosphere chooses each refresh's spread from how fast the Sun, the camera's altitude and the Sun's light are changing. A scrub shortens the spread, to every frame at 1.5° of Sun a frame, at the governor-off cost while it lasts.
 - Assumption: a refresh may let the sky's inputs move 0.2° of Sun, 10 m of altitude or 1% of light, and the Sun's value may tighten toward the horizon, to a rebuild every frame through the sharpest twilight. Other modules may rely on every chart being within three tolerances of the frame at the widest values, 0.6° of Sun.
 - Assumption: WP12.3 counts the saving as kept when four-frame refreshes cover at least three quarters of the frames of the Mac route's moving segment.
-- Assumption: with the governor off, a cloud's reflection under a cloud producer that has stopped writing keeps the old sunlight after the Sun's brightness or colour changes, until the producer next writes. That is today's behaviour, and under the governor it is corrected.
+- Assumption: with the governor off, a cloud's reflection under a cloud producer that has stopped writing keeps the old sunlight until the producer next writes, as today. Under the governor it is corrected.
 - Assumption: WP12 judges the knob at 4 in the Mac window and at 8 in Chrome, the longest spread at the slower display. Chrome at 4 is not captured.
-- Assumption: under WP13 a small thing stops casting a shadow where its thickest part, such as a cactus's trunk, would be under about a texel and a half, and every Sun shadow fades out by 2,048 m from the camera into the caster height map's ground shadows. The other choice is every prop casting to the horizon, which costs more maps or a different technique.
-- Assumption: WP13 leaves two faint things out: the soft tip of a small prop's long shadow at a low Sun is trimmed, and a flat sheet the Sun grazes edge-on may shimmer. The showcase has no sheet that casts.
+- Assumption: under WP13 a small thing stops casting a shadow where its thickest part, such as a cactus's trunk, would be under about a texel and a half, and every Sun shadow fades out by 2,048 m from the camera into the caster height map's ground shadows. The other choice is every prop casting to the horizon, at more maps or another technique.
+- Assumption: WP13 leaves two faint things out: the soft tip of a small prop's long shadow at a low Sun, and shimmer on a flat sheet the Sun grazes edge-on. The showcase has no sheet that casts.
 - Assumption: WP13 starts from ten 2048² cascades, the three nearest the camera drawn four times a frame, about 320 MB of depth, and the builder tunes them by eye and by the cost record.
-- Assumption: steady edges within 16 m are worth about half a millisecond more of Sun work, an estimate. Beyond that an edge along the shadow grid still moves a texel at a time, up to 4.6 pixels at full screen. The other choices are every cascade drawn four times, or smoothing over time, which trails behind a balloon's shadow.
-- Assumption: "mind the cost" is a paired cost record with named ways to cut it, not a budget, for the Sun's shadows (WP13.8) and for occlusion (WP14.6). The Apple rows are full screen at the 67% output scale. `APPLE-PRESENTATION` WP17 owns 120 Hz at full screen and waits for neither. If its closing sitting predates one of them and that record shows the full-screen frame slower, the builder asks the lead for the sitting again. The other choice makes WP17 wait, in `APPLE-PRESENTATION`'s plan.
-- Assumption: WP13 is not behind a selection and has no governor knob. A cascade redrawn every few frames would judder under a balloon's shadow at about 20 m/s.
-- Assumption: "the default path" means the showcase. The valley and the exit scene show screen-space ambient occlusion in every launch, on the Mac and in Chrome, and an engine scene that does not ask gets none. The other choice turns it on for every 3D scene. The starter scene and the SDK's 3D scenes are left to `CREATOR` and `GAME-SDK`.
+- Assumption: steady edges within 16 m are worth an estimated half a millisecond more of Sun work. Beyond that an edge along the shadow grid still moves a texel at a time, up to 4.6 pixels at full screen. The other choices are every cascade drawn four times, or smoothing over time, which trails behind a balloon's shadow.
+- Assumption: "mind the cost" is a paired cost record with named ways to cut it, not a budget, for the Sun's shadows (WP13.8) and for occlusion (WP14.6), with Apple rows at full screen and the 67% output scale. `APPLE-PRESENTATION` WP17 owns 120 Hz at full screen and waits for neither. If its closing sitting predates one and that record shows the frame slower, the builder asks the lead for the sitting again. The other choice makes WP17 wait.
+- Assumption: WP13 has no selection and no governor knob. A cascade redrawn every few frames would judder under a balloon's shadow at about 20 m/s.
+- Assumption: "the default path" means the showcase. The valley and the exit scene show screen-space ambient occlusion in every launch, on the Mac and in Chrome, and an engine scene that does not ask gets none. The other choice turns it on for every 3D scene. Starter and SDK scenes are `CREATOR`'s and `GAME-SDK`'s.
 - Assumption: the darkening is one frame late, as ray-traced occlusion already is, and follows a thing that arrives or leaves within a few frames. The other choice is a depth prepass, a second draw of the scene every frame.
 - Assumption: a thing outside the picture, or hidden behind another, darkens nothing, and a mirror shows no darkening. Ray-traced occlusion has neither limit.
 - Assumption: a scene that asks for ambient occlusion is never drawn without it. Where rays cannot run it gets the screen-space method, and over a device's binding limits the scene is refused, as today. The valley in Chrome has one sampled texture to spare. The other choice turns occlusion off there with a reason.
@@ -46,25 +46,28 @@
 
 Read [the Sun's cascades round the camera](DESIGN.md#the-suns-cascades-round-the-camera-wp13) first, then the
 module list's [seam ruling](../ARCHITECTURE.md#seam-ruling-for-atmosphere-wp13) and
-[baseline ruling](../ARCHITECTURE.md#ruling-on-atmosphere-wp13). Leave `SHOWCASE`'s two thresholded baselines
-as they are.
+[baseline ruling](../ARCHITECTURE.md#ruling-on-atmosphere-wp13).
 
 Start from [the diagnosis](../../../.orchestrate/evidence/ATMOSPHERE/WP13-diagnosis/README.md): its frames
-are the "before" of each inspection and its `routes/` are the ones the items name. Leave them as they are
-and keep any changed copy in WP13's evidence folder. A route's `render_extent` must equal the take's game
-grid, so a row that draws another grid needs a copy with only that field changed. WP13.7's Chrome takes come
-from `scripts/capture_v1_browser.mjs --route-file`.
+are the "before" of each inspection and its `routes/` are the ones the items name, with
+[`exit-props-near.json`](../../../.orchestrate/evidence/ATMOSPHERE/exit-near-props/README.md) in a folder of
+its own. Leave them as they are and keep any changed copy in WP13's evidence folder. A route's
+`render_extent` must equal the take's game grid, so a row that draws another grid needs a copy with only
+that field changed.
 
 WP13 resumes from `build/atmosphere` at `6a49b48df`, unmerged. Keep that build and add
-[rule 7](DESIGN.md#rule-7), the 4 m cascade and WP13.6's test, `sun_outline_gpu`, starting from
-[the cause](../../../.orchestrate/evidence/ATMOSPHERE/WP13-edge-cause/README.md). Only WP13.6 changed. Make
-the takes, the cost record, the baselines and their difference images again at the commit that is claimed.
+[rule 7](DESIGN.md#rule-7) and the 4 m cascade, starting from
+[the cause](../../../.orchestrate/evidence/ATMOSPHERE/WP13-edge-cause/README.md). If an edge is still seen
+to step, take [the design's four steps](DESIGN.md#if-an-edge-still-steps) before you stop. WP13.6 has no
+test and no figure to meet:
+[the diagnostics](DESIGN.md#wp13-diagnostics) only find a step you can see. Make the takes, the cost
+record, the baselines and their difference images again at the commit that is claimed.
 
 WP13.1 and WP13.2 select tests by name: `sun_cascade_layout` and `sun_cascades_gpu`. `WATERS` WP16 builds in
 the same Sun files, so whichever lands second carries the other's change. The cost record goes to
 `.orchestrate/evidence/ATMOSPHERE/WP13/cost.md` and ends with
 [the hand-off to WP17](DESIGN.md#wp13-hand-off-to-wp17). Its full-screen takes force the 67% output scale and
-120 Hz by launch setting. Hold the display awake for those takes alone.
+120 Hz by launch setting, and only they hold the display awake.
 
 ## WP14 Things standing in shade look grounded: a soft darkening where they meet the ground, steady while flying, on the Mac and in Chrome
 
@@ -76,12 +79,15 @@ Start from `RAY-TRACING` WP5's occlusion in `thrum-render`'s `synthetic/raytrace
 ported from XeGTAO or Bevy in `docs/provenance/ATMOSPHERE.md`.
 
 WP14.1, WP14.2 and WP14.10 select tests by name: `ambient_occlusion_selection`, `screen_occlusion_gpu` and
-`occlusion_launch`. [The design](DESIGN.md#ray-tracings-tests-of-the-old-fallback) says how two assertions of
-`RAY-TRACING`'s are restated. List any other you find in the log.
+`occlusion_launch`. [The design](DESIGN.md#ray-tracings-tests-of-the-old-fallback) restates two assertions
+of `RAY-TRACING`'s. List any other you find in the log.
 
-Keep the route copies in `.orchestrate/evidence/ATMOSPHERE/WP14/routes/`: the three with a changed hour,
-`rock-dusk.json`, and an off copy of each route an item judges. Run WP14.8's five comparisons with occlusion
-off before you regenerate a reference, while the tree still holds the old ones. The cost record goes to
+Keep the route copies in `.orchestrate/evidence/ATMOSPHERE/WP14/routes/`: the four dusk copies, the two
+poses you cut and an off copy of each of the eleven routes in
+[the design's two tables](DESIGN.md#what-occlusion-adds). The originals beside the exit's props are in
+[their own folder](../../../.orchestrate/evidence/ATMOSPHERE/exit-near-props/README.md). Run WP14.8's five
+comparisons with occlusion off before you regenerate a reference, while the tree still holds the old ones. The cost record goes to
 `.orchestrate/evidence/ATMOSPHERE/WP14/cost.md` and ends with
-[the hand-off to WP17](DESIGN.md#wp14-hand-off-to-wp17). If `GAME-SPLIT` WP4 has moved the game, the game's
-request for occlusion is made where the game lives.
+[the hand-off to WP17](DESIGN.md#wp14-hand-off-to-wp17). Its full-screen takes force the 67% output scale
+and 120 Hz by launch setting, and only they hold the display awake. If `GAME-SPLIT` WP4 has moved the game,
+the game's request for occlusion is made where the game lives.

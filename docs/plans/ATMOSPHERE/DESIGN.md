@@ -1828,8 +1828,9 @@ On 28 November the first build stopped on WP13.6: with the set tuned, the sphere
 forward about two pixels and then crept back, over and over, with the camera held. The planner found the cause
 from that build's frames and shader
 ([the record](../../../.orchestrate/evidence/ATMOSPHERE/WP13-edge-cause/README.md)). The design gained
-[rule 7](#rule-7), a finer cascade and WP13.6's test, and lost one claim, that a wide enough filter makes a
-texel's step harmless.
+[rule 7](#rule-7) and a finer cascade, and lost one claim, that a wide enough filter makes a texel's step
+harmless. What decides WP13.6 is what the edges are seen to do. The measurements that found the cause are
+kept as [diagnosis](#if-an-edge-still-steps), and no figure of theirs passes or fails a build.
 
 ### Cues
 
@@ -1985,7 +1986,8 @@ the largest ball that fits inside its mesh, times the instance's smallest axis s
    by whole texels. A blocker search, a view-volume sample and the lent Sun lookup read the first drawing
    alone. A coarser cascade is drawn once. The rule goes by a cascade's radius in every view, so a secondary
    view's 128 m cascade is drawn once, as the main view's is. How the four are stored, and how the filter's
-   samples are shared among them, are the builder's, held by WP13.6's test of an outline's place.
+   samples are shared among them, are the builder's. What holds them is WP13.6's list: the edges near the
+   camera are seen to slide.
 
 **Reach.** The reach is the coarsest cascade's radius, a distance from the eye: 2,048 m to start, where it was
 512 m of view depth. Over the outer two fifths of the reach (a starting value) the answer blends into the
@@ -2003,7 +2005,8 @@ what made the line.
 profile's meaning and WP13.1 hold. The builder tunes the rest by eye against WP13's lists and by the cost
 record: the count, the map size, the reach, the guard band, the blend and fade fractions, the least filter
 width, the search's eight texels, the size threshold down to √2, and under rule 7 which cascades are drawn more
-than once and how many times, four at least.
+than once and how many times, four to start. No texel or pixel figure binds that tuning. A set that meets
+WP13's lists passes, whatever a probe or a measurement of it reads.
 
 **A scene's profile.** `SyntheticView::with_sun_shadow_profile(count, reach)` keeps its meaning and admits up to
 the engine's full count: `count` cascades, the coarsest of radius `reach`, each inner one half the next. One
@@ -2058,9 +2061,14 @@ eye. The two agree on the view's axis and differ off it, where a receiver at the
   to ±1.09 px on the same rows and submissions, and the same creep and jump. With four shifted drawings it
   gives ±0.12 to ±0.31 px and no step over 0.8 px, and with two, ±0.42 to ±0.55 px. With texels of half the
   size as well, the edge never moves back
-  ([the record](../../../.orchestrate/evidence/ATMOSPHERE/WP13-edge-cause/README.md)). In the first build's
-  exit take with the camera held, where shadows lie 150 to 400 m out in cascades drawn once, the edge the
-  builder followed steps by at most 0.7 px.
+  ([the record](../../../.orchestrate/evidence/ATMOSPHERE/WP13-edge-cause/README.md)). Those figures are
+  estimates in two ways. The model takes all four shifted samples at every texel under the filter, where
+  the build may share its taps among the four drawings, which is a different set of samples. And the five
+  rows lie 3.42 to 3.63 m from the eye, inside the band where the starting set blends the 4 m cascade into
+  the 8 m one, while the model runs each texel size alone. What the built filter does on those rows is
+  settled by the take, under WP13.6's list. In the first build's exit take with the camera held, where
+  shadows lie 150 to 400 m out in cascades drawn once, the edge the builder followed steps by at most
+  0.7 px.
 - **Nothing thinner than the grid, by the thickest part and not the bounds.** The design review projected the
   exit's cactus of layout entry 1548 (scale 0.926, 16 h) onto 0.5 m texels: its bounds span 1.86 by 4.06
   texels, which passes a rule on bounds, and its triangles cover four texel centres at one place of the grid
@@ -2080,11 +2088,47 @@ eye. The two agree on the view's axis and differ off it, where a receiver at the
   first search, in the finest.
 - **The far end.** With the starting values a caster's shadow ends where its thickest part is about two to seven
   pixels wide on screen, across a band a quarter of a radius deep, and each size ends at its own distance.
-- **If it does not work.** If WP13.4 or WP13.6 still shows crawl with rule 7 built and the set tuned, the
-  builder ends `BLOCKED` with frames and WP13.6's measurement of them. It does not hold the Sun still for the
-  maps or add a pass that smooths shadows over time. Until 28 November this entry said that crawl outlasting
-  the tuned set could not come from texel density. The first build showed it does, wherever a texel is wider
-  than about two pixels: a cascade drawn once places an outline in whole texels.
+- <a id="if-an-edge-still-steps"></a>**If an edge still steps.** The first build stopped here with nothing to
+  do but stop. The witness is the sphere's edge on `c1-held-sunruns.json`, on the five rows the first build
+  measured. If it, or an edge of WP13.4's, is still seen to step in a take with rule 7 built and the set
+  tuned, the builder takes these steps in order and stops at the first that accounts for what it sees:
+
+  | Step | What the builder does | What it shows | The correction |
+  |---|---|---|---|
+  | 1 | Takes the route again with the Sun held, as `c3-held-sunheld.json` does | The edge still moves between frames: the step is not the Sun's grid, so it is not this section's cause | None of this section's. The builder ends `BLOCKED` with those frames |
+  | 2 | Runs the placement probe below in the cascade that serves the edge. The take's record gives the eye, and the edge's distance from it gives the cascade | The half-lit place moves by about a whole texel at a time: rule 7 is not built as written, in the drawings' shifts or in how the filter shares its samples among them | The builder corrects the drawings or the filter until the probe shows the place moving in parts of a texel, about a quarter with four drawings, and takes the route again |
+  | 3 | With the probe showing that, measures the edge's step on the take in texels of that cascade | About a whole texel: the outline is drawn from a cascade that is drawn once, by its radius or through the far part of rule 3 | Rule 7 is extended to that cascade, which is the builder's to tune |
+  | 4 | The same measurement | About a quarter of a texel: the outline is placed as designed, and a quarter of that texel is still wide enough on screen to see | The texels of rule 7's cascades are halved, by a larger map for them or a finer set. In the model that leaves the sphere's edge within ±0.14 px and never moving back |
+
+  A step of some other size, or one that outlasts its correction, ends the work package `BLOCKED` with the
+  frames, the measurement and what each step ruled out. That is at most four steps, and each names its own
+  evidence. The builder does not hold the Sun still for the maps or add a pass that smooths shadows over
+  time. Until 28 November this entry said that crawl outlasting the tuned set could not come from texel
+  density. The first build showed it does, wherever a texel is wider than about two pixels: a cascade drawn
+  once places an outline in whole texels.
+
+  <a id="wp13-diagnostics"></a>**Three diagnostics, and what they may decide.** They find and size a step
+  that someone has seen. None is a tolerance, by
+  [the owner's rule on proof](../../../ORCHESTRATE.md#what-is-proved-and-how-hard): no item holds an edge to
+  a figure of theirs, a build whose edges are seen to slide passes whatever they read, and a small figure
+  passes no edge that is seen to step. What an edge has to do is in WP13.4's and WP13.6's lists, judged at
+  the size the take plays at.
+
+  - **The first build's strip**, `WP13/c1-edge-witness/16-frame-native-crop.png` in the evidence folder: the
+    sphere's edge jumping forward about two pixels and creeping back. It is what a recurrence looks like.
+  - **The crossing measurement**, `c1-edge-witness.py` beside it: where the brightness crosses one level
+    between the shadow and the sunlit ground, on rows of the picture, through consecutive images. It reads
+    the ground's own brightness under a moving penumbra as well as the edge, and
+    [the model](../../../.orchestrate/evidence/ATMOSPHERE/WP13-edge-cause/README.md) covers five rows of the
+    sphere and neither cube, so its figures locate a step and bound nothing.
+  - **The placement probe**, a small Metal scene the builder writes when step 2 calls for it: a box over
+    level ground with one straight edge of its shadow along a cascade's texel rows, the half-lit place across
+    that edge found from receivers a tenth of a texel apart, read as the box moves a sixteenth of a texel at
+    a time and as the Sun turns in steps of 0.02° with the scene 240 m above the world's origin. It reports
+    how the place moves, in texels. A texel is a different size on screen in every cascade and at every
+    render extent, so a figure in texels says nothing of what is seen: a map fine enough that its whole
+    texel is under a pixel moves an outline a texel at a time and shows no step. So the probe asserts no
+    bound and `./dev check` does not run it.
 
 ### Exact baselines for WP13
 
@@ -2125,7 +2169,9 @@ further drawings under rule 7. All ten are of the finest cascades, which hold th
 still draws the terrain's 62,000 triangles and clears its layer. From the medians above that is about another
 half a millisecond of Sun work on the Apple row, which is an estimate and not a measurement. The read near the
 camera also changes: the filter that draws an outline takes samples from four drawings. Spread over the four,
-and not repeated in each, they cost what they did.
+and not repeated in each, they would cost what they did. That too is an estimate: whether so few samples
+place an outline as finely as the model's, which takes all four at every texel, is seen in the takes, and
+WP13.8's record gives what the read the builder settles on costs.
 
 WP13.8 records it, paired before and after. The record counts the Sun's work as every cascade's pass, the
 caster height map, the air's shadow pass and the caster cull, and takes the forward opaque pass beside it.
@@ -2142,8 +2188,8 @@ each bought:
    aloft moved or changed), where the builder can show the skipped frame's map would be the same bytes.
 3. A cheaper read where the receiver is far from any edge: no second search where the first finds nothing
    and the second's cascade is empty over the receiver, and one read in place of two.
-4. Fewer cascades drawn four times, the coarsest of them first, while WP13.6's test and measurement still
-   pass. The finest stays.
+4. Fewer cascades drawn four times, the coarsest of them first, while WP13.6's list still passes. The
+   finest stays.
 
 Drawing the coarse cascades less often than every frame is not one of them. It needs a schedule that follows
 how fast each cascade's shadows move, which on this clock is fast, and a governor knob. Nor is drawing rule
@@ -2175,9 +2221,11 @@ through the existing call. It does not shrink the default.
 - **WP13.3**, a reviewer's question: each rendered behaviour the two-cascade tests guarded and the design keeps
   still has a test of the production code.
 - **WP13.4 to WP13.6**, a reviewer's inspection of each of the owner's three views on the Mac, with the clock
-  running, against the take from before. WP13.6 also has a small Metal test of rule 7, that an outline along
-  the grid follows its caster within a third of a texel, and repeats the first build's measurement of the
-  sphere's edge on the new take.
+  running, against the take from before. WP13.4 also takes a pose held beside the exit scene's props, because
+  the other exit routes never come within 150 m of a prop's foot. WP13.6 is decided by its list alone: the
+  sphere's and the cubes' edges slide with no crawl that can be seen, and each sunlit cube's shadow meets
+  the edge or corner it rests on. [The diagnostics](#wp13-diagnostics) show a builder or a reviewer where
+  to look, and decide nothing.
 - **WP13.7**, the same lists in Chrome, on the same routes.
 - **WP13.8**, the cost record and the hand-off to WP17.
 - **WP13.9 and WP13.10**, the planned refresh of the exact baselines and a look at what moved.
@@ -2211,17 +2259,24 @@ agree.
 | `e2-held-sunruns.json` | exit | That view with the camera held, so only the Sun and the balloons move |
 | `e4-turn-sunheld.json` | exit | That view turning in place with the Sun held |
 | `valley-floor.json` | exit | The owner's second view: down to the valley floor and level across it, the ground running out to the ridges |
+| `exit-props-near.json`, in [its own folder](../../../.orchestrate/evidence/ATMOSPHERE/exit-near-props/README.md) | exit | A pose held 2.5 m above the ground with the clock running from 16 h, for shadows at the foot of what casts them. It frames the feet of a standing rock 12 m from the eye, a cactus and a boulder at about 19 m, a cactus and a boulder at about 54 m, and each kind again at about 100 m, by projection of the authored layout. The Sun stands 21° up and to the side of the view, so each shadow falls across the frame and a little toward the camera, and by the terrain's heights no ridge shades those feet from 16.0 to 16.4 h. The routes above stay 150 m or more from the nearest foot in frame |
 | `c1-held-sunruns.json` | valley, `proof` overlay | The owner's third view from 15 h, camera held above the cubes beside the sphere |
 | `cubes.json` | valley, `proof` overlay | Round the cubes from 17.3 h to sunset. Mac and Chrome |
 | `c2-moving-sunheld.json` | valley, `proof` overlay | Moving round the cubes with the Sun held |
 
 A route names the cooked root it was cut for. If the root has moved, the builder cuts the route again at the
-same poses and says so.
+same poses and says so. The pose of `exit-props-near.json` was found from the layout, the terrain's heights
+and the day cycle's Sun direction, and has not been drawn. If a take shows a foot hidden behind another prop,
+a near foot in another prop's shadow, or a shadow falling behind its caster, the builder cuts the pose again
+so that it frames, in sunlight, what the row above says, and records the feet in frame and their distances
+the same way.
 
 ### Risks
 
 | Risk | Early sign | Wrong substitute to refuse |
 |---|---|---|
+| A figure stands in for the look | The measured crossings or the probe's texels are small and an edge can still be seen to step in the native crops, or they are large and no step can be seen | Passing or failing WP13.6 on a measurement or on the probe |
+| Contact judged where there is none | The exit crops "inside 50 m" show ground with no prop's foot in it | Judging the foot of a shadow on the flythrough routes, which never come within 150 m of one |
 | The staircase is traded for blur | Contact shadows of the cubes are soft smears wider than the cubes' edges are sharp | Passing "no steps" on a filter many texels wide |
 | Shimmer hidden by the reconstructor | The takes with reconstruction off still crawl and the MetalFX take does not | Judging the flicker points with reconstruction on |
 | The size rule draws its own line | All shadows of one kind of prop stop at one distance in a band a reviewer can point to | Lowering the threshold until thin casters blink again |
@@ -2233,7 +2288,7 @@ same poses and says so.
 | A long shadow's tip is cut | At a low Sun a cactus's shadow ends in a step where it should fade out | Widening the first search until it is a few taps over tens of texels |
 | Cost is carried by the governor | The exit's Apple row holds its rate only because the render scale dropped | Recording the frame rate and not the Sun passes' time and the scale |
 | Far terrain shadows move | Ridge shadows past the reach differ from before | Refreshing the baselines without WP13.10's look |
-| A texel's step is blurred and not removed | Edges look soft in stills, and WP13.6's measured crossings still creep back and jump | Widening the least filter until a step is hard to see |
+| A texel's step is blurred and not removed | Edges look soft in stills, and in motion the soft edge still creeps back and jumps | Widening the least filter until contact shadows smear, which WP13.6's list fails as blur |
 | A ring where rule 7 stops | An edge slides near the camera and steps beyond about 12 to 16 m of it | Judging the sphere's edge alone: follow the cubes of the far row too |
 | Rule 7's drawings are paid for elsewhere | The Sun's work on the Apple row doubles again, or the governor's render scale drops | Drawing the four on alternate frames, or dropping the finest cascade from rule 7 |
 
@@ -2348,10 +2403,23 @@ the takes from before and the grounding lists of WP13, which WP14 is judged besi
   method, screen-space or traced. It is fixed when the scene is prepared, like the Sun's shadow method. A scene
   that gives none gets none: it prepares no occlusion pass, texture or binding and draws the bytes it drew
   (C04).
-- **Resolution.** One function resolves it before anything is allocated. A radius resolves to the
-  **screen-space** method on every recipe and device. A preference for **traced** resolves to traced where
-  `RAY-TRACING`'s admission passes, and otherwise to screen-space at the same radius with the admission's
-  reason. A scene resolved to one method declares no pass, texture or pipeline of the other.
+- **Resolution.** One function resolves the request from an admission, and a preparation **candidate**
+  resolves through it before that candidate allocates anything. A radius resolves to the **screen-space**
+  method on every recipe and device. A preference for **traced** resolves to traced where `RAY-TRACING`'s
+  admission passes, and otherwise to screen-space at the same radius with the admission's reason. A scene
+  resolved to one method declares no pass, texture or pipeline of the other.
+- **The method a scene has is the one whose preparation succeeded.** Three of the admission's refusals are
+  known before any candidate is prepared: no ray queries, a recipe with no ray effects, and a contribution
+  without candidate preparation. The fourth, `PreparationFailed`, is known only after an admitted traced
+  candidate has tried to build its GPU resources and failed. Preparation is the transaction it is today
+  (`prepare_with_meshes` in `synthetic/preparation.rs`): the failed candidate is dropped whole, and a second
+  candidate is prepared under the admission `PreparationFailed`. That candidate resolves, through the same
+  function, to the screen-space method at the radius the scene asked for, and prepares the screen-space
+  pass. The scene publishes one method, the successful candidate's, with the radius and the reason, and
+  nothing of the failed candidate is left bound or recorded. Before WP14 the second candidate carried no
+  occlusion. A retry that dropped the radius, or published a scene with no occlusion, would break the rule
+  below, and WP14.2 holds it with the traced pipeline's failure that the renderer's tests can already
+  inject.
 - **A radius never resolves to off.** The screen-space method is there on every recipe and device, as C08
   and the module list's row say, so a caller that asks for a radius gets occlusion or no scene. Two things
   make that true. The pass's textures use only formats and usages WebGPU requires of every device, so no
@@ -2366,7 +2434,11 @@ the takes from before and the grounding lists of WP13, which WP14 is judged besi
   ordinary page (`create_browser_game`), which is what a player opens, and the browser's route page
   (`create_route_game`), which is what the T2 capture opens. The two browser constructors build their setup
   separately today, so a request made in one alone would show in the captures and not in the game, or the
-  reverse. WP14.10 holds the one place and WP14.5 reads the ordinary page.
+  reverse. WP14.10 holds the one place and WP14.5 reads the ordinary page. That page (`web/index.html`)
+  opens a scene by its content selectors: the cooked valley by `assets`, and the exit scene by `assets` with
+  `scene=exit`. With no selector it opens the uncooked grid, which is neither and asks for no occlusion. So
+  a player's launch of a scene is the page with that scene's selectors and no occlusion value, and what is
+  read back from it is the scene it is running as well as the method resolved.
 - **A proving value replaces it.** A proving build can turn occlusion off, set the radius or prefer traced,
   by the Mac's launch value (`THRUM_AMBIENT_OCCLUSION`, which the capture scripts pass through from the
   environment) or by a field of a route's `start`. The route is the value's way into Chrome: the T2
@@ -2394,8 +2466,10 @@ motion target, which every view of a 3D scene publishes (C07), and nothing else 
    are the visibility. The slice directions and the step offsets differ from pixel to pixel and from frame to
    frame. The sky's pixels neither receive nor occlude. A tap outside the frame marks nothing.
 4. **Over time.** It reprojects last frame's result through the motion target, rejects history whose depth
-   disagrees, clamps what is left to the range of this frame's neighbourhood and blends. Its memory in frames
-   is the **settle length**, a runtime value the builder sets by eye and the report states.
+   disagrees, clamps what is left to the range of this frame's neighbourhood and blends. It finds last
+   frame's texel by [the conversion between extents](#the-previous-position-between-extents) that the
+   forward read uses, so it too carries across a step of the render scale. Its memory in frames is the
+   **settle length**, a runtime value the builder sets by eye and the report states.
 5. **Over space.** One edge-stopping filter, guided by depth and the rebuilt normal, so darkening does not
    leak across a silhouette.
 
@@ -2415,19 +2489,40 @@ read already follows (`synthetic/raytrace/ambient_forward.wgsl`), and the screen
   that value and its off setting stay runtime values exactly as `RAY-TRACING` WP5 built them. A read fixed to
   half extent would sample the wrong place when traced occlusion runs at full extent, so nothing in the
   shared function is fixed to it.
+- <a id="the-previous-position-between-extents"></a>**A previous position is converted from the frame being
+  drawn to the frame that wrote the history.** A fragment's motion is in pixels of the frame being drawn
+  (`motion_vector` in `forward/opaque_output.wgsl` scales by the current viewport). The history's texels
+  are laid out by the drawn extent of the frame that wrote them, and the two differ on the first frame
+  after the governor steps the render scale. So a reader, whether the forward read or the pass's own
+  reprojection in step 4, takes these steps. It forms the previous position in pixels of the frame being
+  drawn, the position plus the motion. It divides by the drawn extent of the frame being drawn, which gives
+  a fraction of the drawn rectangle. It multiplies by the written extent in the record, which gives pixels
+  of the frame that wrote the history, and only then divides by the stride. Each frame's jitter is taken in
+  that frame's own pixels. A tap is kept only inside the written extent. Today's read
+  (`ambient_forward.wgsl`) adds the motion to the fragment's position and divides by the stride, which is
+  right only while the two extents are equal: with a still camera and no jitter, a point halfway across a
+  960-pixel draw is at x = 480 and was at x = 640 of the 1,280-pixel draw before the step, about texel 320
+  at a stride of 2, where the unconverted read takes about texel 240. With equal extents the ratio is exactly 1 and the
+  read is today's, so a traced scene draws what it drew.
 - **Each method keeps its own history and its own reset rules.** A scene resolves to one method, so one
   history is bound at the light group's two occlusion bindings. The traced method's history is the one it
   has: its own texture, written by the same dispatch that traces soft Sun visibility when both are on, with
   the soft Sun's history a separate texture, invalid after a change of drawn extent or target and after its
   extent or settle value changes. None of that changes.
 
-The module list's row gives the history at half the render extent. That is the screen-space method's extent
-and the traced method's default; where traced occlusion is set to full extent, the stride in the record is
-what holds.
+**What the interface promises a reader.** The history's extent is the writing method's, never a fixed half:
+a stride of 2 for the screen-space method, and 2 or 1 for the traced method as its runtime value says, each
+with the record that says which. The module list's [ambient occlusion row](../ARCHITECTURE.md#interfaces)
+puts both points more shortly than this section, and WP14 is built to this section. The row's "at half the
+render extent" is the screen-space method's extent and the traced method's default, as `RAY-TRACING` WP5
+built it. Its "resolves to one method before anything is allocated" holds of each candidate, and the scene
+publishes the method of the candidate that prepared, as the module list's traced visibility row already
+says of a traced preparation that fails. Changing the row's words to these is a planner of the whole
+project's, and [the log](LOG.md) holds the request.
 
 **What a fragment reads.** The forward pass reads last frame's occlusion history at the fragment's previous
-position, which it already has for its motion vector: the four nearest history texels at the record's
-stride, each weighted by how well its stored depth matches the fragment's. That is the bilateral upsample.
+position, converted to the extent the history was written at as above: the four nearest history texels at
+the record's stride, each weighted by how well its stored depth matches the fragment's. That is the bilateral upsample.
 With no matching history the value is 1. This is the read `RAY-TRACING` WP5 built, and from WP14 both methods
 use the one function. Fragments drawn after opaque geometry, such as water, read nothing and are as they
 were.
@@ -2445,9 +2540,12 @@ broad and faint and the display is at 120 Hz. A darkening still visible after th
 on a camera cut and a replaced device, by `APPLE-PRESENTATION`'s history rules. Its textures are sized once
 for a generation, from the output extent, as the forward attachments are, and the pass fills half the drawn
 rectangle. A step of the render scale does not reset it: the record carries the drawn extent the history
-was written at, and the read addresses the history by it, so the first frame at a new scale reads the frame
-before it and nothing is created. The governor steps the scale during play, and a reset there would blink
-every contact in view. The traced method's history resets at a step today and keeps doing so.
+was written at, and both readers convert a previous position to that extent
+([above](#the-previous-position-between-extents)), so the first frame at a new scale reads the frame
+before it at the right place and nothing is created. The governor steps the scale during play, and a reset
+there would blink every contact in view, while a read at the unconverted address would put a contact's
+darkening on open ground for a frame. The traced method's history resets at a step today and keeps doing
+so: its record is invalid for that frame, and the shared read then returns 1.
 
 **Quality.** One quality value, the gather's slices and steps, declared through the contribution seam's
 quality knobs with three tier values and no history invalidation, for the governor. The policy's order is
@@ -2560,6 +2658,14 @@ package draws full screen at an output scale of 67% to hold the rate. So the cos
 recorded where that work package will read it (WP14.6): paired on and off on one commit, on the Apple row at
 the full screen's output extent with the governor on, on the portable row and in Chrome. No figure is a budget.
 
+The Apple rows are the workload the owner named, set the way WP13.8's row was: full screen on the built-in
+display, with the 67% output scale and 120 Hz forced by launch setting. The scale is forced and not left to
+the registry, because the registry's full-screen default is still the panel's pixel size
+(`mac_fullscreen_output_scale` in `capabilities.rs` returns `Native`, 3,456 × 2,234 on this panel), only
+WP17 can promote another, and WP14 does not wait for WP17. Each Apple row states that the scale was forced,
+the output extent the launch resolved, which is 2,316 × 1,497 on this panel, and the governor's render scale
+and drawn extent through the take. The governor's render scale is a second thing and is left to run.
+
 The record's tripwires are the pass over about 0.5 ms on an Apple row, the forward pass more than about a
 tenth over its time with occlusion off, and a governor that settles on a lower render scale with occlusion on.
 When one trips, the builder pulls these levers in order and records what each bought:
@@ -2571,8 +2677,9 @@ When one trips, the builder pulls these levers in order and records what each bo
 <a id="wp14-hand-off-to-wp17"></a>**The hand-off to WP17.** As for [WP13](#wp13-hand-off-to-wp17), the
 verdict on 120 Hz at full screen is `APPLE-PRESENTATION` WP17's, its closing sitting qualifies the frame it
 was taken on, and WP17 does not wait for WP14 in the plan. WP14's record therefore ends with the timed-pass
-span on the two Apple rows with occlusion on and off, the spread between its own repeats, and the commit of
-WP17's closing sitting if one has been taken. It then says which of three holds. The sitting has not been taken, and is then taken on a frame with occlusion on. Or it was
+span on the two Apple rows with occlusion on and off, the output extent those rows resolved and that the 67%
+scale was forced to get it, the spread between its own repeats, and the commit of WP17's closing sitting if
+one has been taken. It then says which of three holds. The sitting has not been taken, and is then taken on a frame with occlusion on. Or it was
 taken on a commit without occlusion and the span with occlusion on is no higher than with it off, beyond
 the spread between the record's own repeats: it stands. Or it was taken without occlusion and the span is
 higher: WP17's sitting is to be taken again, and the builder's handoff asks the lead for it in those
@@ -2589,45 +2696,78 @@ The occlusion history, its previous copy and the depth chain are about 20 bytes 
   with a reviewer's question on the one read and the one application.
 - **WP14.2**, small tests on Metal, for what only the drawn depth, the pass and the forward read can show:
   among them that the reach follows the radius asked, that a traced request rays cannot serve draws the
-  screen-space method, and that the shared read follows the traced method's extent.
-- **WP14.3**, a reviewer's inspection of stills on the Mac: grounded in shade, and sunlight unchanged.
-- **WP14.4**, the same takes in motion: no halo, shimmer, trail or blink.
-- **WP14.5**, both lists in Chrome, and the page a player opens.
+  screen-space method, before or after a traced preparation fails, that the shared read follows the traced
+  method's extent, and that the first frame after a step of the render scale reads the history at the
+  right place.
+- **WP14.3**, a reviewer's inspection of held pairs on the Mac: grounded in shade, sunlight unchanged, and
+  no outline at rest.
+- **WP14.4**, moving routes on the Mac: no shimmer, trail, blink or outline in motion.
+- **WP14.5**, both lists in Chrome, and the page a player opens for each scene.
 - **WP14.6**, the cost record and the hand-off to WP17.
 - **WP14.7 and WP14.8**, the planned refresh of the exact baselines, and that occlusion alone moved them.
 - **WP14.9**, the maturity ledger and the creator's page.
 - **WP14.10**, a test on the CPU and a reviewer's question: every launch of the game takes the request from
   one place.
 
-**What occlusion adds, and what it may do in motion.** The valley's ground already varies in colour and in
-Sun shadow, so a frame alone cannot show what occlusion did. Every inspection sets a frame beside its
-**pair**: the frame of the same tick, eye, heading and solar hour from the same route with occlusion off.
-What occlusion adds is the difference between the two, and the lists judge that. Within the radius of a
-prop the method may darken the ground behind it a little, as the prop does hide some sky from it: what
-fails is a hard patch in the prop's shape, or any outline on ground or hills farther behind a silhouette
-than the radius, where nothing of the prop can reach. In motion a darkening may change continuously: it
-grows on screen as the camera nears it, changes as things come into view or are hidden, and follows the
-light. What fails is grain, sparkle, an abrupt change between frames, an outline and a trail. No item holds
-the darkening to a computed fraction: that belongs in a diagnosis, by the owner's decision of 17 November
-on proof that is plausible and not accurate.
+<a id="what-occlusion-adds"></a>**What occlusion adds is read from a held pair.** The valley's ground already
+varies in colour and in Sun shadow, so a frame alone cannot show what occlusion did, and a frame is set
+against the same view with occlusion off. Two realtime takes of a moving route do not give that view: the
+capture runs on elapsed time, so the two submit different poses. In one Mac take of WP13, submissions 407
+and 408 both carry tick 101, at interpolation fractions 0.061 and 0.878
+([its record](../../../.orchestrate/evidence/ATMOSPHERE/WP13/motion/mac-tuned-c1-held-sunruns/runtime.json)),
+so frames paired by tick can stand a silhouette at different pixels, and their difference then shows an
+outline that is not occlusion's. So the takes are of two kinds, and each claim is made of the kind that can
+show it:
+
+- **A held route** has its camera and Sun both held from its cut. Once the history has settled, every
+  submitted image of one shows the same view wherever nothing in the scene moves, whatever its tick or
+  interpolation fraction. A held route is taken twice, as the game launches and from its **off copy**, which
+  differs only in that its `start` turns occlusion off. A [**held pair**](../GLOSSARY.md#held-pair) is one
+  settled image of each. What
+  occlusion adds is the difference between the two, and the builder may amplify it into an image. Every
+  claim about what occlusion adds, and about what it leaves alone, is made of held pairs. The exit scene's
+  balloons drift in a held route's take as in any other, so its pairs are read on the ground and the still props. The
+  diagnosis measured the held route at the cubes at 0.000 codes of change between frames.
+- **A moving route** is one in which the camera moves or the clock runs. It is judged from its take with
+  occlusion on, by what that take does from one frame to the next: grain, sparkle, crawl, an abrupt change,
+  a trail, a band at the frame's edge, a line where the darkening begins. The off copy's take is played
+  beside it, and where a fault is seen, the off frame at the nearest recorded pose is set beside it: the
+  fault is occlusion's if the off frame lacks it. No difference image is made of a moving route.
+
+Within the radius of a prop the method may darken the ground behind it a little, as the prop does hide some
+sky from it: what fails is a hard patch in the prop's shape, or any outline on ground or hills farther
+behind a silhouette than the radius, where nothing of the prop can reach. In motion a darkening may change
+continuously: it grows on screen as the camera nears it, changes as things come into view or are hidden,
+and follows the light. What fails is grain, sparkle, an abrupt change between frames, an outline and a
+trail. No item holds the darkening to a computed fraction: that belongs in a diagnosis, by the owner's
+decision of 17 November on proof that is plausible and not accurate.
 
 The routes are WP13's, in [the diagnosis folder](../../../.orchestrate/evidence/ATMOSPHERE/WP13-diagnosis/routes/),
-and copies the builder keeps in `.orchestrate/evidence/ATMOSPHERE/WP14/routes/`. Three copies differ from
-their originals only in the hour of `start`, one is a held pose cut for the rock, and each route judged has
-an **off copy** beside it, which differs only in that its `start` turns occlusion off:
+the planner's two beside the exit scene's props, in
+[their own folder](../../../.orchestrate/evidence/ATMOSPHERE/exit-near-props/README.md), and copies the
+builder keeps in `.orchestrate/evidence/ATMOSPHERE/WP14/routes/`. A copy differs from its original only in
+`start`: the hour, whether the Sun is held, or occlusion off. Every route below has an off copy.
 
-| Route | Scene | What it is for |
+| Held route | Scene | What it is for |
 |---|---|---|
-| `c2-moving-sunheld.json` | valley, `proof` overlay | Round the cubes with the Sun held at 15.3 h: cubes inside the sphere's shadow, and cubes in sunlight beside them |
-| `c2-dusk.json`, a copy with the Sun held 4° below the horizon (18.3 h as planned) | valley, `proof` overlay | The cubes and the sphere lit by the sky alone |
-| `rock-dusk.json`, a held pose the builder cuts at the same hour | valley, `proof` overlay | The rock's contact with the ground, which the moving part of the cube routes never shows: it lies past the frame's right edge there. The valley's opening pose shows it |
-| `valley-floor-dusk.json`, a copy held at the same hour | exit | Down to the valley floor and level across it at dusk: every prop is in shade |
-| `valley-floor-low-sun.json`, a copy held at 17.3 h | exit | The same flight with long shadows: props inside a ridge's or a mesa's shadow beside props in sunlight |
-| `balloons.json` | exit | Flying at 17 m/s over rocks and cacti toward the balloons, clock running from 16 h: sunlight, and motion |
-| `valley-floor.json` | exit | The descent and level flight with the clock running |
+| `c3-held-sunheld.json` | valley, `proof` overlay | Above the cubes at 15.3 h: cubes inside the sphere's shadow, and cubes in sunlight beside them |
+| `c3-dusk.json`, a copy with the Sun held 4° below the horizon (18.4 h by the day cycle's formula) | valley, `proof` overlay | The cubes and the sphere lit by the sky alone |
+| `rock-dusk.json`, a pose the builder cuts at the same hour | valley, `proof` overlay | The rock's contact with the ground, which the cube routes never show: it lies past the frame's right edge there. The valley's opening pose shows it |
+| `exit-props-dusk.json`, a copy of `exit-props-near.json` with the Sun held at the same hour | exit | Beside the props, 2.5 m above the ground: the feet of a standing rock 12 m from the eye, a cactus and a boulder at about 19 m, a cactus and a boulder at about 54 m, and each kind again at about 100 m, all in shade. Above about a metre from their feet, the near cactus and the rock stand against ground more than 5 m behind them |
+| `exit-ridge-shade.json`, a pose the builder cuts with the Sun held at 17.3 h | exit | Long shadows: at least three still props within 100 m of the eye whose feet stand inside a ridge's or a mesa's shadow, with sunlit ground and a sunlit prop in the same frame. Where that shadow lies has to be seen in the game, so the builder finds the pose and records the feet in frame as the planner's record does |
+
+| Moving route | Scene | What it is for |
+|---|---|---|
+| `c2-moving-sunheld.json` | valley, `proof` overlay | Round the cubes with the Sun held at 15.3 h |
+| `c2-dusk.json`, a copy held at the dusk hour | valley, `proof` overlay | The same by sky light alone, where occlusion is the whole of the contact |
+| `exit-props-pass-dusk.json`, a copy of `exit-props-pass.json` held at the dusk hour | exit | 8 m sideways past the props at 2 m/s: the standing rock and the near cactus cross the frame against ground far behind them, and contacts at about 19 m, 54 m and 100 m shift against each other |
+| `balloons.json` | exit | Flying at 17 m/s over rocks and cacti toward the balloons, clock running from 16 h: sunlight, speed, and balloons against the hills. Its nearest foot in frame is about 150 m away |
+| `valley-floor.json` | exit | The descent and level flight with the clock running: the ground out to the ridges |
 | `e4-turn-sunheld.json` | exit | Turning in place: the frame's edges |
 
-If 18.3 h does not put the Sun about 4° down in the scene, the builder sets the hour that does and says so.
+If 18.4 h does not put the Sun about 4° down in the scene, the builder sets the hour that does and says so.
+The takes are T2 `realtime` on both targets, held routes included: a held route needs no fixed clock, because its view
+does not depend on when an image was submitted.
 
 ### Risks
 
@@ -2639,6 +2779,12 @@ If 18.3 h does not put the Sun about 4° down in the scene, the builder sets the
 | Blur in place of accumulation | Contacts are wide grey smudges with no dark core | Widening the spatial filter to hide grain |
 | A trail read as softness | A darkening lingers where a balloon's basket or the camera's parallax has moved on | Judging stills only |
 | A blink at a scale step | Contacts flash on the Apple row when the governor moves | Judging only takes in which the scale never stepped |
+| The history read at the old address after a scale step | For one frame after the governor moves, a contact's darkening stands on open ground beside it and the contact is bare | Resetting the history at the step, or testing the step only where the contact sits at the frame's origin |
+| A pair that is not one view | The difference of two frames shows a thin line along every silhouette, light on one side and dark on the other | Pairing frames of two realtime takes of a moving route by tick, or differencing a moving route |
+| Contacts judged where there are none | The exit crops "beside the camera" show bare ground | Judging near contacts on the flythrough routes, which never come within 150 m of a foot |
+| A retry that loses occlusion | After a traced preparation fails, the scene is ready and bare, or reports another radius | Proving the fallback only for refusals known before any candidate is prepared |
+| The cost taken at another output size | The Apple rows report 3,456 × 2,234, the registry's default, and not the 67% the owner named | Leaving the output scale to the registry before WP17 has promoted one |
+| The grid stands in for the game | The page's record names the screen-space method and no scene, or was read with an empty query | Reading the resolved method from the grid, the route page or the capture page |
 | Cost carried by the governor | The Apple row keeps its rate because the render scale fell | Recording the frame rate and not the pass times and the scale |
 | A second kind of occlusion | A scene on the traced method also runs the screen-space pass, or the two are multiplied | Judging the traced launch by eye alone: WP14.2 counts the passes |
 | A gather fixed to the showcase's radius | Asking for another radius changes the report and not the picture | Testing every case at 1 m |

@@ -364,3 +364,12 @@ width. Defined in [ATMOSPHERE](ATMOSPHERE/DESIGN.md#the-suns-cascades-round-the-
 - **Source** — close to the field's inscribed-sphere diameter and local thickness.
 
 Proposed: the planner chose the name.
+
+### Held pair
+
+Two captured images of one view that differ in one setting: a settled image from a route whose camera and Sun
+are both held, and one from a copy of that route with the setting changed. Their difference is what the setting
+adds, which two realtime takes of a moving route cannot show, because they do not submit the same poses.
+Defined in [ATMOSPHERE](ATMOSPHERE/DESIGN.md#what-occlusion-adds).
+
+Proposed: the planner chose the name.

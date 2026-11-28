@@ -1005,3 +1005,69 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   WP13.8's record asks for it. `APPLE-PRESENTATION` WP17's sitting is still to be taken again on WP13's frame,
   which now holds more Sun work. Beyond 16 m an outline along the grid still moves a texel at a time, which is
   in the plan file for the owner.
+- 2026-11-28 Design review 3 asked for changes, with seven Must Fix findings, one on WP13's stopped build
+  and six on WP14. It read the commit from before rule 7 landed. A revision was written for it and ended
+  `BLOCKED` on one row of the module list, so nothing merged.
+  [Review 3](../../../.orchestrate/evidence/ATMOSPHERE/design-review-3.md) ·
+  [that revision](../../../.orchestrate/evidence/ATMOSPHERE/design-review-3-revision/README.md)
+- 2026-11-28 Design review 4 read the tree without that revision: finding 1 resolved by rule 7, findings 2
+  to 7 still open, and a new finding 8 on WP13.6. This round lands the revision with finding 8 and the
+  review's suggestion. No reviewer reads it before building starts.
+  [Review 4](../../../.orchestrate/evidence/ATMOSPHERE/design-review.md)
+- 2026-11-28 Finding 1, resolved in review 4. Kept from the revision: the design's stop rule is
+  [four ordered steps](DESIGN.md#if-an-edge-still-steps) on the witness, each with what it shows and its
+  correction, before `BLOCKED`.
+- 2026-11-28 Finding 2, no exit route shows a prop's foot nearby. The planner found a pose from the authored
+  layout, the terrain's heights and the day cycle's Sun direction, 2.5 m above the ground: a standing rock
+  at 12 m, a cactus and a boulder at about 19 m, a cactus and a boulder at about 54 m and each kind at about
+  100 m, lit from the side at 16 h with no ridge's shadow on them. Two routes are written there, held and 8 m
+  sideways past it. Nothing was drawn. WP13.4 takes the held pose with the clock running, in sunlight, and
+  WP14.3 to WP14.5 take dusk copies of both, in shade. The earlier routes stay, for flicker and the distance
+  line. The revision's first pose faced directly away from the Sun, so every shadow fell behind its caster,
+  and was replaced. [Record](../../../.orchestrate/evidence/ATMOSPHERE/exit-near-props/README.md)
+- 2026-11-28 Finding 3, the history after a scale step. The design now says how a reader finds last frame's
+  texel: the previous position as a fraction of the frame being drawn, times the extent the history was
+  written at, then the stride. The forward read and the pass's own reprojection both do it. WP14.2's
+  scale-step case steps down and up and names the open ground an unconverted read would darken, and
+  WP14.1's question asks for the conversion.
+- 2026-11-28 Finding 4, realtime pairs do not show one view. What occlusion adds is now read from held
+  pairs: a route with the camera and the Sun held, taken with occlusion on and off. A moving route is judged
+  from its take with occlusion on, with the off take beside it and no difference image. WP14.3 to WP14.5 were
+  written again on that split: five held routes and six moving ones, each with an off copy. `valley-floor-dusk.json`
+  and `valley-floor-low-sun.json` left the plan, and `exit-ridge-shade.json` is a pose the builder cuts.
+- 2026-11-28 Finding 5, a fallback known only after preparation. The design describes resolution for each
+  candidate: a traced candidate that fails to prepare is dropped whole, and the second resolves to the
+  screen-space method at the radius asked, which the scene publishes with the reason. WP14.2 gained a case
+  with the traced pipeline's injected failure.
+- 2026-11-28 Finding 6, the cost at another output size. WP14.6's Apple rows force the 67% output scale and
+  120 Hz by launch setting, as WP13.8's did, state the extent resolved, and hand it to WP17 with the spans.
+  The registry's default is still the panel's size.
+- 2026-11-28 Finding 7, the ordinary page opened neither scene. WP14.5 reads two records from `index.html`,
+  one with the valley's selector and one with the exit's, each naming the scene it runs and the method
+  resolved. An empty query opens the grid and stands for neither.
+- 2026-11-28 Finding 8, WP13.6 held two figures. The item was written again as an inspection alone: it lost
+  the 0.4 px bound on measured crossings, its Metal test `sun_outline_gpu` and that test's third of a texel.
+  It passes when the sphere's and the cubes' edges are seen to slide and each sunlit cube's shadow meets the
+  edge or corner it rests on. The first build's strip, the crossing measurement and the placement probe are
+  [diagnostics](DESIGN.md#wp13-diagnostics) that find and size a step someone has seen; the probe asserts no
+  bound and `./dev check` does not run it. The design's tuning and stop language follow: rule 7's four
+  drawings are a starting value, cost lever 4 goes by the list, and step 2 of the stop rule reads the probe
+  as a diagnosis.
+- 2026-11-28 Suggestion taken: the model's ±0.31 px and the equal-cost read are labelled estimates. The model
+  takes all four samples at every texel, the build may share taps among the four drawings, and the measured
+  rows lie in the blend of the 4 m and 8 m cascades, which the model runs apart. The takes and WP13.8's
+  record settle both.
+- 2026-11-28 The dusk hour is 18.4 h, 4.2° below the horizon by the day cycle's formula, where the plan said
+  18.3 h, which is 3.2°.
+- 2026-11-28 Left for the lead, in the module list, which this planner may not change. Findings 3 and 5 also
+  ask that the ambient occlusion interface row agree with the design. The row says the history is "at half
+  the render extent" and that a scene "resolves to one method before anything is allocated". The design
+  builds the history's extent as the writing method's, a stride of 2 for the screen-space method and 2 or 1
+  for the traced one, and resolves a method for each candidate, with the scene publishing the one that
+  prepared. The design now says how it reads the row, and that WP14 is built to the design. The row's new
+  wording is ready for a planner of the whole project, and changes nothing that is built.
+  [The row as it should read](../../../.orchestrate/evidence/ATMOSPHERE/design-review-3-revision/README.md#the-row)
+- 2026-11-28 Name proposed: [held pair](../GLOSSARY.md#held-pair), for the two images WP14's lists compare.
+- 2026-11-28 The plan file was shortened. What left it is in the design: WP13.7's Chrome takes come from
+  `scripts/capture_v1_browser.mjs --route-file`, and WP14's copies are named in
+  [the design's two tables](DESIGN.md#what-occlusion-adds).
