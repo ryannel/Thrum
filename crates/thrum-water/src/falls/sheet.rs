@@ -16,11 +16,12 @@ pub(in crate::falls) const ROWS: usize = 32;
 pub(crate) const PASS: &str = "waterfall sheet";
 const SPLASHES_PER_SEGMENT: usize = 24;
 const RIBBONS_PER_SEGMENT: usize = 6;
+const STRANDS_PER_SEGMENT: usize = 8;
 const STRAND_SIDES: usize = 8;
 const STRAND_EDGE: f32 = 4.0;
 const STRAND_ROLL_START: f32 = 0.18;
 const VERTICES_PER_SEGMENT: usize =
-    RIBBONS_PER_SEGMENT * 6 * STRAND_SIDES * (ROWS + 3) + 6 * SPLASHES_PER_SEGMENT;
+    STRANDS_PER_SEGMENT * 6 * STRAND_SIDES * (ROWS + 3) + 6 * SPLASHES_PER_SEGMENT;
 const ATTRIBUTES: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4, 4 => Float32x4];
 
 #[repr(C)]
@@ -479,10 +480,15 @@ fn mesh(
         } else {
             let thickness = f64::from(foot[1].discharge[3]) / sheet.tear;
             let spread = ((2.48 - thickness) / 0.73).clamp(0.0, 1.0) as f32;
-            let mut top = ribbons(strip(-1.0), spread);
+            let count = if spread > 0.0 {
+                STRANDS_PER_SEGMENT
+            } else {
+                RIBBONS_PER_SEGMENT
+            };
+            let mut top = ribbons(strip(-1.0), spread, count);
             for fraction in stations() {
-                let bottom = ribbons(strip(fraction), spread);
-                for (a, b) in top.into_iter().zip(bottom) {
+                let bottom = ribbons(strip(fraction), spread, count);
+                for (a, b) in top.into_iter().zip(bottom).take(count) {
                     if spread > 0.0 {
                         stitch_strand(vertices, a, b, spread);
                     } else {
@@ -499,7 +505,7 @@ fn mesh(
 }
 
 #[expect(clippy::cast_precision_loss, reason = "ribbon indices are bounded")]
-fn ribbons(section: [Vertex; 3], spread: f32) -> [[Vertex; 3]; RIBBONS_PER_SEGMENT] {
+fn ribbons(section: [Vertex; 3], spread: f32, count: usize) -> [[Vertex; 3]; STRANDS_PER_SEGMENT] {
     let at = |distance: f32| {
         let (a, b, t) = if distance <= 0.5 {
             (section[0], section[1], 2.0 * distance)
@@ -515,21 +521,24 @@ fn ribbons(section: [Vertex; 3], spread: f32) -> [[Vertex; 3]; RIBBONS_PER_SEGME
             edge_receiver: [0.0, a.edge_receiver[1], a.edge_receiver[2], 0.0],
         }
     };
-    let step = 1.0 / RIBBONS_PER_SEGMENT as f32;
+    let step = 1.0 / count as f32;
     let division = |index: usize| {
         let equal = index as f32 * step;
-        if index == 0 || index == RIBBONS_PER_SEGMENT {
+        if index == 0 || index == count {
             return equal;
         }
         let lip = at(equal).velocity_along[3];
         equal + spread * step * 0.39 * (lip * 43.7).sin()
     };
     std::array::from_fn(|index| {
+        if index >= count {
+            return section;
+        }
         let (middle, half_width) = if spread > 0.0 {
             let (left, right) = (division(index), division(index + 1));
             (f32::midpoint(left, right), 0.5 * (right - left))
         } else {
-            let half_width = 0.5 / RIBBONS_PER_SEGMENT as f32;
+            let half_width = 0.5 * step;
             ((2.0 * index as f32 + 1.0) * half_width, half_width)
         };
         let centre = at(middle);

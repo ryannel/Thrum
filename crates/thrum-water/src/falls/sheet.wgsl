@@ -334,8 +334,10 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
         + vec3(1e-7, 0.0, 0.0));
     let view_across = normalize(look - tangent * dot(look, tangent) + vec3(1e-7, 0.0, 0.0));
     let chord = smoothstep(0.02, 0.83, abs(dot(radial, view_across)));
-    let round_light = 0.11 * chord;
-    let diffuse_streaks = 0.12 * coarse + 0.19 * fine + 0.17 * grain;
+    let round_light = 0.14 * chord;
+    let droplets = sheet_noise(vec2(lip, birth), FALL_LOOP, vec2(42.0, 13.6), vec2(91.0, 0.0));
+    let bead_light = 0.20 * smoothstep(0.42, 0.78, droplets);
+    let diffuse_streaks = 0.11 * coarse + 0.13 * fine + 0.12 * grain + bead_light;
     let packet_light = aerated * (0.26 + round_light + diffuse_streaks + 0.78 * packet);
     let sheet_colour = mix(mix(clear_light, broken_light, white), packet_light, mixed_air);
     let spray_light = mix(sheet_colour, aerated,
@@ -349,8 +351,9 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     // The aerated body transmits through a similar thickness across its face.
     // Lighting follows the departing parcels independently of the cover.
     let glass_cover = film_opacity * presence * mix(0.62, 1.0, seam) * contact_cover * trickle_film;
-    let breaking = smoothstep(0.53, 0.94, fraction) * (1.0 - smoothstep(0.28, 0.73, 0.52 * fine + 0.48 * coarse));
-    let aerated_cover = 0.66 * foot * mix(0.62, 1.0, chord) * (1.0 - 0.35 * breaking);
+    let breaking = smoothstep(0.47, 0.90, fraction)
+        * (1.0 - smoothstep(0.28, 0.73, 0.40 * fine + 0.39 * coarse + 0.21 * droplets));
+    let aerated_cover = 0.71 * foot * mix(0.16, 1.0, chord) * (1.0 - 0.54 * breaking);
     let opacity = mix(glass_cover, aerated_cover, mixed_air);
     let path_distance = select(input.across_fraction.y, -input.across_fraction.y - 2.0, is_filament);
     let last_fraction = input.across_fraction.w - length(input.velocity_along.xyz) * sheet_clock.y
