@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-23 of 39 modules done · 12 in progress · 4 to come
+23 of 39 modules done · 13 in progress · 3 to come
 
 ### Needs you now
 
@@ -427,7 +427,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - GATE-TIME's design: Design Ready for Review · [design](GATE-TIME/DESIGN.md) · [plan](GATE-TIME/PLAN.md)
 - An agent writes a game's scenes, phases and rules in plain Rust against one crate, in the order they run, and proves them in an ordinary test with no window (GAME-SDK WP1): Not Started · [plan](GAME-SDK/PLAN.md) · [latest review](../../.orchestrate/evidence/GAME-SDK/WP1-review.md)
 - A rule asks whether two 3D shapes touch, where a ray meets one and where a moving one is stopped, and gets the same answer on the Mac, in Chrome and on the iPhone simulator (SIM-3D WP1): Not Started · [plan](SIM-3D/PLAN.md)
-- A program plays sounds into a buffer with no device, placed, pitched, looped and limited, and a test reads exactly what would be heard (AUDIO WP1): Not Started · [plan](AUDIO/PLAN.md)
+- A program plays sounds into a buffer with no device, placed, pitched, looped and limited, and a test reads exactly what would be heard (AUDIO WP1): Ready for Review · [plan](AUDIO/PLAN.md)
 
 ### Recently done
 
@@ -545,7 +545,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A merge's check runs only the tests of the packages its change can reach, and the whole workspace's tests run on main after each merge (GATE-TIME WP7), 21 Nov · review `.orchestrate/evidence/GATE-TIME/WP7-review.md` (cleared)
 - The game and the iPhone app hold the engine's frame host directly, a frame can be drawn without reading it back, and there is one way to capture the game to disk (HOST WP3), 21 Nov · review `.orchestrate/evidence/HOST/WP3-review.md` (cleared)
 - A merge's check runs its tests side by side and takes minutes where it took twenty: it says where its time went, and a test that runs over a minute fails it (GATE-TIME WP8), 21 Nov · review `.orchestrate/evidence/GATE-TIME/WP8-review.md` (cleared)
-- The engine's public API holds no simulation query, capture, device opener, serialiser or shader copy that only its own tests reach (DEAD-CODE WP3), 21 Nov · review `.orchestrate/evidence/DEAD-CODE/WP3-review.md` (cleared)
 
 ## All modules
 
@@ -589,4 +588,4 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 36 | DEAD-CODE | Engine code that nothing calls is gone, and a scene contribution no longer writes empty methods | GATE-TIME WP1 to start; GATE-TIME WP6 for the contribution's defaults; WATERS WP7 for the water scene's settings; HOST WP3 for the game's projection; REVIEW-RENDER WP3 and GATE-TIME WP6 for the two helpers | Done 22 Nov |
 | 37 | GAME-SDK | A developer or an agent builds a 2D, a 3D or an online game in plain Rust against one documented crate, and the showcase and the swarm game are written on it | Nothing to start: the owner approved its design on 27 November 2026. SESSION WP7 for a game played online; GAME-UI WP4 for menus and status displays and GAME-UI WP6 for the iPhone simulator; APPLE-PRESENTATION WP8 to WP12, RAY-TRACING WP6 and MESH-SHADING WP3 for 3D models that turn between ticks; SIM-3D for a 3D character that walks on the ground and is stopped by walls; AUDIO for sound; GAME-SPLIT WP4 for the showcase on the SDK | WP1 of 19 · Not Started |
 | 38 | SIM-3D | A 3D game's characters and shots find what is near them, what a ray meets and where they are stopped, the same on every device, and a character walks over hills, steps and solid models | SIM-2D WP3 | WP1 of 5 · Not Started |
-| 39 | AUDIO | A game's sounds and music are heard on the Mac, in Chrome and on the iPhone simulator, mixed in one place and never stalling a frame |  | WP1 of 4 · Not Started |
+| 39 | AUDIO | A game's sounds and music are heard on the Mac, in Chrome and on the iPhone simulator, mixed in one place and never stalling a frame |  | WP1 of 4 · Ready for Review |
