@@ -9,8 +9,8 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 
 ## Open for the human
 
-- Assumption: "taking into account mist / fog" and "top quality atmosphere" (14 November) are met by mist, fog and low cloud as the clouds' own droplets in this module's one weather field. `ATMOSPHERE`'s view volume draws them near the camera and this module's trace beyond.
-- Assumption: "changing with the weather and time of day" means the mist itself forms after dusk and burns off after sunrise, as well as taking the day's light. The narrower reading leaves every amount to the game and drops WP13.4 and WP16.1.
+- Assumption: "taking into account mist / fog" and "top quality atmosphere" (14 November) are met by mist, fog and low cloud as the clouds' own droplets in this module's one weather field.
+- Assumption: "changing with the weather and time of day" means the mist itself forms after dusk and burns off after sunrise, as well as taking the day's light.
 - Assumption: "low cloud the camera can enter" includes coming out above it on a summit. The camera stays 2 to 40 m over the ground. Only a layered deck on the hills is inspected.
 - Assumption: a headless game asking whether it can see through a placed cloud gets a marked estimate unless it gives the cloud's voxels.
 - Assumption: "a flexible set of cloud capabilities" is taken up: shade, the visible sky, the world's light, shapes and ground condensate are each left out by a scene at no cost.
@@ -24,15 +24,17 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 - Assumption: time-lapse runs from 1× to 60×, and "continuous to the horizon" means about 200 km.
 - Assumption: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item (brief decision 3), except in WP20 and WP25, by [their rule](DESIGN.md#holding-the-displays-refresh-while-clouds-drift-wp19-and-wp20).
 - Assumption: what the game loses with clouds absent stops nothing here; it is listed for `PLATFORM-RUNTIME-MAC` and the performance phase.
-- Assumption: only the fair preset's sky is held to the refresh. The broken and overcast skies' cost and the finished sky's presented cadence are recorded and investigated (WP7.8, WP12.5, WP12.6), and the rest is the performance phase's.
-- Assumption: "each cloud holds up on its own" is met by a new form for the weather's own clouds (heaps held in a 3D volume, about 72 MiB more), not by library shapes filling the fair sky. From WP24 until WP17 passes, main shows it unjudged.
+- Assumption: only the fair preset's sky is held to the refresh. The broken and overcast skies' cost and the finished sky's presented cadence are recorded and investigated (WP12.5, WP12.6), and the rest is the performance phase's.
+- Assumption: "each cloud holds up on its own" is met by a new form for the weather's own clouds (heaps held in a 3D volume, about 72 MiB more), not by library shapes filling the fair sky. Until WP17 passes, main shows it unjudged.
 - Assumption: near heaps are drawn half a second of play behind the weather a query answers (30 seconds of weather at 60×), and past about 25 km a heap loses its overhangs.
-- Assumption: the game WP20 and WP25 measure is the release V1 game in its 1920×1080 window, on the Apple recipe with TAAU under the fair preset. WP25 needs one more sitting with no other agent working.
+- Assumption: through a preset change a query can call a column clear for up to a second of play while its cloud is still drawn and still shades. A game's simulation gets no query that lags with the picture ([what a game may rely on](DESIGN.md#the-weather-volume)).
+- Assumption: the weather volume's fill cadence is no governor knob, though the brief asks that every cadence be one, because moving it would freeze or jump the near clouds.
+- Assumption: WP25 measures the release V1 game in its 1920×1080 window, on the Apple recipe with TAAU under the fair preset, in one more sitting with no other agent working.
 - Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX work packages.
 - Assumption: the finished sky closes at WP12 with weak noon relief on broad lobes of library shapes as a listed weakness ([risk 14](DESIGN.md#risks)); [the noon-relief follow-up](DESIGN.md#the-noon-relief-follow-up) is no work package and waits for the lead.
 - Assumption: WP14 to WP12 pass without a shaft of sunlight followed inside mist below broken cloud ([risk 15](DESIGN.md#risks)); WP22, last, takes it up.
-- Assumption: a scene that declares Ground pays its full-refresh trace at every fog amount, zero included. With no mist it is held to the look of the same scene without Ground, not to the bytes it drew before WP15.
-- Assumption: from inside upper cloud only the far-mist toggle is inspected (WP15.16), not how the cloud looks from within.
+- Assumption: a scene that declares Ground pays its full-refresh trace at every fog amount, zero included. With no mist it is held to the look of the same scene without Ground.
+- Assumption: from inside upper cloud only the far-mist toggle is inspected, not how the cloud looks from within.
 
 ## WP1 The weather over any place and time is computed on the CPU alone, from a clear sky to overcast, and repeats exactly: done
 [review](../../../.orchestrate/evidence/CLOUDS/WP1-review.md)

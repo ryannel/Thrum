@@ -83,6 +83,13 @@ never answered as clear. A heaped cell's [column form](#the-weather-volume) keep
 would have read call empty. The weather volume is [filled a part a tick and read between two keys](#the-weather-volume),
 because a whole fill on each tick of a time-lapse cannot fit a frame. WP25 takes
 [the wind series](#holding-the-displays-refresh-while-clouds-drift-wp19-and-wp20) again on the puff form.
+Revised once more that day after the review of those fixes (five findings, the last round). The volume shows
+[one shown tick](#the-weather-volume), by a weight made from the ticks its keys hold, after a reset and after
+ticks that arrive together. The drawn sky is held to
+[the states its products hold](#the-weather-volume), which through a preset change are not the committed
+state, and the design says what a game may rely on. The map's heaped part is taken from
+[the procedural column](#the-weather-map), so a placed shape is drawn once. The key interval is no governor
+knob. No interface with another module changed.
 
 ## The request
 
@@ -587,10 +594,17 @@ this design are named where they are made: the GPU reads the field through filte
 over a point is a local average of the model's density over a texel, held to the model at stated points within
 a tolerance its test states; the [coarse density](#one-density-in-m¹) takes the detail noise at its mean; and
 the Sun path's [far value](#the-suns-path-one-optical-depth-product) is a mean transmittance. Two more
-differences from the query are stated where they are made, and neither draws more than the model's column
-for the weather it shows: [the weather volume](#the-weather-volume) shows heaped cloud one key interval of
-ticks late, and past the volume a heaped cell's column form keeps its column's optical depth and not where
-in the column it lies.
+differences from the query are stated where they are made: past [the weather volume](#the-weather-volume) a
+heaped cell's column form keeps its column's optical depth and not where in the column it lies, and the
+volume shows heaped cloud one key interval of ticks late.
+
+**The bound is by state.** A query answers for the state it is given. Each GPU product holds the model at
+a state it names, the state it was last written from, and the bound above holds between a product and the
+query at that state. While the weather stands still every such state gives one column, and the query at
+the committed tick bounds what is drawn. Through a preset change it does not: a query at the committed
+tick can answer clear over a puff the volume still shows.
+[The states the drawn sky holds](#the-weather-volume) says which states bound the drawn column then, and
+what a game may rely on.
 
 ### Time: drift at the display's time, evolution on the tick
 
@@ -657,9 +671,10 @@ belongs to the ground takes no travel: the [surface field](#condensate-that-meet
 texture is anchored to the world. So a frame that shows the
 same tick again moves every cloud and its shade by the wind's travel since the last frame, and rewrites no texel:
 the weather map, the Sun's path and everything that evolves stay at the committed tick, as `EFFECT-GRAPH`'s state
-rule requires. Evolution can stay there because it is slow: at 60× a cell changes its envelope by at most 0.2% of
-its range in a tick (part F). On a cut, a seek or a new timeline the frame takes `travel(C)`, as it does when the
-phase is exactly 1 because the clock is not interpolating: a pause, an overload or a capture frame.
+rule requires. Evolution can stay there because it is slow: at 60× a cell changes its envelope by at most
+0.44% of its range in a tick, the steepest of a 12-minute life. On a cut, a seek or a new timeline the
+frame takes `travel(C)`, as it does when the phase is exactly 1 because the clock is not interpolating: a
+pause, an overload or a capture frame.
 
 ### One density, in m⁻¹
 
@@ -715,16 +730,30 @@ evaluate the same cell, puff and deck rules as the CPU. Because the map lives in
 the air frame, wind costs nothing: only evolution and the camera's movement through the air need new texels, so
 the map is refreshed in parts.
 
-**The deck's column is held apart.** A column can hold two condensates, the deck and a heaped cell, and its
-top and its coverage may be the cell's while the cloud low in it is the deck's: under a broken sky a tall
-puff stands over a shallow deck. One column for both cannot draw that. The deck's vertical profile over the
-combined height fills the air above the deck, and the puff alone leaves the deck out. So a texel also holds
-the deck's own thickness and coverage, and the **heaped part** of the column's optical depth, which is the
-column's less the deck's own and is never below zero. The model gives the map's passes and its check the same
-three values; a game's query is unchanged. Every reader draws the deck from the deck's own column at every
-distance and takes the greater of it and the heaped profile at each point, as the model does: near the
-camera the heaped profile is [the weather volume](#the-weather-volume)'s, and past it the column form's,
-made from the heaped part.
+**The procedural column is held apart, by condensate.** A column can hold two condensates of the weather's
+own, the deck and a heaped cell, and its top and its coverage may be the cell's while the cloud low in it is
+the deck's: under a broken sky a tall puff stands over a shallow deck. One column for both cannot draw that.
+The deck's vertical profile over the combined height fills the air above the deck, and the puff alone leaves
+the deck out. So beside the field's column a texel holds four values of the **procedural column**, which is
+the column of cells and the deck with no placed shape in it: the deck's own thickness and coverage, the
+heaped cells' own top, and the **heaped part** of its optical depth, which is the procedural column's
+optical depth less the deck's own and is never below zero. The model gives the map's passes and its check
+the same four values; a game's query is unchanged. Every reader draws the deck from the deck's own column at
+every distance and takes the greater of it and the heaped profile at each point, as the model does: near
+the camera the heaped profile is [the weather volume](#the-weather-volume)'s, and past it the column
+form's, made from the heaped part between the type's condensation level and the heaped cells' own top.
+
+**A placed shape is in neither.** The field's column, which a game reads, adds a
+[placed shape's](#placed-volumes) footprint to the weather's, and its base and top may be the shape's. The
+shape's own reader draws that footprint, in its volume form or its column form. So the heaped part is never
+made from the field's column, and the column form is never spread to the field's base and top, or a shape
+would be drawn twice. With coverage at zero and one directed shape whose footprint has an optical depth of 1
+at a point, the field's column there is 1 and the procedural column is clear. The heaped part is zero, the
+column form draws nothing on either side of the volume's edge, and the shape's reader draws its 1. A heaped
+part made from the field's column would be 1 too, and past the volume the sky would draw 2
+([part XXII](#check-that-it-can-work)). In a column that holds a shape, a heaped cell and the deck, each
+is drawn once: the deck from its own column, the cell from the volume or from the heaped part, joined with
+the deck by the greater, and the shape's coefficient [added](#one-density-in-m¹) to theirs.
 
 **Stepping across empty air.** A ray skips only air that the texels it would have read there call empty, so
 every skip is bounded by the product the march draws from. For the deck, a heaped cell's column form and a
@@ -793,35 +822,63 @@ in the air frame, so wind costs nothing.
 
 - **Two keys, and a part a tick.** The first profile's volume is 37.7 million voxels, and the map's bound
   would have all of them written on every tick of a 60× time-lapse, which no frame holds
-  ([the cost account](#cost-account)). So a voxel holds the profile at two ticks, its **keys**, and the
-  volume is filled a part a tick. A level is cut into parts fixed in the air frame, and a part is written
-  once in every **key interval**, a count of ticks that is a profile constant (30 in the first profile, half
-  a second of play). Its turn replaces the older key with the model at the committed tick. A reader takes
-  the two keys blended by how far the committed tick is from the newer key's tick toward the next turn: the
-  older key in the tick the newer is written, and the newer one interval later, when it becomes the older.
-  So nothing steps when a part is written, every part shows the same weather, and that weather is the
-  model's **one key interval of ticks late**, interpolated between two of its own states: half a second
-  of weather at 1× and 30 seconds at 60×. In 30 seconds a cluster rises by less than a fade length: the
-  fair type's deepest, 3.8 km, by about 230 m at the fastest an envelope moves, 0.2% of its range in a
-  weather second. Across its fade a profile is linear in depth, so the blend of a profile with itself moved
-  that far has one surface, between the two keys' surfaces, and no second edge. WP17.4 judges it at 60×, and
-  a shorter interval is the fix. A fill's work is the same on every tick at every time scale.
-- **What stays exact.** Each key holds the model at the tick it names, at every voxel of its part. A voxel
-  that enters a level's reach as the camera moves through the air is written in both keys in that tick, each
-  at its own key's tick. On a cut, a weather seek, a backward tick, a new timeline and a replaced device
-  both keys of every part are written at the committed tick in that frame. The volume then shows the
-  committed weather with no lag, and its heaps stand still for the interval that follows while each part
-  takes its first turn. The blend's weight advances on the tick and never within one, as
+  ([the cost account](#cost-account)). So a voxel holds the profile at two states, its **keys**, and the
+  volume is filled a part a tick. A level is cut into parts fixed in the air frame. Each key of each part
+  has a **key tick**: the committed tick of the weather state it was written from. The effect keeps that
+  tick with the state's weather time and parameters, which are all a heaped profile takes from a state,
+  because travel is the air frame's. A part's **turn** comes once in every **key interval** `K`, a count
+  of ticks that is a profile constant (30 in the first profile, half a second of play), at the part's own
+  place in the interval. Its turn replaces its older key with the model at the committed tick. A fill's
+  work is the same on every tick at every time scale.
+- **One shown tick.** The volume shows the weather of one tick, the **shown tick** `S = max(C − K, R)`: the
+  committed tick `C` less the key interval, and never before `R`, the tick of the last reset. A reader
+  blends a part's two keys by where `S` lies between their key ticks `a ≤ b`, with a weight of
+  `(S − a) / (b − a)` toward the newer. Where `S` is at or before `a`, or the two ticks are one, it takes
+  the older key whole. The weight is made from the ticks the keys hold, and never from a count of ticks
+  since a write. In steady running a part's keys are `K` apart and its next turn comes as `S` reaches the
+  newer, so nothing steps when a part is written. Every part shows the weather of the same tick: the
+  model's at a key, and between two keys a straight line between two of the model's own states. That
+  weather is **one key interval of ticks late**: half a second of weather at 1× and 30 seconds at 60×. The
+  weight advances on the tick and never within one, as
   [evolution](#time-drift-at-the-displays-time-evolution-on-the-tick) does.
+- **A reset.** On a cut, a weather seek, a backward tick, a new timeline, a replaced device and the first
+  frame, the states the keys held are gone or no longer lead to the committed one. Both keys of every part
+  are written at the committed tick in that frame, and `R` is that tick. The volume then shows the
+  committed weather with no lag and holds it for one key interval, drifting with the wind, while each part
+  takes its first turn. Through that interval `S` is `R`, at or before both keys of every part, so a part
+  whose turn has come shows no more of its new key than a part whose turn has not. From `R + K` every part
+  moves on from `R`'s weather together. A weight counted from a part's last write would not hold it: with
+  `K` at 30, a reset at tick 0 and parts first due at ticks 5 and 25, at tick 20 the first part would show
+  half the change from tick 0 to tick 5 and the second none ([part XXII](#check-that-it-can-work)).
+- **Ticks that arrive together.** A frame can receive several committed ticks at once, after a slow frame
+  or a hitch, and `EFFECT-GRAPH` gives the effect the count, the ticks it dropped included. The effect
+  holds the state of the last of them alone. So every part whose turn falls in the ticks that frame
+  crossed is written in that frame from the committed state, and its key tick is the committed tick. `S`
+  is then never past a part's newer key. Where a late write leaves `S` before the older key, the older key
+  shows whole until `S` reaches it, a wait of fewer ticks than the frame crossed. After a hitch of a key
+  interval or more every part is due: each takes one new key in that frame, and none is reset.
+- **What stays exact.** Each key holds the model at its key tick's state, at every voxel of its part. A
+  voxel that enters a level's reach as the camera moves through the air is written in both keys in that
+  tick, each from its own key's state, which the effect kept.
+- **How far a cloud moves between keys.** In 30 seconds of weather an envelope moves by up to 0.13 of its
+  range, the steepest of a 12-minute life. In the valley's fair sky the cell at site (−1, 6) of seed 39
+  has a 755 s life and an authored depth of 3.74 km, and rises 465 m in its steepest 30 seconds: more than
+  the 300 m fade length. So at 60× the two keys' surfaces of a fast cloud can stand further apart than a
+  profile fades, and their blend then has a thin outer zone ahead of a dense one, where two keys less than
+  a fade length apart blend to one surface between them. Nothing here shows that a rising edge at 60×
+  stays single. WP17.4 judges it in the game, and a shorter key interval is the fix, at the cost WP24.5
+  records and WP25 holds.
 - **Who reads it.** The one density function, and so every consumer: the view march and its local light
   samples, the Sun's path, the sky overlay and the medium coefficients. Inside the volume a heaped cell's
   profile is the volume's, read through its filter at every point of its reach, whatever the map's column
   says there ([stepping across empty air](#the-weather-map)).
 - **The column form keeps the column's optical depth.** Past the volume's outermost level a heaped cell is
-  drawn in its **column form**: the heaped part of the map's column optical depth, spread between the
-  column's base and its top by the type's vertical profile, and scaled so that its uneroded integral up the
-  column is that heaped part, `σ(h) = τ / (top − base) · v(h) / v̄` with `v̄` the profile's mean. That is how
-  a [placed cell's](#placed-volumes) column form is made from its footprint. Coverage times the vertical
+  drawn in its **column form**: [the heaped part](#the-weather-map) of the procedural column's optical
+  depth, spread between the type's condensation level and the heaped cells' own top by the type's vertical
+  profile, and scaled so that its uneroded integral up the column is that heaped part,
+  `σ(h) = τ / (top − base) · v(h) / v̄` with `v̄` the profile's mean. That is how a
+  [placed cell's](#placed-volumes) column form is made from its footprint, and a placed shape's column is
+  no part of this one. Coverage times the vertical
   profile over the column's height is not this form. Through the centre of a 300 m puff that overhangs
   clear air 900 m over the base, the column's optical depth is 12 at 0.04 m⁻¹, and coverage times the fair
   type's profile over the 1,200 m between base and top would draw 30.72
@@ -836,17 +893,53 @@ in the air frame, so wind costs nothing.
 - **The band between them.** The volume's profile and the column form are two forms of one condensate,
   blended across a band inside the volume's edge with weights that sum to one. The weight is a function of
   the column alone, the same at every height.
-- **The bound all three keep.** At a point the deck's profile and the heaped one, whichever form or blend
-  gives it, are joined by taking the greater. In the column form that integrates to the deck's optical depth
-  plus the heaped part at most, which is the query's column. Inside the volume it is the integral that the
-  query's column bounds. In the band the weight is one number up the column, and the greater of the deck and a blend is no more
-  than the same blend of the two greaters. So with nothing eroded the GPU draws no more than the query's
-  column optical depth at any distance, and exactly it in the column form where the column holds heaped
-  cloud alone, within the allowance for filtering that the test states. Inside the volume the column it is
-  held to is the model's at the two keys' ticks, blended as the reader blends them.
+- **The states the drawn sky holds.** A query answers for the committed state. No GPU product holds
+  that state for long. A part of the map holds the state it was last written from, `M`, which
+  [its age](#the-weather-map) bounds. A part of the volume holds its two keys' states, `A` and `B`, with
+  the part's weight `w` between them. So over a point the deck, a placed shape and a heaped cell's column
+  form are drawn at `M`, and heaped cloud inside the volume at `A` and `B`. They are joined as the model
+  joins them: the deck's profile and the heaped one by the greater at each point, whichever form or blend
+  gives the heaped one, and a shape's coefficient added. Every reader draws from those products alone. None
+  scales or gates what it reads by the committed state or by the map's column, so the view, the Sun's
+  path, the overlay and the medium coefficients show one sky and its own shade, and a heap that
+  [every map centre misses](#the-weather-map) is still drawn.
+- **The bound: the column of two states.** The model's column rule takes the deck and the heaped cells
+  from one state. Given the deck from `M` and the heaped cells from `X`, it is the **column of two
+  states**, `τ(M, X)`: the integral up the column of the greater of `M`'s deck profile and `X`'s heaped
+  profile at each height, with `M`'s placed column added. `τ(M, M)` is the query's column at `M`. The
+  model gives each condensate's profile at a point for a state, so a test forms `τ(M, X)` by its own sum.
+  With nothing eroded, the column the GPU draws at a point is no more than, within the allowance for
+  filtering that the test states:
+  - past the volume, `τ(M, M)`, and exactly it where the column holds heaped cloud alone or with a placed
+    shape;
+  - inside the volume, `(1 − w) · τ(M, A) + w · τ(M, B)`, because the greater of the deck and a blend is
+    no more than the same blend of the two greaters;
+  - in the band, the band's blend of those two, because its weight is one number up the column.
+- **Through a preset change.** While the weather stands still `M`, `A` and `B` give one column, and the
+  bound is the query's at the committed tick. While a preset ramps they differ, and the picture follows
+  the query: the deck, the shapes and the far heaps within the map's age, and the near heaps within two
+  key intervals of the ramp's end, which is a second of play. Under the game's 5 s response at 60×, a
+  change from fair to clear takes coverage through 0.50, 0.30, 0.10 and 0 on four ticks. On the third the
+  query is clear over a mature puff and so is the map, while both of its part's keys still hold the puff
+  whole, and the view and the Sun's path draw it and its shade. The part's next turn, within `K` ticks,
+  writes a clear key, the puff thins as `S` moves to that key, and it is gone when both keys are clear. A
+  change from fair to overcast draws the new deck from `M` under the old puff from `A` and `B`. No point
+  is denser than the denser of the two, and the column is no more than `τ(M, A)` and `τ(M, B)` blended,
+  which is at most the deck's column and the puff's together
+  ([part XXII](#check-that-it-can-work)).
+- **What a game may rely on.** Its query is exact for the state it gives, with no lag, and a server needs
+  nothing else. The picture at tick `C` is bounded by the model at the states its products hold, and each
+  of them is a committed state no older than two key intervals or the map's age bound, whichever is
+  longer. After a hitch the span also holds the last state the effect received before it, for one key
+  interval more. So a column the query has answered clear at every tick of that span is drawn clear, and
+  the query at the committed tick is what the picture reaches by the end of it. Code that must match the
+  picture at a tick asks the effect, which reports for a world point the states `M`, `A` and `B` and the
+  weight its parts hold there, and evaluates the model at them. That report is for presentation code and
+  tests. A simulation never reads the effect, because its answers must not depend on a renderer.
 - **It belongs to the weather, not to the sky.** The Sun's path integrates it. A scene with Shade and no
   visible sky holds it, and its ground field is the same bytes as with the sky drawn.
-- **Its size.** Its reach, its voxels and its key interval are profile constants. The first profile starts
+- **Its size.** Its reach, its voxels and its key interval are profile constants, and none is a
+  [knob](#recipes-limits-and-knobs). The first profile starts
   from 50 m voxels to about 12 km and 100 m voxels to about 25 km, over the heaped type's depth: about
   72 MiB at one byte a key.
   At 12 km a 50 m voxel is 7 pixels of a 2560×1440 frame, and a profile changes over a fade length of 300 m,
@@ -855,7 +948,8 @@ in the air frame, so wind costs nothing.
 - **What fills it.** Compute passes in `simulate` evaluate the model's rule at the voxel centres of the
   parts whose turn it is. Whether a pass makes a cell's puffs from the hash or reads a list the model made
   for each live cell, and how it passes over a part no live cell stands in, are the builder's choice. The
-  check is each key's voxel centres against the model at that key's tick, at a tolerance the test states.
+  check is each key's voxel centres against the model at that key's key tick, at a tolerance the test
+  states.
 
 The map still holds every column to the horizon. It is what a game's query is checked against, it steps a ray
 across the air its own texels call empty, and it draws the deck and the column form.
@@ -1476,8 +1570,14 @@ and costs nothing; changing the set rebuilds the effect and starts a new epoch.
   in the same views.
 - **Knobs.** Each is a named runtime value in `EFFECT-GRAPH`'s list with a declared invalidation: the trace's
   refresh fraction, the layer's scale, step length and sample cap, local light samples, the Sun's path cadence
-  per level, weather map cadence (the weather volume's is the same value), overlay cadence, placed range, the ground band's cadence and the medium coefficients' cadence. The handover
-  distance is a profile value and not a knob, because it decides which integrator draws a thing. Extent knobs select a sub-rectangle of a
+  per level, weather map cadence, overlay cadence, placed range, the ground band's cadence and the medium coefficients' cadence. The handover
+  distance is a profile value and not a knob, because it decides which integrator draws a thing. The
+  weather volume's key interval is a profile value and not a knob either, because it sets
+  [the shown tick](#the-weather-volume): the governor never moves it, and the keys a volume holds mean the
+  same whatever the knobs say. The weather map's cadence knob, like the Sun path's, is a percentage, from
+  50 to 200, of the product's age bound in the profile: it scales the map's bound in weather seconds and
+  nothing of the volume. A changed cadence rewrites nothing: each part keeps the tick it was written at and
+  falls due by the new bound from the next tick. Extent knobs select a sub-rectangle of a
   fixed allocation, so no knob creates a resource or pipeline. None changes the weather field, the columns the
   weather map holds, the profiles the weather volume holds or what a query returns; the placed range changes only the map's presentation values, the
   slot and the volume form's weight, and through them which form of a placed cell is drawn and shaded.
@@ -1511,9 +1611,12 @@ The owner's bar of 17 November 2026 ([the request](#the-request), and
   what a server reads. So the GPU's weather map and ground condensate are tested against the query, at a
   tolerance the test states: cloud and mist stand where the query has them and not where it is clear (WP2, WP4.1,
   WP6.2, WP6.9, WP7.6, WP14.2), and [the weather volume](#the-weather-volume)'s voxels hold the model's
-  profile at their centres (WP24.1). WP24.6 holds the three places where a column alone misleads a reader:
-  an overhang in its volume form, its column form and their blend; a puff over a shallow deck; and a heap
-  that every map centre misses. Presence is not enough. A GPU that draws twice the query's extinction puts mist at
+  profile at their centres, each key at its key tick, and its reader shows one shown tick (WP24.1). WP24.6
+  holds the five places where a column, or one state, alone misleads a reader: an overhang in its volume
+  form, its column form and their blend; a puff over a shallow deck; a heap that every map centre misses;
+  a preset ramp with the two keys at different ticks, held to
+  [the column of two states](#the-weather-volume); and a directed shape under a clear sky, drawn once on
+  both sides of the volume's edge. Presence is not enough. A GPU that draws twice the query's extinction puts mist at
   every probe the query does, and a player loses sight of a thing at half the range the game works with. So
   the test of each GPU path that WP2's map test does not reach also compares the amount, at a point inside the
   condensate: through ground condensate, the optical depth along a sight line, summed from the GPU's coarse
@@ -2023,9 +2126,24 @@ is a toy. It shows outline and relief, and nothing of the engine's light, map or
   the base to the top. *A heap between map centres.* Texels of 320 m have centres 226 m from the point
   midway between four of them, so a heap of 150 m radius there is clear at all four and holds the centre of
   a 100 m voxel.
+- **XXII, three cases two states or two readers get wrong**, from the review of 28 November's fixes,
+  worked by hand. *A weight counted from a write.* Key interval 30, a reset at tick 0, parts first due at
+  ticks 5 and 25. At tick 20 a weight of ticks since the newer key over the interval is 15 / 30 for the
+  first part, half the change from tick 0 to tick 5, and the second part still shows tick 0. With the
+  shown tick, `S = max(20 − 30, 0) = 0`, at or before both keys of both parts, and both show tick 0. At
+  tick 35 `S` is 5: the first part, just written, holds keys at 5 and 35 and shows tick 5, and the second
+  holds 0 and 25 and shows a fifth of the way from one to the other. *A ramp inside one key interval.* The
+  game's response is 5 s of weather, so at 60× a tick moves coverage by 0.2: fair to clear is 0.50, 0.30,
+  0.10, 0. At 0.10 a cell's share is zero unless its threshold is under 0.07, so the query and the map
+  are clear over most mature puffs, and a part whose last turn came before the ramp holds the puff in
+  both keys. *A shape counted twice.* Coverage zero and one directed shape with a footprint of optical
+  depth 1: the field's column is 1 and the procedural column is clear. A heaped part of the field's column
+  less the deck's is 1, and past the volume the column form's 1 and the shape's own 1 make 2.
 - **Unrun:** the engine's light and its noise on the form; the weather volume's filter at 50 and 100 m
   voxels, where the toy's grid is 25 m; the column form past the volume and the band between them; a dying
-  cloud, in motion; the blend of two keys 30 seconds of weather apart; cost, and the refresh under it.
+  cloud, in motion; the blend of two keys 30 seconds of weather apart, where a fast cloud's two surfaces
+  stand further apart than its fade; a preset change at 60× with the near heaps a second behind; cost, and
+  the refresh under it.
   WP23's stills from the model, WP24's tests and records, WP17's inspections and WP25's wind series take
   those up, in that order.
 
@@ -2131,7 +2249,7 @@ there, not here.
 | Weather step | Tick, CPU | One record and at most 16 directed shapes | Microseconds | |
 | Phases | Frame, once a ray; the tables at preparation | One table read and one closed form; a table for each row of the type table, about 4 KiB each at 1,025 entries, with the Sun term's four numbers | None in the march | |
 | Weather map | Half a second of weather, in parts: 2 Hz at 1× | 4 levels × 256², two textures, or three where the deck's own column needs one. A heaped texel integrates its column between the heights the puffs enter and leave it | Under 0.1 ms a frame at 1× under turrets; WP24.5 records it under puffs | 2 ms an update |
-| Weather volume | A part a tick, the whole in one key interval of 30 ticks, at every time scale | 2 levels of 512² columns, 96 and 48 voxels deep, two keys a voxel, one byte a key: 37.7 M voxels. A whole fill on each tick, which the map's bound would ask at 60×, cannot fit: at the 1 to 2 ns a texel the map's pass measured (262 k texels a tick at 60× in 0.23 ms a frame, WP2.9's record) it is 40 to 75 ms. A tick writes 1.26 M voxels, and the voxels that enter the reach: 49 k in a 40 m/s wind at 60×. A cut, a seek, a replaced device and the first frame write both keys whole, once, as a Sun-path jump refills its product. A voxel under a live cell measures its distance to that cell's puffs, 46 to 136 a cell in part XX; any other costs its cells' footprint tests | Unmeasured. About five times the map's texels a tick: 1 to 3 ms on a tick's frame if a voxel costs what a map texel does, less where a part no live cell stands in is passed over. WP24.5 records the pass and the largest fill in one frame at 1×, 8× and 60×, and WP25 decides whether the sky still holds the refresh | |
+| Weather volume | A part a tick, the whole in one key interval of 30 ticks, at every time scale | 2 levels of 512² columns, 96 and 48 voxels deep, two keys a voxel, one byte a key: 37.7 M voxels. A whole fill on each tick, which the map's bound would ask at 60×, cannot fit: at the 1 to 2 ns a texel the map's pass measured (262 k texels a tick at 60× in 0.23 ms a frame, WP2.9's record) it is 40 to 75 ms. A tick writes 1.26 M voxels, and the voxels that enter the reach: 49 k in a 40 m/s wind at 60×. A reset (a cut, a seek, a replaced device and the first frame) writes both keys whole, once, as a Sun-path jump refills its product. A frame that receives several ticks writes a part for each, and after a hitch of a key interval one key of every part. A voxel under a live cell measures its distance to that cell's puffs, 46 to 136 a cell in part XX; any other costs its cells' footprint tests | Unmeasured. About five times the map's texels a tick: 1 to 3 ms on a tick's frame if a voxel costs what a map texel does, less where a part no live cell stands in is passed over. WP24.5 records the pass and the largest fill in one frame in each of its runs at 1×, 8× and 60×, and WP25 decides whether the sky still holds the refresh | |
 | Noise | Preparation | 128³ and 32³ | None in a frame | |
 | Sun's path | At 1×, near level over 8 frames, mid 32, far 128 | 3 × 256² columns (80 m, 320 m and 1.6 km wide, the last reaching the horizon), 48, 32 and 16 slices of the coarse density, which reads the map, the weather volume and the shape noise, and a placed cell's slab where its volume form has weight: 6.3 M stored slices to fill, about 0.5 M a frame. A stored slice is one or more density reads: part H's accuracy figures took four | 0.1–0.2 ms | 2.2 ms shadow |
 | Ground field and far value | With the Sun's path; the far value each frame | 1024², and a mean over the outermost level's ground slice | Under 0.05 ms | |
@@ -2181,7 +2299,10 @@ finished sky in WP12.6.
 clouds-visible run, a GPU time above zero under each cloud pass's name and a byte count above zero under
 each resource's name, in the committed record and in the fresh measurement alike. The words of a pass in a
 note prove nothing. From WP24 the weather volume's pass and its resource are on those lists, so a record
-taken before the volume existed is turned away whatever a note in it says (WP24.5, WP17.5).
+taken before the volume existed is turned away whatever a note in it says (WP24.5, WP17.5). The shade
+scene's record is three clouds-visible runs, one at each of 1×, 8× and 60×, and each gives the largest fill
+of the weather volume in one frame as a time above zero. A record with a speed missing or repeated, or
+with no largest fill, is turned away too (WP24.5).
 
 ## Risks
 
@@ -2256,8 +2377,13 @@ taken before the volume existed is turned away whatever a note in it says (WP24.
 
    **The volume's lag.** Heaped cloud near the camera is drawn one key interval of ticks behind the weather
    the map and a query hold, between two keys. At 1× that is half a second, inside the seconds a control's
-   ramp takes. If WP17.4's 60× sequence shows a cloud's edge soften or double as it rises, the fix is a
-   shorter key interval, at the cost WP24.5 records.
+   ramp takes. At 60× a preset change is over in a few ticks, and for up to a second of play the near
+   heaps are still the old weather's over the new weather's deck and far sky, bounded by
+   [the column of two states](#the-weather-volume) and not by the query at the committed tick. At 60×, too,
+   a fast cloud [rises further between two keys than a profile fades](#the-weather-volume), up to 465 m
+   against 300 m. If WP17.4's 60× sequence shows a cloud's edge soften or double as it rises, the fix is a
+   shorter key interval, at the cost WP24.5 records. A model whose own heaped cloud is keyed, so that the
+   query lags with the picture, is a planner's change and no builder's.
 
    **Who judges it.** WP17 judges the clouds that failed. The fair preset places library shapes among its
    procedural clouds, and at a placed share of 1 it holds no procedural heap at all, so a sky judged with
@@ -2641,7 +2767,9 @@ water scene, WP11.5 uses `scripts/check_water_browser.mjs`.
 - **Checks by name.** WP23.1's check runs the tests whose names contain `puff`, WP24.1's those with
   `weather_volume` and WP24.6's those with `heaped_column`; none counts tests. WP24.5's and WP17.5's checks
   look in a record's `pass_gpu_ns` and `resources` for names that contain `weather volume`, in each
-  clouds-visible run, and read the runs `check` measured from the last line it prints. WP25's command writes
+  clouds-visible run, and read the runs `check` measured from the last line it prints. WP24.5's also reads
+  each shade run's `weather_speed`, which the tool already writes, and its
+  `maximum_weather_volume_fill_ns`, which stands beside `maximum_sun_refill_ns`. WP25's command writes
   its series to a new folder beside WP20's; link it from WP25's evidence.
 - **Maturity.** The ledger's `E1.clouds` row is kept current from WP2, with implementation, correctness, visuals
   and device apart.
@@ -2673,7 +2801,7 @@ water scene, WP11.5 uses `scripts/check_water_browser.mjs`.
 | Do puffs hold up from the ground in the engine's own density and noise, as part XX's toy has them? | WP23's stills, before any GPU work ([risk 2](#risks)) |
 | Does a cluster read from 50 m and 100 m voxels keep its heaps, and does the edge of the weather volume show? | WP17.1's crops and WP17.3's horizon |
 | What does filling the weather volume cost a tick, and does the sky still hold the display's refresh with it? | WP24.5 records the pass and its largest fill in one frame at 1×, 8× and 60×; WP25's wind series decides |
-| Does heaped cloud read between two keys 30 seconds of weather apart keep a clean edge as it rises at 60×? | WP17.4's sequences |
+| Does heaped cloud read between two keys 30 seconds of weather apart keep a clean edge as it rises at 60×, where a fast cloud rises further than its fade length between them? | WP17.4's sequences |
 | What brings out the creases of a broad lobe under a high Sun, when a finer Sun march, a broader diffuse column and density probes do not? | [The noon-relief follow-up](#the-noon-relief-follow-up), after WP12, finds the cause by a control before any look |
 | Why does a beam below broken cloud stop reading as a shaft where it meets the mist, when the mist's depth, a local bank, the opening's width, the ground band's spacing and the diffuse solar term do not explain it? | [WP22](#the-broken-cloud-shaft-follow-up-wp22) finds the cause by a control before any look ([risk 15](#risks)) |
 | Does a far cloud read as cumulus on the map level that samples heaps it cannot resolve, and does its crossing into that level show? | WP3.2's crops for turrets; WP17.3's for puffs |

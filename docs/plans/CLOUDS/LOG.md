@@ -1382,3 +1382,8 @@ The replacement command and validator exercised the same comparison with a fresh
   [What changed for each finding](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-28.md)
 - 2026-11-28 Planner: four assumptions the owner has since settled left `PLAN.md` (the 2 s test aim, first
   principles, when builders start, and the lowered bar's tests); the note above lists them.
+- 2026-11-28 Planner, after the review of those fixes asked for changes (five Must Fix findings, the last
+  round; the script approves the design left here). The drawn sky is held to the states its products hold,
+  the volume shows one shown tick, and the map's heaped part comes from the procedural column. WP24.1,
+  WP24.2, WP24.4, WP24.5 and WP24.6 written again. No interface with another module changed.
+  [What changed for each finding](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-28-2.md)

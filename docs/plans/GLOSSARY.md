@@ -343,6 +343,17 @@ holds how much cloud is over each point out to the horizon. Defined in
 
 Proposed: the planner chose the name, after the weather map.
 
+### Shown tick
+
+The tick whose weather the weather volume shows: the committed tick less the volume's key interval, half a
+second of play, and never before the last reset. Each part of the volume holds the weather at two **key
+ticks** and blends them by where the shown tick lies between them. Defined in
+[CLOUDS' design](CLOUDS/DESIGN.md#the-weather-volume).
+
+- **Source** — animation's keyframes, and the render delay a networked game interpolates snapshots behind.
+
+Proposed: the planner chose the names.
+
 ### Cast width
 
 How wide a thing is for casting a shadow: the diameter of the largest ball that fits inside its mesh, scaled
