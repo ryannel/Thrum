@@ -10,6 +10,7 @@ publish.workspace = true
 default = []
 
 [dependencies]
+inventory = "=0.3.25"
 thrum-core = { path = "../thrum-core" }
 thrum-derive = { path = "../thrum-derive" }
 

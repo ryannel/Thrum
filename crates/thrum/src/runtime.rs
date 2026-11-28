@@ -343,6 +343,7 @@ pub(crate) struct State {
     pub(crate) phase_clock: PhaseTicks,
     pub(crate) held: Option<Transition>,
     pub(crate) next_entity: u128,
+    pub(crate) tree: Arc<crate::entity::family::Tree>,
     pub(crate) seed: u64,
     pub(crate) random_runs: Vec<(&'static str, u64)>,
 }
@@ -363,6 +364,7 @@ impl Clone for State {
         self.phase_clock = source.phase_clock;
         self.held.clone_from(&source.held);
         self.next_entity = source.next_entity;
+        self.tree.clone_from(&source.tree);
         self.seed = source.seed;
         self.random_runs.clone_from(&source.random_runs);
     }
@@ -423,6 +425,9 @@ impl StateEncode for State {
             }
         }
         self.resources.encode(digest);
+        if !self.tree.empty() {
+            self.tree.encode(digest);
+        }
     }
 }
 
@@ -446,7 +451,10 @@ pub(crate) struct Candidate {
     pub(crate) changed_entities: Vec<Entity>,
     pub(crate) spawned_entities: Vec<Entity>,
     pub(crate) retired_entities: Vec<Entity>,
-    pub(crate) spawns: Vec<Box<dyn crate::entity::SpawnValue>>,
+    pub(crate) spawns: Vec<crate::entity::Birth>,
+    pub(crate) prefabs: Arc<crate::prefab::Catalog>,
+    pub(crate) staging: Arc<Mutex<crate::prefab::staging::Staging>>,
+    pub(crate) staged_spawns: bool,
     pub(crate) changes: Vec<Box<dyn crate::entity::QueuedComponent>>,
     pub(crate) values: Arc<Mutex<ValuePool>>,
     pub(crate) edit_pool: Arc<Mutex<crate::entity::EditPool>>,
@@ -456,7 +464,9 @@ impl Candidate {
     fn recycle_edits(&mut self) {
         if !self.spawns.is_empty() || !self.changes.is_empty() {
             let mut pool = self.edit_pool.lock().expect("structural edit pool");
-            pool.births.append(&mut self.spawns);
+            for spawn in self.spawns.drain(..) {
+                spawn.recycle(&mut pool);
+            }
             pool.components.append(&mut self.changes);
         }
     }
@@ -484,6 +494,16 @@ impl TickGame for Authority {
     fn reset_candidate(&self, candidate: &mut Candidate) {
         candidate.attempt = candidate.attempt.wrapping_add(1);
         candidate.state.clone_from(&self.state);
+        candidate.prefabs.clone_from(&self.program.prefabs);
+        candidate.staged_spawns = false;
+        candidate.staging.clone_from(&self.program.staging);
+        if !candidate.prefabs.is_empty() {
+            candidate
+                .staging
+                .lock()
+                .expect("prefab spawn staging")
+                .clear();
+        }
         candidate.events.clear();
         *candidate.requests.lock().expect("requests lock") = Requests {
             next: if matches!(*self.operation.lock().expect("operation"), Operation::Tick) {
@@ -534,10 +554,18 @@ impl TickGame for Authority {
         candidate.retired_entities.clear();
         candidate.spawned_entities.clear();
         candidate.recycle_edits();
+        if std::mem::take(&mut candidate.staged_spawns) {
+            candidate
+                .staging
+                .lock()
+                .expect("prefab spawn staging")
+                .clear();
+        }
         let result = self.program.validate_queries(
             world,
             candidate.state.scene,
             &candidate.changed_entities,
+            &candidate.state.tree,
             tick,
         );
         candidate.changed_entities.clear();
@@ -591,7 +619,7 @@ pub(crate) fn spawn_edit(
     edits: &mut EditWriter<'_, Candidate>,
     candidate: &mut Candidate,
     id: StableId,
-    value: Box<dyn crate::entity::SpawnValue>,
+    value: crate::entity::Birth,
 ) {
     let index = candidate.spawns.len();
     candidate.spawns.push(value);
@@ -599,7 +627,7 @@ pub(crate) fn spawn_edit(
         permit,
         id,
         index,
-        |candidate, index, writer| candidate.spawns[index].fill(writer),
+        |candidate, index, writer| candidate.spawns[index].fill(writer, &candidate.staging),
     ));
 }
 

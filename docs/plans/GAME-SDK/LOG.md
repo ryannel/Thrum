@@ -804,3 +804,16 @@
   An identical value keeps rewind history through both `TestGame::set` and `game.run`. A different
   encoding, including a change of sign on zero, starts a new history.
   [Mac replay and rewind proof](../../../.orchestrate/evidence/GAME-SDK/WP1/review5-WP1.3.log)
+
+- 2026-11-28 WP11 built linked prefab declarations and startup resolution, including variants defined
+  before their bases. The engine retains prefab origin and applies ownership, visibility and placement
+  through the existing rule barrier. The Mac proofs cover declarations missing from the game description,
+  required spawn inputs, attachment order, the numerical bound, failed-tick rollback and rewind/replay.
+  The allocation guard covers repeated plain and customized prefab spawns after warming the edit queue.
+  Proofs and source inspection are in [the work package record](../../../.orchestrate/evidence/GAME-SDK/WP11/index.md).
+- WP11 spelling and fixture notes. Example E's prefab function, BAT, ELITE_BAT, GEM, and SHOT keep their
+  spawn and definition calls. The fixture uses Appearance in place of the sprite and replaces asset,
+  collision and action inputs with ordinary data. Example G's part lookup, child check and attach/detach
+  calls are the same, with a Tick-driven fixture selecting the item. For the three-coordinate prefab
+  placement in R2, use `.at_point(vec3(x, y, z))`. Rust methods have one arity and the two-coordinate
+  `.at(x, y)` spelling stays available. Free-angle cross-target proof is scheduled in WP2.3.

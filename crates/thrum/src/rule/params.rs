@@ -33,6 +33,10 @@ impl ParameterList {
         ));
     }
 
+    pub(crate) fn family(&mut self) {
+        self.0.0.push(Parameter::Family);
+    }
+
     pub(crate) fn writer<T: 'static>(&mut self, name: &str) {
         self.0.0.push(Parameter::Exclusive(
             name.to_owned(),

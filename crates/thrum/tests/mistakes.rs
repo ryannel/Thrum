@@ -438,7 +438,7 @@ fn runtime_reports_unknown_component_capacity_single_scene_and_rule_failure() ->
     Ok(())
 }
 
-fn compiler_dependencies() -> (PathBuf, Vec<PathBuf>) {
+pub(super) fn compiler_dependencies() -> (PathBuf, Vec<PathBuf>) {
     let binary = std::env::current_exe().expect("locate the integration test");
     let directory = binary
         .parent()
@@ -468,7 +468,7 @@ fn children(directory: &Path) -> impl Iterator<Item = PathBuf> + use<> {
         .filter_map(|entry| entry.ok().map(|entry| entry.path()))
 }
 
-fn sdk_library(directory: &Path, dependencies: &[PathBuf]) -> PathBuf {
+pub(super) fn sdk_library(directory: &Path, dependencies: &[PathBuf]) -> PathBuf {
     dependencies
         .iter()
         .filter(|path| path.starts_with(directory))

@@ -14,21 +14,28 @@ mod entity;
 mod error;
 mod game;
 mod number;
+mod prefab;
 mod rule;
 mod runtime;
 mod scene;
 mod time;
+mod transform;
 
 pub use data::{Component, Data, Event, PhaseType, Resource, SceneType};
-pub use entity::{Entities, Entity, Spawn};
+pub use entity::family::{Family, Part};
+pub use entity::{Attach, Detach, Entities, Entity, Reparenting, Spawn};
 pub use error::{Diagnostic, Error, Result};
 pub use game::{Game, NewGame, TestGame, TestSetup};
 pub use number::{Num, Vec2, vec2};
+pub use prefab::{Bundle, Place, Pose, Prefab, PrefabDef, PrefabSpawn, SpawnEdits};
 pub use rule::params::{Emit, Events, Random, Res, ResMut};
-pub use rule::query::{Filter, Iter, IterMut, Query, QueryData, Single, With, Without};
+pub use rule::query::{
+    Disabled, Filter, Iter, IterMut, Query, QueryData, Single, With, WithDisabled, Without,
+};
 pub use rule::{ConfiguredRules, Rules};
 pub use scene::{Phase, PhaseBlock, PhaseMut, Scene, Scenes};
 pub use time::{Cooldown, PhaseClock, Seconds, Tick, TickNumber, Timer, seconds};
+pub use transform::{Angle, Rot3, Transform2d, Transform3d, Vec3, vec3};
 
 /// Declare data attached to an entity.
 /// ```
@@ -120,10 +127,11 @@ pub use thrum_derive::Scene;
 /// ```
 pub mod prelude {
     pub use crate::{
-        Component, Cooldown, Data, Emit, Entities, Entity, Error, Event, Events, Game, Num, Params,
-        Phase, PhaseClock, PhaseMut, Query, Random, Res, ResMut, Resource, Result, Rules, Scene,
-        Scenes, Seconds, Single, Spawn, Tick, TickNumber, Timer, Vec2, With, Without, seconds,
-        vec2,
+        Angle, Bundle, Component, Cooldown, Data, Disabled, Emit, Entities, Entity, Error, Event,
+        Events, Family, Game, Num, Params, Part, Phase, PhaseClock, PhaseMut, Prefab, PrefabDef,
+        Query, Random, Res, ResMut, Resource, Result, Rot3, Rules, Scene, Scenes, Seconds, Single,
+        Spawn, Tick, TickNumber, Timer, Transform2d, Transform3d, Vec2, Vec3, With, WithDisabled,
+        Without, prefabs, seconds, vec2, vec3,
     };
 }
 
@@ -137,8 +145,9 @@ pub mod prelude {
 #[doc(hidden)]
 pub mod __derive {
     pub use crate::data::{DataReader, DataWriter, InvalidData, schema_id};
-    pub use crate::entity::Changes;
+    pub use crate::entity::{Changes, family::FamilyRows};
     pub use crate::game::FirstScene;
+    pub use crate::prefab::{Declaration, LinkedDeclaration};
     pub use crate::rule::params::{Context, Param, ParameterList, ReadContext, ReadOnly};
     pub use crate::rule::query::Rows;
     pub use crate::rule::{
@@ -147,4 +156,5 @@ pub mod __derive {
     };
     pub use crate::scene::{Duration, PhaseDuration, SceneDescription};
     pub use crate::scene::{PhaseRequests, SceneRequests};
+    pub use inventory::submit as submit_prefab;
 }

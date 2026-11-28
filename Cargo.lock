@@ -1320,6 +1320,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "inventory"
+version = "0.3.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6928282826c822ad91bf1c9a1cb90a30ba1c26770749929b4656cd6be829cd7c"
+dependencies = [
+ "rustversion",
+]
+
+[[package]]
 name = "ispc_rt"
 version = "2.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3232,6 +3241,7 @@ dependencies = [
 name = "thrum"
 version = "0.1.0"
 dependencies = [
+ "inventory",
  "serde_json",
  "thrum-core",
  "thrum-derive",

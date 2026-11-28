@@ -1,0 +1,155 @@
+use thrum::prelude::*;
+
+prefabs! {
+    const KEEPER: Prefab = "keeper";
+    const WAND: Prefab = "wand";
+    const EMPTY: Prefab = "empty";
+}
+const BACK: Part = Part::new("back");
+
+#[derive(Component)]
+struct Charge(u32);
+
+#[derive(Resource, Default)]
+struct Owners(Option<[Entity; 5]>);
+
+fn start(mut entities: Entities, mut owners: ResMut<Owners>) {
+    let keeper = entities.spawn(
+        KEEPER
+            .at(2, 3)
+            .child(
+                WAND.at_local(1, 2)
+                    .with(Charge(2))
+                    .child(WAND.at_local(3, 4)),
+            )
+            .child(WAND.at_local(3, 4).with(Charge(3)))
+            .disabled(),
+    );
+    let other = entities.spawn(EMPTY.at(0, 0).child(WAND.at_local(8, 9)));
+    let independent = entities.spawn(WAND.at(8, 9));
+    let no_children = entities.spawn(EMPTY.at(0, 0));
+    let gone = entities.spawn(EMPTY.at(0, 0));
+    assert!(entities.despawn(gone));
+    owners.0 = Some([keeper, other, independent, no_children, gone]);
+}
+
+fn take_or_set_down(owners: Res<Owners>, mut entities: Entities, tick: Tick) {
+    let [keeper, _, wand, _, _] = owners.0.unwrap();
+    let back = entities.part(keeper, BACK);
+    if let Some(carried) = entities.children(back).next() {
+        assert_eq!(carried, wand);
+        entities.detach(carried).keep_world();
+        assert!(entities.despawn(keeper));
+    } else {
+        assert_eq!(tick.seconds(), seconds(1));
+        assert!(entities.enable(keeper));
+        let born = entities.spawn(WAND.at_local(2, 4).under(keeper).with(Charge(5)));
+        entities
+            .attach(wand)
+            .to(back)
+            .keep_local(Transform3d::ORIGIN);
+        assert_eq!(entities.parent(born), None);
+    }
+}
+
+fn inspect_before(
+    owners: Res<Owners>,
+    mut sleeping: Query<(Entity, &Charge), Disabled>,
+    enabled: Query<Entity>,
+    family: Family,
+    tick: Tick,
+) {
+    if tick.seconds() == seconds(1) {
+        let [keeper, _, _, _, _] = owners.0.unwrap();
+        let children: Vec<_> = family.children(keeper).collect();
+        assert_eq!(children.len(), 3);
+        assert_eq!(family.part(keeper, BACK), children[0]);
+        assert_eq!(
+            sleeping
+                .under(keeper)
+                .map(|(e, c)| (e, c.0))
+                .collect::<Vec<_>>(),
+            [(children[0], 1), (children[1], 2), (children[2], 3)]
+        );
+        assert_eq!(family.world2d(children[0]), Transform2d::at(2, 3));
+        assert_eq!(family.world2d(children[1]), Transform2d::at(3, 5));
+        assert_eq!(family.world2d(children[2]), Transform2d::at(5, 7));
+        assert!(enabled.get(keeper).is_none());
+        assert!(
+            children
+                .into_iter()
+                .all(|child| enabled.get(child).is_none())
+        );
+    }
+}
+
+fn use_wands(
+    owners: Res<Owners>,
+    mut weapons: Query<(Entity, &mut Charge)>,
+    family: Family,
+    tick: Tick,
+) {
+    let [keeper, other, independent, empty, gone] = owners.0.unwrap();
+    if tick.seconds() == seconds(1) {
+        let back = family.part(keeper, BACK);
+        assert_eq!(family.parent(independent), Some(back));
+        let children: Vec<_> = family.children(keeper).collect();
+        assert_eq!(children.len(), 4);
+        let mut values = Vec::new();
+        for (entity, charge) in weapons.under(keeper) {
+            values.push((entity, charge.0));
+            charge.0 += 10;
+        }
+        assert_eq!(
+            values,
+            [
+                (children[0], 1),
+                (children[1], 2),
+                (children[2], 3),
+                (children[3], 5)
+            ]
+        );
+        assert_eq!(
+            weapons
+                .under(back)
+                .map(|(entity, _)| entity)
+                .collect::<Vec<_>>(),
+            [independent]
+        );
+        assert_eq!(weapons.under(other).count(), 1);
+        assert_eq!(weapons.under(empty).count(), 0);
+        assert_eq!(weapons.under(gone).count(), 0);
+        assert_eq!(weapons.get(independent).unwrap().1.0, 1);
+        assert_eq!(weapons.get(children[1]).unwrap().1.0, 12);
+    } else if tick.seconds() == seconds(2) {
+        assert!(!family.alive(keeper));
+        assert!(family.alive(independent));
+        assert_eq!(family.parent(independent), None);
+        assert_eq!(weapons.under(keeper).count(), 0);
+        assert_eq!(weapons.count(), 2);
+    }
+}
+
+fn main() -> Result {
+    let mut game = Game::new("owning and finding")
+        .max_entities(16)
+        .tick_rate(1)
+        .resource(Owners::default())
+        .prefab(KEEPER, PrefabDef::new(()).part(BACK, WAND.at_local(0, 0)))
+        .prefab(WAND, (Charge(1),))
+        .prefab(EMPTY, ())
+        .scene(|scene: &mut Scene| {
+            scene.on_enter(start);
+            scene.rules((inspect_before, take_or_set_down, use_wands));
+        })
+        .test()?;
+    game.step()?;
+    let inside = game.digest();
+    game.step()?;
+    let finished = game.digest();
+    game.rewind(1)?;
+    assert_eq!(game.digest(), inside);
+    game.step()?;
+    assert_eq!(game.digest(), finished);
+    Ok(())
+}

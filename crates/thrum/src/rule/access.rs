@@ -17,6 +17,7 @@ pub(crate) struct Column {
     pub(crate) key: ComponentKey,
     pub(crate) type_id: TypeId,
     pub(crate) name: &'static str,
+    pub(crate) stage: fn(usize) -> Box<dyn crate::prefab::staging::StagedColumn>,
     schema: fn() -> ComponentSchemaId,
     register: fn(&mut ComponentRegistry, ComponentSchemaId) -> Result,
     bind: fn(&GameRuntime<crate::runtime::Authority>, SystemId, AccessMode) -> Binding,
@@ -28,6 +29,7 @@ impl Column {
             key: ComponentKey::of::<Stored<T>>(),
             type_id: TypeId::of::<T>(),
             name: type_name::<T>(),
+            stage: crate::prefab::staging::Values::<T>::allocate,
             schema: || {
                 ComponentSchemaId(crate::data::schema_hash(
                     T::SCHEMA_ID,
@@ -116,6 +118,10 @@ impl Bindings {
         }));
     }
 
+    pub(crate) fn try_read<T: Data>(&self) -> Option<&ReadPermit<Stored<T>>> {
+        self.0.get(&TypeId::of::<T>())?.read.downcast_ref()
+    }
+
     pub(crate) fn read<T: Data>(&self) -> &ReadPermit<Stored<T>> {
         self.0[&TypeId::of::<T>()]
             .read
@@ -155,6 +161,7 @@ pub(crate) struct AccessColumn {
 
 #[derive(Clone, Default)]
 pub(crate) struct Projection {
+    pub(crate) visibility: u8,
     pub(crate) access: Vec<AccessColumn>,
     pub(crate) present: Vec<Column>,
     pub(crate) absent: Vec<Column>,
@@ -180,12 +187,14 @@ pub(crate) enum Parameter {
     Query(String, Projection),
     Exclusive(String, Exclusive),
     Random(String),
+    Family,
 }
 
 impl Parameter {
     fn name(&self) -> &str {
         match self {
             Self::Query(name, _) | Self::Exclusive(name, _) | Self::Random(name) => name,
+            Self::Family => "Family",
         }
     }
 }
@@ -221,7 +230,7 @@ impl Signature {
     pub(crate) fn needs_entities(&self) -> bool {
         self.0
             .iter()
-            .any(|parameter| matches!(parameter, Parameter::Query(..)))
+            .any(|parameter| matches!(parameter, Parameter::Query(..) | Parameter::Family))
             || crate::entity::contains_entities(self)
     }
 
@@ -291,7 +300,7 @@ impl Signature {
                         }
                     }
                 }
-                Parameter::Random(_) => {}
+                Parameter::Random(_) | Parameter::Family => {}
             }
         }
         Ok(())
@@ -331,6 +340,10 @@ impl Signature {
                         insert(column, false);
                     }
                 }
+                Parameter::Family => {
+                    insert(Column::of::<crate::Transform2d>(), false);
+                    insert(Column::of::<crate::Transform3d>(), false);
+                }
                 Parameter::Random(_) => {}
             }
         }
@@ -341,12 +354,25 @@ impl Signature {
         &self,
         rule: &str,
         entity: crate::Entity,
+        disabled: bool,
+        present: impl Fn(ComponentKey) -> bool,
+    ) -> Result {
+        self.validate_projection(rule, || format!("{entity:?}"), disabled, present)
+    }
+
+    pub(crate) fn validate_projection(
+        &self,
+        rule: &str,
+        target: impl Fn() -> String,
+        disabled: bool,
         present: impl Fn(ComponentKey) -> bool,
     ) -> Result {
         let matches = |data: &Projection| {
-            data.access
-                .iter()
-                .all(|item| !item.required || present(item.column.key))
+            data.visibility & if disabled { 2 } else { 1 } != 0
+                && data
+                    .access
+                    .iter()
+                    .all(|item| !item.required || present(item.column.key))
                 && data.present.iter().all(|column| present(column.key))
                 && data.absent.iter().all(|column| !present(column.key))
         };
@@ -366,7 +392,7 @@ impl Signature {
                     return Err(Error::refused(
                         "T0303",
                         format!("{rule}, {right_name} and {left_name}"),
-                        format!("both reach {} on {entity:?} and one writes", column.name),
+                        format!("both reach {} on {} and one writes", column.name, target()),
                         "Change the query projections or match disjoint sets of entities.",
                     ));
                 }

@@ -10,8 +10,9 @@ use thrum_core::sim::{
 };
 
 use crate::{
-    Error, Result, Tick, TickNumber,
+    Error, Result, Tick, TickNumber, Transform2d, Transform3d,
     entity::{Changes, contains_entities},
+    prefab::{Catalog, Origin},
     rule::{
         Invocation, ReadContextParts, Rule, RuleNames, RuleOrigin,
         access::{Bindings, Column, Signature},
@@ -35,6 +36,8 @@ pub(crate) struct Program {
     pub(crate) columns: Vec<Column>,
     pub(crate) rule_names: RuleNames,
     rate: u32,
+    pub(crate) prefabs: Arc<Catalog>,
+    pub(crate) staging: Arc<Mutex<crate::prefab::staging::Staging>>,
 }
 
 struct ScenePlan {
@@ -127,6 +130,8 @@ impl Program {
         mut columns: Vec<Column>,
         global: &[TypeId],
         rate: u32,
+        prefabs: Catalog,
+        capacity: usize,
     ) -> Result<(Self, ComponentRegistry, Vec<RegisteredSystem<Authority>>)> {
         let mut scenes = Vec::new();
         let mut main = vec![Step::Manual];
@@ -226,6 +231,28 @@ impl Program {
                 }
             }
         }
+        let mut add = |column: Column| {
+            if !columns.iter().any(|known| known.key == column.key) {
+                columns.push(column);
+            }
+        };
+        // The SDK's own structural columns are available to manual rules.
+        add(Column::of::<Transform2d>());
+        add(Column::of::<Transform3d>());
+        add(Column::of::<Origin>());
+        for prefab in prefabs.entries() {
+            prefab.columns(&mut add);
+            for scene in &scenes {
+                for &(name, ref signature) in &scene.signatures {
+                    prefab.check_access(name, signature)?;
+                }
+            }
+        }
+        let staging = if prefabs.is_empty() {
+            crate::prefab::staging::Staging::default()
+        } else {
+            crate::prefab::staging::Staging::new(&columns, capacity)
+        };
         let mut registry = ComponentRegistry::default();
         for &column in &columns {
             column.register(&mut registry)?;
@@ -299,6 +326,8 @@ impl Program {
                 columns,
                 rule_names,
                 rate,
+                prefabs: Arc::new(prefabs),
+                staging: Arc::new(Mutex::new(staging)),
             },
             registry,
             systems,
@@ -361,9 +390,12 @@ impl Program {
             for &(entity, handle) in &call.candidate.entities {
                 invocation
                     .signature
-                    .validate_entity(invocation.name, entity, |key| {
-                        world.has_component(handle, key)
-                    })
+                    .validate_entity(
+                        invocation.name,
+                        entity,
+                        call.candidate.state.tree.is_disabled(entity),
+                        |key| world.has_component(handle, key),
+                    )
                     .map_err(|error| rule_failure(invocation.name, call.tick, &error))?;
             }
         }
@@ -485,6 +517,7 @@ impl Program {
                         &call.world.read(),
                     );
                 }
+                candidate.state.tree = Arc::default();
                 candidate.entities.clear();
                 candidate.entities_valid = true;
                 candidate.state.scene = *index;
@@ -683,6 +716,7 @@ impl Program {
         world: &WorldRead<'_>,
         scene: usize,
         changed: &[crate::Entity],
+        tree: &crate::entity::family::Tree,
         tick: u64,
     ) -> Result {
         let signatures = &self.scenes[scene].signatures;
@@ -693,7 +727,9 @@ impl Program {
             if let Some(handle) = world.handle(entity.stable()) {
                 for &(name, ref signature) in signatures {
                     signature
-                        .validate_entity(name, entity, |key| world.has_component(handle, key))
+                        .validate_entity(name, entity, tree.is_disabled(entity), |key| {
+                            world.has_component(handle, key)
+                        })
                         .map_err(|error| rule_failure(name, tick, &error))?;
                 }
             }

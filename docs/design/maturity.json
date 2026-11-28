@@ -4,6 +4,14 @@
   "as_of": "2026-11-06",
   "contract_revision": "C4",
   "scope_note": "6 Nov 11:15 owner policy: foundation by best practice, regression/visible tripwires, later performance tuning. Numeric targets are retired; correctness, lifecycle, oracle tolerance and visuals remain. Historical device facts are unchanged.",
+  "game_sdk": {
+    "scope": "GAME-SDK WP11 prefab definitions, spawn inputs and entity hierarchy",
+    "implementation": "The SDK resolves linked prefab declarations and variants before play. Structural edits land between rules. The tentative world carries hierarchy and disable state through commit and rewind, with prefab origin stored on spawned entities.",
+    "correctness": "Windowless Mac tests cover startup and tick refusals, bounded preserve-world reparenting, prefab and query behavior, and digest equality after rewind and replay.",
+    "visuals": "No visual proof is required for this work package.",
+    "device": "The Mac proof uses CPU-only rules. An allocation counter covers repeated plain and customized prefab spawns after warming the structural queue.",
+    "evidence": "../../.orchestrate/evidence/GAME-SDK/WP11/index.md"
+  },
   "game_ui": {
     "scope": "GAME-UI through WP6, including the V1 interface and the Crowd status display",
     "implementation": "Retained interface trees and font-backed paint lists feed the frame host's interface stage. Cooked font and art publications switch with matching layouts. The router owns each contact through release. V1 supplies the screens, their actions and the join ticket. The iOS proving shell translates touches and invite URLs, and provides its view's density and safe area.",

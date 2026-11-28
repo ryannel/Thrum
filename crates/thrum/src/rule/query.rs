@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, slice};
+use std::{marker::PhantomData, slice, sync::Arc};
 
 use thrum_core::{
     Handle,
@@ -6,7 +6,7 @@ use thrum_core::{
     sim::{ColumnRead, Executor, RuleColumn, WorldRead},
 };
 
-use crate::{Component, Entity, Error, Result, data::Stored};
+use crate::{Component, Entity, Error, Result, data::Stored, entity::family::Tree};
 
 use super::{
     access::{AccessColumn, Bindings, Column, Loans, Parameter, Projection},
@@ -29,6 +29,12 @@ pub struct With<T: Component>(PhantomData<T>);
 /// ```
 pub struct Without<T: Component>(PhantomData<T>);
 
+/// Select entities that are disabled directly or through an ancestor.
+pub struct Disabled;
+
+/// Include enabled and disabled entities in one query.
+pub struct WithDisabled;
+
 /// The rows that match one rule parameter, in spawn order.
 /// ```
 /// use thrum::{Component, Query};
@@ -39,6 +45,7 @@ pub struct Without<T: Component>(PhantomData<T>);
 /// ```
 pub struct Query<'a, D: QueryData, F: Filter = ()> {
     rows: &'a mut [Row<D::Owned>],
+    tree: Arc<Tree>,
     columns: D::Columns,
     executor: Executor,
     filter: PhantomData<F>,
@@ -67,6 +74,50 @@ impl<D: QueryData, F: Filter> Query<'_, D, F> {
     /// ```
     pub fn iter_mut(&mut self) -> IterMut<'_, D> {
         IterMut(self.rows.iter_mut(), &self.columns, PhantomData)
+    }
+
+    /// Access matching direct children in the order they were attached.
+    ///
+    /// ```
+    /// use thrum::{Component, Entity, Query};
+    /// #[derive(Component)] struct Health(u32);
+    /// fn heal(mut query: Query<&mut Health>, parent: Entity) {
+    ///     for health in query.under(parent) { health.0 += 1; }
+    /// }
+    /// ```
+    #[expect(
+        unsafe_code,
+        reason = "ordered iteration lends each distinct child row at most once"
+    )]
+    pub fn under(&mut self, parent: Entity) -> impl Iterator<Item = D::Item<'_>> + '_ {
+        let rows = self.rows.as_mut_ptr();
+        let len = self.rows.len();
+        let columns = &self.columns;
+        self.tree.children(parent).iter().filter_map(move |&child| {
+            // Search entity IDs without touching the row data. The iterator
+            // may still hold loans from previously yielded children.
+            let mut low = 0;
+            let mut high = len;
+            while low < high {
+                let middle = low + (high - low) / 2;
+                let row = rows.wrapping_add(middle);
+                // SAFETY: middle is within the slice, and entity is separate
+                // from the data field loaned by the iterator.
+                match unsafe { (*row).entity }.cmp(&child) {
+                    std::cmp::Ordering::Less => low = middle + 1,
+                    std::cmp::Ordering::Greater => high = middle,
+                    std::cmp::Ordering::Equal => {
+                        // SAFETY: This is a matching live row within the slice.
+                        let physical = unsafe { (*row).physical };
+                        // SAFETY: A parent's children are unique. The mutable
+                        // query borrow prevents other access to this field.
+                        let data = unsafe { &mut (*row).data };
+                        return Some(D::item(columns, child, physical, data));
+                    }
+                }
+            }
+            None
+        })
     }
 
     /// Read the matching item for this entity.
@@ -365,6 +416,7 @@ mod sealed {
     }
 
     pub(crate) trait Filter {
+        const VISIBILITY: Option<u8> = None;
         type Columns<'a>;
         fn describe(projection: &mut Projection);
         fn bind<'a>(world: &'a WorldRead<'_>, bindings: &'a Bindings) -> Self::Columns<'a>;
@@ -375,6 +427,32 @@ mod sealed {
 impl<T: Component> Filter for With<T> {}
 impl<T: Component> Filter for Without<T> {}
 impl Filter for () {}
+impl Filter for Disabled {}
+impl Filter for WithDisabled {}
+
+macro_rules! visibility_filter {
+    ($filter:ident, $mask:literal) => {
+        impl sealed::Filter for $filter {
+            const VISIBILITY: Option<u8> = Some($mask);
+            type Columns<'a> = ();
+            fn describe(_: &mut Projection) {}
+            fn bind<'a>(_: &'a WorldRead<'_>, _: &'a Bindings) {}
+            fn matches((): &(), _: u32) -> bool {
+                true
+            }
+        }
+    };
+}
+visibility_filter!(Disabled, 2);
+visibility_filter!(WithDisabled, 3);
+
+const fn intersect(first: Option<u8>, second: Option<u8>) -> Option<u8> {
+    match (first, second) {
+        (Some(a), Some(b)) => Some(a & b),
+        (Some(mask), None) | (None, Some(mask)) => Some(mask),
+        (None, None) => None,
+    }
+}
 
 macro_rules! presence_filter {
     ($filter:ident, $field:ident, $expected:literal) => {
@@ -593,6 +671,11 @@ macro_rules! tuples {
         impl<$($ty: ReadProjection),+> ReadProjection for ($($ty,)+) {}
         impl<$($ty: Filter),+> Filter for ($($ty,)+) {}
         impl<$($ty: Filter),+> sealed::Filter for ($($ty,)+) {
+            const VISIBILITY: Option<u8> = {
+                let mask = None;
+                $(let mask = intersect(mask, $ty::VISIBILITY);)+
+                mask
+            };
             type Columns<'a> = ($($ty::Columns<'a>,)+);
             fn describe(projection: &mut Projection) { $($ty::describe(projection);)+ }
             fn bind<'a>(world: &'a WorldRead<'_>, bindings: &'a Bindings) -> Self::Columns<'a> {
@@ -631,7 +714,10 @@ impl<T> Default for Rows<T> {
 }
 
 fn describe<D: QueryData, F: Filter>(name: &str, list: &mut ParameterList) {
-    let mut projection = Projection::default();
+    let mut projection = Projection {
+        visibility: F::VISIBILITY.unwrap_or(1),
+        ..Projection::default()
+    };
     D::describe(&mut projection);
     F::describe(&mut projection);
     list.0.0.push(Parameter::Query(name.to_owned(), projection));
@@ -642,8 +728,17 @@ fn read_rows<D: QueryData, F: Filter>(rows: &mut Rows<D::Owned>, context: &ReadC
     let world = context.world.expect("preparing query matches");
     let columns = D::presence(world, context.bindings);
     let filters = F::bind(world, context.bindings);
+    let tree = &context.candidate.state.tree;
+    let visibility = F::VISIBILITY.unwrap_or(1);
+    let check_disabled = tree.has_disabled();
+    if !check_disabled && visibility & 1 == 0 {
+        return;
+    }
     for &(entity, handle) in context.entities {
-        if F::matches(&filters, handle.slot) && D::matches(&columns, handle.slot) {
+        if F::matches(&filters, handle.slot)
+            && D::matches(&columns, handle.slot)
+            && (!check_disabled || visible(tree, entity, visibility))
+        {
             rows.rows.push(Row {
                 entity,
                 handle,
@@ -669,6 +764,7 @@ unsafe impl<D: QueryData, F: Filter + 'static> Param for Query<'_, D, F> {
     fn item<'t>(state: &'t mut Self::State, context: &ReadContext<'_>) -> Self::Item<'t> {
         Query {
             rows: &mut state.rows,
+            tree: Arc::clone(&context.candidate.state.tree),
             columns: <D::For<'t> as sealed::Data>::bind(
                 context.loans.expect("lending query columns"),
             ),
@@ -772,16 +868,18 @@ impl<D: ReadProjection, F: Filter + 'static> ReadOnly for Option<Single<'_, D, F
 pub(crate) fn matching<F: Filter>(
     world: &WorldRead<'_>,
     entities: &[(Entity, Handle)],
+    tree: &Tree,
 ) -> Vec<Entity> {
     let mut projection = Projection::default();
     F::describe(&mut projection);
     entities
         .iter()
         .filter_map(|&(entity, handle)| {
-            (projection
-                .present
-                .iter()
-                .all(|column| world.has_component(handle, column.key))
+            (visible(tree, entity, F::VISIBILITY.unwrap_or(1))
+                && projection
+                    .present
+                    .iter()
+                    .all(|column| world.has_component(handle, column.key))
                 && projection
                     .absent
                     .iter()
@@ -789,4 +887,8 @@ pub(crate) fn matching<F: Filter>(
             .then_some(entity)
         })
         .collect()
+}
+
+fn visible(tree: &Tree, entity: Entity, visibility: u8) -> bool {
+    visibility == 3 || visibility & if tree.is_disabled(entity) { 2 } else { 1 } != 0
 }

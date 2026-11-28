@@ -12,6 +12,7 @@ use thrum_core::{
 use crate::{
     Component, Data, Entities, Entity, Error, Event, Filter, PhaseType, ResMut, Resource, Result,
     Scene, SceneType, Seconds, Spawn,
+    prefab::{Authored, Catalog, Fields},
     rule::{
         Invocation, ReadContextParts, RuleFunction, RuleNames, RuleOrigin, access::Column,
         params::Context, query::matching,
@@ -55,6 +56,7 @@ struct Description {
     scenes: Vec<Result<(SceneNames, Definition)>>,
     columns: Vec<Column>,
     resources: Vec<ValueRef>,
+    prefabs: Vec<Authored>,
     capacity: u32,
     rate: u32,
 }
@@ -86,6 +88,7 @@ impl Game {
             scenes: Vec::new(),
             columns: Vec::new(),
             resources: Vec::new(),
+            prefabs: Vec::new(),
             capacity: 256,
             rate: 60,
         })
@@ -130,6 +133,7 @@ impl Game {
             resources,
             capacity,
             rate,
+            prefabs,
         } = self.description;
         if rate == 0 || rate > 1_000_000_000 {
             return Err(Error::refused(
@@ -156,8 +160,15 @@ impl Game {
                 )
             })?;
         let global: Vec<TypeId> = resources.iter().map(|value| value.id()).collect();
-        let (mut program, registry, systems) =
-            Program::compile(Names(names), scenes, columns, &global, rate)?;
+        let (mut program, registry, systems) = Program::compile(
+            Names(names),
+            scenes,
+            columns,
+            &global,
+            rate,
+            Catalog::compile(prefabs)?,
+            capacity as usize,
+        )?;
         let mut runtime = GameRuntime::new_published_with_rule_boundaries(
             WorldEpoch(0),
             capacity as usize,
@@ -256,6 +267,13 @@ macro_rules! settings {
             #[doc = example!("Provide a game resource that persists across scenes.", "# #[derive(Resource)] struct Score(u32);", concat!("# let builder = ", $builder, ";"), "let _builder = builder.resource(Score(0));")]
             pub fn resource(mut self, value: impl Resource) -> Self {
                 self.$description.resources.push(Arc::new(value));
+                self
+            }
+
+            /// Define one name from a prefab declaration.
+            #[expect(private_bounds, reason = "only SDK component bundles are valid prefab requirements")]
+            pub fn prefab<N: Fields>(mut self, name: crate::Prefab<N>, definition: impl Into<crate::PrefabDef>) -> Self {
+                self.$description.prefabs.push(Authored::new(name, definition.into()));
                 self
             }
 
@@ -503,7 +521,7 @@ impl TestGame {
         let world = self.runtime.read();
         let mut entities = Vec::new();
         collect_entities(&world, &mut entities);
-        matching::<F>(&world, &entities)
+        matching::<F>(&world, &entities, &self.authority.state.tree)
     }
 
     #[doc = harness_example!("Count live entities that match a filter.", "game.spawn((Health(3),)).unwrap();", "assert_eq!(game.count::<With<Health>>(), 1);")]
