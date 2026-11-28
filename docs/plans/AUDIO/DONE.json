@@ -4,7 +4,7 @@
     {
       "id": "WP1",
       "name": "A program plays sounds into a buffer with no device, placed, pitched, looped and limited, and a test reads exactly what would be heard",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "A mixer as dependable as a shipped game's: a crowded moment degrades by dropping its quietest sounds, and never by crackling, clicking or stalling a frame. Correctness held as `SIM-2D` holds it: one script, one digest, the same on every target. No reference game is named, because no item here is judged by ear or by eye: how it sounds is the owner's to judge, in `GAME-SDK` WP19.",
       "items": [
         {
