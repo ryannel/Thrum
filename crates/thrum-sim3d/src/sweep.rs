@@ -193,7 +193,8 @@ impl Search {
         if end.contact.gap == Number::ZERO {
             return self.refine(low, high, None);
         }
-        let mut near = (end.contact.gap <= self.gap).then_some(end);
+        let mut near =
+            (end.contact.gap <= self.gap && self.closing(&end) >= Number::ZERO).then_some(end);
         for _ in 0..32 {
             let middle = midpoint(low, high);
             if middle == low || middle == high {
@@ -203,11 +204,13 @@ impl Search {
             if sample.contact.gap == Number::ZERO {
                 return self.refine(low, middle, None);
             }
-            if self.closing(&sample) > Number::ZERO && sample.contact.gap > self.gap {
+            let closing = self.closing(&sample);
+            if closing > Number::ZERO && sample.contact.gap > self.gap {
                 low = middle;
             } else {
                 high = middle;
-                if sample.contact.gap <= self.gap {
+                // A nearby place on the retreating side is only an upper bound.
+                if sample.contact.gap <= self.gap && closing >= Number::ZERO {
                     near = Some(sample);
                 }
             }

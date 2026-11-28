@@ -9,56 +9,84 @@ use crate::cases::{FORWARD, STOP, capsule, cube, n, ratio, sphere, triangle, v, 
 fn shapes_that_reach_the_domain_limits_are_admitted() {
     let bound = DOMAIN_BOUND;
     let face = n(bound) - ratio(1, 2);
-    let center = sphere(STOP, Number::ZERO);
+    let near_corner = bound - 48;
+    assert_eq!(bound, 32_768);
+    let denominator = thrum_sim3d::CONTACT_TOLERANCE_DENOMINATOR;
+    assert!(denominator >= 64 && (denominator & (denominator - 1)) == 0);
+    assert_eq!(SweepGap::Tolerance.units(), ratio(1, denominator));
+    assert_eq!(SweepGap::HalfTolerance.units(), ratio(1, 2 * denominator));
+
     for sx in [-1, 1] {
         for sy in [-1, 1] {
             for sz in [-1, 1] {
                 let corner = v(sx * bound, sy * bound, sz * bound);
-                let inward = v(-sx, -sy, -sz);
-                let here = corner + inward;
+                let outward = v(sx, 0, 0);
+                let center = v(sx * near_corner, sy * near_corner, sz * near_corner);
+                let side = v(sx * bound, sy * near_corner, sz * near_corner);
                 let shapes = [
-                    sphere(STOP, n(bound)),
-                    capsule(
-                        [
-                            Vector3::new(n(sx) * face, STOP.y, STOP.z),
-                            Vector3::new(n(-sx) * face, STOP.y, STOP.z),
-                        ],
-                        ratio(1, 2),
+                    (sphere(STOP, n(bound)), v(sx * bound, 0, 0), -outward),
+                    (sphere(center, n(48)), side, -outward),
+                    (
+                        capsule(
+                            [
+                                Vector3::new(n(sx) * face, STOP.y, STOP.z),
+                                Vector3::new(n(-sx) * face, STOP.y, STOP.z),
+                            ],
+                            ratio(1, 2),
+                        ),
+                        v(sx * bound, 0, 0),
+                        -outward,
                     ),
-                    cube(STOP, n(bound)),
-                    triangle([
-                        corner,
-                        v(sx * bound, -sy * bound, sz * bound),
-                        v(sx * bound, sy * bound, -sz * bound),
-                    ]),
+                    (
+                        capsule(
+                            [
+                                center,
+                                v(-sx * near_corner, sy * near_corner, sz * near_corner),
+                            ],
+                            n(48),
+                        ),
+                        side,
+                        -outward,
+                    ),
+                    (cube(STOP, n(bound)), corner, -outward),
+                    (
+                        triangle([
+                            corner,
+                            v(sx * bound, -sy * bound, sz * bound),
+                            v(sx * bound, sy * bound, -sz * bound),
+                        ]),
+                        corner - outward,
+                        outward,
+                    ),
                 ];
-                for shape in shapes {
-                    assert!(distance(center, shape).unwrap().is_finite());
-                    assert!(distance(shape, center).unwrap().is_finite());
-                    assert_eq!(
-                        overlap(shape, center).unwrap(),
-                        distance(shape, center).unwrap() == Number::ZERO
-                    );
-                    let penetration = depth(center, shape).unwrap();
+                for (shape, start, motion) in shapes {
+                    let point = sphere(start, Number::ZERO);
+                    for (first, second) in [(point, shape), (shape, point)] {
+                        let gap = distance(first, second).unwrap();
+                        assert!(gap.is_finite());
+                        assert_eq!(overlap(first, second).unwrap(), gap == Number::ZERO);
+                        let penetration = depth(first, second).unwrap();
+                        assert!(
+                            penetration.depth.is_finite()
+                                && penetration.normal.length().is_finite()
+                        );
+                    }
+                    let hit = ray(start, motion, shape).unwrap().unwrap();
                     assert!(
-                        penetration.depth.is_finite() && penetration.normal.length().is_finite()
+                        hit.fraction.is_finite()
+                            && hit.normal.length().is_finite()
+                            && hit.point.length().is_finite()
+                            && hit.depth.is_finite()
                     );
-                    if let Some(hit) = ray(here, -inward, shape).unwrap() {
-                        assert!(
-                            hit.fraction.is_finite()
-                                && hit.normal.length().is_finite()
-                                && hit.point.length().is_finite()
-                        );
-                    }
-                    let mover = sphere(here, Number::ZERO);
-                    if let Some(hit) = sweep(mover, -inward, shape, SweepGap::Tolerance).unwrap() {
-                        assert!(
-                            hit.fraction.is_finite()
-                                && hit.normal.length().is_finite()
-                                && hit.point.length().is_finite()
-                                && hit.depth.is_finite()
-                        );
-                    }
+                    let hit = sweep(point, motion, shape, SweepGap::Tolerance)
+                        .unwrap()
+                        .unwrap();
+                    assert!(
+                        hit.fraction.is_finite()
+                            && hit.normal.length().is_finite()
+                            && hit.point.length().is_finite()
+                            && hit.depth.is_finite()
+                    );
                 }
             }
         }
