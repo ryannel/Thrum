@@ -8,7 +8,11 @@
       ".orchestrate/evidence/AUDIO/design-review-1.md",
       ".orchestrate/evidence/AUDIO/design-review.md"
     ],
-    "at": "2026-11-28T03:10:30Z"
+    "at": "2026-11-28T03:10:30Z",
+    "items_owed": [
+      "WP3",
+      "WP4"
+    ]
   },
   "work_packages": {
     "WP1": {
@@ -301,6 +305,25 @@
         "at": "2026-11-28T03:10:30Z"
       },
       "ends_stretch": true
+    },
+    "WP3": {
+      "definitions": "a3c0b1f428a332fb972762d6e20f5992fd6f2d828e9469b3f1ba7fe27d25afdc",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the next work packages of module AUDIO, up to WP4: write their items in its done-when file. Its plan names them alr",
+        "at": "2026-11-28T10:25:33Z"
+      }
+    },
+    "WP4": {
+      "definitions": "1f462e997720eb6be402d9ec1625b744119101e4fd7d91ac6cdcae8149560396",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the next work packages of module AUDIO, up to WP4: write their items in its done-when file. Its plan names them alr",
+        "at": "2026-11-28T10:25:33Z"
+      },
+      "ends_stretch": true
     }
   },
   "tasks": [
@@ -315,11 +338,15 @@
     {
       "task": "The design review of AUDIO at .orchestrate/evidence/AUDIO/design-review.md asked for changes, with its 4 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
       "at": "2026-11-28T03:10:30Z"
+    },
+    {
+      "task": "Plan the next work packages of module AUDIO, up to WP4: write their items in its done-when file. Its plan names them already. Where the user chose one of a set of options, or answered a question, in an earlier work package, its User Feedback and the settings' `References:` folder hold the answer; write the new items against it",
+      "at": "2026-11-28T10:25:33Z"
     }
   ],
   "planner": {
-    "host": "claude",
-    "at": "2026-11-28T03:10:30Z"
+    "host": "codex",
+    "at": "2026-11-28T10:25:33Z"
   },
   "design_history": [
     {
