@@ -707,3 +707,50 @@
   existing rule forms. The SDK reports `T0204` at startup or harness admission for erased callables
   taking `Random`, including as a field of `Params`. Function pointers remain usable for rules
   without `Random`. [Mac proofs](../../../.orchestrate/evidence/GAME-SDK/WP1/)
+
+## Design review of 28 November
+
+- 2026-11-28 [The design review](../../../.orchestrate/evidence/GAME-SDK/design-review.md) asked for seven
+  changes, all in the two contracts the diagnosis settled. Each is fixed in the design and the items.
+  WP1.2, WP1.3, WP1.6 and WP2.10 changed; WP1.1, WP1.4, WP1.5 and WP1.7 did not.
+- 2026-11-28 Finding 1, two functions with one path. Section 3 now refuses the pair where both take
+  `Random`: at startup before either runs, and from `game.run`, by asking whether the two have one Rust
+  type, with nothing of the type in a key. The promise is one version of the compiler, in section 3,
+  WP1.6's question and risk 20 alike. WP1.3(h) proves the refusal, and WP1.3(i) holds draws as literals
+  that pass in a debug build and in a release build, which its check now runs. Risk 21 is new.
+  Rejected: a name the game writes for each rule, because it adds a word to learn; an identity from the
+  Rust type, because it differs between a debug and a release build.
+- 2026-11-28 Finding 2, a function pointer has no origin to check. Section 1 says where a pointer is a
+  rule: in a sketch and in a test's `game.run`. A game with a `rules` module refuses one at startup,
+  wherever its function is defined. WP1.3(g) keeps the sketch's outcome and WP2.10 has the checked game's.
+- 2026-11-28 Finding 3, a clock taken on phase entry. Section 4 sets the clock before the phase's enter
+  functions run, and asks a `lasts` function then: after the exit functions and a scene's enter functions,
+  before the phase's own. WP1.2 clause 3 proves the order and what an enter function reads, and clause 8
+  resumes from that clock, for a written length and a computed one.
+- 2026-11-28 Finding 4, a time that is up with its action still to come. The clock is two counts, and
+  `left()` is zero only inside the tick the time is up, until what follows has happened, and `None` after.
+  A clock resumed with zero left has what follows happen once in the first tick; one with `None` never.
+  Section 4, `PhaseClock` in R2 and `PhaseMut` in R3 now say the same. WP1.2 clause 8 tells the two
+  captures apart, for `then_run` and for `then`.
+- 2026-11-28 Finding 5, a save menu's read. Section 3 counts only a run inside a tick. A capture and its
+  condition, like a test's `game.run`, draw as the function's first run and count nothing, so repeated
+  reads of one committed world change no later draw. Section 10, `Random` in R3 and the state table say
+  so, and WP13's proof list has the case.
+- 2026-11-28 Finding 6, a rule asked to return an array. WP1.3 clause 3 is written again: `loot` and
+  `weather` return nothing and record their draws in the world, and (c) lists the one function by every
+  route with no wrapper.
+- 2026-11-28 Finding 7, the wrong tick rewound. WP1.3(f) now steps, runs `weather` at the new tick and
+  rewinds past that call, as `replay.rs` already does.
+- 2026-11-28 Suggestion taken: a clock made by hand holds the times it was given and takes its tick rate
+  when `resume` receives it (section 4 and R2), because a builder would otherwise have to guess what
+  `time()` returns before a game exists.
+- 2026-11-28 Planner's choices in this revision, each for the owner to overturn: two functions that take
+  `Random` may not share a name; a draw is the same across builds by one version of the compiler; a
+  checked game refuses a function pointer as a rule; a phase's length is fixed before its enter functions
+  run; a `lasts` is never less than one tick.
+- 2026-11-28 Notes for WP1's builder, moved here from the plan file to keep it short. The sources of a
+  random stream the earlier rounds tried were the schedule slot, a table filled as functions were
+  registered or run, the pointer's address, and `RuleStreams` keyed by `TypeId` with a `DefaultHasher`.
+  A named function's type has no size and its type name is its path; a function pointer's type always
+  has a size, in every build profile. The two new refusals are proved under WP1.3, and each code is
+  documented as every other message's is.
