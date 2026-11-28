@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-23 of 39 modules done · 13 in progress · 3 to come
+23 of 39 modules done · 12 in progress · 4 to come
 
 ### Needs you now
 
@@ -355,7 +355,11 @@ A planner or the lead chose each of these where your words left it open. Each st
 - GAME-SDK assumes: in a 3D game, an edit that changes a mesh's or a terrain's shape waits for the game to be started again, and an edit to how it looks is redrawn at once. ([plan](GAME-SDK/PLAN.md))
 - GAME-SDK assumes: a host with no window continues a saved run only through the standard lobby, reads its save once as it starts, and takes no save or restore asked for by a player's screen. ([plan](GAME-SDK/PLAN.md))
 - GAME-SDK assumes: only a named function draws from `Random`. A closure or a function pointer that asks for it is refused with a message, because neither has a name that is the same in every build. ([plan](GAME-SDK/PLAN.md))
-- GAME-SDK assumes: a function a test runs with `game.run` draws what a scene's first run of it draws at that tick, so two calls at one tick draw the same. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: two functions that take `Random` may not share a name. The game is refused when it starts, and one is renamed. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: a test's `game.run`, a save's capture and its condition draw what a scene's first run of that function draws at that tick, and are not counted. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: a draw is the same in every build by one version of the compiler, and may differ under another version. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: a game with a `rules` module refuses a function pointer as a rule. A sketch and a test's `game.run` take one. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: a phase's length is fixed before its enter functions run, so a `lasts` function cannot read what they set up. ([plan](GAME-SDK/PLAN.md))
 - GAME-SDK assumes: a scene resumed from a save carries on its phase's clock and nothing else. The scene's own time, `Tick::in_scene()`, starts again, and a game that wants it kept saves it. ([plan](GAME-SDK/PLAN.md))
 - SIM-3D assumes: shapes are spheres, capsules and cuboids, and a level's fixed collision is models' triangles, terrain heights and boxes, as the game SDK's design names them. A cuboid can be turned and scaled, but nothing spins or is pushed: no rigid bodies. ([plan](SIM-3D/PLAN.md))
 - SIM-3D assumes: a model's triangles and a terrain stop a shape from both sides and have no inside. A box is solid through. ([plan](SIM-3D/PLAN.md))
