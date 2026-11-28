@@ -321,6 +321,32 @@
         "by": "plan",
         "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its Must Fix fi",
         "at": "2026-11-28T04:21:18Z"
+      },
+      "ready_for_review": {
+        "commit": "f616054c816004421ae2ea5da173792f8d830fce",
+        "checked": "f616054c816004421ae2ea5da173792f8d830fce",
+        "at": "2026-11-28T05:33:24Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "headless",
+        "usage": {
+          "input": 287397,
+          "cached": 40353024,
+          "output": 53937,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 437621,
+          "cached": 47517696,
+          "output": 81201,
+          "turns": 2
+        }
       }
     },
     "WP2": {
