@@ -4,7 +4,7 @@
     {
       "id": "WP1",
       "name": "A program plays sounds into a buffer with no device, placed, pitched, looped and limited, and a test reads exactly what would be heard",
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "A mixer as dependable as a shipped game's: a crowded moment degrades by dropping its quietest sounds, and never by crackling, clicking or stalling a frame. Correctness held as `SIM-2D` holds it: one script, one digest, the same on every target. No reference game is named, because no item here is judged by ear or by eye: how it sounds is the owner's to judge, in `GAME-SDK` WP19.",
       "items": [
         {
@@ -64,7 +64,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/AUDIO/WP1/resume-repair/WP1.4.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
         {
@@ -94,7 +94,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/AUDIO/WP1/resume-repair/WP1.6.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
         {
@@ -109,7 +109,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/AUDIO/WP1/resume-repair/WP1.11.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/AUDIO/WP1-review.md"
         },
         {
@@ -171,26 +171,7 @@
         }
       ],
       "failed_reviews": 3,
-      "failed_reviews_with_repeat": 2,
-      "findings": [
-        {
-          "name": "An emitter restored on resume can keep sounding after it ends",
-          "item": "WP1.6",
-          "repeat": true
-        },
-        {
-          "name": "Releasing a restored emitter can leave it held",
-          "item": "WP1.4",
-          "different": "The prior hold during entry now fades correctly. Here the post-resume release command is discarded and the selected loop stays silent.",
-          "repeat": false
-        },
-        {
-          "name": "An emitter volume changed while the queue is full can be lost on resume",
-          "item": "WP1.11",
-          "different": "The earlier master mute now reaches the mix during continuous plays. This emitter change reaches the queue once, is rejected at the restored snapshot revision and is never retried.",
-          "repeat": false
-        }
-      ]
+      "failed_reviews_with_repeat": 2
     },
     {
       "id": "WP2",

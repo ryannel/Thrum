@@ -166,7 +166,7 @@
         {
           "verdict": "fail",
           "commit": "4a0e087adbc95cc156082565a9b8c8a3a188b538",
-          "review": ".orchestrate/evidence/AUDIO/WP1-review.md",
+          "review": ".orchestrate/evidence/AUDIO/WP1-review-3.md",
           "items": {
             "WP1.1": "pass",
             "WP1.2": "pass",
@@ -216,6 +216,41 @@
             "turns": 1
           },
           "at": "2026-11-28T08:11:19Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "0471813153aa79415a3ae79dd340aac24bc23d3d",
+          "review": ".orchestrate/evidence/AUDIO/WP1-review.md",
+          "items": {
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.11": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.10": "pass"
+          },
+          "summary": "All eleven items pass. The Mac buffer now ends, releases and changes an emitter at the requested level after queue pressure and interruption, including when pulling stops again before the deferred command is consumed. Native and Node rendered the same 8,193 stereo frames bit for bit.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 115131,
+            "cached": 2516736,
+            "output": 10056,
+            "turns": 1
+          },
+          "at": "2026-11-28T10:18:18Z"
         }
       ],
       "authorised": {
@@ -248,6 +283,13 @@
           "output": 35873,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "0471813153aa79415a3ae79dd340aac24bc23d3d",
+        "review": ".orchestrate/evidence/AUDIO/WP1-review.md",
+        "checked": "e52fecd0b1874db87bd3876e470cd8e6949f807a",
+        "at": "2026-11-28T10:18:18Z"
       }
     },
     "WP2": {
