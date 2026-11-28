@@ -442,7 +442,92 @@
     },
     "WP11": {
       "definitions": "8ec6bcb68dcc76f1adde0c61e49036af515c1a836db8f822ecf7dab045eec13e",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "7cceb36db7a662d4be1881eaeba83fb100a39303",
+          "review": ".orchestrate/evidence/GAME-SDK/WP11-review.md",
+          "items": {
+            "WP11.1": "fail",
+            "WP11.2": "fail",
+            "WP11.3": "fail",
+            "WP11.4": "fail",
+            "WP11.5": "fail"
+          },
+          "findings": [
+            {
+              "name": "keep_world checks the previous parent transform",
+              "item": "WP11.2",
+              "repeat": false
+            },
+            {
+              "name": "A retired parent can acquire a live child",
+              "item": "WP11.5",
+              "repeat": false
+            },
+            {
+              "name": "Detaching a child can suppress its explicit despawn",
+              "repeat": false
+            },
+            {
+              "name": "Startup overlap validation loses inherited disabling",
+              "item": "WP11.3",
+              "repeat": false
+            },
+            {
+              "name": "Placement discards later transform overrides",
+              "item": "WP11.1",
+              "repeat": false
+            },
+            {
+              "name": "keep_world refusals omit the parent handle",
+              "item": "WP11.3",
+              "repeat": false
+            },
+            {
+              "name": "A prefab burst allocates inside spawn after warmup",
+              "item": "WP11.4",
+              "repeat": false
+            },
+            {
+              "name": "Prefab-free games reserve a prefab-origin column",
+              "item": "WP11.4",
+              "repeat": false
+            },
+            {
+              "name": "Structural rules gather transforms for unrelated entities",
+              "item": "WP11.4",
+              "repeat": false
+            },
+            {
+              "name": "One disabled entity adds parent lookups for unrelated roots",
+              "item": "WP11.4",
+              "repeat": false
+            },
+            {
+              "name": "Query::under searches unrelated query rows",
+              "repeat": false
+            }
+          ],
+          "summary": "WP11 fails all five items. On the M3 Max, a child at x = 2 jumped to x = 12 after a successful `keep_world`, and a live child remained queryable under a despawned parent. The four recorded guards pass their fixtures, but the public SDK also loses transform overrides, postpones a required startup error, and incurs costs the work package rules out.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 129094,
+            "cached": 3583104,
+            "output": 13179,
+            "turns": 1
+          },
+          "at": "2026-11-28T11:11:42Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 12 Must Fix",

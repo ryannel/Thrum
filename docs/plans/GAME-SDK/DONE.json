@@ -111,7 +111,7 @@
     {
       "id": "WP11",
       "name": "A game names a reusable thing, spawns it and variants of it, attaches one thing to another and takes a thing out of play",
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "Reuse as plain as Unity's prefab variants and Godot's scenes, in Rust with no editor: a variant is a base and a difference, and a child is one line. The reference for how game code reads is the design's worked examples E and G, which the owner approves.",
       "items": [
         {
@@ -124,10 +124,10 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GAME-SDK/WP11/check.json",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GAME-SDK/WP11-review.md"
         },
         {
           "id": "WP11.2",
@@ -139,10 +139,10 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GAME-SDK/WP11/check.json",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GAME-SDK/WP11-review.md"
         },
         {
           "id": "WP11.3",
@@ -154,20 +154,20 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GAME-SDK/WP11/check.json",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GAME-SDK/WP11-review.md"
         },
         {
           "id": "WP11.4",
           "statement": "Prefabs and the tree cost nothing where they are not used, `keep_world` is held to its bound on every call, and both read as the design's examples do.",
           "ask": "1. Is a prefab, with its variants, resolved once when the game starts, so that a spawn copies a prepared set of components with no lookup by name and no allocation? 2. Does an entity with no parent and no child hold or pay for anything of the tree, in a query and in the digest's work? 3. Is the place a `keep_world` recomposes compared with where the child stood on every call, and the attachment refused past the design's bound, with the residual and the bound in the error? 4. Set the tests' games beside example E's `prefabs` function, its spawns of `BAT`, `ELITE_BAT`, `GEM` and `SHOT`, and example G's `take_or_set_down`. Is each difference in the log as a spelling, and is none a change of shape as the design's section \"What a builder may change\" defines one?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GAME-SDK/WP11/index.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GAME-SDK/WP11-review.md"
         },
         {
           "id": "WP11.5",
@@ -179,14 +179,69 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GAME-SDK/WP11/check.json",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GAME-SDK/WP11-review.md"
         }
       ],
-      "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      "failed_reviews": 1,
+      "failed_reviews_with_repeat": 0,
+      "findings": [
+        {
+          "name": "keep_world checks the previous parent transform",
+          "item": "WP11.2",
+          "repeat": false
+        },
+        {
+          "name": "A retired parent can acquire a live child",
+          "item": "WP11.5",
+          "repeat": false
+        },
+        {
+          "name": "Detaching a child can suppress its explicit despawn",
+          "repeat": false
+        },
+        {
+          "name": "Startup overlap validation loses inherited disabling",
+          "item": "WP11.3",
+          "repeat": false
+        },
+        {
+          "name": "Placement discards later transform overrides",
+          "item": "WP11.1",
+          "repeat": false
+        },
+        {
+          "name": "keep_world refusals omit the parent handle",
+          "item": "WP11.3",
+          "repeat": false
+        },
+        {
+          "name": "A prefab burst allocates inside spawn after warmup",
+          "item": "WP11.4",
+          "repeat": false
+        },
+        {
+          "name": "Prefab-free games reserve a prefab-origin column",
+          "item": "WP11.4",
+          "repeat": false
+        },
+        {
+          "name": "Structural rules gather transforms for unrelated entities",
+          "item": "WP11.4",
+          "repeat": false
+        },
+        {
+          "name": "One disabled entity adds parent lookups for unrelated roots",
+          "item": "WP11.4",
+          "repeat": false
+        },
+        {
+          "name": "Query::under searches unrelated query rows",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "WP2",
