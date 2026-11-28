@@ -578,7 +578,7 @@ impl FallViews {
                 ),
                 look(
                     centre + 2.0 * forward + 0.2 * across,
-                    middle_height + 0.5,
+                    lip.height + 0.22,
                     centre,
                     middle_height,
                     74.0,

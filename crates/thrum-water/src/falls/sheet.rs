@@ -18,6 +18,7 @@ const SPLASHES_PER_SEGMENT: usize = 24;
 const RIBBONS_PER_SEGMENT: usize = 6;
 const STRAND_SIDES: usize = 8;
 const STRAND_EDGE: f32 = 4.0;
+const STRAND_ROLL_START: f32 = 0.39;
 const VERTICES_PER_SEGMENT: usize =
     RIBBONS_PER_SEGMENT * (6 * STRAND_SIDES * ROWS + 36) + 6 * SPLASHES_PER_SEGMENT;
 const ATTRIBUTES: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4, 4 => Float32x4];
@@ -142,7 +143,7 @@ impl Sheet {
                 + "fn fall_foam(point: vec2<f32>) -> vec2<f32> { return foam_at(point, vec4(0.0)).stocks.xy; }",
         );
         let source = format!(
-            "{library}\n{}\nconst FALL_LOOP: f32 = {:?};\nconst FALL_CONTACT_DROPS: f32 = {}.0;\nconst FALL_TEAR: f32 = {:?};\nconst FALL_STRAND_EDGE: f32 = {STRAND_EDGE:?};\nfn fall_cloud(point: vec3<f32>) -> f32 {{ return {cloud}; }}\n{}\n{stocks}\n{}\n{}",
+            "{library}\n{}\nconst FALL_LOOP: f32 = {:?};\nconst FALL_CONTACT_DROPS: f32 = {}.0;\nconst FALL_TEAR: f32 = {:?};\nconst FALL_STRAND_EDGE: f32 = {STRAND_EDGE:?};\nconst FALL_STRAND_ROLL: f32 = {STRAND_ROLL_START:?};\nfn fall_cloud(point: vec3<f32>) -> f32 {{ return {cloud}; }}\n{}\n{stocks}\n{}\n{}",
             crate::VIEW_RECORDS,
             thrum_sea_model::LOOP_SECONDS,
             SPLASHES_PER_SEGMENT / 2,
@@ -355,6 +356,7 @@ fn mesh(
         .map(|segment| (segment.bottom.distance / spacing).ceil())
         .fold(1.0, f64::max)
         .min(ROWS as f64) as usize;
+    let roll_start = (STRAND_ROLL_START * rows as f32).ceil() / rows as f32;
     for (index, segment) in segments.iter().enumerate() {
         let lip = segment.data.lip.map(DVec2::from_array);
         let centre = (lip[0] + lip[1]) * 0.5;
@@ -482,8 +484,8 @@ fn mesh(
             for fraction in stations() {
                 let bottom = ribbons(strip(fraction), spread);
                 for (a, b) in top.into_iter().zip(bottom) {
-                    if spread > 0.0 && fraction > 0.21 {
-                        stitch_strand(vertices, a, b, spread);
+                    if spread > 0.0 && a[1].across_fraction[3] >= roll_start {
+                        stitch_strand(vertices, a, b, spread, roll_start);
                     } else {
                         stitch(vertices, a, b);
                     }
@@ -561,9 +563,15 @@ fn ribbons(section: [Vertex; 3], spread: f32) -> [[Vertex; 3]; RIBBONS_PER_SEGME
     })
 }
 
-fn stitch_strand(vertices: &mut Vec<Vertex>, top: [Vertex; 3], bottom: [Vertex; 3], spread: f32) {
-    let top = strand_section(top, spread);
-    let bottom = strand_section(bottom, spread);
+fn stitch_strand(
+    vertices: &mut Vec<Vertex>,
+    top: [Vertex; 3],
+    bottom: [Vertex; 3],
+    spread: f32,
+    roll_start: f32,
+) {
+    let top = strand_section(top, spread, roll_start);
+    let bottom = strand_section(bottom, spread, roll_start);
     for (side, &first) in top.iter().enumerate() {
         let next = (side + 1) % STRAND_SIDES;
         vertices.extend([
@@ -578,7 +586,11 @@ fn stitch_strand(vertices: &mut Vec<Vertex>, top: [Vertex; 3], bottom: [Vertex; 
 }
 
 #[expect(clippy::cast_precision_loss, reason = "the strand has eight sides")]
-fn strand_section([left, centre, right]: [Vertex; 3], spread: f32) -> [Vertex; STRAND_SIDES] {
+fn strand_section(
+    [left, centre, right]: [Vertex; 3],
+    spread: f32,
+    roll_start: f32,
+) -> [Vertex; STRAND_SIDES] {
     let [ax, _, az, fraction] = centre.across_fraction;
     let axis = Vec3::new(ax, 0.0, az);
     let velocity = Vec3::from_slice(&centre.velocity_along);
@@ -586,7 +598,7 @@ fn strand_section([left, centre, right]: [Vertex; 3], spread: f32) -> [Vertex; S
     let outward = normal * normal.dot(Vec3::new(velocity.x, 0.12, velocity.z)).signum();
     let width =
         0.5 * Vec3::from_slice(&left.world_time).distance(Vec3::from_slice(&right.world_time));
-    let roll = (4.0 * (fraction - 0.21)).clamp(0.0, 1.0) * spread;
+    let roll = (4.0 * (fraction - roll_start)).clamp(0.0, 1.0) * spread;
     let interpolate = |a, b, t| Vec4::from_array(a).lerp(Vec4::from_array(b), t).to_array();
     std::array::from_fn(|i| {
         // Follow the actual flow orientation so the shell winds outwards at either bank.

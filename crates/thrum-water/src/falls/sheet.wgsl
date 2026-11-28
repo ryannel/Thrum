@@ -215,7 +215,7 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let sheet_normal = mix(normal, geometric,
         select(0.38 * smoothstep(0.34, 0.76, fraction), 1.0, is_filament));
     // At the root the strand's section is still flat and shares the tongue's normal.
-    let rounding_in = select(0.0, smoothstep(0.28, 0.65, fraction), input.closed_strand != 0u);
+    let rounding_in = select(0.0, smoothstep(FALL_STRAND_ROLL, 0.77, fraction), input.closed_strand != 0u);
     let contour = normalize(mix(sheet_normal, input.strand_normal, rounding_in));
     var face = select(-contour, contour, dot(contour, look) >= 0.0);
     let breakout = input.discharge.y;
@@ -289,6 +289,8 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let churn = foam * translucence * (0.60 + 0.72 * smoothstep(-0.44, 0.32, grain));
     let glint = pow(max(dot(reflect(-light, face), look), 0.0), 160.0) * 0.055 * direct;
     let glass = mirror * (0.18 + 0.82 * fresnel) + glint * below_tongue;
+    let trickle_tongue = select(0.0, 0.32 * (1.0 - below_tongue), is_filament);
+    let clear_light = mix(glass, diffuse * 0.22, trickle_tongue);
     let uv = input.clip.xy * view_aux.viewport_inv_viewport.zw;
     let aerial = environment_aerial(point, uv);
     let mixing = select(smoothstep(0.72, 0.99, input.across_fraction.w),
@@ -297,14 +299,14 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
         * vec3(0.84, 0.90, 0.89) / 3.14159265;
     let parcel_light = mix(0.16, 1.38, pulse);
     let broken_light = mix(churn, aerated * parcel_light, breakup * below_tongue);
-    let sheet_colour = mix(glass, broken_light, white);
+    let sheet_colour = mix(clear_light, broken_light, white);
     let spray_light = mix(sheet_colour, aerated,
         mixing * (1.0 - thinness) * mix(0.32 + 0.58 * contact_foam + 0.10 * fine, 0.93, breakup));
     let colour = (spray_light * aerial.transmission + aerial.scatter) * environment_storage_scale();
     let streak_cover = mix(1.0, mix(0.48, 1.0, pulse),
         breakup * smoothstep(0.20, 0.72, input.across_fraction.w));
     let glass_alpha = min(mix(0.46, 0.88, below_tongue), fresnel + 0.07 + 1.7 * input.discharge.w + 0.35 * breakout);
-    let trickle_film = select(1.0, mix(0.14, 1.0, smoothstep(0.0, 0.19, fraction)), is_filament);
+    let trickle_film = select(1.0, mix(0.60, 1.0, smoothstep(-0.09, 0.19, fraction)), is_filament);
     let opacity = (clear * glass_alpha + white * (0.90 + 0.18 * grain))
         * presence * mix(0.62, 1.0, seam) * contact_cover * streak_cover * trickle_film;
     let path_distance = select(input.across_fraction.y, -input.across_fraction.y - 2.0, is_filament);
