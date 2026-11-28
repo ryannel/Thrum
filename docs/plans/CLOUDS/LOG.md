@@ -1418,3 +1418,14 @@ The replacement command and validator exercised the same comparison with a fresh
   case turns the reviewed reader away by 0.036 or more over its whole stated range. One clause of the
   design was added: the column bound in a band between two levels of the volume. No item changed.
   [The check and its figures](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-28-5/README.md)
+
+## WP23 bounded puff revision
+
+Part XXIII's radius and reach bounds keep each thermal a stack. Grouped
+thermals and staggered root heights give the rounded base and billowed crown.
+The cell strength scales the heaped profile before the shared density curve.
+The column integrates the same uneroded curve over the clipped sphere chords.
+
+The Mac passed all ten numerical behaviours and the unchanged turret tests.
+The paired noon stills passed two locations and a six-age life strip in the
+builder's inspection and a fresh visual read. [Tests, captures and inspection](../../../.orchestrate/evidence/CLOUDS/WP23/revised/README.md)
