@@ -206,7 +206,7 @@
         {
           "verdict": "fail",
           "commit": "66edf302b2acb3a51721071c50090cc03c6cc02f",
-          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review-3.md",
           "items": {
             "WP1.1": "fail",
             "WP1.2": "fail",
@@ -264,6 +264,57 @@
             "turns": 1
           },
           "at": "2026-11-28T03:17:35Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "582ff17be1e7a0370687cf291ee2254da5991727",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md",
+          "items": {
+            "WP1.1": "pass",
+            "WP1.2": "fail",
+            "WP1.3": "fail",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "fail",
+            "WP1.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "A clock saved on phase entry loses the phase deadline",
+              "item": "WP1.2",
+              "different": "The 60 Hz elapsed-time rounding is fixed. The entry callback captures the clock before a two-second deadline has even been installed.",
+              "repeat": false
+            },
+            {
+              "name": "A harness-only rule draws different numbers in debug and release",
+              "item": "WP1.3",
+              "different": "The two-function collision and the scheduled-to-manual mismatch are fixed. One directly named harness-only function derives its stream from a build-dependent Rust type ID.",
+              "repeat": false
+            },
+            {
+              "name": "A warmed parallel query allocates while submitting work to the executor",
+              "item": "WP1.6",
+              "different": "Manual rule registration no longer changes state after a rewind. This is a recurring executor queue allocation during par_each with a fixed population and no events.",
+              "repeat": false
+            }
+          ],
+          "summary": "WP1 fails three of seven items. Restoring a clock saved in a phase\u2019s entry callback can leave a game stuck in that phase, and a named rule called through the harness can change the world differently in debug and release. The worked examples passed, but a warmed parallel query still allocated during measured ticks.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 150823,
+            "cached": 4547968,
+            "output": 15824,
+            "turns": 1
+          },
+          "at": "2026-11-28T03:38:09Z"
         }
       ],
       "authorised": {

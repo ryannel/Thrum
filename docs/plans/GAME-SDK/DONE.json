@@ -4,7 +4,7 @@
     {
       "id": "WP1",
       "name": "An agent writes a game's scenes, phases and rules in plain Rust against one crate, in the order they run, and proves them in an ordinary test with no window",
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "Game code that reads as plainly as Bevy's `breakout` example with less ceremony: a scene function reads top to bottom as one tick, and no line names engine plumbing. Compiler and startup messages as useful as Rust's own, each naming the object, the cause and the next step. Correctness held as `SIM-2D` holds it: one trace, one digest. The reference for how game code reads is the design's worked examples, which the owner approves.",
       "items": [
         {
@@ -19,8 +19,8 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
         {
           "id": "WP1.2",
@@ -34,8 +34,8 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "",
-          "review": ""
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
         {
           "id": "WP1.3",
@@ -49,8 +49,8 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "",
-          "review": ""
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
         {
           "id": "WP1.4",
@@ -64,8 +64,8 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
         {
           "id": "WP1.5",
@@ -81,8 +81,8 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
         {
           "id": "WP1.6",
@@ -91,8 +91,8 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "",
-          "review": ""
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
         {
           "id": "WP1.7",
@@ -101,12 +101,32 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         }
       ],
-      "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      "failed_reviews": 1,
+      "failed_reviews_with_repeat": 1,
+      "findings": [
+        {
+          "name": "A clock saved on phase entry loses the phase deadline",
+          "item": "WP1.2",
+          "different": "The 60 Hz elapsed-time rounding is fixed. The entry callback captures the clock before a two-second deadline has even been installed.",
+          "repeat": false
+        },
+        {
+          "name": "A harness-only rule draws different numbers in debug and release",
+          "item": "WP1.3",
+          "different": "The two-function collision and the scheduled-to-manual mismatch are fixed. One directly named harness-only function derives its stream from a build-dependent Rust type ID.",
+          "repeat": false
+        },
+        {
+          "name": "A warmed parallel query allocates while submitting work to the executor",
+          "item": "WP1.6",
+          "different": "Manual rule registration no longer changes state after a rewind. This is a recurring executor queue allocation during par_each with a fixed population and no events.",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "WP11",
