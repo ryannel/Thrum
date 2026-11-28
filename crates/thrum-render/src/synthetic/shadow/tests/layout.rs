@@ -388,7 +388,7 @@ fn sun_cascade_layout_membership_uses_smallest_axis_instead_of_bounds() {
             assert!(width < fit.caster_view(layer, MAPS).minimum_cast_width[0]);
         }
         let accepted = layer_at(0.125);
-        assert!(width >= fit.caster_view(accepted).minimum_cast_width[0]);
+        assert!(width >= fit.caster_view(accepted, MAPS).minimum_cast_width[0]);
     }
 }
 

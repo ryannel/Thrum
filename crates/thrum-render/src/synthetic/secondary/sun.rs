@@ -223,7 +223,7 @@ impl Sun {
         opaque.extend([
             Access::new(
                 maps.clone(),
-                0..shadow::SECONDARY_LAYERS as u64,
+                0..u64::from(shadow::SECONDARY_LAYERS),
                 AccessKind::SampledRead,
             ),
             Access::new(
