@@ -108,8 +108,8 @@ fn splash_vertex(world_time: vec4<f32>, velocity_along: vec4<f32>, discharge: ve
 fn falling_packet_vertex(origin: vec4<f32>, linear: vec4<f32>, curve: vec4<f32>,
     corners: vec4<f32>, cover: f32) -> SheetVertex {
     let seed = linear.w * 29.31;
-    let loop_cells = floor(FALL_LOOP / max(0.98, origin.w * 1.65));
-    let period = FALL_LOOP / max(1.0, loop_cells);
+    let loop_cells = max(1.0, floor(FALL_LOOP / max(0.98, origin.w * 1.65)));
+    let period = FALL_LOOP / loop_cells;
     let clock = sheet_clock.x / period + corners.w + noise_hash(vec2(seed, 27.0));
     let cell = floor(clock);
     let slot = cell - floor(cell / loop_cells) * loop_cells;
@@ -124,9 +124,9 @@ fn falling_packet_vertex(origin: vec4<f32>, linear: vec4<f32>, curve: vec4<f32>,
     let along = normalize(velocity + vec3(1e-6, 0.0, 0.0));
     let look = normalize(view.camera_xyz_time.xyz - centre);
     let side = normalize(cross(along, look) + vec3(1e-6, 0.0, 0.0));
-    let width = curve.w * mix(0.53, 1.27, random);
-    let length = length(velocity) * mix(0.033, 0.081, noise_hash(event + vec2(17.0, 0.0)));
-    let point = centre + side * (corners.x * width) + along * (corners.z * length);
+    let width = curve.w * mix(0.37, 0.89, random);
+    let streak_length = length(velocity) * mix(0.058, 0.109, noise_hash(event + vec2(17.0, 0.0)));
+    let point = centre + side * (corners.x * width) + along * (corners.z * streak_length);
     let life = smoothstep(0.0, 0.15, path_time) * (1.0 - smoothstep(0.73, 1.0, path_time));
     let world = vec4(point, path_time);
     return SheetVertex(view.view_proj * vec4(point, 1.0), world, vec4(velocity, seed),
@@ -261,14 +261,18 @@ fn tongue_shade(input: SheetVertex, look: vec3<f32>) -> FallOutput {
 }
 
 fn falling_packet_shade(input: SheetVertex, solid: bool) -> FallOutput {
+    if !solid { discard; }
     let corner = input.across_fraction.xz;
-    let profile = 1.0 - smoothstep(0.22, 1.0, dot(corner, corner));
-    let alpha = input.discharge.x * profile * mix(0.64, 0.94, input.discharge.y);
-    if alpha < 0.018 || (alpha > 0.42) != solid { discard; }
+    let body = vec2(corner.x + 0.23 * corner.y * (input.discharge.y - 0.5), corner.y);
+    let radius = dot(body, body);
+    let profile = exp(-3.2 * radius) * (1.0 - smoothstep(0.52, 1.0, radius));
+    let grain = 0.63 + 0.37 * sheet_noise(corner, 2.0, vec2(3.0, 2.4), vec2(input.discharge.y * 19.0, 0.0));
+    let alpha = input.discharge.x * profile * grain;
+    if alpha < 0.021 { discard; }
     let point = input.world_time.xyz;
     let up = vec3(0.0, 1.0, 0.0);
     let sunlight = sun_irradiance(point) * fall_cloud(point) * max(0.0, environment_sun_direction().y);
-    let colour = (environment_diffuse(up) + sunlight) * vec3(0.86, 0.92, 0.93) / 3.14159265;
+    let colour = (environment_diffuse(up) + sunlight) * vec3(0.57, 0.66, 0.69) / 3.14159265;
     let air = environment_aerial(point, input.clip.xy * view_aux.viewport_inv_viewport.zw);
     let now = view.unjittered_view_proj * vec4(point, 1.0);
     let previous = view.previous_view_proj * vec4(point - input.strand_motion, 1.0);
@@ -343,7 +347,7 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let wet_pockets = max(packet, air_breaks * (0.42 + 0.58 * chord));
     let middle_cover = mix(1.0, 0.075 + 0.925 * wet_pockets, dispersed * mixed_air);
     let filament_cover = mix(0.09, 1.0, smoothstep(0.05, 0.59, packet + 0.13 * pulse));
-    let leaving_sheet = 1.0 - 0.96 * smoothstep(0.25, 0.61, fraction)
+    let leaving_sheet = 1.0 - 0.82 * smoothstep(0.25, 0.61, fraction)
         * smoothstep(0.0, 0.55, input.strand_strength);
     let passing_cover = middle_cover * leaving_sheet * select(1.0, 0.12 * filament_cover, is_filament);
     let filament_white = smoothstep(0.06, 0.48, input.across_fraction.w)
