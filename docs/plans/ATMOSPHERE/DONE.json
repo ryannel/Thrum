@@ -838,7 +838,7 @@
           "ask": "For each of the nine behaviours, name the test that guards it at the claimed commit, and say whether it runs the production fit, cull or shader and whether it would fail if the behaviour broke. From `git diff` between the starting commit and the claimed one, is every deleted or shortened test either one of the three removed mechanisms' or replaced by a named successor? Are the horizon and anchor tests unchanged? Is the half-disc test described where it stands as a check of the offline reference, and does any test, comment or record cite it for a rendered shadow or hold the shader to its fraction?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP13/rule7-dependent-checks.log",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP13/rule7-correctness.md",
           "verdict": "",
           "review": ""
         },
@@ -888,7 +888,7 @@
           "ask": "Is the record in `.orchestrate/evidence/ATMOSPHERE/WP13/cost.md` paired on the two commits in one session, order alternated, capture off, with the host's load, for the two Mac rows and Chrome? Is the Apple row taken at full screen at the 67% output scale, with the resolved output extent and the governor's render scale and drawn extent through each take? Does every row time the Sun's caster cull and count it in the Sun's sum, with each Sun pass's draws and triangles beside the times? Where a figure is more than about a quarter over its time before, is the investigation there with the levers tried and what each bought? Does the record end with the hand-off to WP17, stating one of the three cases from the spans it gives, and where the sitting predates the change and the span rose, does the builder's handoff ask the lead for the sitting again? Does the record claim no budget?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP13/cost.md",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP13/rule7-cost/README.md",
           "verdict": "",
           "review": ""
         },

@@ -1152,3 +1152,7 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   placed the required cactus in another prop’s shade.
   [Motion and recut](../../../.orchestrate/evidence/ATMOSPHERE/WP13/rule7-motion/README.md) ·
   [Crossings](../../../.orchestrate/evidence/ATMOSPHERE/WP13/rule7-c1-witness/crossings.json)
+- Rule 7’s capture-off exit measurements show higher median Sun work on the Mac and Chrome. The Apple
+  row at 67% output shows a higher median frame span and fewer served refresh intervals in both pairs.
+  Lead, take the APPLE-PRESENTATION WP17 closing sitting again on the merged frame.
+  [Paired timings, draw counts and refresh receipts](../../../.orchestrate/evidence/ATMOSPHERE/WP13/rule7-cost/README.md)
