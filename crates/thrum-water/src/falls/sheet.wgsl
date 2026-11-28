@@ -247,13 +247,7 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let ruptures = 1.0 - 0.62 * smoothstep(0.55, 1.0, input.discharge.z);
     let breaks_apart = ruptures * smoothstep(0.45, 0.92, input.across_fraction.w);
     let feather = 1.0 - breaks_apart * smoothstep(0.50 + 0.19 * fine, 1.0, input.edge);
-    // At the edge of a rounded strand, the ray crosses very little water.
-    // Use the actual surface angle so folds fade even where their projected
-    // silhouette cuts across the side of a strand.
-    let incidence = abs(dot(geometry_normal, look));
-    let feather_silhouette = mix(1.0, smoothstep(0.02, 0.48, incidence),
-        select(0.0, smoothstep(0.18, 0.40, fraction), input.closed_strand != 0u));
-    let presence = select(sheet_presence * feather * feather_silhouette, strand_presence, is_filament);
+    let presence = select(sheet_presence * feather, strand_presence, is_filament);
     let spread = mix(0.63 * coarse + 0.37 * grouped, 0.5, smoothstep(0.9, 3.0, pixel));
     let contact = 0.85 + 0.055 * spread;
     let path_foot = 1.0 - smoothstep(contact, 0.98 + 0.02 * spread, input.across_fraction.w);
