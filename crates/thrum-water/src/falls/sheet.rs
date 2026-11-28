@@ -18,7 +18,7 @@ const SPLASHES_PER_SEGMENT: usize = 24;
 const RIBBONS_PER_SEGMENT: usize = 6;
 const VERTICES_PER_SEGMENT: usize =
     12 * RIBBONS_PER_SEGMENT * (ROWS + 3) + 6 * SPLASHES_PER_SEGMENT;
-const ATTRIBUTES: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4, 4 => Float32x3];
+const ATTRIBUTES: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4, 4 => Float32x4];
 
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
@@ -27,7 +27,7 @@ struct Vertex {
     velocity_along: [f32; 4],
     discharge: [f32; 4],
     across_fraction: [f32; 4],
-    edge_receiver: [f32; 3],
+    edge_receiver: [f32; 4],
 }
 
 #[repr(C)]
@@ -140,10 +140,11 @@ impl Sheet {
                 + "fn fall_foam(point: vec2<f32>) -> vec2<f32> { return foam_at(point, vec4(0.0)).stocks.xy; }",
         );
         let source = format!(
-            "{library}\n{}\nconst FALL_LOOP: f32 = {:?};\nconst FALL_CONTACT_DROPS: f32 = {}.0;\nfn fall_cloud(point: vec3<f32>) -> f32 {{ return {cloud}; }}\n{}\n{stocks}\n{}\n{}",
+            "{library}\n{}\nconst FALL_LOOP: f32 = {:?};\nconst FALL_CONTACT_DROPS: f32 = {}.0;\nconst FALL_TEAR: f32 = {:?};\nfn fall_cloud(point: vec3<f32>) -> f32 {{ return {cloud}; }}\n{}\n{stocks}\n{}\n{}",
             crate::VIEW_RECORDS,
             thrum_sea_model::LOOP_SECONDS,
             SPLASHES_PER_SEGMENT / 2,
+            falls.profile.sheet.tear,
             Interaction::sample_source(3, 1, 2, interaction.is_some()),
             include_str!("../foam/noise.wgsl"),
             concat!(include_str!("pattern.wgsl"), include_str!("sheet.wgsl"))
@@ -459,7 +460,7 @@ fn mesh(
                     across.y as f32,
                     fraction as f32,
                 ],
-                edge_receiver: [f32::from(edge), level as f32, contact],
+                edge_receiver: [f32::from(edge), level as f32, contact, 0.0],
             }
         };
         let strip = |t| [at(t, 0), at(t, 1), at(t, 2)];
@@ -501,7 +502,7 @@ fn ribbons(section: [Vertex; 3]) -> [[Vertex; 3]; RIBBONS_PER_SEGMENT] {
             velocity_along: interpolate(a.velocity_along, b.velocity_along),
             discharge: interpolate(a.discharge, b.discharge),
             across_fraction: interpolate(a.across_fraction, b.across_fraction),
-            edge_receiver: [0.0, a.edge_receiver[1], a.edge_receiver[2]],
+            edge_receiver: [0.0, a.edge_receiver[1], a.edge_receiver[2], 0.0],
         }
     };
     std::array::from_fn(|index| {
@@ -531,6 +532,7 @@ fn ribbons(section: [Vertex; 3]) -> [[Vertex; 3]; RIBBONS_PER_SEGMENT] {
                 Vec3::from_slice(&vertex.world_time) + outward * depth * (1.0 - 0.42 * edge.abs());
             vertex.world_time = position.extend(vertex.world_time[3]).to_array();
             vertex.edge_receiver[0] = edge.abs();
+            vertex.edge_receiver[3] = along;
             vertex
         })
     })
