@@ -304,13 +304,7 @@ fn compare_presentation(recipe: &str, format: wgpu::TextureFormat, baseline: &st
         return;
     };
     let (commit, expected) = baseline.split_once('\n').expect("baseline revision");
-    // The EDR-only graph dropped the unconsumed SDR encode in APPLE-PRESENTATION WP11.
-    let revision = if format == wgpu::TextureFormat::Rgba16Float {
-        "d5acaa456002d9aa9979fbe86ae7bb5bcc45e57b"
-    } else {
-        "91d2cf2880314e6446721cb9f396d4deb3203ee9"
-    };
-    assert_eq!(commit, revision);
+    assert_eq!(commit, "1cc1565ad");
     let actual = snapshot(&gpu, &[recipe], format, false);
     for (line, (before, after)) in expected.lines().zip(actual.lines()).enumerate() {
         assert_eq!(

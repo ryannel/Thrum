@@ -1031,10 +1031,10 @@ fn place_box(instance: &mut InstanceRecord, center: [f32; 3], scale: [f32; 3]) {
 
 #[test]
 #[cfg(target_os = "macos")]
-fn two_sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters() {
+fn sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters() {
     pollster::block_on(async {
         let Some(thrum_test_support::Opened { device, queue, .. }) = thrum_test_support::open(
-            "two_sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters",
+            "sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters",
             Some(wgpu::Backend::Metal),
             thrum_test_support::Profile::Portable,
             &thrum_test_support::Restriction {
@@ -1080,12 +1080,28 @@ fn two_sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters() {
             let target = OffscreenTarget::new(&device, &shadowed, 129, 129).expect("shadow target");
             let graph = shadowed
                 .graph(&target, true)
-                .expect("seven passes plus readback");
-            // Near, far and horizon height maps all feed forward (pass 4).
-            assert!(graph.dependencies.contains(&(0, 4)));
-            assert!(graph.dependencies.contains(&(1, 4)));
-            assert!(graph.dependencies.contains(&(2, 4)));
-            assert!(graph.dependencies.contains(&(3, 4)));
+                .expect("Sun shadow graph with readback");
+            let passes = graph.pass_names().collect::<Vec<_>>();
+            let forward = passes
+                .iter()
+                .position(|name| *name == "synthetic forward opaque")
+                .expect("forward opaque pass");
+            let mut shadow_passes = 0;
+            for (index, name) in passes.iter().enumerate() {
+                if name.starts_with("synthetic Sun shadow ")
+                    || name.starts_with("synthetic Sun cascade ")
+                    || *name == "synthetic Sun horizon heights"
+                {
+                    assert!(
+                        graph
+                            .dependencies
+                            .contains(&(graph.pass_order[index], graph.pass_order[forward])),
+                        "{name}"
+                    );
+                    shadow_passes += 1;
+                }
+            }
+            assert_eq!(shadow_passes, 10);
             let shaded = render_pixels(&device, &queue, &shadowed, &target);
             if let Some(dir) = std::env::var_os("THRUM_SHADOW_CAPTURE_DIR") {
                 let name = if sample_x == 84 { "near" } else { "far" };
@@ -1180,16 +1196,10 @@ fn two_sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters() {
                 .graph(&off_target, false)
                 .expect("off-state graph")
                 .dependencies,
-            [
-                (0, 4),
-                (1, 4),
-                (2, 4),
-                (3, 4),
-                (3, 6),
-                (3, 7),
-                (4, 5),
-                (4, 7)
-            ],
+            (0..11)
+                .map(|pass| (pass, 11))
+                .chain([(10, 13), (10, 14), (11, 12), (11, 14)])
+                .collect::<Vec<_>>(),
             "configured shadow and horizon maps remain ready for a live Sun activation"
         );
     });
