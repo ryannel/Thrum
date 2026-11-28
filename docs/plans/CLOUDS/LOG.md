@@ -1410,3 +1410,11 @@ The replacement command and validator exercised the same comparison with a fresh
   own key ticks, and a reader filters within its own part alone, so a neighbour's write no longer shows
   early beside a face. WP24.1 and WP24.6 written again. No interface with another module changed.
   [What changed, the cost, the new assumption and the calculation](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-28-4/README.md)
+- 2026-11-28 Planner, started again on the same review after that revision had merged, with no reviewer to
+  follow. The apron rule was checked against the finding from stored keys, apart from the revision's own
+  calculation, and holds: the review's sample reads 0.679 and 0.383 under the reviewed reader and the full
+  core at ticks 59, 60 and 61 under the design's; no write moves any sample on its own tick; and the
+  density at every sample is the blend the effect's reported key ticks and weight give. WP24.6's seventh
+  case turns the reviewed reader away by 0.036 or more over its whole stated range. One clause of the
+  design was added: the column bound in a band between two levels of the volume. No item changed.
+  [The check and its figures](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-28-5/README.md)

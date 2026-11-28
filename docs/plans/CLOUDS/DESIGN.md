@@ -1091,7 +1091,9 @@ in the air frame, so wind costs nothing.
     part, which are one up the column because a part is whole columns. It holds because the reader blends
     densities, each key's from one state at every height, and the greater of the deck's density and a
     blend of two is no more than the same blend of the two greaters;
-  - in the band, the band's blend of those two, because its weight is one number up the column.
+  - in the band, the band's blend of those two, because its weight is one number up the column;
+  - in a band between two levels of the volume, the band's blend of the two levels' bounds, each with
+    its own part's `A`, `B` and `w`, for the same reason.
 - **Through a preset change.** While the weather stands still `M`, `A` and `B` give one column, and the
   bound is the query's at the committed tick. While a preset ramps they differ, and the picture follows
   the query: the deck, the shapes and the far heaps within the map's age, and the near heaps within two
