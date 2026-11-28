@@ -617,3 +617,21 @@
   lint. `TestSetup::seed` provides the seeded harness path in R6 for the WP1 replay check.
 - The evidence is under [WP1](../../../.orchestrate/evidence/GAME-SDK/WP1/). The allocation probe covers two
   small warmed CPU fixtures. Crowd-scale cost and cross-target rule parity are scheduled for WP2.
+
+### WP1 review fixes
+
+- Manual rules now refuse their edits on error and keep retained ticks after a read. Landing
+  requests wait for the next scheduled tick. A phase clock captured at the deadline keeps its due
+  expiry, and registered callbacks reject mutable captures. Named rules and conditions have independent
+  random streams.
+- Queries lend values from the registered columns. Scoped column access relies on projection
+  disjointness and keeps first-write preimages even when a rule unwinds. The runtime admits the
+  complete resource aggregate and reuses scene payload and resource storage. The Mac probes measured
+  zero allocations during warmed component updates, entity replacement and alternating scene entries.
+- The guards now match each compiler message to its source declaration and follow callable types
+  returned from private modules. Public harness and scene methods have examples of their own calls.
+  Components derive `Copy`, and fixed arrays and tuples round-trip through the portable data encoding.
+- The headless Swarm fixture seeds enemies and a hero with tuples, uses two waves and checks the winning
+  result after the last wave with its existing wave number. Rockfall constructs the original half-width
+  from integers. The fixtures use `*entity` for the reference's entity-valued `Single`.
+  [Mac evidence](../../../.orchestrate/evidence/GAME-SDK/WP1/)
