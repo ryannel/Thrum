@@ -1046,7 +1046,75 @@
     },
     "WP6": {
       "definitions": "e6869cfb95457c51542558332bd69b740993db4b77ea219a0688b8c202ff2409",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "7174664491797b83b94b8b00945ab7dfe091bec8",
+          "review": ".orchestrate/evidence/RIVERS/WP6-review.md",
+          "items": {
+            "WP6.1": "fail",
+            "WP6.2": "fail",
+            "WP6.3": "pass",
+            "WP6.4": "fail",
+            "WP6.5": "fail",
+            "WP6.6": "pass",
+            "WP6.7": "pass",
+            "WP6.8": "pass",
+            "WP6.10": "pass",
+            "WP6.11": "pass",
+            "WP6.12": "pass"
+          },
+          "findings": [
+            {
+              "name": "Translucent waterfall streaks leave the background motion unchanged",
+              "item": "WP6.2",
+              "repeat": false
+            },
+            {
+              "name": "Sheet above one-half presence can leave the rock\u2019s depth",
+              "item": "WP6.2",
+              "repeat": false
+            },
+            {
+              "name": "The clear crest reads as a flat strip at the lowest running gauge",
+              "item": "WP6.4",
+              "repeat": false
+            },
+            {
+              "name": "The falling water separates into isolated marks below the crest",
+              "item": "WP6.4",
+              "repeat": false
+            },
+            {
+              "name": "The on-screen fall is missing from the calmer pool reflection",
+              "item": "WP6.5",
+              "repeat": false
+            },
+            {
+              "name": "A uniform river with falls disabled gains a shader variant and 6 MiB of storage",
+              "item": "WP6.1",
+              "repeat": false
+            }
+          ],
+          "summary": "WP6 fails four of its eleven items. The translucent waterfall changes the visible image without writing its movement, and parts of the sheet above one-half presence leave the rock\u2019s depth in the frame. At the two running gauges judged here the crest reads as a flat band above detached streaks, the fall is missing from the calmer pool reflection, and a river with falls disabled acquires shader and storage costs.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 332112,
+            "cached": 16906624,
+            "output": 44776,
+            "turns": 1
+          },
+          "at": "2026-11-28T06:27:28Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of RIVERS at .orchestrate/evidence/RIVERS/design-review.md asked for changes, with its 4 Must Fix find",
