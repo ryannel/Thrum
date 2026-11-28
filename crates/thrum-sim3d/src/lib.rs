@@ -2,6 +2,7 @@
 
 mod hull;
 mod pair;
+mod predicates;
 mod ray;
 mod shape;
 mod sweep;

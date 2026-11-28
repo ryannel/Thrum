@@ -3,14 +3,13 @@ use thrum_core::profile::Number;
 use crate::{
     QueryError, Shape, Vector3, n,
     pair::{Pair, pair},
-    shape::validate_motion_end,
 };
 
 /// Maximum length of either motion or their difference for a half-gap sweep.
 pub const MAX_HALF_GAP_MOTION: i32 = 4_096;
 
 /// The denominator of the contact tolerance, expressed as its exact reciprocal.
-pub const CONTACT_TOLERANCE_DENOMINATOR: i32 = 128;
+pub const CONTACT_TOLERANCE_DENOMINATOR: i32 = 64;
 
 /// Gap to stop within in a collision sweep.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -81,8 +80,8 @@ pub fn sweep_two(
     if !motion.is_finite() || !struck_motion.is_finite() {
         return Err(QueryError::NonFinite);
     }
-    validate_motion_end(mover.translated(motion).validate())?;
-    validate_motion_end(struck.translated(struck_motion).validate())?;
+    mover.validate_motion_end(motion)?;
+    struck.validate_motion_end(struck_motion)?;
     let relative_motion = motion - struck_motion;
     if gap == SweepGap::HalfTolerance
         && [motion, struck_motion, relative_motion]

@@ -239,6 +239,23 @@ pub(crate) fn overlap_cases() -> Vec<PairCase> {
             });
         }
     }
+    for (index, axis) in [v(1, 3, 11), v(1, 1, 3), v(3, -7, 5)]
+        .into_iter()
+        .enumerate()
+    {
+        for (label, center, gap) in [
+            ("inside", STOP, n(0)),
+            ("endpoint", axis * n(4), n(0)),
+            ("beyond", axis * ratio(17, 4), axis.length() / n(4)),
+        ] {
+            cases.push(PairCase {
+                id: format!("collinear-triangle-{index}-{label}"),
+                mover: sphere(center, n(0)),
+                struck: triangle([-axis, axis * n(2), axis * n(4)]),
+                gap,
+            });
+        }
+    }
     cases
 }
 
@@ -283,6 +300,30 @@ pub(crate) fn ray_cases() -> Vec<RayCase> {
             });
         }
     }
+    let through_point = v(1, 1, 7);
+    for (id, shape) in [
+        ("point-sphere-tilted-ray", sphere(STOP, n(0))),
+        (
+            "point-capsule-tilted-ray",
+            Shape::Capsule {
+                ends: [STOP; 2],
+                radius: n(0),
+            },
+        ),
+    ] {
+        cases.push(RayCase {
+            id: id.into(),
+            start: -through_point,
+            motion: through_point * n(2),
+            struck: shape,
+            expected: Some((
+                ratio(1, 2),
+                STOP,
+                -through_point / through_point.length(),
+                n(0),
+            )),
+        });
+    }
     for sign in [-1, 1] {
         let start = x(n(2 * sign));
         cases.push(RayCase {
@@ -293,6 +334,19 @@ pub(crate) fn ray_cases() -> Vec<RayCase> {
             expected: Some((ratio(1, 2), STOP, x(n(sign)), n(0))),
         });
     }
+    let line = v(1, 1, 11);
+    let arm = v(3, -2, 1);
+    let tilted = triangle([-line - arm, line - arm, arm * n(2)]);
+    let degenerate = v(1, 1, 3);
+    let tilted_normal = v(23, 32, -5);
+    let unit_normal = tilted_normal / tilted_normal.length();
+    cases.push(RayCase {
+        id: "triangle-tilted-transverse".into(),
+        start: tilted_normal,
+        motion: tilted_normal * n(-2),
+        struck: tilted,
+        expected: Some((ratio(1, 2), STOP, unit_normal, n(0))),
+    });
     for (id, start, motion, struck) in [
         ("triangle-edge-on", v(0, -8, 0), v(0, 16, 0), face),
         (
@@ -300,6 +354,22 @@ pub(crate) fn ray_cases() -> Vec<RayCase> {
             FORWARD,
             v(-2, 0, 0),
             triangle([v(0, -1, 0), STOP, v(0, 1, 0)]),
+        ),
+        ("triangle-short", v(-4, 0, 0), v(3, 0, 0), face),
+        ("triangle-away", v(-4, 0, 0), v(-3, 0, 0), face),
+        ("triangle-beside", v(-4, 6, 0), v(8, 0, 0), face),
+        ("triangle-tilted-edge-on", -line * n(3), line * n(6), tilted),
+        (
+            "triangle-tilted-parallel",
+            -line * n(3) + FORWARD,
+            line * n(6),
+            tilted,
+        ),
+        (
+            "triangle-tilted-no-area",
+            -FORWARD,
+            FORWARD * n(2),
+            triangle([-degenerate, degenerate * n(2), degenerate * n(4)]),
         ),
         ("triangle-still", STOP, STOP, face),
     ] {
@@ -496,12 +566,12 @@ pub(crate) fn sweep_cases() -> Vec<SweepCase> {
         let radius = ratio(1, 16);
         cases.push(SweepCase {
             id: id.into(),
-            mover: sphere(x(radius - n(1250)), radius),
+            mover: sphere(v(-1249, 0, 0), radius),
             motion: v(1250, 0, 0),
             struck,
             struck_motion: STOP,
             expected: Some(SweepExpected {
-                fraction: (n(1250) - radius * n(2)) / n(1250),
+                fraction: (n(1249) - radius) / n(1250),
                 normal: -FORWARD,
                 point: Some(STOP),
                 precise: true,
@@ -615,6 +685,33 @@ pub(crate) fn depth_cases() -> Vec<DepthCase> {
         normal: None,
         perpendicular_to: vec![FORWARD],
     });
+    for (index, line) in [v(1, 1, 11), v(3, -7, 5)].into_iter().enumerate() {
+        let ids = [
+            ("skew-line-capsules", "skew-line-sphere"),
+            ("reflected-line-capsules", "reflected-line-sphere"),
+        ];
+        for (id, mover, struck) in [
+            (
+                ids[index].0,
+                capsule([line * n(-2), line * n(2)], n(1)),
+                capsule([line * n(-3), line * n(4)], n(1)),
+            ),
+            (
+                ids[index].1,
+                ball,
+                capsule([line * n(-2), line * n(3)], n(1)),
+            ),
+        ] {
+            cases.push(DepthCase {
+                id,
+                mover,
+                struck,
+                depth: n(2),
+                normal: None,
+                perpendicular_to: vec![line / line.length()],
+            });
+        }
+    }
     cases.push(DepthCase {
         id: "coincident-spheres",
         mover: ball,
@@ -748,6 +845,39 @@ pub(crate) fn moving_cases() -> Vec<SweepCase> {
         });
     }
     cases
+}
+
+pub(crate) fn opposing_cases() -> [SweepCase; 2] {
+    let diagonal = v(1, 1, 1);
+    [
+        ("opposing-solids", 32760, 50002, 8),
+        ("opposing-points", DOMAIN_BOUND, 60000, 0),
+    ]
+    .map(|(id, corner, speed, radius)| {
+        let extent = diagonal * n(corner);
+        let motion = diagonal * n(speed);
+        SweepCase {
+            id: id.into(),
+            mover: sphere(-extent, n(radius)),
+            motion,
+            struck: sphere(extent, n(radius)),
+            struck_motion: -motion,
+            expected: Some(SweepExpected {
+                fraction: (n(corner) - n(radius) / diagonal.length()) / n(speed),
+                normal: -diagonal / diagonal.length(),
+                point: Some(STOP),
+                precise: true,
+            }),
+        }
+    })
+}
+
+pub(crate) fn domain_frames() -> [Frame; 8] {
+    let [_, corners @ ..] = frames();
+    corners.map(|frame| Frame {
+        offset: STOP,
+        ..frame
+    })
 }
 
 pub(crate) fn depth_motions(normal: Vector3) -> [Vector3; 4] {

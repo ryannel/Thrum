@@ -98,6 +98,8 @@ fn invalid_inputs_have_typed_errors() {
     let valid = sphere(STOP, Number::ZERO);
     let out = n(DOMAIN_BOUND + 1);
     let infinite = n(1) / n(0);
+    let sub_grid = x(ratio(1, 2048));
+    let bound = n(DOMAIN_BOUND);
     for (shape, fault) in [
         (sphere(x(out), n(0)), QueryError::OutsideDomain),
         (sphere(x(infinite), n(0)), QueryError::NonFinite),
@@ -106,6 +108,10 @@ fn invalid_inputs_have_typed_errors() {
             sphere(x(n(DOMAIN_BOUND)), ratio(1, 4)),
             QueryError::OutsideDomain,
         ),
+        (sphere(sub_grid, bound), QueryError::OutsideDomain),
+        (sphere(-sub_grid, bound), QueryError::OutsideDomain),
+        (capsule([STOP, sub_grid], bound), QueryError::OutsideDomain),
+        (cube(sub_grid, bound), QueryError::OutsideDomain),
         (capsule([STOP, x(out)], n(0)), QueryError::OutsideDomain),
         (capsule([STOP, FORWARD], n(-1)), QueryError::NegativeRadius),
         (cube(STOP, out), QueryError::OutsideDomain),
@@ -144,6 +150,15 @@ fn invalid_inputs_have_typed_errors() {
         Err(QueryError::HalfGapMotionTooLong)
     );
     assert!(sweep(valid, v(4096, 0, 0), valid, SweepGap::HalfTolerance).is_ok());
+    let face = x(bound);
+    assert_eq!(
+        ray(face, sub_grid, valid),
+        Err(QueryError::MotionOutsideDomain)
+    );
+    assert_eq!(
+        sweep(sphere(-face, n(0)), -sub_grid, valid, SweepGap::Tolerance),
+        Err(QueryError::MotionOutsideDomain)
+    );
     let triangle = Shape::Triangle {
         corners: [STOP, FORWARD, v(0, 1, 0)],
     };

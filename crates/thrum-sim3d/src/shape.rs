@@ -2,7 +2,7 @@ use std::fmt;
 
 use thrum_core::profile::{Number, StateEncode};
 
-use crate::{Vector3, n};
+use crate::{Vector3, n, predicates::sum};
 
 /// Inclusive bound of the query domain on each axis, in world units.
 pub const DOMAIN_BOUND: i32 = 32_768;
@@ -120,36 +120,58 @@ impl Shape {
             return Err(QueryError::NegativeRadius);
         }
 
-        let extent = match self {
-            Self::Sphere { center, .. } => return validate_extent(center, splat(radius)),
-            Self::Capsule { ends, .. } => {
-                for end in ends {
-                    validate_extent(end, splat(radius))?;
-                }
-                return Ok(());
+        if let Self::Cuboid { half_edges, .. } = self {
+            for edge in half_edges {
+                validate_point(edge)?;
             }
-            Self::Triangle { corners } => return corners.into_iter().try_for_each(validate_point),
-            Self::Cuboid { center, half_edges } => {
-                validate_point(center)?;
-                for edge in half_edges {
-                    validate_point(edge)?;
-                }
-                let directions = half_edges.map(Vector3::unit);
-                for (index, first) in directions.iter().enumerate() {
-                    for second in directions.iter().skip(index + 1) {
-                        if let (Some(first), Some(second)) = (first, second)
-                            && first.dot(*second).abs() > Number::ONE / n(1 << 20)
-                        {
-                            return Err(QueryError::SkewedCuboid);
-                        }
+            let directions = half_edges.map(Vector3::unit);
+            for (index, first) in directions.iter().enumerate() {
+                for second in directions.iter().skip(index + 1) {
+                    if let (Some(first), Some(second)) = (first, second)
+                        && first.dot(*second).abs() > Number::ONE / n(1 << 20)
+                    {
+                        return Err(QueryError::SkewedCuboid);
                     }
                 }
-                half_edges.into_iter().fold(Vector3::ZERO, |sum, edge| {
-                    sum + Vector3::new(edge.x.abs(), edge.y.abs(), edge.z.abs())
-                })
             }
-        };
-        validate_extent(self.reference(), extent)
+        }
+        self.validate_bounds(Vector3::ZERO)
+    }
+
+    /// Also test the exact endpoint so rounding the translation onto a domain
+    /// face cannot hide a coordinate outside it.
+    pub(crate) fn validate_motion_end(self, motion: Vector3) -> Result<(), QueryError> {
+        if motion == Vector3::ZERO {
+            return Ok(());
+        }
+        if motion.max_component() > n(2 * DOMAIN_BOUND) {
+            return Err(QueryError::MotionOutsideDomain);
+        }
+        self.validate_bounds(motion)
+            .and_then(|()| self.translated(motion).validate_bounds(Vector3::ZERO))
+            .map_err(|_| QueryError::MotionOutsideDomain)
+    }
+
+    fn validate_bounds(self, motion: Vector3) -> Result<(), QueryError> {
+        let check = |point, extents| validate_extent(point, motion, extents);
+        match self {
+            Self::Sphere { center, radius } => {
+                check(center, [splat(radius), Vector3::ZERO, Vector3::ZERO])
+            }
+            Self::Capsule { ends, radius } => {
+                for end in ends {
+                    check(end, [splat(radius), Vector3::ZERO, Vector3::ZERO])?;
+                }
+                Ok(())
+            }
+            Self::Triangle { corners } => {
+                for corner in corners {
+                    check(corner, [Vector3::ZERO; 3])?;
+                }
+                Ok(())
+            }
+            Self::Cuboid { center, half_edges } => check(center, half_edges),
+        }
     }
 }
 
@@ -157,14 +179,37 @@ fn splat(value: Number) -> Vector3 {
     Vector3::new(value, value, value)
 }
 
-fn validate_extent(center: Vector3, extent: Vector3) -> Result<(), QueryError> {
+fn validate_extent(
+    center: Vector3,
+    motion: Vector3,
+    extents: [Vector3; 3],
+) -> Result<(), QueryError> {
     validate_point(center)?;
+    let [a, b, c] = extents;
     let bound = n(DOMAIN_BOUND);
-    if extent.x > bound - center.x.abs()
-        || extent.y > bound - center.y.abs()
-        || extent.z > bound - center.z.abs()
-    {
-        return Err(QueryError::OutsideDomain);
+    for (coordinate, displacement, edges) in [
+        (center.x, motion.x, [a.x, b.x, c.x]),
+        (center.y, motion.y, [a.y, b.y, c.y]),
+        (center.z, motion.z, [a.z, b.z, c.z]),
+    ] {
+        let [a, b, c] = edges.map(Number::abs);
+        if [a, b, c].into_iter().any(|extent| extent > bound) {
+            return Err(QueryError::OutsideDomain);
+        }
+        for sign in [Number::ONE, -Number::ONE] {
+            let at = sign * coordinate;
+            let delta = sign * displacement;
+            let rounded = (at + delta) + ((a + b) + c);
+            // Away from a face the rounded sum already decides the result.
+            // Near it, preserve the remainder in the sum of the input words.
+            let margin = Number::ONE / n(32);
+            if rounded > bound + margin
+                || ((rounded - bound).abs() <= margin
+                    && sum([at, delta, a, b, c, -bound]) > Number::ZERO)
+            {
+                return Err(QueryError::OutsideDomain);
+            }
+        }
     }
     Ok(())
 }
@@ -177,11 +222,4 @@ pub(crate) fn validate_point(point: Vector3) -> Result<(), QueryError> {
         return Err(QueryError::OutsideDomain);
     }
     Ok(())
-}
-
-pub(crate) fn validate_motion_end(result: Result<(), QueryError>) -> Result<(), QueryError> {
-    result.map_err(|error| match error {
-        QueryError::OutsideDomain | QueryError::NonFinite => QueryError::MotionOutsideDomain,
-        other => other,
-    })
 }

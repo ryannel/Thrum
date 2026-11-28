@@ -94,6 +94,11 @@ fn hand_worked_inputs() {
             cast(&mut rows, frame, "moving", &case, SweepGap::Tolerance);
         }
     }
+    for frame in crate::cases::domain_frames() {
+        for case in crate::cases::opposing_cases() {
+            cast(&mut rows, frame, "domain", &case, SweepGap::Tolerance);
+        }
+    }
     let corner = thrum_sim3d::DOMAIN_BOUND;
     let corner = v(corner, corner, corner);
     let mut row = String::from("corners/domain-diagonal/sweep sweep");

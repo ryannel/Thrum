@@ -1,6 +1,9 @@
 use thrum_core::profile::Number;
 
-use crate::{Shape, Vector3, n};
+use crate::{
+    Shape, Vector3,
+    predicates::{conditioned, cross, determinant},
+};
 
 /// Hull coordinates translated into the same local frame.
 #[derive(Clone, Copy)]
@@ -94,21 +97,28 @@ impl Hull {
     }
 
     pub(crate) fn edge_directions(self) -> [Vector3; 3] {
-        let raw = match self {
+        match self {
             Self::Point(_) => [Vector3::ZERO; 3],
             Self::Segment([a, b]) => [b - a, Vector3::ZERO, Vector3::ZERO],
             Self::Box { half_edges, .. } => half_edges,
             Self::Triangle([a, b, c]) => [b - a, c - b, a - c],
-        };
-        // Scaling by the largest component preserves integer edge ratios such as 3:4.
-        raw.map(|edge| {
-            let scale = edge.max_component();
-            if scale > Number::ZERO {
-                edge / scale
-            } else {
-                edge
-            }
-        })
+        }
+    }
+
+    fn span(self) -> [Vector3; 3] {
+        match self {
+            // The two incident edges span the triangle. Subtracting its third
+            // edge independently could give it an artificial third dimension.
+            Self::Triangle([a, b, c]) => [b - a, c - a, Vector3::ZERO],
+            _ => self.edge_directions(),
+        }
+    }
+
+    fn reference(self) -> Vector3 {
+        match self {
+            Self::Point(point) | Self::Box { center: point, .. } => point,
+            Self::Segment([first, _]) | Self::Triangle([first, _, _]) => first,
+        }
     }
 
     pub(crate) fn project(self, axis: Vector3) -> (Number, Number) {
@@ -232,13 +242,7 @@ pub(crate) fn triangle_contains([a, b, c]: [Vector3; 3], point: Vector3, normal:
 }
 
 pub(crate) fn triangle_normal([a, b, c]: [Vector3; 3]) -> Option<Vector3> {
-    let first = b - a;
-    let second = c - a;
-    let scale = first.max_component().max(second.max_component());
-    if scale == Number::ZERO {
-        return None;
-    }
-    (first / scale).cross(second / scale).unit()
+    cross(conditioned(b - a), conditioned(c - a)).unit()
 }
 
 fn closest_on_triangle(corners: [Vector3; 3], point: Vector3) -> Vector3 {
@@ -329,9 +333,11 @@ fn closest_inside_edges(
     let second_edge = d - c;
     let u = first_edge.unit()?;
     let v = second_edge.unit()?;
-    let cross = u.cross(v);
-    let normal = cross.unit()?;
-    let denominator = cross.dot(normal);
+    let normal = cross(conditioned(first_edge), conditioned(second_edge)).unit()?;
+    let denominator = cross(u, v).dot(normal);
+    if denominator <= Number::ZERO {
+        return None;
+    }
     let between = c - a;
     let first = between.cross(v).dot(normal) / denominator;
     let second = between.cross(u).dot(normal) / denominator;
@@ -350,52 +356,63 @@ fn closest_inside_edges(
 /// the edge directions. Keep the first normal on a tie, in shape/edge order,
 /// testing the cross product's positive sense before its negative sense.
 pub(crate) fn intersection(first: Hull, second: Hull) -> Option<(Vector3, Number)> {
-    let [a, b, c] = first.edge_directions();
-    let [d, e, f] = second.edge_directions();
+    let [a, b, c] = first.edge_directions().map(conditioned);
+    let [d, e, f] = second.edge_directions().map(conditioned);
     let edges = [a, b, c, d, e, f];
-    let mut best = None;
-    let mut plane = None;
-    let mut line = None;
-    for (index, &edge) in edges.iter().enumerate() {
-        if edge != Vector3::ZERO && line.is_none() {
-            line = Some(edge);
+    let [a, b, c] = first.span().map(conditioned);
+    let [d, e, f] = second.span().map(conditioned);
+    let span = [a, b, c, d, e, f];
+    let offset = conditioned(second.reference() - first.reference());
+    let Some(line) = span.into_iter().find(|edge| *edge != Vector3::ZERO) else {
+        return (offset == Vector3::ZERO).then_some((Vector3::AXES[0], Number::ZERO));
+    };
+    let plane = span
+        .into_iter()
+        .find_map(|edge| cross(line, edge).unit().map(|normal| (edge, normal)));
+    let Some((second_edge, plane)) = plane else {
+        if cross(line, offset) != Vector3::ZERO {
+            return None;
         }
+        // A world axis through the largest line component orders the points
+        // along the line without a rounded projection onto a unit vector.
+        let largest = line.max_component();
+        let axis = if line.x.abs() == largest {
+            Vector3::AXES[0]
+        } else if line.y.abs() == largest {
+            Vector3::AXES[1]
+        } else {
+            Vector3::AXES[2]
+        };
+        consider_axis(first, second, axis, &mut None)?;
+        return Some((perpendicular(line), Number::ZERO));
+    };
+
+    if span
+        .iter()
+        .all(|edge| determinant(line, second_edge, *edge) == Number::ZERO)
+    {
+        if determinant(line, second_edge, offset) != Number::ZERO {
+            return None;
+        }
+        // A shared plane has zero depth along either normal. Its in-plane
+        // separating axes still distinguish disjoint coplanar hulls.
+        for edge in edges {
+            if let Some(axis) = cross(edge, plane).unit() {
+                consider_axis(first, second, axis, &mut None)?;
+            }
+        }
+        return Some((plane, Number::ZERO));
+    }
+
+    let mut best = None;
+    for (index, &edge) in edges.iter().enumerate() {
         for &next in &edges[index + 1..] {
-            if let Some(axis) = edge.cross(next).unit() {
-                plane.get_or_insert(axis);
+            if let Some(axis) = cross(edge, next).unit() {
                 consider_axis(first, second, axis, &mut best)?;
             }
         }
     }
-    if let Some(plane) = plane {
-        // In rank two, face normals alone cannot separate disjoint coplanar hulls.
-        // The additional tests only decide intersection. The out-of-plane depth
-        // remains zero, including when the projected hulls cross.
-        if edges
-            .iter()
-            .all(|edge| edge.dot(plane).abs() <= Number::ONE / n(1 << 22))
-        {
-            for edge in edges {
-                if let Some(axis) = edge.cross(plane).unit() {
-                    consider_axis(first, second, axis, &mut None)?;
-                }
-            }
-            return Some((best?.0, Number::ZERO));
-        }
-        return best;
-    }
-
-    if let Some(line) = line {
-        let normal = perpendicular(line);
-        let across = line.cross(normal).unit()?;
-        for axis in [normal, across, line.unit()?] {
-            consider_axis(first, second, axis, &mut None)?;
-        }
-        return Some((normal, Number::ZERO));
-    }
-    let (points, _) = first.vertices();
-    let (other_points, _) = second.vertices();
-    (points[0] == other_points[0]).then_some((Vector3::AXES[0], Number::ZERO))
+    best
 }
 
 fn consider_axis(

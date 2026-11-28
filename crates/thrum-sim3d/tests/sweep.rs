@@ -81,6 +81,15 @@ fn hand_worked_contacts_on_the_way() {
                 frame.name,
                 case.id
             );
+            if case.id.starts_with("through-") {
+                let end = mover.translated(frame.vector(case.motion));
+                assert!(
+                    distance(end, struck).unwrap() > Number::ZERO,
+                    "{} {}",
+                    frame.name,
+                    case.id
+                );
+            }
             for gap in GAPS {
                 let hit = sweep(mover, frame.vector(case.motion), struck, gap).unwrap();
                 check_hit(frame, case, gap, hit);
@@ -100,6 +109,8 @@ fn measure_candidate_gaps() {
             let first = frame.shape(case.mover);
             let second = frame.shape(case.struck);
             let motion = frame.vector(case.motion);
+            let start_gap = distance(first, second).unwrap();
+            let end_gap = distance(first.translated(motion), second).unwrap();
             for (index, gap) in GAPS.into_iter().enumerate() {
                 let hit = sweep(first, motion, second, gap).unwrap();
                 let separation = hit
@@ -107,13 +118,19 @@ fn measure_candidate_gaps() {
                 let passes = match separation {
                     Some(value) => {
                         maxima[index] = maxima[index].max(value);
-                        case.expected.is_some() && value > Number::ZERO && value <= gap.units()
+                        hit.zip(case.expected).is_some_and(|(hit, expected)| {
+                            hit.fraction <= expected.fraction + ratio(1, 1 << 20)
+                        }) && value > Number::ZERO
+                            && value <= gap.units()
                     }
                     None => case.expected.is_none(),
                 };
+                let passes = passes
+                    && start_gap > SweepGap::Tolerance.units()
+                    && (!case.id.starts_with("through-") || end_gap > Number::ZERO);
                 failures += i32::from(!passes);
                 println!(
-                    "{} {} {gap:?} gap={separation:?} pass={passes}",
+                    "{} {} {gap:?} start={start_gap:?} end={end_gap:?} gap={separation:?} pass={passes}",
                     frame.name, case.id
                 );
             }
@@ -133,6 +150,40 @@ fn measure_candidate_gaps() {
     }
     failures += i32::from(!passes);
     println!("domain-diagonal Tolerance gap={separation:?} pass={passes}");
+    for frame in crate::cases::domain_frames() {
+        for case in crate::cases::opposing_cases() {
+            let gap = SweepGap::Tolerance;
+            let first = frame.shape(case.mover);
+            let second = frame.shape(case.struck);
+            let motion = frame.vector(case.motion);
+            let other = frame.vector(case.struck_motion);
+            let hit = sweep_two(first, motion, second, other, gap).unwrap();
+            let separation = hit.map(|hit| {
+                distance(
+                    first.translated(motion * hit.fraction),
+                    second.translated(other * hit.fraction),
+                )
+                .unwrap()
+            });
+            let start_gap = distance(first, second).unwrap();
+            let end_gap = distance(first.translated(motion), second.translated(other)).unwrap();
+            let before_contact = hit.zip(case.expected).is_some_and(|(hit, expected)| {
+                hit.fraction <= expected.fraction + ratio(1, 1 << 20)
+            });
+            let passes = before_contact
+                && start_gap > gap.units()
+                && end_gap > gap.units()
+                && separation.is_some_and(|value| value > Number::ZERO && value <= gap.units());
+            if let Some(value) = separation {
+                maxima[0] = maxima[0].max(value);
+            }
+            failures += i32::from(!passes);
+            println!(
+                "{} {} {gap:?} start={start_gap:?} end={end_gap:?} gap={separation:?} pass={passes}",
+                frame.name, case.id
+            );
+        }
+    }
     println!(
         "maximum gap full={:?} half={:?}, failures={failures}",
         maxima[0], maxima[1]
