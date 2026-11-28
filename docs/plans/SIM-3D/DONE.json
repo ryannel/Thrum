@@ -4,7 +4,7 @@
     {
       "id": "WP1",
       "name": "A rule asks whether two 3D shapes touch, where a ray meets one and where a moving one is stopped, and gets the same answer on the Mac, in Chrome and on the iPhone simulator",
-      "status": "ready_for_review",
+      "status": "in_progress",
       "depends_on": [
         "SIM-2D:WP3"
       ],
@@ -21,8 +21,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SIM-3D/WP1/review-fixes/WP1.1.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         },
@@ -37,8 +37,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SIM-3D/WP1/review-fixes/WP1.2.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         },
@@ -53,8 +53,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SIM-3D/WP1/review-fixes/WP1.3.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         },
@@ -69,8 +69,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SIM-3D/WP1/review-fixes/WP1.4.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         },
@@ -109,7 +109,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/SIM-3D/WP1/review-fixes/WP1.6.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         },
         {
@@ -157,7 +157,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/SIM-3D/WP1/review-fixes/WP1.9.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         },
         {
@@ -173,7 +173,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/SIM-3D/WP1/review-fixes/WP1.10.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         },
         {
@@ -193,56 +193,31 @@
           "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         }
       ],
-      "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
+      "failed_reviews": 2,
+      "failed_reviews_with_repeat": 1,
       "findings": [
         {
-          "name": "Two moving spheres pass through each other without a sweep hit",
-          "repeat": false
-        },
-        {
-          "name": "Collinear hulls return a normal that leaves the mover inside",
-          "item": "WP1.10",
-          "repeat": false
-        },
-        {
-          "name": "Swapping a point and a collinear triangle changes overlap",
-          "item": "WP1.2",
-          "repeat": false
-        },
-        {
-          "name": "An edge-on ray hits a tilted triangle",
-          "item": "WP1.3",
-          "repeat": false
-        },
-        {
-          "name": "A zero-area triangle produces a ray hit",
-          "item": "WP1.3",
-          "repeat": false
-        },
-        {
-          "name": "A sphere extending beyond the domain passes validation",
-          "item": "WP1.1",
-          "repeat": false
-        },
-        {
-          "name": "The fast thin-target fixtures end in overlap",
+          "name": "Head-on cuboid sweeps return the wrong face normal",
           "item": "WP1.4",
+          "different": "The clear-ended thin crossings are fixed. Two turned solid cuboids now expose an incorrect head-on face normal.",
           "repeat": false
         },
         {
-          "name": "The triangle ray fixtures omit three required misses",
+          "name": "Finite rays miss solid surfaces at their endpoint",
           "item": "WP1.3",
+          "different": "The prior triangle predicates and missing triangle cases are fixed. Rays ending exactly on a sphere, capsule or cuboid return a false miss.",
           "repeat": false
         },
         {
-          "name": "The retained vectors omit required hand-worked inputs",
-          "item": "WP1.6",
+          "name": "Swapping a point and a turned cuboid changes exact vertex overlap",
+          "item": "WP1.2",
+          "different": "The collinear triangle now agrees in both orders. This case involves a full-dimensional turned cuboid and a point at its exact vertex.",
           "repeat": false
         },
         {
-          "name": "The tolerance measurement omits the required clear-ended thin crossings",
-          "item": "WP1.9",
+          "name": "Half-gap sweeps accept motion longer than 4,096 units",
+          "item": "WP1.1",
+          "different": "Shape extent validation now rejects the oversize sphere. The separate guard on motion length rounds an overlimit value down to 4,096.",
           "repeat": false
         }
       ]

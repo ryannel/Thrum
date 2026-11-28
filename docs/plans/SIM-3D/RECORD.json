@@ -17,7 +17,7 @@
         {
           "verdict": "fail",
           "commit": "0f2bc98f8f8807dfd2cf5520403ef4603c650209",
-          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md",
+          "review": ".orchestrate/evidence/SIM-3D/WP1-review-1.md",
           "items": {
             "WP1.1": "fail",
             "WP1.2": "fail",
@@ -99,6 +99,67 @@
             "turns": 1
           },
           "at": "2026-11-28T05:41:56Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "f9e40598ffed9e808f19f1f44c1f07efe3e5cb14",
+          "review": ".orchestrate/evidence/SIM-3D/WP1-review.md",
+          "items": {
+            "WP1.1": "fail",
+            "WP1.2": "fail",
+            "WP1.3": "fail",
+            "WP1.4": "fail",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.10": "pass",
+            "WP1.11": "pass"
+          },
+          "findings": [
+            {
+              "name": "Head-on cuboid sweeps return the wrong face normal",
+              "item": "WP1.4",
+              "different": "The clear-ended thin crossings are fixed. Two turned solid cuboids now expose an incorrect head-on face normal.",
+              "repeat": false
+            },
+            {
+              "name": "Finite rays miss solid surfaces at their endpoint",
+              "item": "WP1.3",
+              "different": "The prior triangle predicates and missing triangle cases are fixed. Rays ending exactly on a sphere, capsule or cuboid return a false miss.",
+              "repeat": false
+            },
+            {
+              "name": "Swapping a point and a turned cuboid changes exact vertex overlap",
+              "item": "WP1.2",
+              "different": "The collinear triangle now agrees in both orders. This case involves a full-dimensional turned cuboid and a point at its exact vertex.",
+              "repeat": false
+            },
+            {
+              "name": "Half-gap sweeps accept motion longer than 4,096 units",
+              "item": "WP1.1",
+              "different": "Shape extent validation now rejects the oversize sphere. The separate guard on motion length rounds an overlimit value down to 4,096.",
+              "repeat": false
+            }
+          ],
+          "summary": "WP1 fails four of eleven items. Two turned cuboids meeting face to face return a contact normal almost perpendicular to the expected normal, finite rays miss solid surfaces at their endpoints, swapping a point and a cuboid changes exact overlap, and an overlength half-gap sweep passes validation. All ten previous findings are resolved, and all four runtime builds reproduced the 13,288 retained answers.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 108550,
+            "cached": 2330240,
+            "output": 13533,
+            "turns": 1
+          },
+          "at": "2026-11-28T06:16:08Z"
         }
       ],
       "authorised": {
