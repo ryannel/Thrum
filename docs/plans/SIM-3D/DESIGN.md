@@ -290,16 +290,19 @@ For d = −2T, enter at 1 − 2T/L. For d = 0, δ or T, hit at one. For d = 2T, 
 in the origin frame. At a corner δ rounds away, so that input is a flush endpoint there. The origin
 inputs distinguish the positive overruns.
 
+For the oblique solid rays, the flush, one-grid-short and sub-grid-short cases hit at fraction one at
+the supplied endpoint. The doubled rays enter at ½. Replace the sphere's half-length control with a ray
+from the origin to (127/128,1,4) against the unit sphere centred at (2,1,4). Its endpoint is 1/128 unit
+from the surface, but its first forward entry lies about 0.036013 units beyond the endpoint along the ray.
+That exceeds T = 1/64, so the ray misses. The other solids retain their half-length misses.
+
 **Turned faces (WP1.4).** The retained two-cuboid case has half-edges u = (1,4,3), v = (4,−1,0) and
 u × v. The mover at 4u travels by −6u and first meets the face at ⅓ with normal u/√26. For the cuboid
 against a triangle use half-edges a = (1,2,5)/8, b = (40,−20,0)/8 and c = (100,200,−100)/8.
 From 4a by −8a it meets the triangle (b,c,−(b+c)) at ⅜ with normal (1,2,5)/√30. Both contacts have
 a face patch. Apply WP1.4's face-direction, time, witness and measured-gap bounds at both gap requests.
 
-The retained oblique solid endpoint inputs use the same finite-ray rule. Their flush, one-grid-short and
-sub-grid-short entries all lie within the allowance and report fraction one. Their half-length rays miss
-and their doubled rays enter at ½. For a clamped hit the point is the supplied segment's endpoint. The
-WP1.9 measurement covers the named sweeps, including the new face row at both gaps, before retaining T
+The WP1.9 measurement covers the named sweeps, including the new face row at both gaps, before retaining T
 for the revised build.
 
 The choice of a world-space tolerance follows the practice of expressing collision accuracy in the units a

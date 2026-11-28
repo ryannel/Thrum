@@ -45,3 +45,6 @@
 - 2026-11-28 Revised WP1.2–WP1.4 after the third WP1 review. The [named boundary cases](DESIGN.md#wp1-boundary-cases)
   cover tangent pairs, grazing rays, finite endpoints and turned-face normals.
   [Decision for each finding](../../../.orchestrate/evidence/SIM-3D/WP1-boundary-revision-2026-11-28.md).
+- 2026-11-28 Revised [WP1.3’s finite endpoint cases](DESIGN.md#wp1-boundary-cases) after design review.
+  The oblique sphere’s short control now ends at (127/128,1,4) and requires a miss. Its surface clearance
+  is 1/128 unit, while first entry takes another 0.036013 units along the ray, beyond the 1/64 allowance.
