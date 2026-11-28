@@ -215,3 +215,41 @@ fn invalid_family_edits_leave_the_tick_and_places_unchanged() -> Result {
     }
     Ok(())
 }
+
+#[test]
+fn a_missing_named_part_refuses_the_prefab_tick() {
+    let output = rustc(
+        r#"
+        use thrum::prelude::*;
+        prefabs! { const BAT: Prefab = "bat"; }
+        const EYE: Part = Part::new("eye");
+        fn inspect(bat: Single<'_, Entity>, mut entities: Entities<'_>) {
+            entities.part(*bat, EYE);
+            entities.despawn(*bat);
+        }
+        fn main() -> Result {
+            let mut game = Game::new("missing part").max_entities(4)
+                .prefab(BAT, ())
+                .scene(|scene: &mut Scene| scene.rules(inspect)).test()?;
+            let bat = game.spawn(BAT.at(2, 3))?;
+            let digest = game.digest();
+            let error = game.step().expect_err("the bat's prefab has no eye");
+            assert_eq!(game.digest(), digest);
+            assert!(game.alive(bat));
+            assert_eq!(game.get::<Transform2d>(bat)?, Transform2d::at(2, 3));
+            println!("{error}");
+            Ok(())
+        }
+        "#,
+        true,
+    );
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_text(
+        &String::from_utf8_lossy(&output.stdout),
+        &["T0309", "inspect", "eye", "no such part", "PrefabDef::part"],
+    );
+}

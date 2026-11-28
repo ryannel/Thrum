@@ -192,3 +192,39 @@ fn the_parent_changes_the_digest_with_identical_components() -> Result {
     assert_eq!(game.digest(), digest);
     Ok(())
 }
+
+#[test]
+fn prefab_under_lands_at_the_next_rule() {
+    let output = crate::prefabs::rustc(
+        r#"
+        use thrum::prelude::*;
+        prefabs! { const CHILD: Prefab = "child"; }
+        #[derive(Resource, Default)]
+        struct Handles(Option<(Entity, Entity)>);
+        fn birth(mut entities: Entities<'_>, mut handles: ResMut<'_, Handles>) {
+            let parent = entities.spawn(());
+            let child = entities.spawn(CHILD.at_local(2, 3).under(parent));
+            assert_eq!(entities.children(parent).len(), 0);
+            handles.0 = Some((parent, child));
+        }
+        fn inspect(family: Family<'_>, handles: Res<'_, Handles>) {
+            let (parent, child) = handles.0.expect("the preceding rule spawned both");
+            assert_eq!(family.children(parent).collect::<Vec<_>>(), [child]);
+            assert_eq!(family.parent(child), Some(parent));
+            assert_eq!(family.world2d(child), Transform2d::at(2, 3));
+        }
+        fn main() -> Result {
+            let mut game = Game::new("spawn under").max_entities(4)
+                .prefab(CHILD, ()).resource(Handles::default())
+                .scene(|scene: &mut Scene| scene.rules((birth, inspect))).test()?;
+            game.step()
+        }
+        "#,
+        true,
+    );
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
