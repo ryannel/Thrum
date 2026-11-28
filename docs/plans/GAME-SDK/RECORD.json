@@ -25,7 +25,7 @@
   },
   "work_packages": {
     "WP1": {
-      "definitions": "0e7ba9d75267431daa4972103cfebde878938211efdeb0894018d7d0957fa23a",
+      "definitions": "09ab8e7afd69465634b1d665ada892bad5c6d2eeffb5e6377d95f0e3e3461259",
       "reviews": [
         {
           "verdict": "fail",
@@ -332,17 +332,17 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "Diagnose GAME-SDK WP1. It has failed three reviews (.orchestrate/evidence/GAME-SDK/WP1-review-1.md, -2.md and WP1-review",
-        "at": "2026-11-28T03:32:10Z"
+        "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its Must Fix fi",
+        "at": "2026-11-28T03:59:10Z"
       }
     },
     "WP2": {
-      "definitions": "9863a573316eaf5be729f760f1dd051f42af071a705b0518365061f11e0b1e25",
+      "definitions": "2b82839861e79131ec8b02d3b947e54fdd8b546683a996a17324ed7ffa6f01ad",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 5 Must Fix ",
-        "at": "2026-11-27T23:12:49Z"
+        "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its Must Fix fi",
+        "at": "2026-11-28T03:59:10Z"
       },
       "ends_stretch": true
     },
@@ -420,11 +420,15 @@
     {
       "task": "Diagnose GAME-SDK WP1. It has failed three reviews (.orchestrate/evidence/GAME-SDK/WP1-review-1.md, -2.md and WP1-review.md in the game-sdk worktree), and WP1.1, WP1.2, WP1.3 and WP1.6 failed the last two. Each round finds real new bugs, but one finding repeats: different rule functions share a random stream, because a rule's stream is keyed on its Rust type name, which a function-pointer array or a closure called through game.run does not distinguish; and rewound manual rule registrations change later draws. That points at the design, not the builder: decide how a rule gets a stable identity for its random stream (and for rewind and replay) that every supported way of registering or calling a rule preserves, and say it in the design and the items. Also settle the phase-resume findings (a resumed phase restarting its rule cadence, and an elapsed-time threshold landing a tick late at 60 Hz): what resume must restore. The builder's work is on build/game-sdk; keep what passes.",
       "at": "2026-11-28T03:32:10Z"
+    },
+    {
+      "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its Must Fix findings.",
+      "at": "2026-11-28T03:59:10Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-28T03:32:10Z"
+    "at": "2026-11-28T03:59:10Z"
   },
   "design_history": [
     {
