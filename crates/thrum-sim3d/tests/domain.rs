@@ -1,6 +1,7 @@
 use thrum_core::profile::{Number, StateEncode};
 use thrum_sim3d::{
     DOMAIN_BOUND, QueryError, Shape, SweepGap, Vector3, depth, distance, overlap, ray, sweep,
+    sweep_two,
 };
 
 use crate::cases::{FORWARD, STOP, capsule, cube, n, ratio, sphere, triangle, v, x};
@@ -90,6 +91,37 @@ fn shapes_that_reach_the_domain_limits_are_admitted() {
                 }
             }
         }
+    }
+}
+
+#[test]
+fn half_gap_checks_each_motion_and_the_exact_relative_length() {
+    let mover = sphere(STOP, n(0));
+    let struck = sphere(v(0, 20, 0), n(0));
+    let gap = SweepGap::HalfTolerance;
+    let limit = v(0, 0, 4096);
+    let excess = v(1, 1, 4096);
+    let tiny = x(ratio(1, 1 << 24));
+    for (first, second) in [
+        (excess, STOP),
+        (STOP, excess),
+        (v(1, 1, 2048), v(0, 0, -2048)),
+        (limit + tiny, STOP),
+        (limit, v(0, 0, -1) * ratio(1, 1 << 24)),
+    ] {
+        assert_eq!(
+            sweep_two(mover, first, struck, second, gap),
+            Err(QueryError::HalfGapMotionTooLong),
+            "{first:?} {second:?}"
+        );
+    }
+    for (first, second) in [
+        (limit, STOP),
+        (STOP, limit),
+        (limit / n(2), -limit / n(2)),
+        (v(1, 1, 4095), STOP),
+    ] {
+        assert!(sweep_two(mover, first, struck, second, gap).is_ok());
     }
 }
 

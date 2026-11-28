@@ -5,9 +5,12 @@ use thrum_core::profile::Number;
 use crate::{Vector3, n};
 
 pub(crate) fn sum<const N: usize>(values: [Number; N]) -> Number {
-    let mut partials = [Number::ZERO; N];
+    sum_terms(&values, &mut [Number::ZERO; N])
+}
+
+fn sum_terms(values: &[Number], partials: &mut [Number]) -> Number {
     let mut count = 0;
-    for value in values {
+    for &value in values {
         if value == Number::ZERO {
             continue;
         }
@@ -29,11 +32,63 @@ pub(crate) fn sum<const N: usize>(values: [Number; N]) -> Number {
         .fold(Number::ZERO, |total, part| total + *part)
 }
 
-fn two_sum(a: Number, b: Number) -> (Number, Number) {
+pub(crate) fn two_sum(a: Number, b: Number) -> (Number, Number) {
     let rounded = a + b;
     let recovered_b = rounded - a;
     let residual = (a - (rounded - recovered_b)) + (b - recovered_b);
     (rounded, residual)
+}
+
+/// Dot product of a sum of vectors, preserving cancellations between terms.
+pub(crate) fn dot_sum<const N: usize>(axis: Vector3, vectors: [Vector3; N]) -> Number {
+    let mut terms = [[Number::ZERO; 6]; N];
+    for (terms, vector) in terms.iter_mut().zip(vectors) {
+        let (x, x_tail) = product(axis.x, vector.x);
+        let (y, y_tail) = product(axis.y, vector.y);
+        let (z, z_tail) = product(axis.z, vector.z);
+        *terms = [x, y, z, x_tail, y_tail, z_tail];
+    }
+    sum_terms(
+        terms.as_flattened(),
+        [[Number::ZERO; 6]; N].as_flattened_mut(),
+    )
+}
+
+/// Sign of squared distance minus the squared radius, keeping differences
+/// too small to affect either rounded length. Inputs share a local frame.
+pub(crate) fn squared_gap(first: Vector3, second: Vector3, mut radius: Number) -> Number {
+    let mut offsets = [
+        (first.x, second.x),
+        (first.y, second.y),
+        (first.z, second.z),
+    ]
+    .map(|(a, b)| two_sum(a, -b));
+    let mut maximum = (first - second).max_component().max(radius);
+    if maximum == Number::ZERO {
+        return Number::ZERO;
+    }
+    // Scale before squaring tiny coordinates. Scale the terms directly so
+    // an accumulated multiplier cannot overflow.
+    let factor = n(1 << 16);
+    while maximum < Number::ONE {
+        for (head, tail) in &mut offsets {
+            *head = *head * factor;
+            *tail = *tail * factor;
+        }
+        radius = radius * factor;
+        maximum = maximum * factor;
+    }
+    let mut terms = [Number::ZERO; 20];
+    for (index, (head, tail)) in offsets.into_iter().enumerate() {
+        let (squared, remainder) = product(head, head);
+        let (mixed, mixed_tail) = product(head + head, tail);
+        let (small, small_tail) = product(tail, tail);
+        terms[index * 6..index * 6 + 6]
+            .copy_from_slice(&[squared, remainder, mixed, mixed_tail, small, small_tail]);
+    }
+    let (squared, remainder) = product(radius, radius);
+    terms[18..].copy_from_slice(&[-squared, -remainder]);
+    sum(terms)
 }
 
 fn split(value: Number) -> (Number, Number) {

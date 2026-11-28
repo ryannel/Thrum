@@ -3,6 +3,7 @@ use thrum_core::profile::Number;
 use crate::{
     QueryError, Shape, Vector3, n,
     pair::{Pair, pair},
+    predicates::{squared_gap, two_sum},
 };
 
 /// Maximum length of either motion or their difference for a half-gap sweep.
@@ -84,9 +85,13 @@ pub fn sweep_two(
     struck.validate_motion_end(struck_motion)?;
     let relative_motion = motion - struck_motion;
     if gap == SweepGap::HalfTolerance
-        && [motion, struck_motion, relative_motion]
-            .into_iter()
-            .any(|motion| motion.length() > n(MAX_HALF_GAP_MOTION))
+        && [
+            (motion, Vector3::ZERO),
+            (struck_motion, Vector3::ZERO),
+            (motion, struck_motion),
+        ]
+        .into_iter()
+        .any(|(first, second)| exceeds_half_gap_limit(first, second))
     {
         return Err(QueryError::HalfGapMotionTooLong);
     }
@@ -100,6 +105,32 @@ pub fn sweep_two(
         gap: gap.units(),
     };
     Ok(search.find())
+}
+
+fn exceeds_half_gap_limit(first: Vector3, second: Vector3) -> bool {
+    let limit = n(MAX_HALF_GAP_MOTION);
+    let length = (first - second).length();
+    let margin = Number::ONE / n(128);
+    if (length - limit).abs() > margin {
+        return length > limit;
+    }
+    // If a component is exactly at the limit, even a transverse component
+    // whose square underflows makes the motion too long.
+    let components = [
+        (first.x, second.x),
+        (first.y, second.y),
+        (first.z, second.z),
+    ];
+    for (index, (a, b)) in components.into_iter().enumerate() {
+        let (head, tail) = two_sum(a, -b);
+        if head.abs() == limit && tail == Number::ZERO {
+            return components
+                .into_iter()
+                .enumerate()
+                .any(|(other, (a, b))| other != index && a != b);
+        }
+    }
+    squared_gap(first, second, limit) > Number::ZERO
 }
 
 struct Search {

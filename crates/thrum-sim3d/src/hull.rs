@@ -1,8 +1,8 @@
 use thrum_core::profile::Number;
 
 use crate::{
-    Shape, Vector3,
-    predicates::{conditioned, cross, determinant},
+    Shape, Vector3, n,
+    predicates::{conditioned, cross, determinant, dot_sum},
 };
 
 /// Hull coordinates translated into the same local frame.
@@ -121,7 +121,7 @@ impl Hull {
         }
     }
 
-    pub(crate) fn project(self, axis: Vector3) -> (Number, Number) {
+    fn project(self, axis: Vector3) -> (Number, Number) {
         match self {
             Self::Point(point) => {
                 let at = point.dot(axis);
@@ -148,28 +148,82 @@ impl Hull {
         }
     }
 
-    fn closest_to_point(self, point: Vector3) -> Vector3 {
-        match self {
+    /// Terms of the support point, before adding the edges to the centre.
+    fn support(self, axis: Vector3) -> [Vector3; 4] {
+        let mut terms = [Vector3::ZERO; 4];
+        terms[0] = match self {
+            Self::Point(point) => point,
+            Self::Segment(ends) => extreme_point(ends, axis),
+            Self::Triangle(corners) => extreme_point(corners, axis),
+            Self::Box { center, half_edges } => {
+                for (term, edge) in terms[1..].iter_mut().zip(half_edges) {
+                    *term = if dot_sum(axis, [edge]) >= Number::ZERO {
+                        edge
+                    } else {
+                        -edge
+                    };
+                }
+                center
+            }
+        };
+        terms
+    }
+
+    fn closest_to_point(self, point: Vector3) -> (Vector3, Vector3) {
+        let nearest = match self {
             Self::Point(position) => position,
             Self::Segment(ends) => closest_on_segment(ends, point),
             Self::Box { center, half_edges } => {
-                let offset = point - center;
-                let mut nearest = offset;
+                // Keep the displacement in the box frame. Subtracting the
+                // two rounded world-frame points can erase it or turn it.
+                let mut delta = Vector3::ZERO;
                 for axis in box_axes(half_edges) {
-                    let position = offset.dot(axis.direction);
-                    let clamped = position.clamp(-axis.extent, axis.extent);
-                    nearest = nearest + axis.direction * (clamped - position);
+                    let projected = (point - center).dot(axis.direction);
+                    let face = if projected >= Number::ZERO {
+                        axis.edge
+                    } else {
+                        -axis.edge
+                    };
+                    let direction = axis.scaled_direction();
+                    let excess = dot_sum(direction, [point, -center, -face]) / direction.length();
+                    let outside = if projected >= Number::ZERO {
+                        excess.max(Number::ZERO)
+                    } else {
+                        excess.min(Number::ZERO)
+                    };
+                    delta = delta + axis.direction * outside;
                 }
-                center + nearest
+                return (point - delta, delta);
             }
             Self::Triangle(corners) => closest_on_triangle(corners, point),
+        };
+        (nearest, point - nearest)
+    }
+}
+
+fn extreme_point<const N: usize>(points: [Vector3; N], axis: Vector3) -> Vector3 {
+    let mut extreme = points[0];
+    for point in points.into_iter().skip(1) {
+        if dot_sum(axis, [point, -extreme]) > Number::ZERO {
+            extreme = point;
         }
     }
+    extreme
 }
 
 pub(crate) struct BoxAxis {
     pub(crate) direction: Vector3,
-    pub(crate) extent: Number,
+    pub(crate) edge: Vector3,
+}
+
+impl BoxAxis {
+    pub(crate) fn scaled_direction(&self) -> Vector3 {
+        if self.edge == Vector3::ZERO {
+            self.direction
+        } else {
+            conditioned(self.edge)
+        }
+    }
 }
 
 /// Nonzero half-edges give the frame directly. Complete it for a flat box,
@@ -177,15 +231,12 @@ pub(crate) struct BoxAxis {
 pub(crate) fn box_axes(half_edges: [Vector3; 3]) -> [BoxAxis; 3] {
     let mut axes = std::array::from_fn(|_| BoxAxis {
         direction: Vector3::ZERO,
-        extent: Number::ZERO,
+        edge: Vector3::ZERO,
     });
     let mut count = 0;
     for edge in half_edges {
         if let Some(direction) = edge.unit() {
-            axes[count] = BoxAxis {
-                direction,
-                extent: edge.length(),
-            };
+            axes[count] = BoxAxis { direction, edge };
             count += 1;
         }
     }
@@ -274,8 +325,7 @@ pub(crate) struct Witness {
 }
 
 impl Witness {
-    fn new(first: Vector3, second: Vector3) -> Self {
-        let delta = first - second;
+    fn new(second: Vector3, delta: Vector3) -> Self {
         Self {
             delta,
             point_on_second: second,
@@ -283,8 +333,8 @@ impl Witness {
         }
     }
 
-    fn consider(&mut self, first: Vector3, second: Vector3) {
-        let candidate = Self::new(first, second);
+    fn consider(&mut self, second: Vector3, delta: Vector3) {
+        let candidate = Self::new(second, delta);
         if candidate.distance < self.distance {
             *self = candidate;
         }
@@ -298,25 +348,28 @@ impl Witness {
 pub(crate) fn closest(first: Hull, second: Hull) -> Witness {
     let (first_points, first_count) = first.vertices();
     let (second_points, second_count) = second.vertices();
-    let mut nearest = Witness::new(first_points[0], second.closest_to_point(first_points[0]));
+    let (point, delta) = second.closest_to_point(first_points[0]);
+    let mut nearest = Witness::new(point, delta);
     for &point in &first_points[1..first_count] {
-        nearest.consider(point, second.closest_to_point(point));
+        let (nearest_point, delta) = second.closest_to_point(point);
+        nearest.consider(nearest_point, delta);
     }
     if matches!(first, Hull::Point(_)) {
         return nearest;
     }
     for &point in &second_points[..second_count] {
-        nearest.consider(first.closest_to_point(point), point);
+        let (_, delta) = first.closest_to_point(point);
+        nearest.consider(point, -delta);
     }
     for &(a, b) in first.edges() {
         for &(c, d) in second.edges() {
-            if let Some((first, second)) = closest_inside_edges(
+            if let Some((point, delta)) = closest_inside_edges(
                 first_points[a],
                 first_points[b],
                 second_points[c],
                 second_points[d],
             ) {
-                nearest.consider(first, second);
+                nearest.consider(point, delta);
             }
         }
     }
@@ -346,7 +399,9 @@ fn closest_inside_edges(
         && second > Number::ZERO
         && second < second_edge.length()
     {
-        Some((a + u * first, c + v * second))
+        // An interior edge pair differs only along its common normal.
+        // Project the edge origins before adding the closest-point offsets.
+        Some((c + v * second, normal * dot_sum(normal, [a, -c])))
     } else {
         None
     }
@@ -423,8 +478,8 @@ fn consider_axis(
 ) -> Option<()> {
     let (first_min, first_max) = first.project(axis);
     let (second_min, second_max) = second.project(axis);
-    let positive = second_max - first_min;
-    let negative = first_max - second_min;
+    let positive = projection_gap(second, first, axis, second_max, first_min);
+    let negative = projection_gap(first, second, axis, first_max, second_min);
     if positive < Number::ZERO || negative < Number::ZERO {
         return None;
     }
@@ -437,4 +492,21 @@ fn consider_axis(
         *best = Some(candidate);
     }
     Some(())
+}
+
+fn projection_gap(
+    high_hull: Hull,
+    low_hull: Hull,
+    axis: Vector3,
+    high: Number,
+    low: Number,
+) -> Number {
+    let rounded = high - low;
+    let margin = high.abs().max(low.abs()) / n(1 << 19);
+    if rounded.abs() > margin {
+        return rounded;
+    }
+    let [a, b, c, d] = high_hull.support(axis);
+    let [e, f, g, h] = low_hull.support(-axis);
+    dot_sum(axis, [a, b, c, d, -e, -f, -g, -h])
 }

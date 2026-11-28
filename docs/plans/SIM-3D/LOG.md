@@ -36,3 +36,9 @@
   The revised Mac measurement selects a 1/64-unit contact tolerance and a 1/128-unit half gap.
   Mac development and release, Chrome Wasm and the iPhone simulator reproduce all 13,288 retained
   answers. [Review fixes and target proof](../../../.orchestrate/evidence/SIM-3D/WP1/review-fixes/README.md).
+- 2026-11-28 WP1's second review added exact turned-cuboid vertex and face contacts, finite solid ray
+  endpoints and short controls, and half-gap motion-length boundaries. The pair test preserves small
+  closest-feature displacements and separating projections. The ray and sweep guards compare their
+  limits before rounding them to travel distances. The retained Mac release corpus was regenerated
+  because these corrections change some contact words and add hand-worked cases.
+  [Review fixes and target proofs](../../../.orchestrate/evidence/SIM-3D/WP1/review-2/README.md).

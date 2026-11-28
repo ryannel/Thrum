@@ -4,7 +4,7 @@ use crate::{
     QueryError, Shape, Vector3,
     hull::{Hull, box_axes, closest_on_segment},
     pair::pair,
-    predicates::{conditioned, cross, determinant},
+    predicates::{conditioned, cross, determinant, dot_sum, squared_gap},
     shape::validate_point,
 };
 
@@ -53,25 +53,45 @@ pub fn ray(start: Vector3, motion: Vector3, shape: Shape) -> Result<Option<RayHi
     let Some(direction) = motion.unit() else {
         return Ok(None);
     };
-    let length = motion.length();
     let radius = shape.radius();
     let contact = match hull {
-        Hull::Point(center) => sphere(center, radius, motion),
+        Hull::Point(center) => {
+            finite_sphere(center, radius, motion, motion.length(), [motion, center])
+        }
         Hull::Segment(ends) => capsule(ends, radius, motion, direction),
-        Hull::Box { center, half_edges } => cuboid(center, half_edges, direction),
+        Hull::Box { center, half_edges } => cuboid(center, half_edges, motion, direction),
         Hull::Triangle(_) => unreachable!("triangles use the plane predicate"),
     };
-    Ok(contact
-        .filter(|(time, _)| *time <= length)
-        .map(|(time, normal)| {
-            let fraction = time / length;
-            RayHit {
-                fraction,
-                point: start + motion * fraction,
-                normal,
-                depth: Number::ZERO,
-            }
-        }))
+    Ok(contact.map(|(fraction, normal)| RayHit {
+        fraction,
+        point: start + motion * fraction,
+        normal,
+        depth: Number::ZERO,
+    }))
+}
+
+fn finite_sphere(
+    center: Vector3,
+    radius: Number,
+    direction: Vector3,
+    length: Number,
+    [end, end_center]: [Vector3; 2],
+) -> Option<(Number, Vector3)> {
+    // Ahead of the closest approach the endpoint must already be inside the
+    // sphere. Compare in the endpoint's local frame before rounding a time.
+    let toward = dot_sum(conditioned(direction), [end_center, -end]);
+    if toward >= Number::ZERO {
+        let side = squared_gap(end, end_center, radius);
+        if side > Number::ZERO {
+            return None;
+        }
+        if side == Number::ZERO {
+            let normal = (end - end_center).unit().or_else(|| (-direction).unit())?;
+            return Some((Number::ONE, normal));
+        }
+    }
+    let (time, normal) = sphere(center, radius, direction)?;
+    Some(((time / length).min(Number::ONE), normal))
 }
 
 fn sphere(center: Vector3, radius: Number, motion: Vector3) -> Option<(Number, Vector3)> {
@@ -104,29 +124,35 @@ fn capsule(
     let [a, b] = ends;
     let edge = b - a;
     let Some(axis) = edge.unit() else {
-        return sphere(a, radius, motion);
+        return finite_sphere(a, radius, motion, motion.length(), [motion, a]);
     };
     let mut hit = [a, b]
         .into_iter()
-        .filter_map(|end| sphere(end, radius, motion))
+        .filter_map(|end| finite_sphere(end, radius, motion, motion.length(), [motion, end]))
         .min_by(|first, second| first.0.partial_cmp(&second.0).expect("finite times"));
     let line = conditioned(motion);
     let edge_direction = conditioned(edge);
     let transverse = cross(line, edge_direction);
     if transverse != Vector3::ZERO {
         let edge_length = edge_direction.length();
-        let speed = transverse.length() / (line.length() * edge_length);
         let center = cross(a, edge_direction) / edge_length;
-        if let Some((when, _)) = sphere(center, radius, transverse) {
-            let time = when / speed;
-            let point = direction * time;
+        let speed = transverse.length() / (line.length() * edge_length);
+        let end_offset = cross(a - motion, edge_direction) / edge_length;
+        if let Some((fraction, _)) = finite_sphere(
+            center,
+            radius,
+            transverse,
+            speed * motion.length(),
+            [Vector3::ZERO, end_offset],
+        ) {
+            let point = motion * fraction;
             let along = (point - a).dot(axis);
             if along >= Number::ZERO
                 && along <= edge.length()
-                && hit.is_none_or(|(previous, _)| time < previous)
+                && hit.is_none_or(|(previous, _)| fraction < previous)
             {
                 let nearest = closest_on_segment(ends, point);
-                hit = positive_hit(time, (point - nearest).unit().unwrap_or(-direction));
+                hit = Some((fraction, (point - nearest).unit().unwrap_or(-direction)));
             }
         }
     }
@@ -136,34 +162,42 @@ fn capsule(
 fn cuboid(
     center: Vector3,
     half_edges: [Vector3; 3],
+    motion: Vector3,
     direction: Vector3,
 ) -> Option<(Number, Vector3)> {
     let mut lower = Number::ZERO;
-    let mut upper = None;
+    let mut upper = Number::ONE;
     let mut normal = -direction;
     for axis in box_axes(half_edges) {
-        let position = (-center).dot(axis.direction);
-        let speed = direction.dot(axis.direction);
+        let along = axis.scaled_direction();
+        let speed = dot_sum(along, [motion]);
+        let to_near = dot_sum(along, [center, -axis.edge]);
+        let to_far = dot_sum(along, [center, axis.edge]);
         if speed == Number::ZERO {
-            if position.abs() > axis.extent {
+            if to_near > Number::ZERO || to_far < Number::ZERO {
                 return None;
             }
             continue;
         }
-        let a = (-axis.extent - position) / speed;
-        let b = (axis.extent - position) / speed;
-        let near = a.min(b);
-        let far = a.max(b);
+        let (entry, exit, entry_edge, outward) = if speed > Number::ZERO {
+            (to_near, to_far, -axis.edge, -axis.direction)
+        } else {
+            (to_far, to_near, axis.edge, axis.direction)
+        };
+        let remaining = dot_sum(along, [center, entry_edge, -motion]);
+        if (remaining > Number::ZERO && speed > Number::ZERO)
+            || (remaining < Number::ZERO && speed < Number::ZERO)
+        {
+            return None;
+        }
+        let near = (entry / speed).min(Number::ONE);
+        let far = exit / speed;
         if near > lower {
             lower = near;
-            normal = if speed > Number::ZERO {
-                -axis.direction
-            } else {
-                axis.direction
-            };
+            normal = outward;
         }
-        upper = Some(upper.map_or(far, |upper: Number| upper.min(far)));
-        if lower > upper? {
+        upper = upper.min(far);
+        if lower > upper {
             return None;
         }
     }
