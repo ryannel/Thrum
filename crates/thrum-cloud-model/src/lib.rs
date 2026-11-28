@@ -12,7 +12,7 @@ mod shape;
 mod state;
 mod visibility;
 
-pub use field::{Cell, Column, Conformance, Density, Field, Profile, Sample, Type};
+pub use field::{Cell, Column, Conformance, Density, Field, Profile, PuffProfile, Sample, Type};
 pub use ground::{Affinity, Fog, Ground, GroundProfile, GroundState, Surface, SurfacePoint};
 pub use library::{HashedShapes, PlacedLibrary, PlacedSlab, ShapeSource};
 pub use medium::{Coefficients, Handover, Light};

@@ -23,6 +23,7 @@ mod optics;
 mod placed;
 mod placed_sun_path;
 mod pooling;
+mod puff;
 mod state;
 mod sun_disc_phase;
 mod turret_query;

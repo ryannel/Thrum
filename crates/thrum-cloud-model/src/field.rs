@@ -1,3 +1,5 @@
+mod puff;
+
 use crate::library::{HASHED_SCALE_MIN, HASHED_SCALE_SPAN};
 use crate::{Directed, Error, Parameters, Shape, ShapeSource, State, smooth, unit};
 use std::f64::consts::PI;
@@ -43,6 +45,17 @@ pub struct Profile {
     /// Detail erosion at its mean, 0..=1.
     pub detail_mean: f64,
     /// Shape threshold and edge-detail strength, 0..=1; zero disables erosion.
+    pub erosion: f64,
+}
+
+/// Structural profile that selects a cluster of puffs for each heaped cell.
+#[derive(Clone, Copy, Debug)]
+pub struct PuffProfile {
+    /// Lattice, timing and erosion settings shared with the turret profile.
+    pub weather: Profile,
+    /// Depth along the surface normal needed to reach the core, metres.
+    pub fade: f64,
+    /// Maximum heaped-cloud erosion threshold, in 0..1. Zero disables erosion.
     pub erosion: f64,
 }
 
@@ -98,6 +111,7 @@ pub enum Density {
 pub struct Field {
     pub(super) seed: u32,
     profile: Profile,
+    puff: Option<PuffProfile>,
     types: Vec<Type>,
 }
 
@@ -137,8 +151,26 @@ impl Field {
         Ok(Self {
             seed,
             profile,
+            puff: None,
             types,
         })
+    }
+
+    /// Create a CPU field whose heaped cells have the puff form. The heaped
+    /// endpoint supplies each cell's mature depth range. Changing type
+    /// changes rise and strength while preserving the cluster's geometry.
+    /// # Errors
+    /// Rejects invalid weather or type data, a nonpositive or nonfinite fade length, or an out-of-range erosion threshold.
+    pub fn new_puff(seed: u32, profile: PuffProfile, types: Vec<Type>) -> Result<Self, Error> {
+        if !profile.fade.is_finite()
+            || profile.fade <= 0.0
+            || !(0.0..1.0).contains(&profile.erosion)
+        {
+            return Err(Error::Invalid);
+        }
+        let mut field = Self::new(seed, profile.weather, types)?;
+        field.puff = Some(profile);
+        Ok(field)
     }
 
     /// Derive one site's generation independently of query order.
@@ -221,6 +253,9 @@ impl Field {
         if parameters.coverage == 0.0 {
             return clear;
         }
+        if let Some(puff) = self.puff {
+            return self.puff_column(air, time, parameters, share, clear, puff.fade);
+        }
         let site = air.map(|p| (p / self.profile.pitch).floor() as i64);
         let turret = self.turret(air);
         let mut coverage: f64 = 0.0;
@@ -264,6 +299,27 @@ impl Field {
                 }
             }
         }
+        let (deck, deck_depth) = self.deck(air, time, parameters, t);
+        coverage = coverage.max(deck);
+        depth = depth.max(deck_depth);
+        if coverage == 0.0 || depth == 0.0 {
+            return clear;
+        }
+        Column {
+            coverage,
+            kind: parameters.kind,
+            base: t.base,
+            top: t.base + depth,
+            age,
+            optical_depth: t.extinction()
+                * depth
+                * coverage
+                * (1.0 - t.profile[0].midpoint(t.profile[1])),
+            profile: t.profile,
+        }
+    }
+
+    fn deck(&self, air: [f64; 2], time: f64, parameters: Parameters, t: Type) -> (f64, f64) {
         let n = self.noise(
             [
                 air[0] / (4.0 * self.profile.pitch),
@@ -291,23 +347,7 @@ impl Field {
             n
         };
         let deck = t.deck * smooth((opening - (1.0 - 1.3 * filling)) / 0.2);
-        coverage = coverage.max(deck);
-        depth = depth.max(t.depth[0] * deck.powf(0.7) * (0.6 + 0.4 * n));
-        if coverage == 0.0 || depth == 0.0 {
-            return clear;
-        }
-        Column {
-            coverage,
-            kind: parameters.kind,
-            base: t.base,
-            top: t.base + depth,
-            age,
-            optical_depth: t.extinction()
-                * depth
-                * coverage
-                * (1.0 - t.profile[0].midpoint(t.profile[1])),
-            profile: t.profile,
-        }
+        (deck, t.depth[0] * deck.powf(0.7) * (0.6 + 0.4 * n))
     }
 
     #[expect(
@@ -461,12 +501,18 @@ impl Field {
                 self.erode(sigma, extinction, noise.0, noise.1, placed)
             }
         };
-        let column = self.procedural_column(air, state.time(), p, state.procedural_share());
-        let mut sigma = erode(column_density(column, point[1]), extinction, false);
-        if sigma > 0.0 && self.profile.erosion > 0.0 && !matches!(fidelity, Density::Uneroded) {
-            let height = (point[1] - column.base) / (column.top - column.base);
-            sigma *= self.bank_shape(point_air, height, kind.deck);
-        }
+        let mut sigma = if let Some(puff) = self.puff {
+            self.puff_density(point_air, state, kind, fidelity, puff)
+        } else {
+            let column = self.procedural_column(air, state.time(), p, state.procedural_share());
+            let mut density = erode(column_density(column, point[1]), extinction, false);
+            if density > 0.0 && self.profile.erosion > 0.0 && !matches!(fidelity, Density::Uneroded)
+            {
+                let height = (point[1] - column.base) / (column.top - column.base);
+                density *= self.bank_shape(point_air, height, kind.deck);
+            }
+            density
+        };
         let mut used_footprint = false;
         let hashed = self.hashed_at(air, state);
         for (shape, selection) in state
