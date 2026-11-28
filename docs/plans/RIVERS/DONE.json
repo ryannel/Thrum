@@ -630,7 +630,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP6/path-strands/checks/WP6.1.log",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/feathered-packets/checks/WP6.1.log",
           "verdict": "",
           "review": ""
         },
@@ -641,7 +641,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP6/path-strands/checks/WP6.2.log",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/feathered-packets/checks/WP6.2.log",
           "verdict": "",
           "review": ""
         },
@@ -653,7 +653,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP6/path-strands/checks/WP6.3.log",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/feathered-packets/checks/WP6.3.log",
           "verdict": "",
           "review": ""
         },
@@ -684,7 +684,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP6/path-strands/checks/WP6.6.log",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/feathered-packets/checks/WP6.6.log",
           "verdict": "",
           "review": ""
         },
@@ -695,7 +695,7 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP6/path-strands/checks/chrome-run.json",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/feathered-packets/checks/chrome-run.json",
           "verdict": "",
           "review": ""
         },
@@ -706,7 +706,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP6/path-strands/checks/fall-cost.json",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/feathered-packets/checks/fall-cost.json",
           "verdict": "",
           "review": ""
         },
@@ -729,7 +729,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP6/path-strands/checks/WP6.11.log",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/feathered-packets/checks/WP6.11.log",
           "verdict": "",
           "review": ""
         },
@@ -741,7 +741,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP6/path-strands/checks/WP6.12.log",
+          "evidence": ".orchestrate/evidence/RIVERS/WP6/feathered-packets/checks/WP6.12.log",
           "verdict": "",
           "review": ""
         }
