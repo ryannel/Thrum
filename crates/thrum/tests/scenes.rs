@@ -348,6 +348,72 @@ fn resume_keeps_fixed_length_and_does_not_call_enter_or_expiry_again() -> Result
     Ok(())
 }
 
+#[test]
+fn resumed_phase_keeps_elapsed_precision_cadence_and_deadline() -> Result {
+    #[derive(Resource, Default)]
+    struct Progress {
+        saved: Option<PhaseClock>,
+        threshold: bool,
+        cadence: u32,
+        expired: u32,
+    }
+
+    fn play(scene: &mut Scene) {
+        scene.phases(Stage::A);
+        scene.on_enter(
+            |mut phase: PhaseMut<'_, Stage>, progress: Res<'_, Progress>| {
+                if let Some(clock) = progress.saved {
+                    assert!(phase.resume(Stage::A, clock));
+                }
+            },
+        );
+        scene
+            .phase(Stage::A)
+            .rules((
+                |phase: Phase<'_, Stage>, tick: Tick, mut progress: ResMut<'_, Progress>| {
+                    assert_eq!(tick.in_phase(), phase.time());
+                    progress.threshold = phase.time() >= seconds(1);
+                    progress.saved = Some(phase.clock());
+                },
+                (|mut progress: ResMut<'_, Progress>| progress.cadence += 1).every(seconds(1)),
+            ))
+            .lasts(seconds(2))
+            .then_run(|mut progress: ResMut<'_, Progress>| progress.expired += 1);
+    }
+
+    for (rate, restore_at) in [(5, 4), (60, 1)] {
+        let setup = || {
+            Game::new("resume time and cadence")
+                .tick_rate(rate)
+                .resource(Progress::default())
+                .scene(play)
+                .test()
+        };
+        let mut uninterrupted = setup()?;
+        let mut resumed = setup()?;
+        uninterrupted.step_ticks(restore_at)?;
+        resumed.step_ticks(restore_at)?;
+        resumed.go_to(())?;
+
+        let interval = u64::from(rate);
+        for tick in (restore_at + 1)..=(2 * interval) {
+            uninterrupted.step()?;
+            resumed.step()?;
+
+            let progress = resumed.resource::<Progress>()?;
+            assert_eq!(progress, uninterrupted.resource::<Progress>()?);
+            assert_eq!(progress.threshold, tick >= interval);
+            assert_eq!(progress.cadence, u32::try_from(tick / interval).unwrap());
+            assert_eq!(progress.expired, u32::from(tick == 2 * interval));
+        }
+        let digest = resumed.digest();
+        resumed.rewind(1)?;
+        resumed.step()?;
+        assert_eq!(resumed.digest(), digest);
+    }
+    Ok(())
+}
+
 #[derive(Resource, Default)]
 struct Watches {
     timer: Timer,

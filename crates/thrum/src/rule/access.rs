@@ -179,12 +179,13 @@ pub(crate) struct Exclusive {
 pub(crate) enum Parameter {
     Query(String, Projection),
     Exclusive(String, Exclusive),
+    Random(String),
 }
 
 impl Parameter {
     fn name(&self) -> &str {
         match self {
-            Self::Query(name, _) | Self::Exclusive(name, _) => name,
+            Self::Query(name, _) | Self::Exclusive(name, _) | Self::Random(name) => name,
         }
     }
 }
@@ -193,6 +194,16 @@ impl Parameter {
 pub(crate) struct Signature(pub(crate) Vec<Parameter>);
 
 impl Signature {
+    pub(crate) fn random_parameter(&self) -> Option<&str> {
+        self.0.iter().find_map(|parameter| {
+            if let Parameter::Random(name) = parameter {
+                Some(name.as_str())
+            } else {
+                None
+            }
+        })
+    }
+
     pub(crate) fn loan_types(&self) -> Vec<TypeId> {
         let mut types = Vec::new();
         for parameter in &self.0 {
@@ -280,6 +291,7 @@ impl Signature {
                         }
                     }
                 }
+                Parameter::Random(_) => {}
             }
         }
         Ok(())
@@ -319,6 +331,7 @@ impl Signature {
                         insert(column, false);
                     }
                 }
+                Parameter::Random(_) => {}
             }
         }
         columns

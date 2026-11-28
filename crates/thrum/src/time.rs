@@ -409,6 +409,66 @@ impl Default for Cooldown {
     }
 }
 
+/// Exact phase time, in units of 1/rate nanoseconds.
+#[derive(Data, Copy, Eq)]
+pub(crate) struct PhaseSpan {
+    units: u128,
+    rate: u32,
+}
+
+impl Default for PhaseSpan {
+    fn default() -> Self {
+        Self::from_seconds(Seconds::ZERO)
+    }
+}
+
+impl PhaseSpan {
+    fn from_seconds(value: Seconds) -> Self {
+        Self {
+            units: u128::from(value.0),
+            rate: 1,
+        }
+    }
+
+    pub(crate) fn from_ticks(ticks: u64, rate: u32) -> Self {
+        Self {
+            units: u128::from(ticks) * u128::from(NANOS_PER_SECOND),
+            rate,
+        }
+    }
+
+    pub(crate) fn advance(self, ticks: u64, rate: u32) -> Self {
+        let mut span = Self::from_ticks(ticks, rate);
+        let offset = if self.rate == rate || self.units == 0 {
+            self.units
+        } else {
+            self.units.saturating_mul(u128::from(rate)) / u128::from(self.rate.max(1))
+        };
+        span.units = span.units.saturating_add(offset);
+        span
+    }
+
+    pub(crate) fn whole_ticks(self) -> u64 {
+        u64::try_from(self.units / u128::from(NANOS_PER_SECOND)).unwrap_or(u64::MAX)
+    }
+
+    pub(crate) fn ticks_ceil(self, rate: u32) -> u64 {
+        let ticks = if self.rate == rate {
+            self.units.div_ceil(u128::from(NANOS_PER_SECOND))
+        } else {
+            self.units
+                .saturating_mul(u128::from(rate))
+                .div_ceil(u128::from(self.rate.max(1)) * u128::from(NANOS_PER_SECOND))
+        };
+        u64::try_from(ticks).unwrap_or(u64::MAX)
+    }
+
+    pub(crate) fn seconds(self) -> Seconds {
+        let nanos = self.units / u128::from(self.rate.max(1));
+        Seconds(u64::try_from(nanos).unwrap_or(u64::MAX))
+    }
+}
+
 /// A phase's elapsed time and any remaining time.
 /// ```
 /// use thrum::{PhaseClock, seconds};
@@ -416,8 +476,8 @@ impl Default for Cooldown {
 /// ```
 #[derive(Data, Copy)]
 pub struct PhaseClock {
-    pub(crate) elapsed: Seconds,
-    pub(crate) remaining: Option<Seconds>,
+    pub(crate) elapsed: PhaseSpan,
+    pub(crate) remaining: Option<PhaseSpan>,
     pub(crate) expired: bool,
 }
 
@@ -429,7 +489,7 @@ impl PhaseClock {
     /// ```
     pub fn at(time: Seconds) -> Self {
         Self {
-            elapsed: time,
+            elapsed: PhaseSpan::from_seconds(time),
             remaining: None,
             expired: false,
         }
@@ -442,7 +502,7 @@ impl PhaseClock {
     /// ```
     #[must_use]
     pub fn ending_in(mut self, left: Seconds) -> Self {
-        self.remaining = Some(left);
+        self.remaining = Some(PhaseSpan::from_seconds(left));
         self.expired = false;
         self
     }
@@ -453,7 +513,7 @@ impl PhaseClock {
     /// assert_eq!(PhaseClock::at(seconds(3)).time(), seconds(3));
     /// ```
     pub fn time(self) -> Seconds {
-        self.elapsed
+        self.elapsed.seconds()
     }
 
     /// Remaining time if an end is scheduled and has yet to run.
@@ -462,6 +522,6 @@ impl PhaseClock {
     /// assert_eq!(PhaseClock::at(seconds(3)).left(), None);
     /// ```
     pub fn left(self) -> Option<Seconds> {
-        self.remaining
+        self.remaining.map(PhaseSpan::seconds)
     }
 }

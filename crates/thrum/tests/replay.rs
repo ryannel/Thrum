@@ -236,17 +236,11 @@ fn rule_draw(mut random: Random) -> u32 {
 }
 
 #[test]
-fn function_pointer_rules_repeat_independently_after_rebuilding() -> Result {
-    fn loot(mut random: Random) -> (&'static str, u32) {
-        ("loot", random.below(u32::MAX))
-    }
-    fn weather(mut random: Random) -> (&'static str, u32) {
-        ("weather", random.below(u32::MAX))
-    }
-    type Callback = fn(Random) -> (&'static str, u32);
-    let rules: [Callback; 2] = [loot, weather];
+fn manual_draws_are_independent_of_calls_on_a_rewound_tick() -> Result {
+    let loot = |mut random: Random| random.below(u32::MAX);
+    let weather = |mut random: Random| random.below(u32::MAX);
     let setup = || {
-        Game::new("pointer streams")
+        Game::new("manual streams")
             .scene(|_: &mut Scene| {})
             .test_setup()
             .seed(17)
@@ -254,51 +248,99 @@ fn function_pointer_rules_repeat_independently_after_rebuilding() -> Result {
     };
     let mut first = setup()?;
     let mut second = setup()?;
-    for _ in 0..3 {
-        let left = first.run(rules[0])?;
-        let right = first.run(rules[1])?;
-        assert_ne!(left.1, right.1);
-        assert_eq!(right, first.run(rules[1])?);
-        assert_eq!(left, first.run(rules[0])?);
-        assert_eq!(left, second.run(rules[0])?);
-        assert_eq!(right, second.run(rules[1])?);
-        first.step()?;
-        second.step()?;
-    }
-    first.rewind(1)?;
+    let digest = second.digest();
+    let expected = first.run(loot)?;
+    assert_ne!(expected, first.run(weather)?);
+
+    second.step()?;
+    second.run(weather)?;
     second.rewind(1)?;
-    assert_eq!(first.run(rules[0])?, second.run(rules[0])?);
+    assert_eq!(digest, second.digest());
+    assert_eq!(expected, second.run(loot)?);
+    assert_eq!(first.run(weather)?, second.run(weather)?);
     Ok(())
 }
 
 #[test]
-fn scheduled_and_manual_calls_share_their_function_pointer_identity() -> Result {
-    #[derive(Resource)]
-    struct Range;
-
-    type Callback = fn(Random, ResMut<'_, Draws>, Res<'_, Range>);
-    fn loot(mut random: Random, mut draws: ResMut<'_, Draws>, _range: Res<'_, Range>) {
+fn scheduled_and_manual_calls_share_each_concrete_rule_stream() -> Result {
+    fn record_weather(mut random: Random, mut draws: ResMut<'_, Draws>) {
         draws.condition = random.below(u32::MAX);
     }
-    fn weather(mut random: Random, mut draws: ResMut<'_, Draws>, _range: Res<'_, Range>) {
-        draws.rule = random.below(u32::MAX);
-    }
-    let rules: [Callback; 2] = [loot, weather];
-    let mut game = Game::new("scheduled pointer streams")
+    let limit = std::hint::black_box(u32::MAX);
+    let record_loot = move |mut random: Random, mut draws: ResMut<'_, Draws>| {
+        draws.rule = random.below(limit);
+    };
+    let mut game = Game::new("scheduled streams")
         .resource(Draws::default())
-        .resource(Range)
-        .scene(move |scene: &mut Scene| scene.rules((rules[0], rules[1])))
+        .scene(move |scene: &mut Scene| scene.rules((record_weather, record_loot)))
         .test()?;
     game.step()?;
     let scheduled = game.resource::<Draws>()?;
     assert_ne!(scheduled.condition, scheduled.rule);
     let digest = game.digest();
-    game.run(rules[1])?;
-    game.run(rules[0])?;
+    game.run(record_loot)?;
+    game.run(record_weather)?;
     assert_eq!(game.digest(), digest);
     game.rewind(1)?;
     game.step()?;
     assert_eq!(game.digest(), digest);
+    Ok(())
+}
+
+#[test]
+fn random_requires_a_concrete_callable_in_debug_and_release() -> Result {
+    fn loot(mut random: Random) -> [u32; 3] {
+        [
+            random.below(u32::MAX),
+            random.below(u32::MAX),
+            random.below(u32::MAX),
+        ]
+    }
+    fn weather(mut random: Random) -> [u32; 3] {
+        [
+            random.below(u32::MAX),
+            random.below(u32::MAX),
+            random.below(u32::MAX),
+        ]
+    }
+
+    #[derive(Params)]
+    struct Bundle<'t> {
+        _score: Res<'t, Counter>,
+        random: Random,
+    }
+    fn bundled(mut bundle: Bundle<'_>) {
+        bundle.random.below(10);
+    }
+
+    let mut game = Game::new("manual streams")
+        .scene(|_: &mut Scene| {})
+        .test()?;
+    let start = game.digest();
+    assert_ne!(game.run(loot)?, game.run(weather)?);
+
+    // Optimized builds may fold these two bodies into the same address.
+    let table: [fn(Random) -> [u32; 3]; 2] = [loot, weather];
+    for callback in table {
+        let error = game.run(callback).unwrap_err();
+        assert_eq!(error.code(), "T0204");
+        assert!(error.to_string().contains("Pass a named function directly"));
+        assert_eq!(game.digest(), start);
+    }
+
+    let callback: fn(Bundle<'_>) = bundled;
+    let scheduled = Game::new("scheduled streams")
+        .resource(Counter::default())
+        .scene(move |scene: &mut Scene| scene.rules(callback))
+        .test();
+    let Err(error) = scheduled else {
+        panic!("startup accepted an erased random rule");
+    };
+    assert_eq!(error.code(), "T0204");
+    assert!(error.to_string().contains(".random"));
+
+    let plain: fn() -> u32 = || 7;
+    assert_eq!(game.run(plain)?, 7);
     Ok(())
 }
 

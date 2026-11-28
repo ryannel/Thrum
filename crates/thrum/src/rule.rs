@@ -1,11 +1,12 @@
 use std::{
-    any::{Any, TypeId, type_name},
+    any::{TypeId, type_name},
     collections::HashMap,
+    hash::{DefaultHasher, Hash, Hasher},
     panic::{AssertUnwindSafe, catch_unwind, resume_unwind},
     sync::{Arc, Mutex},
 };
 
-use crate::{Result, Seconds};
+use crate::{Error, Result, Seconds};
 
 pub(crate) mod access;
 pub(crate) mod params;
@@ -26,22 +27,57 @@ pub struct Invocation<O> {
     pub(crate) name: &'static str,
     pub(crate) signature: Signature,
     pub(crate) stream: u64,
-    pub(crate) callable: TypeId,
-    pub(crate) pointer: Option<usize>,
+    pub(crate) identity: RuleIdentity,
     pub(crate) invoke: Box<Invoke<O>>,
 }
 
+#[derive(Clone, Copy)]
+pub(crate) enum RuleIdentity {
+    Concrete(TypeId),
+    Erased,
+}
+
+impl RuleIdentity {
+    fn of<F: 'static>() -> Self {
+        // Function items are zero-sized. Closures keep a concrete type even
+        // when their captures occupy storage. A pointer or trait object loses
+        // the identity of the function it calls.
+        let name = type_name::<F>();
+        if size_of::<F>() == 0 || (!name.starts_with('&') && name.ends_with("::{{closure}}")) {
+            Self::Concrete(TypeId::of::<F>())
+        } else {
+            Self::Erased
+        }
+    }
+}
+
 #[derive(Default)]
-pub(crate) struct RuleStreams(HashMap<(TypeId, Option<usize>), u64>);
+pub(crate) struct RuleStreams(HashMap<TypeId, u64>);
 
 impl RuleStreams {
-    pub(crate) fn identify<O>(&mut self, invocation: &mut Invocation<O>) {
-        // Addresses only identify a pointer within this process. Registration
-        // order supplies its seed, so ASLR never enters the draw.
-        let next = self.0.len() as u64;
-        let key = (invocation.callable, invocation.pointer);
-        let registration = *self.0.entry(key).or_insert(next);
-        invocation.distinguish(0x6d61_6e75_616c_0000 ^ registration);
+    pub(crate) fn register<O>(&mut self, invocation: &mut Invocation<O>, slot: u64) -> Result {
+        if let Some(identity) = invocation.random_identity()? {
+            // Slots and names are portable. TypeId is only a local lookup key
+            // and makes repeated use of one callable share its first slot.
+            invocation.stream = *self
+                .0
+                .entry(identity)
+                .or_insert_with(|| stream(invocation.name, 0x7363_6865_6475_6c65 ^ slot));
+        }
+        Ok(())
+    }
+
+    pub(crate) fn prepare_manual<O>(&self, invocation: &mut Invocation<O>) -> Result {
+        if let Some(identity) = invocation.random_identity()? {
+            invocation.stream = self.0.get(&identity).copied().unwrap_or_else(|| {
+                // A harness-only rule has no slot. Its identity is local to
+                // this build and independent of every earlier invocation.
+                let mut hash = DefaultHasher::new();
+                identity.hash(&mut hash);
+                stream(invocation.name, hash.finish())
+            });
+        }
+        Ok(())
     }
 }
 
@@ -56,19 +92,18 @@ pub(crate) struct ReadContextParts<'a> {
 }
 
 impl<O> Invocation<O> {
-    pub(crate) fn anonymous(&self) -> bool {
-        self.name.ends_with("::{{closure}}")
-    }
-
-    pub(crate) fn distinguish(&mut self, registration: u64) {
-        self.stream = (self.stream ^ registration).wrapping_mul(0x0100_0000_01b3);
-    }
-
-    pub(crate) fn identify_scheduled(&mut self, registration: u64, streams: &mut RuleStreams) {
-        if self.pointer.is_some() {
-            streams.identify(self);
-        } else if self.anonymous() {
-            self.distinguish(registration);
+    fn random_identity(&self) -> Result<Option<TypeId>> {
+        let Some(parameter) = self.signature.random_parameter() else {
+            return Ok(None);
+        };
+        match self.identity {
+            RuleIdentity::Concrete(identity) => Ok(Some(identity)),
+            RuleIdentity::Erased => Err(Error::refused(
+                "T0204",
+                format!("{}, {parameter}", self.name),
+                "Random requires the identity of a rule erased by this callable type",
+                "Pass a named function directly or define a closure that takes Random.",
+            )),
         }
     }
 
@@ -141,14 +176,10 @@ where
     F: FnMut() -> O + Send + 'static,
 {
     fn compile(mut self) -> Invocation<O> {
-        let function: &dyn Any = &self;
         Invocation {
             name: type_name::<F>(),
-            callable: TypeId::of::<F>(),
-            pointer: function
-                .downcast_ref::<fn() -> O>()
-                .map(|function| *function as usize),
-            stream: stream::<F>(),
+            identity: RuleIdentity::of::<F>(),
+            stream: 0,
             signature: Signature::default(),
             invoke: Box::new(move |_, _| Ok(self())),
         }
@@ -158,16 +189,16 @@ where
 impl<F: Fn() -> O + Copy + Send + 'static, O: 'static> ScheduledFunction<(), O> for F {}
 impl<F: Fn() -> O + Copy + Send + 'static, O: 'static> ReadFunction<(), O> for F {}
 
-fn stream<F>() -> u64 {
-    type_name::<F>()
-        .bytes()
+fn stream(name: &str, discriminator: u64) -> u64 {
+    name.bytes()
+        .chain(discriminator.to_le_bytes())
         .fold(0xcbf2_9ce4_8422_2325, |hash, byte| {
             (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3)
         })
 }
 
 macro_rules! functions {
-    ($(($($parameter:ident $value:ident $index:tt $borrow:lifetime),*)),+ $(,)?) => {$(
+    ($(($($parameter:ident $value:ident $index:tt),*)),+ $(,)?) => {$(
         impl<F, O: 'static, $($parameter,)*> RuleFunction<($($parameter,)*), O> for F
         where
             F: FnMut($($parameter),*) -> O + for<'t> FnMut($($parameter::Item<'t>),*) -> O + Send + 'static,
@@ -180,27 +211,10 @@ macro_rules! functions {
                 let loan_types = list.0.loan_types();
                 let mut loans = Loans::default();
                 let mut state: ($($parameter::State,)*) = Default::default();
-                let function: &dyn Any = &self;
-                let pointer = function
-                    .downcast_ref::<fn($($parameter),*) -> O>()
-                    .map(|function| *function as usize)
-                    .or_else(|| {
-                        // A function type can quantify each parameter's loan
-                        // separately or use a single lifetime for the loans.
-                        function
-                            .downcast_ref::<for<$($borrow),*> fn($($parameter::Item<$borrow>),*) -> O>()
-                            .map(|function| *function as usize)
-                    })
-                    .or_else(|| {
-                        function
-                            .downcast_ref::<for<'t> fn($($parameter::Item<'t>),*) -> O>()
-                            .map(|function| *function as usize)
-                    });
                 Invocation {
                     name,
-                    callable: TypeId::of::<F>(),
-                    pointer,
-                    stream: stream::<F>(),
+                    identity: RuleIdentity::of::<F>(),
+                    stream: 0,
                     signature: list.0,
                     invoke: Box::new(move |context, parts| {
                         let read = ReadContext {
@@ -254,12 +268,12 @@ macro_rules! functions {
 }
 
 functions!(
-    (A a 0 'a0),
-    (A a 0 'a0, B b 1 'a1),
-    (A a 0 'a0, B b 1 'a1, C c 2 'a2),
-    (A a 0 'a0, B b 1 'a1, C c 2 'a2, D d 3 'a3),
-    (A a 0 'a0, B b 1 'a1, C c 2 'a2, D d 3 'a3, E e 4 'a4),
-    (A a 0 'a0, B b 1 'a1, C c 2 'a2, D d 3 'a3, E e 4 'a4, F0 f 5 'a5),
+    (A a 0),
+    (A a 0, B b 1),
+    (A a 0, B b 1, C c 2),
+    (A a 0, B b 1, C c 2, D d 3),
+    (A a 0, B b 1, C c 2, D d 3, E e 4),
+    (A a 0, B b 1, C c 2, D d 3, E e 4, F0 f 5),
 );
 
 /// An ordinary rule returns nothing or a Thrum result.
@@ -318,7 +332,6 @@ pub(crate) struct Condition {
 struct ConditionState {
     invocation: Invocation<bool>,
     value: Option<(u64, bool)>,
-    identified: bool,
 }
 
 impl Condition {
@@ -329,17 +342,13 @@ impl Condition {
             state: Mutex::new(ConditionState {
                 invocation,
                 value: None,
-                identified: false,
             }),
         }
     }
 
-    pub(crate) fn identify(&self, registration: u64, streams: &mut RuleStreams) {
+    pub(crate) fn identify(&self, registration: u64, streams: &mut RuleStreams) -> Result {
         let mut state = self.state.lock().expect("condition scratch");
-        if !state.identified {
-            state.invocation.identify_scheduled(registration, streams);
-            state.identified = true;
-        }
+        streams.register(&mut state.invocation, registration)
     }
 
     pub(crate) fn evaluate(
@@ -365,8 +374,7 @@ impl Rule {
             name,
             signature,
             stream,
-            callable,
-            pointer,
+            identity,
             mut invoke,
         } = function.compile();
         Self {
@@ -374,8 +382,7 @@ impl Rule {
                 name,
                 signature,
                 stream,
-                callable,
-                pointer,
+                identity,
                 invoke: Box::new(move |ctx, parts| invoke(ctx, parts)?.result()),
             },
             cadence: None,

@@ -378,6 +378,10 @@ unsafe impl Param for Tick {
 impl ReadOnly for Tick {}
 
 /// A reproducible stream of draws for the current rule and tick.
+///
+/// Pass the rule's named function or closure directly. Rust function pointers
+/// and erased callables lack the original rule identity and are refused when
+/// they take this parameter.
 /// ```
 /// use thrum::{Num, Random};
 /// fn roll(mut random: Random) -> Num { random.between(Num::ZERO, Num::ONE) }
@@ -460,7 +464,9 @@ impl Random {
 unsafe impl Param for Random {
     type State = ();
     type Item<'t> = Self;
-    fn describe(_: &str, _: &mut ParameterList) {}
+    fn describe(name: &str, list: &mut ParameterList) {
+        list.0.0.push(Parameter::Random(name.to_owned()));
+    }
     fn read((): &mut (), _: &ReadContext<'_>) -> Result {
         Ok(())
     }

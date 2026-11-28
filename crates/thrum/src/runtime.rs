@@ -10,7 +10,7 @@ use thrum_core::{
     sim::{Edit, EditWriter, SystemId, TickGame, WorldRead},
 };
 
-use crate::{Data, Entity, Event, PhaseClock, Result, Seconds, Tick, data::DataWriter};
+use crate::{Data, Entity, Event, PhaseClock, Result, Tick, data::DataWriter, time::PhaseSpan};
 
 pub(crate) trait Value: Send + Sync {
     fn id(&self) -> TypeId;
@@ -341,7 +341,7 @@ pub(crate) struct State {
     pub(crate) scene_entered: u64,
     pub(crate) phase: Option<usize>,
     pub(crate) phase_entered: u64,
-    pub(crate) phase_offset: Seconds,
+    pub(crate) phase_offset: PhaseSpan,
     pub(crate) phase_end: Option<u64>,
     pub(crate) phase_expired: bool,
     pub(crate) held: Option<Transition>,
@@ -380,12 +380,17 @@ impl State {
             .or_else(|| self.resources.get::<T>())
     }
 
+    pub(crate) fn phase_elapsed(&self, tick: u64, rate: u32) -> PhaseSpan {
+        self.phase_offset
+            .advance(tick.saturating_sub(self.phase_entered), rate)
+    }
+
     pub(crate) fn clock(&self, tick: Tick) -> PhaseClock {
-        let elapsed = tick.number.0.saturating_sub(self.phase_entered);
-        let remaining = self.phase_end.map(|end| end.saturating_sub(tick.number.0));
         PhaseClock {
-            elapsed: self.phase_offset + Seconds::from_ticks(elapsed, tick.rate),
-            remaining: remaining.map(|left| Seconds::from_ticks(left, tick.rate)),
+            elapsed: self.phase_elapsed(tick.number.0, tick.rate),
+            remaining: self
+                .phase_end
+                .map(|end| PhaseSpan::from_ticks(end.saturating_sub(tick.number.0), tick.rate)),
             expired: self.phase_expired,
         }
     }

@@ -625,28 +625,21 @@ impl TestGame {
     /// The rule cannot acquire its parameters, returns an error as a rule
     /// result, or proposes an invalid edit.
     ///
-    /// Function pointers get their random stream when first registered or run.
-    /// Repeat manual calls in the same order to reproduce a run in a freshly
-    /// built game. If the compiler gives two functions the same pointer, they
-    /// share a stream. Pass named functions directly to preserve their names.
+    /// For a rule that takes [`crate::Random`], pass the named function
+    /// directly or pass a closure. Function pointers erase the rule's identity.
+    ///
     /// # Panics
     /// Only if an internal harness invariant is broken.
     pub fn run<M, O: Send + 'static>(&mut self, function: impl RuleFunction<M, O>) -> Result<O> {
         let mut invocation = function.compile();
-        self.authority.program.validate_manual(
-            &invocation.signature,
-            invocation.name,
-            &self.authority.state,
-        )?;
+        self.authority
+            .program
+            .prepare_manual(&mut invocation, &self.authority.state)?;
         let output = Arc::new(Mutex::new(None));
         let result = Arc::clone(&output);
         let name = invocation.name;
         let signature = invocation.signature.clone();
-        let callable = invocation.callable;
-        let pointer = invocation.pointer;
-        if pointer.is_some() || invocation.anonymous() {
-            self.authority.program.streams.identify(&mut invocation);
-        }
+        let identity = invocation.identity;
         let stream = invocation.stream;
         let invoke = move |context: &mut Context<'_, '_>, parts: &ReadContextParts<'_>| {
             let mut value = invocation.call(context, parts)?;
@@ -661,8 +654,7 @@ impl TestGame {
             name,
             signature,
             stream,
-            callable,
-            pointer,
+            identity,
             invoke: Box::new(invoke),
         }))?;
         Ok(output

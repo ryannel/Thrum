@@ -651,3 +651,17 @@
   with a harness read after each step. SDK documentation examples exercise their own items. The seven public derive
   examples run from the SDK's re-exports, where game authors use the derives.
   [Mac proofs](../../../.orchestrate/evidence/GAME-SDK/WP1/)
+
+### WP1 phase-clock and rule-identity review fixes
+
+- Resuming a phase keeps the elapsed tick fraction and the exact deadline. Its cadence continues from
+  the saved elapsed time. The Mac tests compare each tick against an uninterrupted phase through the
+  next cadence and expiry, including the 60 Hz one-second threshold and replay.
+- Scheduled random streams are fixed when the scene program is built. The harness looks up those same
+  streams and derives harness-only streams from the callable's type in the current build. Calling a
+  rule on a discarded tick leaves no registration to affect later draws.
+- A function coerced to a Rust `fn` pointer can share an address with a different function. Callers
+  passing a rule that takes `Random` use the named function directly or a concrete closure, the
+  existing rule forms. The SDK reports `T0204` at startup or harness admission for erased callables
+  taking `Random`, including as a field of `Params`. Function pointers remain usable for rules
+  without `Random`. [Mac proofs](../../../.orchestrate/evidence/GAME-SDK/WP1/)
