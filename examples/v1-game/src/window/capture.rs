@@ -1074,7 +1074,7 @@ async fn record(
     let mut final_hold = None;
     let mut last_sample_time = Duration::ZERO;
     let bank_mover = haze_take.is_some_and(HazeTake::runs_world);
-    let (hard_end, soft_end, world_end) = if governed {
+    let (hard_end, soft_end, world_end) = if governed && scenario == "route" {
         (12.0, 10.0, f64::INFINITY)
     } else if let Some(take) = &cloud_take {
         take.bounds()
