@@ -31,3 +31,8 @@
   Hand-worked Mac cases and 12,471 retained vectors passed on the Mac (development and release),
   Chrome Wasm and the iPhone simulator (function). The changed-word control named its differing
   vector. [Item proofs and measurement](../../../.orchestrate/evidence/SIM-3D/WP1/).
+- 2026-11-28 WP1 review fixes preserve rounding residuals in the domain, collinearity and ray predicates.
+  The sweep fixtures now finish clear of thin targets and cover opposing full-domain motions.
+  The revised Mac measurement selects a 1/64-unit contact tolerance and a 1/128-unit half gap.
+  Mac development and release, Chrome Wasm and the iPhone simulator reproduce all 13,288 retained
+  answers. [Review fixes and target proof](../../../.orchestrate/evidence/SIM-3D/WP1/review-fixes/README.md).
