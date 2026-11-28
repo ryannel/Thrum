@@ -493,23 +493,122 @@ fn compiler_names_forbidden_world_fields_and_missing_first_default() {
         .wait_with_output()
         .expect("test fixture provides this value");
     assert!(!output.status.success());
-    let text = String::from_utf8(output.stderr).expect("test fixture provides this value");
-    for expected in [
-        "T0101",
-        "Vec<i32>",
-        "String",
-        "&i32",
-        "f32",
-        "usize",
-        "fixed-width integer",
-        "T0103",
-        "NoDefault",
-        "implement Default",
-    ] {
-        assert!(
-            text.contains(expected),
-            "missing {expected:?} in the compiler diagnostics"
+    let text = String::from_utf8(output.stderr).expect("rustc returned UTF-8");
+    let errors: Vec<serde_json::Value> = text
+        .lines()
+        .map(|line| serde_json::from_str(line).expect("rustc returned JSON"))
+        .filter(|message: &serde_json::Value| message["level"] == "error")
+        .collect();
+
+    let expected_fields = ["Vec<i32>", "String", "&i32", "f32", "usize"];
+    for (index, declaration) in source.lines().enumerate().skip(1).take(20) {
+        assert_diagnostic(
+            &errors,
+            index + 1,
+            declaration,
+            &[
+                "T0101",
+                expected_fields[(index - 1) % expected_fields.len()],
+                "has no portable world representation",
+                "use a fixed-width integer, Num, or a bounded value built from Data fields",
+            ],
         );
     }
-    assert!(text.matches("T0101").count() >= 20);
+    assert_diagnostic(
+        &errors,
+        23,
+        "Game::new(\"bad\").scene",
+        &[
+            "T0103",
+            "NoDefault",
+            "cannot supply a default value",
+            "derive or implement Default on this scene, or register a defaultable scene first",
+        ],
+    );
+}
+
+fn assert_diagnostic(
+    errors: &[serde_json::Value],
+    line: usize,
+    declaration: &str,
+    expected: &[&str],
+) {
+    assert!(
+        errors.iter().any(|error| {
+            let at_declaration = error["spans"].as_array().is_some_and(|spans| {
+                spans.iter().any(|span| {
+                    span["is_primary"] == true
+                        && span["line_start"] == line
+                        && span["text"].as_array().is_some_and(|source| {
+                            source.iter().any(|part| {
+                                part["text"]
+                                    .as_str()
+                                    .is_some_and(|text| text.contains(declaration))
+                            })
+                        })
+                })
+            });
+            at_declaration
+                && error["rendered"]
+                    .as_str()
+                    .is_some_and(|text| expected.iter().all(|part| text.contains(part)))
+        }),
+        "line {line} ({declaration}) needs a diagnostic containing {expected:?}"
+    );
+}
+
+#[test]
+fn the_registered_runtime_refuses_non_finite_starting_and_entering_values() -> Result {
+    #[derive(Resource)]
+    struct Speed(Num);
+    #[derive(Scene)]
+    struct Finished(Num);
+
+    let bad = Num::ONE / Num::ZERO;
+    let initial = Game::new("bad starting resource")
+        .resource(Speed(bad))
+        .scene(|_: &mut Scene| {})
+        .test();
+    assert!(
+        initial
+            .err()
+            .expect("invalid initial resource")
+            .to_string()
+            .contains("non-finite Num")
+    );
+
+    let local = Game::new("bad scene resource")
+        .scene(move |scene: &mut Scene| scene.resource(Speed(bad)))
+        .test();
+    assert!(
+        local
+            .err()
+            .expect("invalid scene resource")
+            .to_string()
+            .contains("non-finite Num")
+    );
+
+    let mut game = Game::new("bad landing")
+        .scene(move |scene: &mut Scene| {
+            scene.rules(move |mut scenes: Scenes<'_>| {
+                scenes.go_to(Finished(bad));
+            });
+        })
+        .scene(|_: &mut Scene<Finished>| {})
+        .test()?;
+    let initial = game.digest();
+    assert!(
+        game.go_to(Finished(bad))
+            .expect_err("invalid explicit scene")
+            .to_string()
+            .contains("non-finite Num")
+    );
+    assert!(
+        game.step()
+            .expect_err("invalid scene request")
+            .to_string()
+            .contains("non-finite Num")
+    );
+    assert_eq!(game.digest(), initial);
+    Ok(())
 }

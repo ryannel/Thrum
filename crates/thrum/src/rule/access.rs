@@ -5,7 +5,7 @@ use std::{
 
 use thrum_core::sim::{
     Access, AccessKey, AccessMode, ComponentKey, ComponentRegistry, ComponentSchemaId, GameRuntime,
-    ReadPermit, SystemId, TickGame, WritePermit,
+    ReadPermit, RuleColumn, RuleStorage, SystemId, TickGame, WorldTxn, WritePermit,
 };
 
 use crate::{Data, Error, Result, data::Stored};
@@ -64,10 +64,20 @@ impl Column {
 pub(crate) struct Binding {
     read: ErasedPermit,
     write: Option<ErasedPermit>,
+    loan: fn(&mut WorldTxn<'_>, &ErasedPermit) -> RuleStorage,
 }
 
 fn bind<T: Data, G: TickGame>(runtime: &GameRuntime<G>, id: SystemId, mode: AccessMode) -> Binding {
     Binding {
+        loan: |world, permit| {
+            world
+                .rule_storage(
+                    permit
+                        .downcast_ref::<ReadPermit<Stored<T>>>()
+                        .expect("typed loan binding"),
+                )
+                .expect("declared component loan")
+        },
         read: Box::new(runtime.read_permit::<Stored<T>>(id).expect("declared read")),
         write: (mode == AccessMode::Write).then(|| -> ErasedPermit {
             Box::new(
@@ -96,6 +106,18 @@ impl Bindings {
         )
     }
 
+    pub(crate) fn prepare_loans(
+        &self,
+        world: &mut WorldTxn<'_>,
+        columns: &[TypeId],
+        loans: &mut Loans,
+    ) {
+        loans.0.extend(columns.iter().map(|id| {
+            let binding = &self.0[id];
+            (*id, (binding.loan)(world, &binding.read))
+        }));
+    }
+
     pub(crate) fn read<T: Data>(&self) -> &ReadPermit<Stored<T>> {
         self.0[&TypeId::of::<T>()]
             .read
@@ -110,6 +132,19 @@ impl Bindings {
             .expect("declared mutable binding")
             .downcast_ref()
             .expect("typed write binding")
+    }
+}
+
+#[derive(Default)]
+pub(crate) struct Loans(HashMap<TypeId, RuleStorage>);
+
+impl Loans {
+    pub(crate) fn clear(&mut self) {
+        self.0.clear();
+    }
+
+    pub(crate) fn column<T: Data>(&self) -> RuleColumn<Stored<T>> {
+        self.0[&TypeId::of::<T>()].typed()
     }
 }
 
@@ -160,6 +195,27 @@ impl Parameter {
 pub(crate) struct Signature(pub(crate) Vec<Parameter>);
 
 impl Signature {
+    pub(crate) fn loan_types(&self) -> Vec<TypeId> {
+        let mut types = Vec::new();
+        for parameter in &self.0 {
+            if let Parameter::Query(_, projection) = parameter {
+                for item in &projection.access {
+                    if !types.contains(&item.column.type_id) {
+                        types.push(item.column.type_id);
+                    }
+                }
+            }
+        }
+        types
+    }
+
+    pub(crate) fn needs_entities(&self) -> bool {
+        self.0
+            .iter()
+            .any(|parameter| matches!(parameter, Parameter::Query(..)))
+            || crate::entity::contains_entities(self)
+    }
+
     pub(crate) fn checks_entity_overlap(&self) -> bool {
         let mut queries = self.0.iter().filter_map(|parameter| {
             if let Parameter::Query(_, projection) = parameter {
@@ -179,7 +235,12 @@ impl Signature {
         false
     }
 
-    pub(crate) fn validate(&self, rule: &str, resources: &[TypeId]) -> Result {
+    pub(crate) fn validate(
+        &self,
+        rule: &str,
+        resources: &[TypeId],
+        scene_value: Option<TypeId>,
+    ) -> Result {
         for (index, param) in self.0.iter().enumerate() {
             match param {
                 Parameter::Query(name, projection) => {
@@ -195,7 +256,10 @@ impl Signature {
                     }
                 }
                 Parameter::Exclusive(name, access) => {
-                    if access.kind == Kind::Resource && !resources.contains(&access.id) {
+                    if access.kind == Kind::Resource
+                        && !(resources.contains(&access.id)
+                            || !access.write && scene_value == Some(access.id))
+                    {
                         return Err(Error::refused(
                             "T0201",
                             format!("{rule}, {name}"),

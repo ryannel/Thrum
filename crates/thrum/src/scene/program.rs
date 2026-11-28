@@ -17,7 +17,10 @@ use crate::{
         access::{Bindings, Column, Signature},
         params::Context,
     },
-    runtime::{Authority, Candidate, Operation, Transition, collect_entities, despawn_all},
+    runtime::{
+        Authority, Candidate, Operation, SceneValue, State, Transition, collect_entities,
+        despawn_all,
+    },
 };
 
 use super::{Definition, Duration, Expiry, Landing, Names};
@@ -81,6 +84,29 @@ impl Step {
         base.into_iter().chain(conditions).chain(duration)
     }
 
+    fn identify(&mut self, slot: u32) {
+        let rule = match self {
+            Self::Main(_, _, rule)
+            | Self::ExpiryRule(_, _, rule)
+            | Self::Exit(_, _, rule)
+            | Self::EnterScene(_, rule)
+            | Self::EnterPhase(_, _, rule) => rule,
+            Self::Length(_, _, Duration::Read(read)) => {
+                if read.anonymous() {
+                    read.distinguish(u64::from(slot));
+                }
+                return;
+            }
+            _ => return,
+        };
+        if rule.invoke.anonymous() {
+            rule.invoke.distinguish(u64::from(slot));
+        }
+        for (index, condition) in (1_u64..).zip(&rule.conditions) {
+            condition.identify((index << 32) | u64::from(slot));
+        }
+    }
+
     fn scene(&self) -> Option<usize> {
         match self {
             Self::Main(scene, ..)
@@ -110,6 +136,13 @@ impl Program {
         let mut enters = Vec::new();
         let mut phases = Vec::new();
         for (scene, definition) in definitions.into_iter().enumerate() {
+            for value in definition
+                .resources
+                .iter()
+                .chain(&names.0[scene].phase_values)
+            {
+                crate::runtime::check_value(value.as_ref())?;
+            }
             let mut phase_exits = Vec::new();
             main.extend(
                 definition
@@ -179,10 +212,9 @@ impl Program {
         for step in &main {
             if let Some(scene) = step.scene() {
                 let mut providers = global.to_vec();
-                providers.push(names.0[scene].id);
                 providers.extend(scenes[scene].resources.iter().map(|value| value.id()));
                 for (name, signature) in step.signatures() {
-                    signature.validate(name, &providers)?;
+                    signature.validate(name, &providers, Some(names.0[scene].id))?;
                     for (column, _) in signature.columns() {
                         if !columns.iter().any(|known| known.key == column.key) {
                             columns.push(column);
@@ -201,8 +233,9 @@ impl Program {
 
         let mut slots = Vec::new();
         let mut systems = Vec::new();
-        for (index, step) in main.into_iter().enumerate() {
+        for (index, mut step) in main.into_iter().enumerate() {
             let id = u32::try_from(index).map_err(|_| Error::invalid("scene", "too many rules"))?;
+            step.identify(id);
             let writes_structure = matches!(step, Step::Manual | Step::Install)
                 || step
                     .signatures()
@@ -280,9 +313,13 @@ impl Program {
         &self,
         signature: &Signature,
         rule: &str,
-        resources: &crate::runtime::Resources,
+        state: &State,
     ) -> Result {
-        signature.validate(rule, &resources.types())?;
+        signature.validate(
+            rule,
+            &state.resources.types(),
+            state.scene_value.as_ref().map(|value| value.0.id()),
+        )?;
         for (column, _) in signature.columns() {
             if !self.columns.iter().any(|known| known.key == column.key) {
                 return Err(Error::refused(
@@ -315,7 +352,7 @@ impl Program {
         call: &mut Call<'_, '_, '_>,
     ) -> Result<O> {
         let world = call.world.read();
-        if !call.candidate.entities_valid {
+        if invocation.signature.needs_entities() && !call.candidate.entities_valid {
             collect_entities(&world, &mut call.candidate.entities);
             call.candidate.entities_valid = true;
         }
@@ -351,7 +388,7 @@ impl Program {
             executor: call.executor,
             tick,
             seed: call.candidate.state.seed,
-            stream: call.world.system_id().0,
+            stream: invocation.stream,
             stage,
             names: &self.names,
         };
@@ -428,10 +465,11 @@ impl Program {
         self.invoke(&mut rule.invoke, stage, call)
     }
 
-    fn install(&self, authority: &Authority, call: &mut Call<'_, '_, '_>) {
+    fn install(&self, authority: &Authority, call: &mut Call<'_, '_, '_>) -> Result {
         let candidate = &mut *call.candidate;
         match candidate.transition.as_ref() {
             Some(Transition::Scene(index, value)) => {
+                crate::runtime::check_value(value.as_ref())?;
                 if !matches!(
                     *authority.operation.lock().expect("operation"),
                     Operation::Start(..)
@@ -445,14 +483,15 @@ impl Program {
                         &call.world.read(),
                     );
                 }
+                candidate.entities.clear();
+                candidate.entities_valid = true;
                 candidate.state.scene = *index;
-                candidate.state.scene_value = Some(Arc::clone(value));
+                candidate.state.scene_value = Some(SceneValue(Arc::clone(value)));
                 candidate.state.scene_entered = call.tick;
                 candidate.state.resources.remove_scene();
                 for resource in &self.scenes[*index].resources {
                     candidate.state.resources.install(resource.as_ref(), true);
                 }
-                candidate.state.resources.install(value.as_ref(), true);
                 set_phase(candidate, None, call.tick);
             }
             Some(Transition::Phase(phase)) => {
@@ -460,6 +499,7 @@ impl Program {
             }
             None => {}
         }
+        Ok(())
     }
 
     fn execute(
@@ -532,18 +572,20 @@ impl Program {
             }
             Step::Choose => {
                 let mut requests = call.candidate.requests.lock().expect("requests");
-                call.candidate.transition = match &*authority.operation.lock().expect("operation") {
+                let operation = authority.operation.lock().expect("operation");
+                call.candidate.transition = match &*operation {
                     Operation::Start(index, value) => {
                         Some(Transition::Scene(*index, Arc::clone(value)))
                     }
                     Operation::Transition(transition) => Some(transition.clone()),
                     Operation::Tick | Operation::Manual(_) => requests.next.take(),
                 };
-                if call
-                    .candidate
-                    .state
-                    .phase_end
-                    .is_some_and(|end| end <= call.tick)
+                if matches!(*operation, Operation::Tick)
+                    && call
+                        .candidate
+                        .state
+                        .phase_end
+                        .is_some_and(|end| end <= call.tick)
                 {
                     call.candidate.state.phase_expired = true;
                     call.candidate.state.phase_end = None;
@@ -568,7 +610,7 @@ impl Program {
                     self.rule(rule, stage, call.tick, call)?;
                 }
             }
-            Step::Install => self.install(authority, call),
+            Step::Install => self.install(authority, call)?,
             Step::EnterScene(when, rule)
                 if *when == scene
                     && matches!(call.candidate.transition, Some(Transition::Scene(..))) =>
@@ -613,13 +655,16 @@ impl Program {
                     Some(call.tick.saturating_add(time.ticks(self.rate)));
             }
             Step::Finish => {
-                call.candidate.state.held = call
+                let held = call
                     .candidate
                     .requests
                     .lock()
                     .expect("requests")
                     .next
                     .take();
+                if call.candidate.state.held.is_none() {
+                    call.candidate.state.held = held;
+                }
             }
             _ => {}
         }
@@ -636,14 +681,21 @@ impl Program {
     pub(crate) fn validate_queries(
         &self,
         world: &WorldRead<'_>,
-        candidate: &Candidate,
+        scene: usize,
+        changed: &[crate::Entity],
         tick: u64,
     ) -> Result {
-        for &(name, ref signature) in &self.scenes[candidate.state.scene].signatures {
-            for &(entity, handle) in &candidate.entities {
-                signature
-                    .validate_entity(name, entity, |key| world.has_component(handle, key))
-                    .map_err(|error| rule_failure(name, tick, &error))?;
+        let signatures = &self.scenes[scene].signatures;
+        if signatures.is_empty() {
+            return Ok(());
+        }
+        for &entity in changed {
+            if let Some(handle) = world.handle(entity.stable()) {
+                for &(name, ref signature) in signatures {
+                    signature
+                        .validate_entity(name, entity, |key| world.has_component(handle, key))
+                        .map_err(|error| rule_failure(name, tick, &error))?;
+                }
             }
         }
         Ok(())

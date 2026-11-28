@@ -2,13 +2,14 @@ use std::{marker::PhantomData, slice};
 
 use thrum_core::{
     Handle,
-    sim::{ColumnRead, Executor, WorldRead, WorldTxn},
+    profile::StateEncode,
+    sim::{ColumnRead, Executor, RuleColumn, WorldRead},
 };
 
 use crate::{Component, Entity, Error, Result, data::Stored};
 
 use super::{
-    access::{AccessColumn, Bindings, Column, Parameter, Projection},
+    access::{AccessColumn, Bindings, Column, Loans, Parameter, Projection},
     params::{Context, Param, ParameterList, ReadContext, ReadOnly},
 };
 
@@ -38,6 +39,7 @@ pub struct Without<T: Component>(PhantomData<T>);
 /// ```
 pub struct Query<'a, D: QueryData, F: Filter = ()> {
     rows: &'a mut [Row<D::Owned>],
+    columns: D::Columns,
     executor: Executor,
     filter: PhantomData<F>,
 }
@@ -50,7 +52,9 @@ impl<D: QueryData, F: Filter> Query<'_, D, F> {
     /// fn total(health: Query<&Health>) -> u32 { health.iter().map(|health| health.0).sum() }
     /// ```
     pub fn iter(&self) -> impl ExactSizeIterator<Item = D::Read<'_>> {
-        self.rows.iter().map(|row| D::read(&row.data))
+        self.rows
+            .iter()
+            .map(|row| D::read(&self.columns, row.entity, row.physical, &row.data))
     }
 
     /// Iterate through the matching rows with the access declared by this query.
@@ -62,7 +66,7 @@ impl<D: QueryData, F: Filter> Query<'_, D, F> {
     /// }
     /// ```
     pub fn iter_mut(&mut self) -> IterMut<'_, D> {
-        IterMut(self.rows.iter_mut(), PhantomData)
+        IterMut(self.rows.iter_mut(), &self.columns, PhantomData)
     }
 
     /// Read the matching item for this entity.
@@ -75,7 +79,8 @@ impl<D: QueryData, F: Filter> Query<'_, D, F> {
     /// ```
     pub fn get(&self, entity: impl Into<Option<Entity>>) -> Option<D::Read<'_>> {
         let index = self.index(entity.into()?)?;
-        Some(D::read(&self.rows[index].data))
+        let row = &self.rows[index];
+        Some(D::read(&self.columns, row.entity, row.physical, &row.data))
     }
 
     /// Access the matching item for this entity.
@@ -88,7 +93,13 @@ impl<D: QueryData, F: Filter> Query<'_, D, F> {
     /// ```
     pub fn get_mut(&mut self, entity: impl Into<Option<Entity>>) -> Option<D::Item<'_>> {
         let index = self.index(entity.into()?)?;
-        Some(D::item(&mut self.rows[index].data))
+        let row = &mut self.rows[index];
+        Some(D::item(
+            &self.columns,
+            row.entity,
+            row.physical,
+            &mut row.data,
+        ))
     }
 
     /// Access two distinct matching rows at once, in argument order.
@@ -102,7 +113,10 @@ impl<D: QueryData, F: Filter> Query<'_, D, F> {
     pub fn pair_mut(&mut self, a: Entity, b: Entity) -> Option<(D::Item<'_>, D::Item<'_>)> {
         let [a, b] = [self.index(a)?, self.index(b)?];
         let [a, b] = self.rows.get_disjoint_mut([a, b]).ok()?;
-        Some((D::item(&mut a.data), D::item(&mut b.data)))
+        Some((
+            D::item(&self.columns, a.entity, a.physical, &mut a.data),
+            D::item(&self.columns, b.entity, b.physical, &mut b.data),
+        ))
     }
 
     /// The number of matching entities.
@@ -128,8 +142,10 @@ impl<D: QueryData, F: Filter> Query<'_, D, F> {
     /// fn heal(mut query: Query<&mut Health>) { query.par_each(|health| health.0 += 1); }
     /// ```
     pub fn par_each(&mut self, run: impl Fn(D::Item<'_>) + Send + Sync) {
-        self.executor
-            .for_each_mut(self.rows, |row| run(D::item(&mut row.data)));
+        let columns = &self.columns;
+        self.executor.for_each_mut(self.rows, |row| {
+            run(D::item(columns, row.entity, row.physical, &mut row.data));
+        });
     }
 
     fn index(&self, entity: Entity) -> Option<usize> {
@@ -145,13 +161,19 @@ impl<D: QueryData, F: Filter> Query<'_, D, F> {
 ///     for entity in &mut query { let _ = entity; }
 /// }
 /// ```
-pub struct IterMut<'a, D: QueryData>(slice::IterMut<'a, Row<D::Owned>>, PhantomData<D>);
+pub struct IterMut<'a, D: QueryData>(
+    slice::IterMut<'a, Row<D::Owned>>,
+    &'a D::Columns,
+    PhantomData<D>,
+);
 
 impl<'a, D: QueryData> Iterator for IterMut<'a, D> {
     type Item = D::Item<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.0.next().map(|row| D::item(&mut row.data))
+        self.0
+            .next()
+            .map(|row| D::item(self.1, row.entity, row.physical, &mut row.data))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -176,13 +198,19 @@ impl<'b, D: QueryData, F: Filter> IntoIterator for &'b mut Query<'_, D, F> {
 ///     for entity in &query { let _ = entity; }
 /// }
 /// ```
-pub struct Iter<'a, D: QueryData>(slice::Iter<'a, Row<D::Owned>>, PhantomData<D>);
+pub struct Iter<'a, D: QueryData>(
+    slice::Iter<'a, Row<D::Owned>>,
+    &'a D::Columns,
+    PhantomData<D>,
+);
 
 impl<'a, D: QueryData> Iterator for Iter<'a, D> {
     type Item = D::Read<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.0.next().map(|row| D::read(&row.data))
+        self.0
+            .next()
+            .map(|row| D::read(self.1, row.entity, row.physical, &row.data))
     }
 }
 
@@ -191,7 +219,7 @@ impl<'b, D: QueryData, F: Filter> IntoIterator for &'b Query<'_, D, F> {
     type IntoIter = Iter<'b, D>;
 
     fn into_iter(self) -> Self::IntoIter {
-        Iter(self.rows.iter(), PhantomData)
+        Iter(self.rows.iter(), &self.columns, PhantomData)
     }
 }
 
@@ -215,6 +243,13 @@ impl<'a, D: QueryData, F: Filter> Single<'a, D, F> {
     /// ```
     pub fn into_inner(self) -> D::Item<'a> {
         self.item
+    }
+}
+
+impl<F: Filter> std::ops::Deref for Single<'_, Entity, F> {
+    type Target = Entity;
+    fn deref(&self) -> &Entity {
+        &self.item
     }
 }
 
@@ -248,7 +283,7 @@ pub trait QueryData: sealed::Data<Owned = Self::RowData> {
     /// ```
     /// fn count(query: thrum::Query<thrum::Entity>) -> u32 { query.count() }
     /// ```
-    type RowData: Send + 'static;
+    type RowData: Default + Send + 'static;
     /// A shared view of one row.
     /// ```
     /// fn count(query: thrum::Query<thrum::Entity>) -> u32 { query.count() }
@@ -274,31 +309,40 @@ pub trait QueryData: sealed::Data<Owned = Self::RowData> {
 pub trait Filter: sealed::Filter {}
 
 mod sealed {
-    use super::{Bindings, Entity, Handle, Projection, QueryData, Result, WorldRead, WorldTxn};
+    use super::{Bindings, Context, Entity, Loans, Projection, QueryData, Result, Row, WorldRead};
 
     pub(crate) trait Data: Sized {
-        type Owned: Send + 'static;
-        type Columns<'a>;
+        type Owned: Default + Send + 'static;
+        type Presence<'a>;
+        type Columns: Sync;
 
         fn describe(projection: &mut Projection);
-        fn bind<'a>(world: &'a WorldRead<'_>, bindings: &'a Bindings) -> Self::Columns<'a>;
-        fn collect(
-            columns: &Self::Columns<'_>,
+        fn presence<'a>(world: &'a WorldRead<'_>, bindings: &'a Bindings) -> Self::Presence<'a>;
+        fn matches(presence: &Self::Presence<'_>, slot: u32) -> bool;
+        fn bind(loans: &Loans) -> Self::Columns;
+        fn read<'a>(
+            columns: &Self::Columns,
             entity: Entity,
-            handle: Handle,
-        ) -> Option<Self::Owned>;
-        fn read(data: &Self::Owned) -> <Self as QueryData>::Read<'_>
+            physical: usize,
+            data: &'a Self::Owned,
+        ) -> <Self as QueryData>::Read<'a>
         where
             Self: QueryData;
-        fn item(data: &mut Self::Owned) -> <Self as QueryData>::Item<'_>
+        fn item<'a>(
+            columns: &Self::Columns,
+            entity: Entity,
+            physical: usize,
+            data: &'a mut Self::Owned,
+        ) -> <Self as QueryData>::Item<'a>
         where
             Self: QueryData;
-        fn save(
-            data: &Self::Owned,
-            world: &mut WorldTxn<'_>,
-            bindings: &Bindings,
-            handle: Handle,
-        ) -> Result;
+        fn journal<R>(
+            _: &mut [Row<R>],
+            _: impl Fn(&mut R) -> &mut Self::Owned,
+            _: &mut Context<'_, '_>,
+        ) -> Result {
+            Ok(())
+        }
     }
 
     pub(crate) trait Filter {
@@ -343,145 +387,157 @@ impl sealed::Filter for () {
     }
 }
 
+// These adapters are private to monomorphised QueryData. Rows are prepared
+// against the live component set, with no conflicting access across parameters.
+// Query iteration lends at most one write to a row, and the rule owns the loan
+// scope until it has journaled all touched rows.
+#[expect(
+    unsafe_code,
+    reason = "mutate a row admitted exclusively by the scoped query projection"
+)]
+fn write_component<'a, T: Component>(
+    column: &RuleColumn<Stored<T>>,
+    row: usize,
+    prior: &'a mut Option<T>,
+) -> Option<&'a mut T> {
+    // SAFETY: The row belongs exclusively to this projection. The preimage is
+    // journaled after every invocation, including a panicking rule.
+    unsafe { column.write(row, prior, |stored| stored.0) }.map(|stored| &mut stored.0)
+}
+
+#[expect(
+    unsafe_code,
+    reason = "journal preimages captured from valid, now-released query loans"
+)]
+fn journal_component<T: Component, R>(
+    rows: &mut [Row<R>],
+    project: impl Fn(&mut R) -> &mut Option<T>,
+    context: &mut Context<'_, '_>,
+) -> Result {
+    let preimages = rows.iter_mut().filter_map(|row| {
+        project(&mut row.data)
+            .take()
+            .map(|prior| (row.handle, Stored(prior)))
+    });
+    // SAFETY: The callback has released its query loans, and structure cannot
+    // change until after this journal is submitted.
+    unsafe {
+        context.world.journal_rule_column(
+            context.bindings.write::<T>(),
+            preimages,
+            StateEncode::is_finite,
+        )
+    }
+    .map_err(|error| {
+        Error::refused(
+            "T0308",
+            std::any::type_name::<T>(),
+            error.to_string(),
+            "Correct the rule's component value.",
+        )
+    })
+}
+
 macro_rules! component_data {
-    ([$($projection:tt)*]; $write:literal; $item:ty; $save:ident) => {
+    ([$($projection:tt)*]; $write:literal; $required:literal; $owned:ty;
+        $read:ty; $item:ty; $read_expr:expr; $item_expr:expr; $($journal:item)?) => {
         impl<T: Component> QueryData for $($projection)* {
-            type RowData = T;
-            type Read<'a> = &'a T;
+            type RowData = $owned;
+            type Read<'a> = $read;
             type Item<'a> = $item;
             type For<'a> = $item;
         }
         impl<T: Component> sealed::Data for $($projection)* {
-            type Owned = T;
-            type Columns<'a> = ColumnRead<'a, Stored<T>>;
+            type Owned = $owned;
+            type Presence<'a> = ColumnRead<'a, Stored<T>>;
+            type Columns = RuleColumn<Stored<T>>;
 
             fn describe(projection: &mut Projection) {
-                projection.access.push(AccessColumn { column: Column::of::<T>(), write: $write, required: true });
+                projection.access.push(AccessColumn { column: Column::of::<T>(), write: $write, required: $required });
             }
-            fn bind<'a>(world: &'a WorldRead<'_>, bindings: &'a Bindings) -> Self::Columns<'a> {
+            fn presence<'a>(world: &'a WorldRead<'_>, bindings: &'a Bindings) -> Self::Presence<'a> {
                 world.column(bindings.read::<T>()).expect("bound query column")
             }
-            fn collect(column: &Self::Columns<'_>, _: Entity, handle: Handle) -> Option<T> {
-                column.at_slot(handle.slot).map(|stored| stored.0.clone())
+            fn matches(column: &Self::Presence<'_>, slot: u32) -> bool {
+                !$required || column.at_slot(slot).is_some()
             }
-            fn read(data: &Self::Owned) -> <Self as QueryData>::Read<'_> { data }
-            fn item(data: &mut Self::Owned) -> <Self as QueryData>::Item<'_> { data }
-            fn save(data: &T, world: &mut WorldTxn<'_>, bindings: &Bindings, handle: Handle) -> Result {
-                $save(data, world, bindings, handle)
+            fn bind(loans: &Loans) -> Self::Columns {
+                loans.column::<T>()
             }
+            fn read<'a>(column: &Self::Columns, _: Entity, row: usize, _: &'a Self::Owned) -> <Self as QueryData>::Read<'a> {
+                $read_expr(column, row)
+            }
+            fn item<'a>(column: &Self::Columns, _: Entity, row: usize, prior: &'a mut Self::Owned) -> <Self as QueryData>::Item<'a> {
+                $item_expr(column, row, prior)
+            }
+            $($journal)?
         }
     };
 }
+
+component_data!([&T]; false; true; (); &'a T; &'a T;
+    read_required; |column, row, &mut ()| read_required(column, row); );
+component_data!([Option<&T>]; false; false; (); Option<&'a T>; Option<&'a T>;
+    read_optional; |column, row, &mut ()| read_optional(column, row); );
+component_data!([&mut T]; true; true; Option<T>; &'a T; &'a mut T;
+    read_required; |column, row, prior| write_component(column, row, prior).expect("matched component");
+    fn journal<R>(rows: &mut [Row<R>], project: impl Fn(&mut R) -> &mut Self::Owned, context: &mut Context<'_, '_>) -> Result {
+        journal_component(rows, project, context)
+    }
+);
+component_data!([Option<&mut T>]; true; false; Option<T>; Option<&'a T>; Option<&'a mut T>;
+    read_optional; write_component;
+    fn journal<R>(rows: &mut [Row<R>], project: impl Fn(&mut R) -> &mut Self::Owned, context: &mut Context<'_, '_>) -> Result {
+        journal_component(rows, project, context)
+    }
+);
 
 #[expect(
-    clippy::unnecessary_wraps,
-    reason = "the same projection adapter also handles fallible writes"
+    unsafe_code,
+    reason = "read stays inside the rule's admitted projection"
 )]
-fn save_read<T>(_: &T, _: &mut WorldTxn<'_>, _: &Bindings, _: Handle) -> Result {
-    Ok(())
-}
-fn save_write<T: Component>(
-    data: &T,
-    world: &mut WorldTxn<'_>,
-    bindings: &Bindings,
-    handle: Handle,
-) -> Result {
-    world
-        .put(bindings.write::<T>(), handle, Stored(data.clone()))
-        .map(|_| ())
-        .map_err(|error| {
-            Error::refused(
-                "T0308",
-                std::any::type_name::<T>(),
-                error.to_string(),
-                "Correct the rule's component value.",
-            )
-        })
+fn read_optional<'a, T: Component>(column: &RuleColumn<Stored<T>>, row: usize) -> Option<&'a T> {
+    // SAFETY: Only the rule's prepared QueryData can use this helper, and only
+    // for a row admitted for this projection and the lifetime of that query.
+    let result = unsafe { column.read(row) };
+    result.map(|stored| &stored.0)
 }
 
-component_data!([&T]; false; &'a T; save_read);
-component_data!([&mut T]; true; &'a mut T; save_write);
+fn read_required<'a, T: Component>(column: &RuleColumn<Stored<T>>, row: usize) -> &'a T {
+    read_optional(column, row).expect("matched component")
+}
 
-macro_rules! optional_data {
-    ([$($projection:tt)*], $item:ty, $write:literal, $item_method:ident, $save:ident) => {
-        impl<T: Component> QueryData for Option<$($projection)*> {
-            type RowData = Option<T>;
-            type Read<'a> = Option<&'a T>;
-            type Item<'a> = Option<$item>;
-            type For<'a> = Option<$item>;
+macro_rules! row_value {
+    ($ty:ty, $value:expr) => {
+        impl QueryData for $ty {
+            type RowData = ();
+            type Read<'a> = Self;
+            type Item<'a> = Self;
+            type For<'a> = Self;
         }
-        impl<T: Component> sealed::Data for Option<$($projection)*> {
-            type Owned = Option<T>;
-            type Columns<'a> = ColumnRead<'a, Stored<T>>;
-            fn describe(projection: &mut Projection) {
-                projection.access.push(AccessColumn { column: Column::of::<T>(), write: $write, required: false });
+
+        impl sealed::Data for $ty {
+            type Owned = ();
+            type Presence<'a> = ();
+            type Columns = ();
+            fn describe(_: &mut Projection) {}
+            fn presence<'a>(_: &'a WorldRead<'_>, _: &'a Bindings) {}
+            fn matches((): &(), _: u32) -> bool {
+                true
             }
-            fn bind<'a>(world: &'a WorldRead<'_>, bindings: &'a Bindings) -> Self::Columns<'a> {
-                world.column(bindings.read::<T>()).expect("bound optional column")
+            fn bind(_: &Loans) {}
+            fn read((): &(), entity: Entity, _: usize, (): &()) -> Self {
+                $value(entity)
             }
-            fn collect(column: &Self::Columns<'_>, _: Entity, handle: Handle) -> Option<Self::Owned> {
-                Some(column.at_slot(handle.slot).map(|stored| stored.0.clone()))
-            }
-            fn read(data: &Self::Owned) -> <Self as QueryData>::Read<'_> { data.as_ref() }
-            fn item(data: &mut Self::Owned) -> <Self as QueryData>::Item<'_> { data.$item_method() }
-            fn save(data: &Self::Owned, world: &mut WorldTxn<'_>, bindings: &Bindings, handle: Handle) -> Result {
-                if let Some(data) = data { $save(data, world, bindings, handle)?; }
-                Ok(())
+            fn item((): &(), entity: Entity, _: usize, (): &mut ()) -> Self {
+                $value(entity)
             }
         }
     };
 }
 
-optional_data!([&T], &'a T, false, as_ref, save_read);
-optional_data!([&mut T], &'a mut T, true, as_mut, save_write);
-
-impl QueryData for Entity {
-    type RowData = Self;
-    type Read<'a> = Self;
-    type Item<'a> = Self;
-    type For<'a> = Self;
-}
-
-impl sealed::Data for Entity {
-    type Owned = Self;
-    type Columns<'a> = ();
-    fn describe(_: &mut Projection) {}
-    fn bind<'a>(_: &'a WorldRead<'_>, _: &'a Bindings) {}
-    fn collect((): &(), entity: Entity, _: Handle) -> Option<Self> {
-        Some(entity)
-    }
-    fn read(data: &Self) -> Self {
-        *data
-    }
-    fn item(data: &mut Self) -> Self {
-        *data
-    }
-    fn save(_: &Self, _: &mut WorldTxn<'_>, _: &Bindings, _: Handle) -> Result {
-        Ok(())
-    }
-}
-
-impl QueryData for () {
-    type RowData = ();
-    type Read<'a> = ();
-    type Item<'a> = ();
-    type For<'a> = ();
-}
-
-impl sealed::Data for () {
-    type Owned = ();
-    type Columns<'a> = ();
-    fn describe(_: &mut Projection) {}
-    fn bind<'a>(_: &'a WorldRead<'_>, _: &'a Bindings) {}
-    fn collect((): &(), _: Entity, _: Handle) -> Option<()> {
-        Some(())
-    }
-    fn read((): &()) {}
-    fn item((): &mut ()) {}
-    fn save((): &(), _: &mut WorldTxn<'_>, _: &Bindings, _: Handle) -> Result {
-        Ok(())
-    }
-}
+row_value!(Entity, |entity| entity);
+row_value!((), |_| ());
 
 macro_rules! tuples {
     ($(($($ty:ident $index:tt),+)),+ $(,)?) => {$(
@@ -493,21 +549,29 @@ macro_rules! tuples {
         }
         impl<$($ty: QueryData),+> sealed::Data for ($($ty,)+) {
             type Owned = ($($ty::Owned,)+);
-            type Columns<'a> = ($($ty::Columns<'a>,)+);
+            type Presence<'a> = ($($ty::Presence<'a>,)+);
+            type Columns = ($($ty::Columns,)+);
             fn describe(projection: &mut Projection) { $($ty::describe(projection);)+ }
-            fn bind<'a>(world: &'a WorldRead<'_>, bindings: &'a Bindings) -> Self::Columns<'a> {
-                ($($ty::bind(world, bindings),)+)
+            fn presence<'a>(world: &'a WorldRead<'_>, bindings: &'a Bindings) -> Self::Presence<'a> {
+                ($($ty::presence(world, bindings),)+)
             }
-            fn collect(columns: &Self::Columns<'_>, entity: Entity, handle: Handle) -> Option<Self::Owned> {
-                Some(($($ty::collect(&columns.$index, entity, handle)?,)+))
+            fn matches(columns: &Self::Presence<'_>, slot: u32) -> bool {
+                true $(&& $ty::matches(&columns.$index, slot))+
             }
-            fn read(data: &Self::Owned) -> <Self as QueryData>::Read<'_> { ($($ty::read(&data.$index),)+) }
-            fn item(data: &mut Self::Owned) -> <Self as QueryData>::Item<'_> { ($($ty::item(&mut data.$index),)+) }
-            fn save(data: &Self::Owned, world: &mut WorldTxn<'_>, bindings: &Bindings, handle: Handle) -> Result {
-                $($ty::save(&data.$index, world, bindings, handle)?;)+
-                Ok(())
+            fn bind(loans: &Loans) -> Self::Columns { ($($ty::bind(loans),)+) }
+            fn read<'a>(columns: &Self::Columns, entity: Entity, physical: usize, data: &'a Self::Owned) -> <Self as QueryData>::Read<'a> {
+                ($($ty::read(&columns.$index, entity, physical, &data.$index),)+)
+            }
+            fn item<'a>(columns: &Self::Columns, entity: Entity, physical: usize, data: &'a mut Self::Owned) -> <Self as QueryData>::Item<'a> {
+                ($($ty::item(&columns.$index, entity, physical, &mut data.$index),)+)
+            }
+            fn journal<R>(rows: &mut [Row<R>], project: impl Fn(&mut R) -> &mut Self::Owned, context: &mut Context<'_, '_>) -> Result {
+                let result = Ok(());
+                $(let result = result.and($ty::journal(rows, |data| &mut project(data).$index, context));)+
+                result
             }
         }
+        impl<$($ty: ReadProjection),+> ReadProjection for ($($ty,)+) {}
         impl<$($ty: Filter),+> Filter for ($($ty,)+) {}
         impl<$($ty: Filter),+> sealed::Filter for ($($ty,)+) {
             type Columns<'a> = ($($ty::Columns<'a>,)+);
@@ -524,9 +588,10 @@ macro_rules! tuples {
 
 tuples!((A 0, B 1), (A 0, B 1, C 2), (A 0, B 1, C 2, D 3), (A 0, B 1, C 2, D 3, E 4), (A 0, B 1, C 2, D 3, E 4, F 5));
 
-struct Row<T> {
+pub(crate) struct Row<T> {
     entity: Entity,
     handle: Handle,
+    physical: usize,
     data: T,
 }
 
@@ -554,30 +619,24 @@ fn describe<D: QueryData, F: Filter>(name: &str, list: &mut ParameterList) {
 
 fn read_rows<D: QueryData, F: Filter>(rows: &mut Rows<D::Owned>, context: &ReadContext<'_>) {
     rows.rows.clear();
-    let world = context.world;
-    let columns = D::bind(world, context.bindings);
+    let world = context.world.expect("preparing query matches");
+    let columns = D::presence(world, context.bindings);
     let filters = F::bind(world, context.bindings);
     for &(entity, handle) in context.entities {
-        if F::matches(&filters, handle.slot)
-            && let Some(data) = D::collect(&columns, entity, handle)
-        {
+        if F::matches(&filters, handle.slot) && D::matches(&columns, handle.slot) {
             rows.rows.push(Row {
                 entity,
                 handle,
-                data,
+                physical: world.physical_row(handle).expect("matching live handle"),
+                data: D::Owned::default(),
             });
         }
     }
 }
 
-fn write_rows<D: QueryData>(rows: &Rows<D::Owned>, context: &mut Context<'_, '_>) -> Result {
-    for row in &rows.rows {
-        D::save(&row.data, context.world, context.bindings, row.handle)?;
-    }
-    Ok(())
-}
-
-impl<D: QueryData, F: Filter + 'static> Param for Query<'_, D, F> {
+// SAFETY: This adapter prepares, lends and journals exactly its declared rows.
+#[expect(unsafe_code, reason = "trusted scoped query projection")]
+unsafe impl<D: QueryData, F: Filter + 'static> Param for Query<'_, D, F> {
     type State = Rows<D::RowData>;
     type Item<'t> = Query<'t, D::For<'t>, F>;
     fn describe(name: &str, list: &mut ParameterList) {
@@ -590,16 +649,21 @@ impl<D: QueryData, F: Filter + 'static> Param for Query<'_, D, F> {
     fn item<'t>(state: &'t mut Self::State, context: &ReadContext<'_>) -> Self::Item<'t> {
         Query {
             rows: &mut state.rows,
+            columns: <D::For<'t> as sealed::Data>::bind(
+                context.loans.expect("lending query columns"),
+            ),
             executor: context.executor,
             filter: PhantomData,
         }
     }
-    fn write(state: &mut Self::State, context: &mut Context<'_, '_>) -> Result {
-        write_rows::<D>(state, context)
+    fn journal(state: &mut Self::State, context: &mut Context<'_, '_>) -> Result {
+        D::journal(&mut state.rows, |data| data, context)
     }
 }
 
-impl<D: QueryData, F: Filter + 'static> Param for Single<'_, D, F> {
+// SAFETY: This adapter prepares, lends and journals exactly its declared rows.
+#[expect(unsafe_code, reason = "trusted scoped query projection")]
+unsafe impl<D: QueryData, F: Filter + 'static> Param for Single<'_, D, F> {
     type State = Rows<D::RowData>;
     type Item<'t> = Single<'t, D::For<'t>, F>;
     fn describe(name: &str, list: &mut ParameterList) {
@@ -617,18 +681,28 @@ impl<D: QueryData, F: Filter + 'static> Param for Single<'_, D, F> {
         }
         Ok(())
     }
-    fn item<'t>(state: &'t mut Self::State, _: &ReadContext<'_>) -> Self::Item<'t> {
+    fn item<'t>(state: &'t mut Self::State, context: &ReadContext<'_>) -> Self::Item<'t> {
+        let row = &mut state.rows[0];
+        let columns =
+            <D::For<'t> as sealed::Data>::bind(context.loans.expect("lending single columns"));
         Single {
-            item: <D::For<'t> as sealed::Data>::item(&mut state.rows[0].data),
+            item: <D::For<'t> as sealed::Data>::item(
+                &columns,
+                row.entity,
+                row.physical,
+                &mut row.data,
+            ),
             filter: PhantomData,
         }
     }
-    fn write(state: &mut Self::State, context: &mut Context<'_, '_>) -> Result {
-        write_rows::<D>(state, context)
+    fn journal(state: &mut Self::State, context: &mut Context<'_, '_>) -> Result {
+        D::journal(&mut state.rows, |data| data, context)
     }
 }
 
-impl<D: QueryData, F: Filter + 'static> Param for Option<Single<'_, D, F>> {
+// SAFETY: This adapter prepares, lends and journals exactly its declared rows.
+#[expect(unsafe_code, reason = "trusted scoped query projection")]
+unsafe impl<D: QueryData, F: Filter + 'static> Param for Option<Single<'_, D, F>> {
     type State = Rows<D::RowData>;
     type Item<'t> = Option<Single<'t, D::For<'t>, F>>;
 
@@ -647,14 +721,22 @@ impl<D: QueryData, F: Filter + 'static> Param for Option<Single<'_, D, F>> {
         }
         Ok(())
     }
-    fn item<'t>(state: &'t mut Self::State, _: &ReadContext<'_>) -> Self::Item<'t> {
+    fn item<'t>(state: &'t mut Self::State, context: &ReadContext<'_>) -> Self::Item<'t> {
+        let columns = <D::For<'t> as sealed::Data>::bind(
+            context.loans.expect("lending optional single columns"),
+        );
         state.rows.first_mut().map(|row| Single {
-            item: <D::For<'t> as sealed::Data>::item(&mut row.data),
+            item: <D::For<'t> as sealed::Data>::item(
+                &columns,
+                row.entity,
+                row.physical,
+                &mut row.data,
+            ),
             filter: PhantomData,
         })
     }
-    fn write(state: &mut Self::State, context: &mut Context<'_, '_>) -> Result {
-        write_rows::<D>(state, context)
+    fn journal(state: &mut Self::State, context: &mut Context<'_, '_>) -> Result {
+        D::journal(&mut state.rows, |data| data, context)
     }
 }
 
@@ -663,8 +745,6 @@ impl<T: Component> ReadProjection for &T {}
 impl<T: Component> ReadProjection for Option<&T> {}
 impl ReadProjection for Entity {}
 impl ReadProjection for () {}
-impl<A: ReadProjection, B: ReadProjection> ReadProjection for (A, B) {}
-impl<A: ReadProjection, B: ReadProjection, C: ReadProjection> ReadProjection for (A, B, C) {}
 impl<D: ReadProjection, F: Filter + 'static> ReadOnly for Query<'_, D, F> {}
 impl<D: ReadProjection, F: Filter + 'static> ReadOnly for Single<'_, D, F> {}
 impl<D: ReadProjection, F: Filter + 'static> ReadOnly for Option<Single<'_, D, F>> {}

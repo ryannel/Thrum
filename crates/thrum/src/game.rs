@@ -1,5 +1,6 @@
 use std::{
-    any::{TypeId, type_name},
+    any::{Any, TypeId, type_name},
+    collections::HashMap,
     num::NonZeroUsize,
     sync::{Arc, Mutex},
 };
@@ -24,8 +25,29 @@ use crate::{
 };
 
 macro_rules! example {
-    ($description:literal) => {
-        concat!($description, "\n```\nuse thrum::prelude::*;\nfn play(scene: &mut Scene) { scene.rules(|| {}); }\nlet mut game = Game::new(\"Example\").scene(play).test().unwrap();\ngame.step().unwrap();\n```\n")
+    ($description:literal, $($code:expr),+ $(,)?) => {
+        concat!($description, "\n\n```\n# use thrum::prelude::*;\n",
+                $($code, "\n",)+ "```\n")
+    };
+}
+
+macro_rules! harness_example {
+    ($description:literal, $($code:expr),+ $(,)?) => {
+        example!($description,
+            "# #[derive(Component)] struct Health(u32);",
+            "# #[derive(Resource)] struct Score(u32);",
+            "# #[derive(Event)] struct Point;",
+            "# #[derive(Scene)] struct Finished(u32);",
+            "# #[derive(Phase)] enum Stage { Play, Overtime }",
+            "# fn play(scene: &mut Scene) {",
+            "#     scene.phases(Stage::Play);",
+            "#     scene.phase(Stage::Overtime);",
+            "#     scene.rules(|mut emit: Emit<Point>| emit.send(Point));",
+            "# }",
+            "# let mut game = Game::new(\"Example\").tick_rate(1).resource(Score(0))",
+            "#     .component::<Health>().scene(play).scene(|_: &mut Scene<Finished>| {})",
+            "#     .test().unwrap();",
+            $($code),+)
     };
 }
 
@@ -38,14 +60,14 @@ struct Description {
     rate: u32,
 }
 
-#[doc = example!("A game described in Rust, ready to start in a test.")]
+#[doc = example!("A game described in Rust, ready to start in a test.", "let game: Game = Game::new(\"Example\").scene(|_: &mut Scene| {});")]
 #[must_use]
 pub struct Game {
     description: Description,
     first: fn() -> ValueRef,
 }
 
-#[doc = example!("A game before its first scene is registered.")]
+#[doc = example!("A game before its first scene is registered.", "let game: thrum::NewGame = Game::new(\"Example\");", "let _game = game.scene(|_: &mut Scene| {});")]
 #[must_use]
 pub struct NewGame(Description);
 
@@ -70,13 +92,13 @@ impl Game {
         })
     }
 
-    #[doc = example!("Append another scene description.")]
+    #[doc = example!("Append another scene description.", "# #[derive(Scene)] struct Finished;", "let _game = Game::new(\"Example\").scene(|_: &mut Scene| {})", "    .scene(|_: &mut Scene<Finished>| {});")]
     pub fn scene<S: SceneType, M>(mut self, description: impl SceneDescription<S, M>) -> Self {
         self.description.scene(description);
         self
     }
 
-    #[doc = example!("Start a headless game in the first scene's default value.")]
+    #[doc = example!("Start a headless game in the first scene's default value.", "# #[derive(Scene, Default)] struct Play;", "let game = Game::new(\"Example\").scene(|_: &mut Scene<Play>| {}).test().unwrap();", "assert!(game.in_scene::<Play>());")]
     /// # Errors
     /// The description or its initial scene is invalid.
     pub fn test(self) -> Result<TestGame> {
@@ -86,14 +108,14 @@ impl Game {
         }
     }
 
-    #[doc = example!("Start a headless game in a named scene and value.")]
+    #[doc = example!("Start a headless game in a named scene and value.", "# #[derive(Scene)] struct Finished(u32);", "let game = Game::new(\"Example\").scene(|_: &mut Scene| {})", "    .scene(|_: &mut Scene<Finished>| {}).test_in(Finished(9)).unwrap();", "assert_eq!(game.scene::<Finished>().unwrap().0, 9);")]
     /// # Errors
     /// The requested scene or the game description is invalid.
     pub fn test_in(self, scene: impl SceneType) -> Result<TestGame> {
         self.start(Arc::new(scene), 0)
     }
 
-    #[doc = example!("Set the fixtures of a windowless test before starting it.")]
+    #[doc = example!("Set the fixtures of a windowless test before starting it.", "let setup = Game::new(\"Example\").scene(|_: &mut Scene| {}).test_setup();", "let _game = setup.seed(17).start().unwrap();")]
     pub fn test_setup(self) -> TestSetup {
         TestSetup {
             game: self,
@@ -158,6 +180,7 @@ impl Game {
             ..State::default()
         };
         for resource in resources {
+            crate::runtime::check_value(resource.as_ref())?;
             state.resources.install(resource.as_ref(), false);
         }
         let mut authority = Authority {
@@ -179,11 +202,12 @@ impl Game {
             authority,
             candidate,
             history,
+            manual_streams: HashMap::new(),
         })
     }
 }
 
-#[doc = example!("A scene whose type can supply the game's starting value.")]
+#[doc = example!("A scene whose type can supply the game's starting value.", "# use thrum::__derive::FirstScene;", "# #[derive(Scene, Default)] struct Play;", "let _: Play = Play::first_value();")]
 #[doc(hidden)]
 #[diagnostic::on_unimplemented(
     message = "T0103: first scene `{Self}` cannot supply a default value",
@@ -191,7 +215,7 @@ impl Game {
     note = "derive or implement Default on this scene, or register a defaultable scene first"
 )]
 pub trait FirstScene: SceneType {
-    #[doc = example!("Get the starting value for the first scene.")]
+    #[doc = example!("Get the starting value for the first scene.", "# use thrum::__derive::FirstScene;", "# #[derive(Scene, Default)] struct Play(u32);", "assert_eq!(Play::first_value().0, 0);")]
     fn first_value() -> Self;
 }
 
@@ -227,15 +251,15 @@ impl Description {
 }
 
 macro_rules! settings {
-    ($game:ident, $description:tt) => {
+    ($game:ident, $description:tt, $builder:literal) => {
         impl $game {
-            #[doc = example!("Provide a game resource that persists across scenes.")]
+            #[doc = example!("Provide a game resource that persists across scenes.", "# #[derive(Resource)] struct Score(u32);", concat!("# let builder = ", $builder, ";"), "let _builder = builder.resource(Score(0));")]
             pub fn resource(mut self, value: impl Resource) -> Self {
                 self.$description.resources.push(Arc::new(value));
                 self
             }
 
-            #[doc = example!("Register a component absent from all rule signatures.")]
+            #[doc = example!("Register a component absent from all rule signatures.", "# #[derive(Component)] struct Rock;", concat!("# let builder = ", $builder, ";"), "let _builder = builder.component::<Rock>();")]
             pub fn component<T: Component>(mut self) -> Self {
                 let column = Column::of::<T>();
                 if !self
@@ -249,13 +273,13 @@ macro_rules! settings {
                 self
             }
 
-            #[doc = example!("Set the maximum number of live entities.")]
+            #[doc = example!("Set the maximum number of live entities.", concat!("# let builder = ", $builder, ";"), "let _builder = builder.max_entities(64);")]
             pub fn max_entities(mut self, capacity: u32) -> Self {
                 self.$description.capacity = capacity;
                 self
             }
 
-            #[doc = example!("Set the number of ticks per simulated second.")]
+            #[doc = example!("Set the number of ticks per simulated second.", concat!("# let builder = ", $builder, ";"), "let _builder = builder.tick_rate(30);")]
             pub fn tick_rate(mut self, hz: u32) -> Self {
                 self.$description.rate = hz;
                 self
@@ -264,10 +288,14 @@ macro_rules! settings {
     };
 }
 
-settings!(NewGame, 0);
-settings!(Game, description);
+settings!(NewGame, 0, "Game::new(\"Example\")");
+settings!(
+    Game,
+    description,
+    "Game::new(\"Example\").scene(|_: &mut Scene| {})"
+);
 
-#[doc = example!("Fixtures for a headless game test.")]
+#[doc = example!("Fixtures for a headless game test.", "let setup: thrum::TestSetup = Game::new(\"Example\").scene(|_: &mut Scene| {}).test_setup();", "let _game = setup.seed(17).start().unwrap();")]
 #[must_use]
 pub struct TestSetup {
     game: Game,
@@ -275,13 +303,13 @@ pub struct TestSetup {
 }
 
 impl TestSetup {
-    #[doc = example!("Choose the seed used by Random in this test.")]
+    #[doc = example!("Choose the seed used by Random in this test.", "let _game = Game::new(\"Example\").scene(|_: &mut Scene| {})", "    .test_setup().seed(17).start().unwrap();")]
     pub fn seed(mut self, seed: u64) -> Self {
         self.seed = seed;
         self
     }
 
-    #[doc = example!("Start this test with the configured fixtures.")]
+    #[doc = example!("Start this test with the configured fixtures.", "let setup = Game::new(\"Example\").scene(|_: &mut Scene| {}).test_setup();", "let _game = setup.start().unwrap();")]
     /// # Errors
     /// The description or its initial scene is invalid.
     pub fn start(self) -> Result<TestGame> {
@@ -290,16 +318,17 @@ impl TestSetup {
     }
 }
 
-#[doc = example!("The headless game harness, stepped by a test without a window.")]
+#[doc = harness_example!("The headless game harness, stepped by a test without a window.", "let _: &mut thrum::TestGame = &mut game;", "game.step().unwrap();")]
 pub struct TestGame {
     runtime: GameRuntime<Authority>,
     authority: Authority,
     candidate: Candidate,
     history: RuntimeHistory<State, ()>,
+    manual_streams: HashMap<TypeId, u64>,
 }
 
 impl TestGame {
-    #[doc = example!("Advance the game by one tick.")]
+    #[doc = harness_example!("Advance the game by one tick.", "game.step().unwrap();", "assert_eq!(game.events::<Point>(), [Point]);")]
     /// # Errors
     /// A rule or transition refused the tick.
     pub fn step(&mut self) -> Result {
@@ -315,7 +344,7 @@ impl TestGame {
         Ok(())
     }
 
-    #[doc = example!("Advance the game by the requested number of ticks.")]
+    #[doc = harness_example!("Advance the game by the requested number of ticks.", "game.step_ticks(3).unwrap();", "assert_eq!(game.events::<Point>().len(), 3);")]
     /// # Errors
     /// A rule or transition refused one of the ticks.
     pub fn step_ticks(&mut self, count: u64) -> Result {
@@ -325,14 +354,14 @@ impl TestGame {
         Ok(())
     }
 
-    #[doc = example!("Advance through the requested time without waiting on a clock.")]
+    #[doc = harness_example!("Advance through the requested time without waiting on a clock.", "game.step_for(seconds(2)).unwrap();", "assert_eq!(game.events::<Point>().len(), 2);")]
     /// # Errors
     /// A rule or transition refused one of the ticks.
     pub fn step_for(&mut self, time: Seconds) -> Result {
         self.step_ticks(time.ticks(self.authority.program.rate()))
     }
 
-    #[doc = example!("Advance to the first state accepted by the predicate, within the time limit.")]
+    #[doc = harness_example!("Advance to the first state accepted by the predicate, within the time limit.", "let start = game.digest();", "game.step_until(seconds(2), |game| Ok(game.digest() != start)).unwrap();")]
     /// # Errors
     /// The predicate was unsatisfied before the limit, or a rule or the predicate refused.
     pub fn step_until(
@@ -357,7 +386,7 @@ impl TestGame {
         ))
     }
 
-    #[doc = example!("Return to an earlier tick in the test's retained history.")]
+    #[doc = harness_example!("Return to an earlier tick in the test's retained history.", "let start = game.digest();", "game.step().unwrap();", "game.rewind(1).unwrap();", "assert_eq!(game.digest(), start);")]
     /// # Errors
     /// The requested tick is outside the retained history.
     pub fn rewind(&mut self, ticks: usize) -> Result {
@@ -368,7 +397,7 @@ impl TestGame {
         Ok(())
     }
 
-    #[doc = example!("Digest the committed world and its resources.")]
+    #[doc = harness_example!("Digest the committed world and its resources.", "let start = game.digest();", "game.set_resource(Score(2)).unwrap();", "assert_ne!(game.digest(), start);")]
     /// # Panics
     /// Only if an engine registration invariant is broken.
     pub fn digest(&self) -> u64 {
@@ -377,7 +406,7 @@ impl TestGame {
             .expect("all SDK columns have canonical encoding")
     }
 
-    #[doc = example!("Spawn a tuple of components at the current tick.")]
+    #[doc = harness_example!("Spawn a tuple of components at the current tick.", "let entity = game.spawn((Health(3),)).unwrap();", "assert!(game.alive(entity));")]
     /// # Errors
     /// The bundle is invalid or the world is full.
     /// # Panics
@@ -389,14 +418,14 @@ impl TestGame {
         })
     }
 
-    #[doc = example!("Despawn this entity at the current tick.")]
+    #[doc = harness_example!("Despawn this entity at the current tick.", "let entity = game.spawn((Health(3),)).unwrap();", "assert!(game.despawn(entity).unwrap());", "assert!(!game.alive(entity));")]
     /// # Errors
     /// The edit was refused.
     pub fn despawn(&mut self, entity: Entity) -> Result<bool> {
         self.run(move |mut entities: Entities<'_>| entities.despawn(entity))
     }
 
-    #[doc = example!("Set a component at the current tick.")]
+    #[doc = harness_example!("Set a component at the current tick.", "let entity = game.spawn((Health(3),)).unwrap();", "game.set(entity, Health(5)).unwrap();", "assert_eq!(game.get::<Health>(entity).unwrap().0, 5);")]
     /// # Errors
     /// The entity is gone or the component value was refused.
     /// # Panics
@@ -409,7 +438,7 @@ impl TestGame {
         })
     }
 
-    #[doc = example!("Read a copy of this entity's component.")]
+    #[doc = harness_example!("Read a copy of this entity's component.", "let entity = game.spawn((Health(3),)).unwrap();", "assert_eq!(game.get::<Health>(entity).unwrap().0, 3);")]
     /// # Errors
     /// The entity is gone or the component is absent.
     pub fn get<T: Component>(&self, entity: Entity) -> Result<T> {
@@ -422,7 +451,7 @@ impl TestGame {
                 .with(
                     self.authority.program.bindings().read::<T>(),
                     handle,
-                    |stored| stored.0.clone(),
+                    |stored| stored.0,
                 )
                 .map_err(|error| Error::invalid(format!("{entity:?}"), error.to_string()));
         }
@@ -434,14 +463,13 @@ impl TestGame {
         ))
     }
 
-    #[doc = example!("Read a copy of a resource in the current world.")]
+    #[doc = harness_example!("Read a copy of a resource in the current world.", "assert_eq!(game.resource::<Score>().unwrap().0, 0);")]
     /// # Errors
     /// The resource is absent.
     pub fn resource<T: Data>(&self) -> Result<T> {
         self.authority
             .state
-            .resources
-            .get::<T>()
+            .resource::<T>()
             .cloned()
             .ok_or_else(|| {
                 Error::refused(
@@ -453,7 +481,7 @@ impl TestGame {
             })
     }
 
-    #[doc = example!("Change a registered resource at the current tick.")]
+    #[doc = harness_example!("Change a registered resource at the current tick.", "game.set_resource(Score(2)).unwrap();", "assert_eq!(game.resource::<Score>().unwrap().0, 2);")]
     /// # Errors
     /// The resource is missing or the value is invalid.
     pub fn set_resource<T: Resource>(&mut self, value: T) -> Result {
@@ -465,12 +493,12 @@ impl TestGame {
         })
     }
 
-    #[doc = example!("Whether this entity is still alive.")]
+    #[doc = harness_example!("Whether this entity is still alive.", "let entity = game.spawn((Health(3),)).unwrap();", "assert!(game.alive(entity));")]
     pub fn alive(&self, entity: Entity) -> bool {
         self.runtime.handle(entity.stable()).is_some()
     }
 
-    #[doc = example!("Find all matching live entities in spawn order.")]
+    #[doc = harness_example!("Find all matching live entities in spawn order.", "let a = game.spawn((Health(3),)).unwrap();", "let b = game.spawn((Health(5),)).unwrap();", "assert_eq!(game.find::<With<Health>>(), [a, b]);")]
     pub fn find<F: Filter>(&self) -> Vec<Entity> {
         let world = self.runtime.read();
         let mut entities = Vec::new();
@@ -478,12 +506,12 @@ impl TestGame {
         matching::<F>(&world, &entities)
     }
 
-    #[doc = example!("Count live entities that match a filter.")]
+    #[doc = harness_example!("Count live entities that match a filter.", "game.spawn((Health(3),)).unwrap();", "assert_eq!(game.count::<With<Health>>(), 1);")]
     pub fn count<F: Filter>(&self) -> u32 {
         u32::try_from(self.find::<F>().len()).unwrap_or(u32::MAX)
     }
 
-    #[doc = example!("Find the sole entity that matches a filter.")]
+    #[doc = harness_example!("Find the sole entity that matches a filter.", "let entity = game.spawn((Health(3),)).unwrap();", "assert_eq!(game.single::<With<Health>>().unwrap(), entity);")]
     /// # Errors
     /// The filter matches zero entities or more than one.
     pub fn single<F: Filter>(&self) -> Result<Entity> {
@@ -499,7 +527,7 @@ impl TestGame {
         ))
     }
 
-    #[doc = example!("Read the current phase's typed value.")]
+    #[doc = harness_example!("Read the current phase's typed value.", "assert_eq!(game.phase::<Stage>().unwrap(), Stage::Play);")]
     /// # Errors
     /// The running scene has no phase of this type.
     pub fn phase<P: PhaseType>(&self) -> Result<P> {
@@ -523,7 +551,7 @@ impl TestGame {
             })
     }
 
-    #[doc = example!("Read the value with which the running scene was entered.")]
+    #[doc = harness_example!("Read the value with which the running scene was entered.", "game.go_to(Finished(8)).unwrap();", "assert_eq!(game.scene::<Finished>().unwrap().0, 8);")]
     /// # Errors
     /// The requested scene is not the running scene.
     pub fn scene<S: SceneType>(&self) -> Result<S> {
@@ -531,7 +559,7 @@ impl TestGame {
             .state
             .scene_value
             .as_ref()
-            .and_then(|value| value.any().downcast_ref::<S>())
+            .and_then(|value| value.0.any().downcast_ref::<S>())
             .cloned()
             .ok_or_else(|| {
                 Error::refused(
@@ -543,12 +571,12 @@ impl TestGame {
             })
     }
 
-    #[doc = example!("Whether a scene of this type is running.")]
+    #[doc = harness_example!("Whether a scene of this type is running.", "assert!(game.in_scene::<()>());", "assert!(!game.in_scene::<Finished>());")]
     pub fn in_scene<S: SceneType>(&self) -> bool {
         self.authority.program.names().scene::<S>() == Some(self.authority.state.scene)
     }
 
-    #[doc = example!("Enter the named scene immediately, without advancing a tick.")]
+    #[doc = harness_example!("Enter the named scene immediately, without advancing a tick.", "game.go_to(Finished(8)).unwrap();", "assert_eq!(game.scene::<Finished>().unwrap().0, 8);")]
     /// # Errors
     /// The scene is not registered or its transition was refused.
     pub fn go_to<S: SceneType>(&mut self, value: S) -> Result {
@@ -566,7 +594,7 @@ impl TestGame {
         )))
     }
 
-    #[doc = example!("Enter another phase of the running scene without advancing a tick.")]
+    #[doc = harness_example!("Enter another phase of the running scene without advancing a tick.", "game.go_to_phase(Stage::Overtime).unwrap();", "assert_eq!(game.phase::<Stage>().unwrap(), Stage::Overtime);")]
     /// # Errors
     /// The phase does not belong to the running scene or the transition was refused.
     #[expect(
@@ -590,14 +618,15 @@ impl TestGame {
         self.edit(Operation::Transition(Transition::Phase(index)))
     }
 
-    #[doc = example!("Read events of this type since the preceding read.")]
+    #[doc = harness_example!("Read events of this type since the preceding read.", "game.step().unwrap();", "assert_eq!(game.events::<Point>(), [Point]);", "assert!(game.events::<Point>().is_empty());")]
     pub fn events<E: Event>(&mut self) -> Vec<E> {
         self.authority.events.take::<E>()
     }
 
-    #[doc = example!("Run one rule or closure immediately at the current tick.")]
+    #[doc = harness_example!("Run one rule or closure immediately at the current tick.", "game.run(|mut score: ResMut<Score>| score.0 += 1).unwrap();", "assert_eq!(game.resource::<Score>().unwrap().0, 1);")]
     /// # Errors
-    /// The rule cannot acquire its parameters or its edits are refused.
+    /// The rule cannot acquire its parameters, returns an error as a rule
+    /// result, or proposes an invalid edit.
     /// # Panics
     /// Only if an internal harness invariant is broken.
     pub fn run<M, O: Send + 'static>(&mut self, function: impl RuleFunction<M, O>) -> Result<O> {
@@ -605,20 +634,33 @@ impl TestGame {
         self.authority.program.validate_manual(
             &invocation.signature,
             invocation.name,
-            &self.authority.state.resources,
+            &self.authority.state,
         )?;
         let output = Arc::new(Mutex::new(None));
         let result = Arc::clone(&output);
         let name = invocation.name;
         let signature = invocation.signature.clone();
+        let callable = invocation.callable;
+        if invocation.anonymous() {
+            let next = self.manual_streams.len() as u64;
+            let registration = *self.manual_streams.entry(callable).or_insert(next);
+            invocation.distinguish(0x6d61_6e75_616c_0000 ^ registration);
+        }
+        let stream = invocation.stream;
         let invoke = move |context: &mut Context<'_, '_>, parts: &ReadContextParts<'_>| {
-            let value = invocation.call(context, parts)?;
+            let mut value = invocation.call(context, parts)?;
+            let outcome: &mut dyn Any = &mut value;
+            if let Some(outcome) = outcome.downcast_mut::<Result>() {
+                std::mem::replace(outcome, Ok(()))?;
+            }
             *result.lock().expect("manual result") = Some(value);
             Ok(())
         };
         self.edit(Operation::Manual(Invocation {
             name,
             signature,
+            stream,
+            callable,
             invoke: Box::new(invoke),
         }))?;
         Ok(output
@@ -630,13 +672,17 @@ impl TestGame {
 
     fn edit(&mut self, operation: Operation) -> Result {
         *self.authority.operation.get_mut().expect("operation") = operation;
-        let result = self
-            .runtime
-            .edit_current(&mut self.authority, &mut self.candidate);
+        let result = self.runtime.edit_current_if_changed(
+            &mut self.authority,
+            &mut self.candidate,
+            |authority, candidate| authority.state != candidate.state,
+        );
         *self.authority.operation.get_mut().expect("operation") = Operation::Tick;
-        result.map_err(operation_result)?;
+        let changed = result.map_err(operation_result)?;
         self.authority.events.collect(&mut self.candidate.events);
-        self.history = new_history(&self.runtime, &self.authority);
+        if changed {
+            self.history = new_history(&self.runtime, &self.authority);
+        }
         Ok(())
     }
 }

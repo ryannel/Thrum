@@ -108,18 +108,19 @@ mod swarm {
     }
 
     impl Health {
-        fn is_spent(&self) -> bool {
+        fn is_spent(self) -> bool {
             self.0 == 0
         }
     }
 
     fn next_wave(mut run: ResMut<'_, Run>, mut scenes: Scenes<'_>) {
-        run.wave += 1;
-        if run.wave > 2 {
+        if run.wave == 2 {
             scenes.go_to(Ended {
                 won: true,
                 wave: run.wave,
             });
+        } else {
+            run.wave += 1;
         }
     }
 
@@ -212,6 +213,8 @@ mod swarm {
         game.step_for(seconds(15))?;
         assert_eq!(game.phase::<Stage>()?, Stage::Wave);
         assert_eq!(game.resource::<Run>()?.wave, 2);
+        game.step_for(seconds(76))?;
+        assert_eq!(game.scene::<Ended>()?, Ended { won: true, wave: 2 });
         Ok(())
     }
 }

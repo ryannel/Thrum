@@ -134,6 +134,12 @@ impl<T> TypedStore<T> {
         }
     }
 
+    pub(super) fn rule_address(&mut self) -> (std::ptr::NonNull<()>, usize) {
+        let address = std::ptr::NonNull::new(self.values.as_mut_ptr())
+            .expect("Vec storage has a non-null address");
+        (address.cast(), self.values.len())
+    }
+
     pub(super) fn values(&self) -> &[Option<T>] {
         &self.values
     }

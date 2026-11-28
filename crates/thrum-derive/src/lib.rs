@@ -150,12 +150,30 @@ fn expand_data(input: &DeriveInput, marker: Option<&str>) -> syn::Result<Tokens>
         parameter.bounds.push(syn::parse_quote!(::thrum::Data));
     }
     let (implementation_generics, use_generics, requirements) = generics.split_for_impl();
+    let copy = (marker == Some("Component")).then(|| {
+        let mut generics = generics.clone();
+        for parameter in generics.type_params_mut() {
+            parameter
+                .bounds
+                .push(syn::parse_quote!(::core::marker::Copy));
+        }
+        let (parameters, args, requirements) = generics.split_for_impl();
+        quote!(impl #parameters ::core::marker::Copy for #name #args #requirements {})
+    });
     let marker = marker.map(|marker| {
+        let mut generics = generics.clone();
+        if marker == "Component" {
+            for parameter in generics.type_params_mut() {
+                parameter.bounds.push(syn::parse_quote!(::core::marker::Copy));
+            }
+        }
+        let (implementation_generics, use_generics, requirements) = generics.split_for_impl();
         let marker = format_ident!("{marker}");
         quote!(impl #implementation_generics ::thrum::#marker for #name #use_generics #requirements {})
     });
     Ok(quote! {
         #implementation
+        #copy
         impl #implementation_generics ::thrum::Data for #name #use_generics #requirements {
             const SCHEMA: &'static str = concat!(module_path!(), "::", stringify!(#name), stringify!(#declaration));
             fn write(&self, writer: &mut ::thrum::__derive::DataWriter<'_, '_>) {
@@ -319,7 +337,8 @@ fn expand_params(input: &DeriveInput) -> syn::Result<Tokens> {
         quote!(<#ty as ::thrum::__derive::Param>::item(&mut state.#index, context))
     }));
     Ok(quote! {
-        impl<#lifetime> ::thrum::__derive::Param for #name<#lifetime> {
+        #[automatically_derived]
+        unsafe impl<#lifetime> ::thrum::__derive::Param for #name<#lifetime> {
             type State = (#(<#field_types as ::thrum::__derive::Param>::State,)*);
             type Item<'__thrum> = #name<'__thrum>;
             fn describe(name: &str, list: &mut ::thrum::__derive::ParameterList) {
@@ -331,6 +350,11 @@ fn expand_params(input: &DeriveInput) -> syn::Result<Tokens> {
             }
             fn item<'__thrum>(state: &'__thrum mut Self::State, context: &::thrum::__derive::ReadContext<'_>) -> Self::Item<'__thrum> {
                 #construct
+            }
+            fn journal(state: &mut Self::State, context: &mut ::thrum::__derive::Context<'_, '_>) -> ::thrum::Result {
+                let result = Ok(());
+                #(let result = result.and(<#field_types as ::thrum::__derive::Param>::journal(&mut state.#indices, context));)*
+                result
             }
             fn write(state: &mut Self::State, context: &mut ::thrum::__derive::Context<'_, '_>) -> ::thrum::Result {
                 #(<#field_types as ::thrum::__derive::Param>::write(&mut state.#indices, context)?;)*

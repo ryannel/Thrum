@@ -267,8 +267,8 @@ target_cost = "Native scene parsing and the authoring-only cooker; derive-genera
 [external_dependencies.serde_json]
 requirement = "=1.0.154"
 license = "MIT OR Apache-2.0"
-purpose = "Decode authored scene recipes and controls; write opt-in native profiler evidence and read temporal witnesses; the contributor tool reads cargo metadata"
-target_cost = "Cold scene/control parsing; native profiler evidence serializes only when explicitly requested, four times a second off the render path; host-only in tools/xtask"
+purpose = "Decode authored scene recipes and controls; write opt-in native profiler evidence and read temporal witnesses; the contributor tool reads cargo metadata; SDK tests read structured compiler diagnostics"
+target_cost = "Cold scene/control parsing; native profiler evidence serializes only when explicitly requested, four times a second off the render path; host-only in tools/xtask and test-only in thrum"
 
 [external_dependencies.profiling]
 requirement = "=1.0.18"

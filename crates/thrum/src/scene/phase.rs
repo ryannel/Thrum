@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use crate::{
     Error, PhaseClock, PhaseType, Result, SceneType, Seconds,
     rule::params::{Context, Param, ParameterList, ReadContext, ReadOnly},
-    runtime::{Requests, Transition, ValueRef},
+    runtime::{Requests, Transition, ValuePool, ValueRef},
 };
 
 use super::{Landing, Names};
@@ -33,8 +33,18 @@ impl Scenes<'_> {
         if requests.next.is_some() || requests.error.is_some() {
             return false;
         }
+        if let Err(error) = crate::runtime::check_value(&scene) {
+            requests.error = Some(error);
+            return false;
+        }
         if let Some(index) = self.0.names.scene::<S>() {
-            requests.next = Some(Transition::Scene(index, Arc::new(scene)));
+            let scene = self
+                .0
+                .values
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .store(scene);
+            requests.next = Some(Transition::Scene(index, scene));
             true
         } else {
             requests.error = Some(Error::refused(
@@ -76,9 +86,12 @@ pub struct SceneRequests {
     names: Arc<Names>,
     scene: usize,
     value: Option<ValueRef>,
+    values: Arc<Mutex<ValuePool>>,
 }
 
-impl Param for Scenes<'_> {
+// SAFETY: This adapter only lends its own scratch and acquires no column loans.
+#[expect(unsafe_code, reason = "trusted SDK parameter adapter")]
+unsafe impl Param for Scenes<'_> {
     type State = SceneRequests;
     type Item<'t> = Scenes<'t>;
     fn describe(name: &str, list: &mut ParameterList) {
@@ -88,7 +101,13 @@ impl Param for Scenes<'_> {
         state.requests = Arc::clone(&context.candidate.requests);
         state.names = Arc::clone(context.names);
         state.scene = context.candidate.state.scene;
-        state.value.clone_from(&context.candidate.state.scene_value);
+        state.value = context
+            .candidate
+            .state
+            .scene_value
+            .as_ref()
+            .map(|value| Arc::clone(&value.0));
+        state.values = Arc::clone(&context.candidate.values);
         Ok(())
     }
     fn item<'t>(state: &'t mut Self::State, _: &ReadContext<'_>) -> Scenes<'t> {
@@ -268,7 +287,9 @@ fn phase_read<P: PhaseType>(state: &mut PhaseRequests<P>, context: &ReadContext<
     state.stage = context.stage;
 }
 
-impl<P: PhaseType> Param for Phase<'_, P> {
+// SAFETY: This adapter only lends its own scratch and acquires no column loans.
+#[expect(unsafe_code, reason = "trusted SDK parameter adapter")]
+unsafe impl<P: PhaseType> Param for Phase<'_, P> {
     type State = PhaseRequests<P>;
     type Item<'t> = Phase<'t, P>;
     fn describe(_: &str, _: &mut ParameterList) {}
@@ -282,7 +303,9 @@ impl<P: PhaseType> Param for Phase<'_, P> {
 }
 impl<P: PhaseType> ReadOnly for Phase<'_, P> {}
 
-impl<P: PhaseType> Param for PhaseMut<'_, P> {
+// SAFETY: This adapter only lends its own scratch and acquires no column loans.
+#[expect(unsafe_code, reason = "trusted SDK parameter adapter")]
+unsafe impl<P: PhaseType> Param for PhaseMut<'_, P> {
     type State = PhaseRequests<P>;
     type Item<'t> = PhaseMut<'t, P>;
     fn describe(name: &str, list: &mut ParameterList) {

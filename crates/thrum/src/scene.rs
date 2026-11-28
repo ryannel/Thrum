@@ -16,8 +16,18 @@ pub use phase::{Phase, PhaseMut, PhaseRequests, SceneRequests, Scenes};
 pub(crate) use program::Program;
 
 macro_rules! example {
-    ($description:literal) => {
-        concat!($description, "\n```\nuse thrum::prelude::*;\n#[derive(Scene, Default)] struct Play;\nfn play(scene: &mut Scene<Play>) { scene.rules(|| {}); }\nlet _game = Game::new(\"Example\").scene(play);\n```\n")
+    ($description:literal, $($code:literal),+ $(,)?) => {
+        concat!($description, "\n\n```\n# use thrum::prelude::*;\n",
+                $($code, "\n",)+ "```\n")
+    };
+}
+
+macro_rules! scene_example {
+    ($description:literal, $($code:literal),+ $(,)?) => {
+        example!($description,
+            "# #[derive(Phase)] enum Stage { Play, Overtime }",
+            "# let mut scene = Scene::<()>::default();",
+            $($code),+)
     };
 }
 
@@ -75,7 +85,7 @@ pub(crate) struct PhaseDefinition {
     pub(crate) expiry: Option<Expiry>,
 }
 
-#[doc = example!("Prepared phase duration.") ]
+#[doc = example!("Prepared phase duration.", "use thrum::__derive::Duration;", "let _ = Duration::Fixed(seconds(2));")]
 #[doc(hidden)]
 pub enum Duration {
     /// A fixed phase duration.
@@ -118,7 +128,7 @@ pub(crate) enum Landing {
     EnteringPhase,
 }
 
-#[doc = example!("Describe a scene with its own rules and phase blocks.")]
+#[doc = example!("Describe a scene with its own rules and phase blocks.", "fn play(scene: &mut Scene) { scene.rules(|| {}); }", "let _game = Game::new(\"Example\").scene(play);")]
 pub struct Scene<S: SceneType = ()> {
     definition: Definition,
     marker: PhantomData<S>,
@@ -137,22 +147,30 @@ impl<S: SceneType> Default for Scene<S> {
 }
 
 impl<S: SceneType> Scene<S> {
-    #[doc = example!("Provide a resource when this scene is entered.")]
+    #[doc = scene_example!("Provide a resource when this scene is entered.", "#[derive(Resource)] struct Score(u32);", "scene.resource(Score(0));")]
     pub fn resource(&mut self, value: impl Resource) {
         self.definition.resources.push(Arc::new(value));
     }
 
-    #[doc = example!("Append rules that run as the scene is entered.")]
+    #[doc = scene_example!("Append rules that run as the scene is entered.", "scene.on_enter(|tick: Tick| { let _ = tick.number(); });")]
     pub fn on_enter<M>(&mut self, rules: impl Rules<M>) {
         rules.into_rules(&mut self.definition.enter);
     }
 
-    #[doc = example!("Append rules that run before this scene is left.")]
+    #[doc = scene_example!("Append rules that run before this scene is left.", "scene.on_exit(|| {});")]
     pub fn on_exit<M>(&mut self, rules: impl Rules<M>) {
         rules.into_rules(&mut self.definition.exit);
     }
 
-    #[doc = example!("Append rules in written order.")]
+    #[doc = scene_example!("Append rules in written order.", "fn advance(_: Tick) {}", "scene.rules(advance);")]
+    ///
+    /// Rules keep mutable gameplay state in resources or components so it can be rewound.
+    /// ```compile_fail,E0277
+    /// use thrum::Scene;
+    /// let mut scene = Scene::<()>::default();
+    /// let mut score = 0;
+    /// scene.rules(move || { score += 1; });
+    /// ```
     pub fn rules<M>(&mut self, rules: impl Rules<M>) {
         let mut list = Vec::new();
         rules.into_rules(&mut list);
@@ -161,12 +179,12 @@ impl<S: SceneType> Scene<S> {
             .extend(list.into_iter().map(|rule| (None, rule)));
     }
 
-    #[doc = example!("Append a description of part of this scene.")]
+    #[doc = scene_example!("Append a description of part of this scene.", "fn enemies(scene: &mut Scene) { scene.rules(|| {}); }", "scene.add(enemies);")]
     pub fn add(&mut self, part: impl FnOnce(&mut Self)) {
         part(self);
     }
 
-    #[doc = example!("Declare the first phase of this scene.")]
+    #[doc = scene_example!("Declare the first phase of this scene.", "scene.phases(Stage::Play);")]
     pub fn phases<P: PhaseType>(&mut self, first: P) {
         if self.definition.first_phase.is_some() {
             self.definition.invalid = Some(Error::refused(
@@ -180,7 +198,7 @@ impl<S: SceneType> Scene<S> {
         }
     }
 
-    #[doc = example!("Describe a phase block in this position in the scene.")]
+    #[doc = scene_example!("Describe a phase block in this position in the scene.", "scene.phase(Stage::Play).lasts(seconds(4));")]
     pub fn phase<P: PhaseType>(&mut self, phase: P) -> PhaseBlock<'_, P> {
         let index = phase_index(&mut self.definition, phase);
         PhaseBlock {
@@ -216,7 +234,7 @@ fn phase_index<P: PhaseType>(definition: &mut Definition, phase: P) -> usize {
     index
 }
 
-#[doc = example!("Describe the rules, entry, exit and length of one phase.")]
+#[doc = scene_example!("Describe the rules, entry, exit and length of one phase.", "let block = scene.phase(Stage::Play);", "block.lasts(seconds(4)).then(Stage::Overtime);")]
 pub struct PhaseBlock<'a, P> {
     definition: &'a mut Definition,
     index: usize,
@@ -224,7 +242,7 @@ pub struct PhaseBlock<'a, P> {
 }
 
 impl<P: PhaseType> PhaseBlock<'_, P> {
-    #[doc = example!("Append rules that run as this phase is entered.")]
+    #[doc = scene_example!("Append rules that run as this phase is entered.", "scene.phase(Stage::Play).on_enter(|tick: Tick| { let _ = tick.number(); });")]
     #[expect(
         clippy::return_self_not_must_use,
         reason = "each phase declaration takes effect even when it ends a chain"
@@ -234,7 +252,7 @@ impl<P: PhaseType> PhaseBlock<'_, P> {
         self
     }
 
-    #[doc = example!("Append rules that run as this phase is left.")]
+    #[doc = scene_example!("Append rules that run as this phase is left.", "scene.phase(Stage::Play).on_exit(|| {});")]
     #[expect(
         clippy::return_self_not_must_use,
         reason = "each phase declaration takes effect even when it ends a chain"
@@ -244,7 +262,7 @@ impl<P: PhaseType> PhaseBlock<'_, P> {
         self
     }
 
-    #[doc = example!("Append rules in the phase block's written position.")]
+    #[doc = scene_example!("Append rules in the phase block's written position.", "fn advance(_: Tick) {}", "scene.phase(Stage::Play).rules(advance);")]
     #[expect(
         clippy::return_self_not_must_use,
         reason = "each phase declaration takes effect even when it ends a chain"
@@ -258,7 +276,7 @@ impl<P: PhaseType> PhaseBlock<'_, P> {
         self
     }
 
-    #[doc = example!("Set this phase's length to a duration or a read-only function.")]
+    #[doc = scene_example!("Set this phase's length to a duration or a read-only function.", "scene.phase(Stage::Play).lasts(seconds(4));")]
     #[expect(
         clippy::return_self_not_must_use,
         reason = "each phase declaration takes effect even when it ends a chain"
@@ -268,7 +286,7 @@ impl<P: PhaseType> PhaseBlock<'_, P> {
         self
     }
 
-    #[doc = example!("Request another phase when this phase reaches its deadline.")]
+    #[doc = scene_example!("Request another phase when this phase reaches its deadline.", "scene.phase(Stage::Play).lasts(seconds(4)).then(Stage::Overtime);")]
     #[expect(
         clippy::return_self_not_must_use,
         reason = "the expiry is registered even when it ends a chain"
@@ -279,7 +297,7 @@ impl<P: PhaseType> PhaseBlock<'_, P> {
         self
     }
 
-    #[doc = example!("Run a rule once after the deadline tick's other rules.")]
+    #[doc = scene_example!("Run a rule once after the deadline tick's other rules.", "fn finish(_: Tick) {}", "scene.phase(Stage::Play).lasts(seconds(4)).then_run(finish);")]
     pub fn then_run<M>(self, rule: impl Rules<M>) {
         let mut list = Vec::new();
         rule.into_rules(&mut list);
@@ -287,10 +305,10 @@ impl<P: PhaseType> PhaseBlock<'_, P> {
     }
 }
 
-#[doc = example!("A duration expression or read-only function used by lasts.")]
+#[doc = example!("A duration expression or read-only function used by lasts.", "use thrum::__derive::{Duration, PhaseDuration};", "assert!(matches!(seconds(2).duration(), Duration::Fixed(_)));")]
 #[doc(hidden)]
 pub trait PhaseDuration<M> {
-    #[doc = example!("Prepare the duration for phase entry.")]
+    #[doc = example!("Prepare the duration for phase entry.", "use thrum::__derive::{Duration, PhaseDuration};", "assert!(matches!(seconds(2).duration(), Duration::Fixed(_)));")]
     fn duration(self) -> Duration;
 }
 
@@ -306,10 +324,10 @@ impl<M, F: ReadFunction<M, Seconds>> PhaseDuration<crate::rule::Function<M>> for
     }
 }
 
-#[doc = example!("One scene description function or a tuple of functions in written order.")]
+#[doc = example!("One scene description function or a tuple of functions in written order.", "use thrum::__derive::SceneDescription;", "let mut scene = Scene::<()>::default();", "(|scene: &mut Scene| scene.rules(|| {})).describe(&mut scene);")]
 #[doc(hidden)]
 pub trait SceneDescription<S: SceneType, M> {
-    #[doc = example!("Write the entries of this scene.")]
+    #[doc = example!("Write the entries of this scene.", "use thrum::__derive::SceneDescription;", "let mut scene = Scene::<()>::default();", "(|scene: &mut Scene| scene.rules(|| {})).describe(&mut scene);")]
     fn describe(self, scene: &mut Scene<S>);
 }
 

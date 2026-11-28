@@ -348,6 +348,16 @@ pub trait TickGame {
         None
     }
 
+    /// Canonical encoding of all staged resources, when the policy supplies
+    /// decoding separately from tick admission.
+    fn profile_resource_encoding<'a>(
+        &self,
+        candidate: &'a Self::Candidate,
+    ) -> Option<&'a dyn crate::profile::StateEncode> {
+        self.profile_resources(candidate)
+            .map(|resources| -> &dyn crate::profile::StateEncode { resources })
+    }
+
     /// Validate a changed tentative world before the next ordered rule starts.
     /// Runs only for schedules constructed with rule boundaries and only when
     /// the callback staged an edit.
@@ -481,6 +491,10 @@ impl DirectDirty {
         for words in &mut self.words {
             words.fill(0);
         }
+    }
+
+    fn is_empty(&self) -> bool {
+        self.words.iter().flatten().all(|&word| word == 0)
     }
 
     fn mark_and_clear(&mut self, world: &mut RegisteredWorld, tick: u64) {
@@ -1194,7 +1208,7 @@ impl<G: TickGame> GameRuntime<G> {
     where
         G: Sync,
     {
-        self.step_inner(game, candidate, None, PublicationMode::Capture, true)
+        self.step_inner(game, candidate, None, PublicationMode::Capture, true, None)
     }
 
     /// Commit one tick and retain moved preimages for a prediction branch.
@@ -1215,7 +1229,7 @@ impl<G: TickGame> GameRuntime<G> {
         if undo.nonce != self.nonce {
             return Err(TickError::Edit(EditError::WrongRuntime));
         }
-        self.step_inner(game, candidate, Some(undo), publication, true)
+        self.step_inner(game, candidate, Some(undo), publication, true, None)
     }
 
     /// Resolve a registered setup or test edit at the current tick. The game
@@ -1234,8 +1248,40 @@ impl<G: TickGame> GameRuntime<G> {
     where
         G: Sync,
     {
-        self.step_inner(game, candidate, None, PublicationMode::Defer, false)
+        self.step_inner(game, candidate, None, PublicationMode::Defer, false, None)
             .map(|_| ())
+    }
+
+    /// Run a between-tick callback, keeping the same history endpoint if it
+    /// staged no component or structural changes and its authority is unchanged.
+    /// The predicate compares the candidate authority to the committed game.
+    ///
+    /// # Errors
+    ///
+    /// The same preparation checks as a tick can refuse the edit.
+    ///
+    /// # Panics
+    ///
+    /// The same commit and snapshot invariants as a tick apply.
+    pub fn edit_current_if_changed(
+        &mut self,
+        game: &mut G,
+        candidate: &mut G::Candidate,
+        authority_changed: fn(&G, &G::Candidate) -> bool,
+    ) -> Result<bool, TickError<G::Error>>
+    where
+        G: Sync,
+    {
+        let revision = self.revision;
+        self.step_inner(
+            game,
+            candidate,
+            None,
+            PublicationMode::Defer,
+            false,
+            Some(authority_changed),
+        )?;
+        Ok(self.revision != revision)
     }
 
     fn mark_publication_changes(&mut self) {
@@ -1334,17 +1380,7 @@ impl<G: TickGame> GameRuntime<G> {
         })
     }
 
-    fn step_inner(
-        &mut self,
-        game: &mut G,
-        candidate: &mut G::Candidate,
-        mut undo: Option<&mut RuntimeUndo>,
-        publication: PublicationMode,
-        advance: bool,
-    ) -> Result<u64, TickError<G::Error>>
-    where
-        G: Sync,
-    {
+    fn prepare_step(&self, advance: bool) -> Result<(u64, u64), TickError<G::Error>> {
         self.assert_usable();
         let next = self
             .tick
@@ -1357,6 +1393,22 @@ impl<G: TickGame> GameRuntime<G> {
         if !self.initial_published {
             return Err(TickError::BaselineRequired);
         }
+        Ok((next, following_revision))
+    }
+
+    fn step_inner(
+        &mut self,
+        game: &mut G,
+        candidate: &mut G::Candidate,
+        mut undo: Option<&mut RuntimeUndo>,
+        publication: PublicationMode,
+        advance: bool,
+        authority_changed: Option<fn(&G, &G::Candidate) -> bool>,
+    ) -> Result<u64, TickError<G::Error>>
+    where
+        G: Sync,
+    {
+        let (next, following_revision) = self.prepare_step(advance)?;
         self.direct_dirty.clear();
         self.query_exclusions.clear();
         // When a caller reuses its deferred endpoint's record, stage the new
@@ -1381,6 +1433,7 @@ impl<G: TickGame> GameRuntime<G> {
             self.world.begin_tick();
         }
         game.reset_candidate(candidate);
+        let mut ran_barrier = false;
         let preparation = catch_unwind(AssertUnwindSafe(|| {
             for wave in &mut self.waves {
                 #[cfg(not(target_arch = "wasm32"))]
@@ -1461,6 +1514,7 @@ impl<G: TickGame> GameRuntime<G> {
                     }
                     check_edit_system(&self.edits, before, bound.id)?;
                     if self.rule_boundaries && !self.edits.is_empty() {
+                        ran_barrier = true;
                         apply_rule_edits(
                             &mut self.world,
                             &mut self.edit_scratch,
@@ -1495,6 +1549,14 @@ impl<G: TickGame> GameRuntime<G> {
                 Ok(result) => result?,
                 Err(payload) => resume_unwind(payload),
             }
+        }
+        if let Some(changed) = authority_changed
+            && self.edits.is_empty()
+            && !ran_barrier
+            && self.direct_dirty.is_empty()
+            && !changed(game, candidate)
+        {
+            return Ok(self.tick);
         }
         // Commit is infallible; an unwind from here on poisons the runtime.
         self.poisoned = true;
@@ -1637,7 +1699,7 @@ fn validate_tick_profile<G: TickGame>(
         .validate_profile()
         .map_err(|error| TickError::Edit(EditError::World(error)))?;
     if game
-        .profile_resources(candidate)
+        .profile_resource_encoding(candidate)
         .is_some_and(|resources| !resources.is_finite())
     {
         return Err(TickError::Edit(EditError::World(
@@ -1742,6 +1804,9 @@ impl<G: TickGame> GameRuntime<G> {
         })
     }
 }
+
+mod rule_storage;
+pub use rule_storage::{RuleColumn, RuleStorage};
 
 /// Checked immutable access to committed game components.
 pub struct WorldRead<'a> {
@@ -1967,6 +2032,16 @@ impl WorldRead<'_> {
             nonce: self.nonce,
             guard: PhantomData,
         })
+    }
+
+    /// Resolve a live handle's physical row for this callback's scoped loans.
+    ///
+    /// # Errors
+    ///
+    /// The handle is stale or belongs to another epoch.
+    pub fn physical_row(&self, handle: Handle) -> Result<usize, RegisteredWorldError> {
+        self.world.stable_id(handle)?;
+        Ok(self.world.row_of_slot(handle.slot))
     }
 
     /// Check whether this live entity has a registered component of the given key.

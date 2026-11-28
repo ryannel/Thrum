@@ -5,12 +5,9 @@ use thrum_core::{
     sim::{Executor, WorldRead, WorldTxn},
 };
 
-use crate::{
-    Data, Entity, Error, Event, Num, Result, Tick,
-    runtime::{Candidate, Resources},
-};
+use crate::{Data, Entity, Error, Event, Num, Result, Tick, runtime::Candidate};
 
-use super::access::{Bindings, Exclusive, Kind, Parameter, Signature};
+use super::access::{Bindings, Exclusive, Kind, Loans, Parameter, Signature};
 
 /// The parameter declarations collected by the SDK for a rule.
 /// ```
@@ -56,7 +53,8 @@ impl ParameterList {
 /// ```
 #[doc(hidden)]
 pub struct ReadContext<'a> {
-    pub(crate) world: &'a WorldRead<'a>,
+    pub(crate) world: Option<&'a WorldRead<'a>>,
+    pub(crate) loans: Option<&'a Loans>,
     pub(crate) bindings: &'a Bindings,
     pub(crate) entities: &'a [(Entity, Handle)],
     pub(crate) executor: Executor,
@@ -66,7 +64,7 @@ pub struct ReadContext<'a> {
     pub(crate) seed: u64,
     pub(crate) stage: crate::scene::Landing,
     pub(crate) names: &'a std::sync::Arc<crate::scene::Names>,
-    pub(crate) stream: u32,
+    pub(crate) stream: u64,
 }
 
 /// The view used to submit a rule's changes.
@@ -85,12 +83,23 @@ pub struct Context<'a, 'w> {
 }
 
 /// Implements one parameter or a struct of parameters accepted by a rule.
+///
+/// # Safety
+///
+/// An adapter must declare all of its accesses exactly once and delegate
+/// preparation, lending and journaling to the same parameters and scratch in
+/// the same order. A loan must stay within the invocation that prepared it.
+/// Use `#[derive(Params)]` to implement these invariants.
 /// ```
 /// use thrum::Tick;
 /// fn rule(_: Tick) {}
 /// ```
 #[doc(hidden)]
-pub trait Param {
+#[expect(
+    unsafe_code,
+    reason = "parameter adapters preserve scoped column disjointness"
+)]
+pub unsafe trait Param {
     /// Reusable scratch for one rule parameter.
     /// ```
     /// use thrum::Tick;
@@ -128,6 +137,18 @@ pub trait Param {
     /// fn rule(_: Tick) {}
     /// ```
     fn item<'t>(state: &'t mut Self::State, context: &ReadContext<'_>) -> Self::Item<'t>;
+
+    /// Journal any component references handed to the rule, including on unwind.
+    ///
+    /// # Errors
+    /// Lent values must remain finite.
+    /// ```
+    /// #[derive(thrum::Params)]
+    /// struct Access<'t> { entities: thrum::Query<'t, thrum::Entity> }
+    /// ```
+    fn journal(_: &mut Self::State, _: &mut Context<'_, '_>) -> Result {
+        Ok(())
+    }
 
     /// Submit the parameter's effects at the end of the rule.
     ///
@@ -186,8 +207,8 @@ impl<T: crate::Resource> std::ops::DerefMut for ResMut<'_, T> {
     }
 }
 
-fn get_resource<T: Data>(resources: &Resources, name: &str) -> Result<T> {
-    resources.get::<T>().cloned().ok_or_else(|| {
+fn get_resource<T: Data>(value: Option<&T>, name: &str) -> Result<T> {
+    value.cloned().ok_or_else(|| {
         Error::refused(
             "T0201",
             name,
@@ -197,7 +218,9 @@ fn get_resource<T: Data>(resources: &Resources, name: &str) -> Result<T> {
     })
 }
 
-impl<T: Data> Param for Res<'_, T> {
+// SAFETY: This parameter only lends its typed resource scratch.
+#[expect(unsafe_code, reason = "trusted SDK resource adapter")]
+unsafe impl<T: Data> Param for Res<'_, T> {
     type State = Option<T>;
     type Item<'t> = Res<'t, T>;
     fn describe(name: &str, list: &mut ParameterList) {
@@ -205,7 +228,7 @@ impl<T: Data> Param for Res<'_, T> {
     }
     fn read(state: &mut Self::State, context: &ReadContext<'_>) -> Result {
         *state = Some(get_resource(
-            &context.candidate.state.resources,
+            context.candidate.state.resource::<T>(),
             context.name,
         )?);
         Ok(())
@@ -217,7 +240,9 @@ impl<T: Data> Param for Res<'_, T> {
 
 impl<T: Data> ReadOnly for Res<'_, T> {}
 
-impl<T: crate::Resource> Param for ResMut<'_, T> {
+// SAFETY: This parameter only lends its typed resource scratch.
+#[expect(unsafe_code, reason = "trusted SDK resource adapter")]
+unsafe impl<T: crate::Resource> Param for ResMut<'_, T> {
     type State = Option<T>;
     type Item<'t> = ResMut<'t, T>;
     fn describe(name: &str, list: &mut ParameterList) {
@@ -225,7 +250,7 @@ impl<T: crate::Resource> Param for ResMut<'_, T> {
     }
     fn read(state: &mut Self::State, context: &ReadContext<'_>) -> Result {
         *state = Some(get_resource(
-            &context.candidate.state.resources,
+            context.candidate.state.resources.get::<T>(),
             context.name,
         )?);
         Ok(())
@@ -235,7 +260,7 @@ impl<T: crate::Resource> Param for ResMut<'_, T> {
     }
     fn write(state: &mut Self::State, context: &mut Context<'_, '_>) -> Result {
         let value = state.take().expect("resource was prepared");
-        crate::runtime::check_value(&value, type_name::<T>())?;
+        crate::runtime::check_value(&value)?;
         context.candidate.state.resources.replace(value);
         Ok(())
     }
@@ -281,7 +306,9 @@ impl<E: Event> Emit<'_, E> {
     }
 }
 
-impl<E: Event> Param for Events<'_, E> {
+// SAFETY: This parameter only lends its own typed event scratch.
+#[expect(unsafe_code, reason = "trusted SDK event adapter")]
+unsafe impl<E: Event> Param for Events<'_, E> {
     type State = Vec<E>;
     type Item<'t> = Events<'t, E>;
     fn describe(_: &str, _: &mut ParameterList) {}
@@ -296,7 +323,9 @@ impl<E: Event> Param for Events<'_, E> {
 }
 impl<E: Event> ReadOnly for Events<'_, E> {}
 
-impl<E: Event> Param for Emit<'_, E> {
+// SAFETY: This parameter only lends its own typed event scratch.
+#[expect(unsafe_code, reason = "trusted SDK event adapter")]
+unsafe impl<E: Event> Param for Emit<'_, E> {
     type State = Vec<E>;
     type Item<'t> = Emit<'t, E>;
     fn describe(name: &str, list: &mut ParameterList) {
@@ -315,7 +344,9 @@ impl<E: Event> Param for Emit<'_, E> {
     }
 }
 
-impl Param for Tick {
+// SAFETY: This parameter lends no references to a component column.
+#[expect(unsafe_code, reason = "trusted SDK value adapter")]
+unsafe impl Param for Tick {
     type State = ();
     type Item<'t> = Tick;
     fn describe(_: &str, _: &mut ParameterList) {}
@@ -337,7 +368,7 @@ impl ReadOnly for Tick {}
 pub struct Random {
     seed: u64,
     tick: u64,
-    stream: u32,
+    stream: u64,
     draw: u128,
     entity: u128,
 }
@@ -345,7 +376,7 @@ pub struct Random {
 impl Random {
     fn word(&mut self) -> u64 {
         let key = self.draw ^ self.entity.rotate_left(64);
-        let value = thrum_core::profile::random_u64(self.seed, self.tick, key, self.stream);
+        let value = thrum_core::profile::random_u64(self.seed ^ self.stream, self.tick, key, 0);
         self.draw = self.draw.wrapping_add(1);
         value
     }
@@ -407,7 +438,9 @@ impl Random {
     }
 }
 
-impl Param for Random {
+// SAFETY: This parameter lends no references to a component column.
+#[expect(unsafe_code, reason = "trusted SDK value adapter")]
+unsafe impl Param for Random {
     type State = ();
     type Item<'t> = Self;
     fn describe(_: &str, _: &mut ParameterList) {}

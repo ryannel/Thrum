@@ -3216,6 +3216,7 @@ dependencies = [
 name = "thrum"
 version = "0.1.0"
 dependencies = [
+ "serde_json",
  "thrum-core",
  "thrum-derive",
 ]

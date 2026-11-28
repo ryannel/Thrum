@@ -1,5 +1,6 @@
 use std::{
-    any::type_name,
+    any::{TypeId, type_name},
+    panic::{AssertUnwindSafe, catch_unwind, resume_unwind},
     sync::{Arc, Mutex},
 };
 
@@ -9,7 +10,7 @@ pub(crate) mod access;
 pub(crate) mod params;
 pub(crate) mod query;
 
-use access::Signature;
+use access::{Loans, Signature};
 use params::{Context, Param, ParameterList, ReadContext, ReadOnly};
 
 macro_rules! internal_doc {
@@ -25,6 +26,8 @@ type Invoke<O> = dyn FnMut(&mut Context<'_, '_>, &ReadContextParts<'_>) -> Resul
 pub struct Invocation<O> {
     pub(crate) name: &'static str,
     pub(crate) signature: Signature,
+    pub(crate) stream: u64,
+    pub(crate) callable: TypeId,
     pub(crate) invoke: Box<Invoke<O>>,
 }
 
@@ -33,12 +36,20 @@ pub(crate) struct ReadContextParts<'a> {
     pub(crate) executor: thrum_core::sim::Executor,
     pub(crate) tick: crate::Tick,
     pub(crate) seed: u64,
-    pub(crate) stream: u32,
+    pub(crate) stream: u64,
     pub(crate) stage: crate::scene::Landing,
     pub(crate) names: &'a Arc<crate::scene::Names>,
 }
 
 impl<O> Invocation<O> {
+    pub(crate) fn anonymous(&self) -> bool {
+        self.name.ends_with("::{{closure}}")
+    }
+
+    pub(crate) fn distinguish(&mut self, registration: u64) {
+        self.stream = (self.stream ^ registration).wrapping_mul(0x0100_0000_01b3);
+    }
+
     pub(crate) fn call(
         &mut self,
         context: &mut Context<'_, '_>,
@@ -65,7 +76,11 @@ pub trait RuleFunction<M, O> {
 
 #[doc = internal_doc!("A function whose parameters permit reads alone.")]
 #[doc(hidden)]
-pub trait ReadFunction<M, O>: RuleFunction<M, O> {}
+pub trait ReadFunction<M, O>: ScheduledFunction<M, O> {}
+
+#[doc = internal_doc!("A scheduled rule cannot mutate captured state.")]
+#[doc(hidden)]
+pub trait ScheduledFunction<M, O>: RuleFunction<M, O> {}
 
 impl<F, O> RuleFunction<(), O> for F
 where
@@ -74,13 +89,24 @@ where
     fn compile(mut self) -> Invocation<O> {
         Invocation {
             name: type_name::<F>(),
+            callable: TypeId::of::<F>(),
+            stream: stream::<F>(),
             signature: Signature::default(),
             invoke: Box::new(move |_, _| Ok(self())),
         }
     }
 }
 
-impl<F, O> ReadFunction<(), O> for F where F: RuleFunction<(), O> {}
+impl<F: Fn() -> O + Copy + Send + 'static, O> ScheduledFunction<(), O> for F {}
+impl<F: Fn() -> O + Copy + Send + 'static, O> ReadFunction<(), O> for F {}
+
+fn stream<F>() -> u64 {
+    type_name::<F>()
+        .bytes()
+        .fold(0xcbf2_9ce4_8422_2325, |hash, byte| {
+            (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3)
+        })
+}
 
 macro_rules! functions {
     ($(($($parameter:ident $value:ident $index:tt),*)),+ $(,)?) => {$(
@@ -93,29 +119,45 @@ macro_rules! functions {
                 let mut list = ParameterList::default();
                 $($parameter::describe(&format!("parameter {} ({})", $index + 1, type_name::<$parameter>()), &mut list);)*
                 let name = type_name::<F>();
+                let loan_types = list.0.loan_types();
+                let mut loans = Loans::default();
                 let mut state: ($($parameter::State,)*) = Default::default();
                 Invocation {
                     name,
+                    callable: TypeId::of::<F>(),
+                    stream: stream::<F>(),
                     signature: list.0,
                     invoke: Box::new(move |context, parts| {
-                        let output = {
-                            let read = ReadContext {
-                                world: &context.world.read(),
-                                bindings: context.bindings,
-                                candidate: context.candidate,
-                                entities: parts.entities,
-                                executor: parts.executor,
-                                tick: parts.tick,
-                                name,
-                                seed: parts.seed,
-                                stream: parts.stream,
-                                stage: parts.stage,
-                                names: parts.names,
-                            };
-                            $($parameter::read(&mut state.$index, &read)?;)*
+                        let read = ReadContext {
+                            world: None,
+                            loans: None,
+                            bindings: context.bindings,
+                            candidate: context.candidate,
+                            entities: parts.entities,
+                            executor: parts.executor,
+                            tick: parts.tick,
+                            name,
+                            seed: parts.seed,
+                            stream: parts.stream,
+                            stage: parts.stage,
+                            names: parts.names,
+                        };
+                        {
+                            let world = context.world.read();
+                            let preparing = ReadContext { world: Some(&world), ..read };
+                            $($parameter::read(&mut state.$index, &preparing)?;)*
+                        }
+                        context.bindings.prepare_loans(context.world, &loan_types, &mut loans);
+                        let read = ReadContext { loans: Some(&loans), ..read };
+                        let output = catch_unwind(AssertUnwindSafe(|| {
                             $(let $value = $parameter::item(&mut state.$index, &read);)*
                             self($($value),*)
-                        };
+                        }));
+                        loans.clear();
+                        let journal = Ok(());
+                        $(let journal = journal.and($parameter::journal(&mut state.$index, context));)*
+                        let output = output.unwrap_or_else(|panic| resume_unwind(panic));
+                        journal?;
                         $($parameter::write(&mut state.$index, context)?;)*
                         Ok(output)
                     }),
@@ -123,9 +165,14 @@ macro_rules! functions {
             }
         }
 
+        impl<F, O, $($parameter,)*> ScheduledFunction<($($parameter,)*), O> for F
+        where
+            F: Fn($($parameter),*) -> O + Copy + RuleFunction<($($parameter,)*), O>,
+        {}
+
         impl<F, O, $($parameter,)*> ReadFunction<($($parameter,)*), O> for F
         where
-            F: RuleFunction<($($parameter,)*), O>,
+            F: ScheduledFunction<($($parameter,)*), O>,
             $($parameter: ReadOnly,)*
         {}
     )+};
@@ -171,6 +218,7 @@ pub(crate) struct Condition {
 struct ConditionState {
     invocation: Invocation<bool>,
     value: Option<(u64, bool)>,
+    identified: bool,
 }
 
 impl Condition {
@@ -181,8 +229,17 @@ impl Condition {
             state: Mutex::new(ConditionState {
                 invocation,
                 value: None,
+                identified: false,
             }),
         }
+    }
+
+    pub(crate) fn identify(&self, registration: u64) {
+        let mut state = self.state.lock().expect("condition scratch");
+        if !state.identified && state.invocation.anonymous() {
+            state.invocation.distinguish(registration);
+        }
+        state.identified = true;
     }
 
     pub(crate) fn evaluate(
@@ -203,16 +260,20 @@ impl Condition {
 }
 
 impl Rule {
-    pub(crate) fn new<M, O: RuleOutput>(function: impl RuleFunction<M, O>) -> Self {
+    pub(crate) fn new<M, O: RuleOutput>(function: impl ScheduledFunction<M, O>) -> Self {
         let Invocation {
             name,
             signature,
+            stream,
+            callable,
             mut invoke,
         } = function.compile();
         Self {
             invoke: Invocation {
                 name,
                 signature,
+                stream,
+                callable,
                 invoke: Box::new(move |ctx, parts| invoke(ctx, parts)?.result()),
             },
             cadence: None,
@@ -278,7 +339,7 @@ impl Rules<()> for ConfiguredRules {
 
 impl<F, M, O> Rules<Function<(M, O)>> for F
 where
-    F: RuleFunction<M, O>,
+    F: ScheduledFunction<M, O>,
     O: RuleOutput,
 {
     fn into_rules(self, out: &mut Vec<Rule>) {

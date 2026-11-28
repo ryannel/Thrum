@@ -63,6 +63,7 @@ pub mod __derive {
     pub use crate::rule::query::Rows;
     pub use crate::rule::{
         Function, Group, Invocation, ReadFunction, Rule, RuleFunction, RuleOutput,
+        ScheduledFunction,
     };
     pub use crate::scene::{Duration, PhaseDuration, SceneDescription};
     pub use crate::scene::{PhaseRequests, SceneRequests};

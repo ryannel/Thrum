@@ -56,17 +56,16 @@ macro_rules! marker {
     };
 }
 
-marker!(
-    Component,
-    "Data attached to an entity.",
-    r"
-```
-use thrum::Component;
-#[derive(Component)]
-struct Health(u32);
-```
-"
-);
+/// Copyable data attached to an entity.
+/// ```
+/// #[derive(thrum::Component)]
+/// struct Health(u32);
+/// let health = Health(7);
+/// let copy = health;
+/// assert_eq!(health, copy);
+/// ```
+pub trait Component: Data + Copy {}
+
 marker!(
     Resource,
     "Data shared by rules in a game or scene.",
@@ -166,7 +165,56 @@ impl<T: Data> Data for Option<T> {
     }
 }
 
-#[derive(Clone, PartialEq)]
+impl<T: Data, const N: usize> Data for [T; N] {
+    const SCHEMA: &'static str = "array";
+
+    fn write(&self, writer: &mut DataWriter<'_, '_>) {
+        for item in self {
+            item.write(writer);
+        }
+    }
+
+    fn read(reader: &mut DataReader<'_, '_>) -> Result<Self, InvalidData> {
+        let mut items = [const { None }; N];
+        for item in &mut items {
+            *item = Some(T::read(reader)?);
+        }
+        Ok(items.map(|item| item.expect("all array items decoded")))
+    }
+}
+
+macro_rules! tuple_data {
+    ($($($ty:ident $index:tt),+);+ $(;)?) => {$(
+        impl<$($ty: Data),+> Data for ($($ty,)+) {
+            const SCHEMA: &'static str = stringify!(($($ty,)+));
+
+            fn write(&self, writer: &mut DataWriter<'_, '_>) {
+                $(self.$index.write(writer);)+
+            }
+
+            fn read(reader: &mut DataReader<'_, '_>) -> Result<Self, InvalidData> {
+                Ok(($($ty::read(reader)?,)+))
+            }
+        }
+    )+};
+}
+
+tuple_data!(
+    A 0;
+    A 0, B 1;
+    A 0, B 1, C 2;
+    A 0, B 1, C 2, D 3;
+    A 0, B 1, C 2, D 3, E 4;
+    A 0, B 1, C 2, D 3, E 4, F 5;
+    A 0, B 1, C 2, D 3, E 4, F 5, G 6;
+    A 0, B 1, C 2, D 3, E 4, F 5, G 6, H 7;
+    A 0, B 1, C 2, D 3, E 4, F 5, G 6, H 7, I 8;
+    A 0, B 1, C 2, D 3, E 4, F 5, G 6, H 7, I 8, J 9;
+    A 0, B 1, C 2, D 3, E 4, F 5, G 6, H 7, I 8, J 9, K 10;
+    A 0, B 1, C 2, D 3, E 4, F 5, G 6, H 7, I 8, J 9, K 10, L 11;
+);
+
+#[derive(Clone, Copy, PartialEq)]
 pub(crate) struct Stored<T>(pub(crate) T);
 
 impl<T: Data> StateEncode for Stored<T> {

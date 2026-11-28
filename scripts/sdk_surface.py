@@ -82,6 +82,8 @@ class Surface:
                 self.errors.add(f"{owner} exposes {'::'.join(path['path'])}")
             return
         entry = self.entries.get(path_id, {}).get("inner", {})
+        if entry and not {"module", "use"}.intersection(entry):
+            self.visit(path_id, "::".join(path["path"]))
         if "type_alias" in entry:
             if followed is None:
                 followed = set()
@@ -161,7 +163,7 @@ class Surface:
 
 
 CONTROLS = {
-    "private_import": ("use backend::Handle; pub struct Item; impl Item { pub fn get() -> Handle { Handle } }", "Item::get"),
+    "private_import": ("mod hidden { use backend::Handle; pub struct Item; impl Item { pub fn get(&self) -> Handle { Handle } } } pub fn item() -> hidden::Item { hidden::Item }", "hidden::Item::get"),
     "alias": ("pub type Entity = backend::Handle;", "Entity"),
     "reexport": ("pub use backend::Handle as Entity;", "Entity"),
     "field": ("pub struct Item { pub handle: backend::Handle }", "Item::handle"),

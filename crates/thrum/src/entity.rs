@@ -270,10 +270,13 @@ impl Changes {
     ) {
         for entity in &self.despawns {
             if let Some(handle) = world.handle(entity.stable()) {
+                candidate.retired_entities.push(*entity);
                 edits.push(Edit::despawn(permit, handle));
             }
         }
         for (entity, value) in self.spawns.drain(..) {
+            candidate.spawned_entities.push(entity);
+            candidate.changed_entities.push(entity);
             spawn_edit(permit, edits, candidate, entity.stable(), value);
         }
         for (entity, change) in self.sets.drain(..) {
@@ -294,6 +297,7 @@ impl Changes {
                     index,
                 );
                 if let Some(edit) = edit {
+                    candidate.changed_entities.push(entity);
                     candidate.changes.push(change);
                     edits.push(edit);
                     continue;
@@ -355,7 +359,9 @@ impl<T: Component> QueuedComponent for ComponentChange<T> {
     }
 }
 
-impl Param for Entities<'_> {
+// SAFETY: This adapter only lends its own scratch and acquires no column loans.
+#[expect(unsafe_code, reason = "trusted SDK parameter adapter")]
+unsafe impl Param for Entities<'_> {
     type State = Changes;
     type Item<'t> = Entities<'t>;
     fn describe(name: &str, list: &mut ParameterList) {

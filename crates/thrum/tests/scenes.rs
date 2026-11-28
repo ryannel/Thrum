@@ -259,6 +259,39 @@ fn resume_keeps_fixed_length_and_does_not_call_enter_or_expiry_again() -> Result
     assert_eq!(game.resource::<ClockLog>()?.expired, 1);
     assert_eq!(game.resource::<ClockLog>()?.enters, 1);
     assert_eq!(game.resource::<ClockLog>()?.leaves, 2);
+    let mut at_deadline = Game::new("due phase clock")
+        .tick_rate(1)
+        .resource(ClockLog {
+            length: 1,
+            ..ClockLog::default()
+        })
+        .scene(|scene: &mut Scene| {
+            scene.phases(Stage::A);
+            scene
+                .phase(Stage::A)
+                .lasts(seconds(1))
+                .rules(|phase: Phase<'_, Stage>, mut log: ResMut<'_, ClockLog>| {
+                    log.clock = Some(phase.clock());
+                })
+                .then_run(|mut log: ResMut<'_, ClockLog>| log.expired += 1);
+            scene.on_enter(|mut phase: PhaseMut<'_, Stage>, log: Res<'_, ClockLog>| {
+                if let Some(clock) = log.clock {
+                    assert!(phase.resume(Stage::A, clock));
+                }
+            });
+        })
+        .test()?;
+    at_deadline.step()?;
+    let at_expiry = at_deadline.resource::<ClockLog>()?;
+    assert_eq!(
+        at_expiry.clock.and_then(PhaseClock::left),
+        Some(Seconds::ZERO)
+    );
+    assert_eq!(at_expiry.expired, 1);
+    at_deadline.go_to(())?;
+    at_deadline.step_ticks(2)?;
+    assert_eq!(at_deadline.resource::<ClockLog>()?.expired, 2);
+
     Ok(())
 }
 
@@ -420,6 +453,9 @@ fn landing_requests_take_precedence_on_the_next_tick_and_replay() -> Result {
             .scene(|_: &mut Scene<Held>| {})
             .scene(|_: &mut Scene<Later>| {})
             .test()?;
+        let initial = game.digest();
+        game.run(|| ())?;
+        assert_eq!(game.digest(), initial);
         game.step()?;
         if choice == 0 {
             assert!(game.in_scene::<Held>());

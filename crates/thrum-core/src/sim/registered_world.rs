@@ -1381,6 +1381,53 @@ impl RegisteredWorld {
         Ok(true)
     }
 
+    pub(super) fn rule_column_address<T: Send + Sync + 'static>(
+        &mut self,
+        component: usize,
+    ) -> (std::ptr::NonNull<()>, usize) {
+        self.column_mut_index::<T>(component).rule_address()
+    }
+
+    pub(super) fn journal_rule_column<T: PartialEq + Send + Sync + 'static>(
+        &mut self,
+        component: usize,
+        values: impl IntoIterator<Item = (Handle, T)>,
+        undo: &mut WorldUndo,
+        dirty: &mut impl TentativeDirty,
+        finite: impl Fn(&T) -> bool,
+    ) -> Result<(), RegisteredWorldError> {
+        let schema = self.registry.entries[component].schema;
+        let capacity = self.slots.len();
+        let directory = self.directory.as_ref();
+        let ticks = &self.change_ticks;
+        let column = self.columns[component]
+            .as_any_mut()
+            .downcast_mut::<TypedStore<T>>()
+            .expect("registered rule column type");
+        let mut undo = undo.batch_writer(component);
+        let mut result = Ok(());
+        for (handle, prior) in values {
+            let slot = handle.slot as usize;
+            let row = directory.map_or(slot, |directory| directory.row_of(slot));
+            let current = column.get(row).expect("loaned row is present");
+            if current == &prior {
+                continue;
+            }
+            if result.is_ok() && !finite(current) {
+                result = Err(RegisteredWorldError::NonFinite {
+                    schema,
+                    slot: handle.slot,
+                });
+            }
+            if dirty.mark_first(component, handle.slot) {
+                let previous_tick = ticks[tick_index(component, slot, capacity)];
+                undo.push(handle.slot, prior, previous_tick);
+            }
+            column.refresh_active(row);
+        }
+        result
+    }
+
     pub(super) fn replace_batch_prevalidated<T: Clone + Send + Sync + 'static>(
         &mut self,
         component: usize,

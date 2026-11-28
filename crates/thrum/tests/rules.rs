@@ -248,3 +248,44 @@ fn a_group_reads_its_condition_once_at_its_written_position() -> Result {
     assert_eq!(game.resource::<Counter>()?.0, 1);
     Ok(())
 }
+
+#[test]
+fn four_entry_read_only_query_and_entity_single_use_the_reference_spelling() -> Result {
+    #[derive(Component)]
+    struct A;
+    #[derive(Component)]
+    struct B;
+    #[derive(Component)]
+    struct C;
+    #[derive(Params)]
+    struct ReadAll<'t> {
+        all: Query<'t, (Entity, &'t A, &'t B, &'t C)>,
+    }
+
+    #[expect(
+        clippy::needless_pass_by_value,
+        reason = "the SDK hands Params to the condition"
+    )]
+    fn one(params: ReadAll<'_>) -> bool {
+        params.all.count() == 1
+    }
+    #[expect(
+        clippy::needless_pass_by_value,
+        reason = "exercise the reference Single parameter"
+    )]
+    fn retire(mut entities: Entities<'_>, entity: Single<'_, Entity, With<A>>) {
+        assert!(entities.despawn(*entity));
+    }
+
+    let mut game = Game::new("typed rule access")
+        .scene(|scene: &mut Scene| {
+            scene.on_enter(|mut entities: Entities<'_>| {
+                entities.spawn((A, B, C));
+            });
+            scene.rules(retire.when(one));
+        })
+        .test()?;
+    game.step()?;
+    assert_eq!(game.count::<()>(), 0);
+    Ok(())
+}
