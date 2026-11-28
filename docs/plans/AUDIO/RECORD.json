@@ -25,21 +25,21 @@
   },
   "work_packages": {
     "WP1": {
-      "definitions": "d574463458820783ca310e1326a1bd735d1ee047eb2075b0974b343c1dcf808b",
+      "definitions": "6c145e64d5a13b4a38a7fc7780359c7b752574d2f0937106d421db7e2126b4e9",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module AUDIO. It serves the approved Game SDK (owner approved 27 Nov; scope question 3: audio in the small form); r",
-        "at": "2026-11-27T22:06:56Z"
+        "task": "The design review of AUDIO at .orchestrate/evidence/AUDIO/design-review.md asked for changes, with its 11 Must Fix findi",
+        "at": "2026-11-28T02:56:09Z"
       }
     },
     "WP2": {
-      "definitions": "eb5735ea8cbb17606643b7912aad56581686edb737782cf5335c66d6ebc4a46c",
+      "definitions": "3bdf81a7a50d56a20d3608e37e610494760226397d2e0690434ed153e129367e",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module AUDIO. It serves the approved Game SDK (owner approved 27 Nov; scope question 3: audio in the small form); r",
-        "at": "2026-11-27T22:06:56Z"
+        "task": "The design review of AUDIO at .orchestrate/evidence/AUDIO/design-review.md asked for changes, with its 11 Must Fix findi",
+        "at": "2026-11-28T02:56:09Z"
       },
       "ends_stretch": true
     }
@@ -48,10 +48,14 @@
     {
       "task": "Plan module AUDIO. It serves the approved Game SDK (owner approved 27 Nov; scope question 3: audio in the small form); read docs/plans/GAME-SDK/DESIGN.md (the Audio entry) for what the SDK expects. No agent can hear, so items that judge sound wait for the owner's ear; keep those few and clearly marked.",
       "at": "2026-11-27T22:06:56Z"
+    },
+    {
+      "task": "The design review of AUDIO at .orchestrate/evidence/AUDIO/design-review.md asked for changes, with its 11 Must Fix findings.",
+      "at": "2026-11-28T02:56:09Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T22:06:56Z"
+    "at": "2026-11-28T02:56:09Z"
   }
 }
