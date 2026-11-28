@@ -5,7 +5,7 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     fmt,
     marker::PhantomData,
-    sync::{Arc, OnceLock},
+    sync::{Arc, Mutex, OnceLock},
 };
 
 use thrum_core::{
@@ -22,6 +22,10 @@ use crate::{
 };
 
 /// A typed prefab name declared by the game.
+/// ```
+/// use thrum::prelude::*;
+/// fn bat(name: Prefab) -> impl Spawn { name.at(2, 3) }
+/// ```
 pub struct Prefab<N = ()> {
     declaration: &'static Declaration,
     need: PhantomData<fn() -> N>,
@@ -57,9 +61,11 @@ impl<N: Data> Data for Prefab<N> {
     }
     fn read(reader: &mut DataReader<'_, '_>) -> std::result::Result<Self, InvalidData> {
         let key = u128::read(reader)?;
-        let declaration = inventory::iter::<LinkedDeclaration>
-            .into_iter()
-            .map(|item| item.0)
+        let declaration = DECLARATIONS
+            .lock()
+            .expect("prefab declarations")
+            .iter()
+            .copied()
             .find(|item| item.key == key && item.requirement == N::SCHEMA_ID)
             .ok_or(InvalidData)?;
         Ok(Self {
@@ -70,6 +76,11 @@ impl<N: Data> Data for Prefab<N> {
 }
 
 #[doc(hidden)]
+/// ```
+/// use thrum::{Prefab, __derive::Declaration};
+/// static BAT: Declaration = Declaration::new("bat", module_path!(), "BAT", Prefab::<()>::__requirement());
+/// assert_eq!(format!("{:?}", Prefab::<()>::__declared(&BAT)), "Prefab(\"bat\")");
+/// ```
 pub struct Declaration {
     key: u128,
     name: &'static str,
@@ -77,20 +88,18 @@ pub struct Declaration {
     constant: &'static str,
     index: OnceLock<usize>,
     requirement: u128,
+    registration: OnceLock<()>,
 }
 
-/// The link-time registration of a prefab declaration.
-#[doc(hidden)]
-pub struct LinkedDeclaration(
-    /// The typed constant's backing declaration.
-    pub &'static Declaration,
-);
-
-inventory::collect!(LinkedDeclaration);
+static DECLARATIONS: Mutex<Vec<&'static Declaration>> = Mutex::new(Vec::new());
 
 impl Declaration {
     /// Describe one declaration for startup validation.
     #[doc(hidden)]
+    /// ```
+    /// use thrum::{Data, __derive::Declaration};
+    /// let _ = Declaration::new("bat", module_path!(), "BAT", <()>::SCHEMA_ID);
+    /// ```
     pub const fn new(
         name: &'static str,
         block: &'static str,
@@ -104,7 +113,24 @@ impl Declaration {
             constant,
             requirement,
             index: OnceLock::new(),
+            registration: OnceLock::new(),
         }
+    }
+
+    /// Register the backing declaration from a program constructor.
+    ///
+    /// ```
+    /// use thrum::__derive::Declaration;
+    /// let _: fn(&'static Declaration) = Declaration::__register;
+    /// ```
+    ///
+    /// # Panics
+    /// Only if the startup declaration lock is poisoned.
+    #[doc(hidden)]
+    pub fn __register(&'static self) {
+        self.registration.get_or_init(|| {
+            DECLARATIONS.lock().expect("prefab declarations").push(self);
+        });
     }
 }
 
@@ -127,7 +153,17 @@ macro_rules! prefabs {
                 stringify!($constant),
                 <$ty>::__requirement(),
             );
-            $crate::__derive::submit_prefab! { $crate::__derive::LinkedDeclaration(&DECLARATION) }
+            extern "C" fn register() {
+                DECLARATION.__register();
+            }
+
+            // SAFETY: Each section expects a pointer to a C-ABI startup
+            // function. The pointer and declaration both have static storage.
+            #[used]
+            #[cfg_attr(target_vendor = "apple", unsafe(link_section = "__DATA,__mod_init_func,mod_init_funcs"))]
+            #[cfg_attr(any(target_os = "linux", target_os = "android", target_family = "wasm"), unsafe(link_section = ".init_array"))]
+            #[cfg_attr(windows, unsafe(link_section = ".CRT$XCU"))]
+            static REGISTER: extern "C" fn() = register;
             <$ty>::__declared(&DECLARATION)
         };
     )+};
@@ -136,6 +172,11 @@ macro_rules! prefabs {
 impl<N> Prefab<N> {
     /// Construct a constant emitted by `prefabs!`.
     #[doc(hidden)]
+    /// ```
+    /// use thrum::{Data, Prefab, __derive::Declaration};
+    /// static BAT: Declaration = Declaration::new("bat", module_path!(), "BAT", <()>::SCHEMA_ID);
+    /// assert_eq!(Prefab::<()>::__declared(&BAT), Prefab::<()>::__declared(&BAT));
+    /// ```
     pub const fn __declared(declaration: &'static Declaration) -> Self {
         Self {
             declaration,
@@ -145,6 +186,10 @@ impl<N> Prefab<N> {
 
     /// The required component schema emitted by `prefabs!`.
     #[doc(hidden)]
+    /// ```
+    /// use thrum::{Data, Prefab};
+    /// assert_eq!(Prefab::<()>::__requirement(), <()>::SCHEMA_ID);
+    /// ```
     pub const fn __requirement() -> u128
     where
         N: Data,
@@ -153,6 +198,11 @@ impl<N> Prefab<N> {
     }
 
     /// Use this prefab as a definition's base.
+    /// ```
+    /// use thrum::prelude::*;
+    /// #[derive(Component)] struct Health(u32);
+    /// fn elite(base: Prefab) -> PrefabDef { base.variant().with(Health(8)) }
+    /// ```
     pub fn variant(self) -> PrefabDef {
         PrefabDef {
             base: Some(self.declaration.key),
@@ -161,6 +211,11 @@ impl<N> Prefab<N> {
     }
 
     /// Supply the spawn's components, including the ones required by the prefab.
+    /// ```
+    /// use thrum::prelude::*;
+    /// #[derive(Component)] struct Shot(u32);
+    /// fn shot(name: Prefab<Shot>) -> impl Spawn { name.with(Shot(2)).at(1, 3) }
+    /// ```
     pub fn with<I>(self, components: I) -> PrefabSpawn<N, I> {
         PrefabSpawn {
             spec: SpawnSpec {
@@ -176,16 +231,28 @@ impl<N> Prefab<N> {
     }
 
     /// Start a two-dimensional spawn at the given coordinates.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn bat(name: Prefab) -> impl Spawn { name.at(2, 3) }
+    /// ```
     pub fn at(self, x: impl Into<Num>, y: impl Into<Num>) -> PrefabSpawn<N> {
         self.with(()).at(x, y)
     }
 
     /// Start a spawn at a point.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn relic(name: Prefab) -> impl Spawn { name.at_point(vec3(2, 0, 3)) }
+    /// ```
     pub fn at_point(self, point: impl Into<Place>) -> PrefabSpawn<N> {
         self.with(()).at_point(point)
     }
 
     /// Start a two-dimensional spawn at coordinates local to its parent.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn socket(name: Prefab) -> PrefabDef { PrefabDef::new(()).child(name.at_local(0, 2)) }
+    /// ```
     pub fn at_local(self, x: impl Into<Num>, y: impl Into<Num>) -> PrefabSpawn<N> {
         self.at(x, y)
     }
@@ -193,11 +260,37 @@ impl<N> Prefab<N> {
 
 /// A 2D or 3D position supplied to a prefab spawn.
 #[doc(hidden)]
+/// ```
+/// use thrum::{Place, vec2};
+/// assert!(matches!(Place::from(vec2(2, 3)), Place::Two(_)));
+/// ```
 pub enum Place {
     /// A 2D point.
-    Two(Vec2),
+    /// ```
+    /// use thrum::{Place, vec2};
+    /// let _ = Place::Two(vec2(1, 2));
+    /// ```
+    Two(
+        /// The 2D value.
+        /// ```
+        /// use thrum::{Place, vec2};
+        /// let _ = Place::Two(vec2(1, 2));
+        /// ```
+        Vec2,
+    ),
     /// A 3D point.
-    Three(Vec3),
+    /// ```
+    /// use thrum::{Place, vec3};
+    /// let _ = Place::Three(vec3(1, 2, 3));
+    /// ```
+    Three(
+        /// The 3D value.
+        /// ```
+        /// use thrum::{Place, vec3};
+        /// let _ = Place::Three(vec3(1, 2, 3));
+        /// ```
+        Vec3,
+    ),
 }
 
 impl From<Vec2> for Place {
@@ -253,6 +346,11 @@ impl<T: Component> Field for Stored<T> {
     reason = "only SDK bundles and components supply prefab fields"
 )]
 /// The tuple of components used as a prefab definition.
+/// ```
+/// use thrum::prelude::*;
+/// fn definition(bundle: impl Bundle) -> PrefabDef { PrefabDef::new(bundle) }
+/// let _ = definition(());
+/// ```
 pub trait Bundle: Fields {}
 impl<T: Spawn + Fields> Bundle for T {}
 
@@ -331,11 +429,37 @@ impl Change {
 #[derive(Clone, Copy)]
 #[doc(hidden)]
 /// A dimensional transform supplied to a hierarchy edit.
+/// ```
+/// use thrum::{Pose, Transform2d};
+/// assert!(matches!(Pose::from(Transform2d::ORIGIN), Pose::Two(_)));
+/// ```
 pub enum Pose {
     /// A 2D transform.
-    Two(Transform2d),
+    /// ```
+    /// use thrum::{Pose, Transform2d};
+    /// let _ = Pose::Two(Transform2d::ORIGIN);
+    /// ```
+    Two(
+        /// The 2D value.
+        /// ```
+        /// use thrum::{Pose, Transform2d};
+        /// let _ = Pose::Two(Transform2d::ORIGIN);
+        /// ```
+        Transform2d,
+    ),
     /// A 3D transform.
-    Three(Transform3d),
+    /// ```
+    /// use thrum::{Pose, Transform3d};
+    /// let _ = Pose::Three(Transform3d::ORIGIN);
+    /// ```
+    Three(
+        /// The 3D value.
+        /// ```
+        /// use thrum::{Pose, Transform3d};
+        /// let _ = Pose::Three(Transform3d::ORIGIN);
+        /// ```
+        Transform3d,
+    ),
 }
 
 impl From<Transform2d> for Pose {
@@ -385,6 +509,10 @@ pub(crate) struct SpawnSpec {
 
 /// A spawn made from a prefab, with the components supplied by its caller.
 #[must_use]
+/// ```
+/// use thrum::prelude::*;
+/// fn bat(name: Prefab) -> thrum::PrefabSpawn { name.at(2, 3) }
+/// ```
 pub struct PrefabSpawn<N = (), I = (), A = ()> {
     spec: SpawnSpec,
     input: I,
@@ -394,11 +522,19 @@ pub struct PrefabSpawn<N = (), I = (), A = ()> {
 
 impl<N, I, A: SpawnEdits> PrefabSpawn<N, I, A> {
     /// Set a two-dimensional spawn's place.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn set_place(spawn: thrum::PrefabSpawn) -> impl Spawn { spawn.at(2, 3) }
+    /// ```
     pub fn at(self, x: impl Into<Num>, y: impl Into<Num>) -> Self {
         self.at_point(crate::vec2(x, y))
     }
 
     /// Set the spawn's point, in the point's dimensionality.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn set_place(spawn: thrum::PrefabSpawn) -> impl Spawn { spawn.at_point(vec3(2, 0, 3)) }
+    /// ```
     pub fn at_point(mut self, point: impl Into<Place>) -> Self {
         self.spec.pose = Some(match point.into() {
             Place::Two(position) => Pose::Two(Transform2d {
@@ -414,11 +550,21 @@ impl<N, I, A: SpawnEdits> PrefabSpawn<N, I, A> {
     }
 
     /// Set coordinates local to the owning entity.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn add_child(parent: thrum::PrefabSpawn, child: thrum::PrefabSpawn) -> impl Spawn {
+    ///     parent.child(child.at_local(0, 2))
+    /// }
+    /// ```
     pub fn at_local(self, x: impl Into<Num>, y: impl Into<Num>) -> Self {
         self.at(x, y)
     }
 
     /// Set the turn at the spawn's place.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn turn(spawn: thrum::PrefabSpawn) -> impl Spawn { spawn.turned(Angle::degrees(90)) }
+    /// ```
     pub fn turned(mut self, angle: Angle) -> Self {
         self.spec.pose = Some(match self.spec.pose {
             Some(Pose::Three(pose)) => Pose::Three(pose.turned_y(angle)),
@@ -429,6 +575,10 @@ impl<N, I, A: SpawnEdits> PrefabSpawn<N, I, A> {
     }
 
     /// Set the scale at the spawn's place.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn enlarge(spawn: thrum::PrefabSpawn) -> impl Spawn { spawn.scaled(2) }
+    /// ```
     pub fn scaled(mut self, scale: impl Into<Num>) -> Self {
         self.spec.pose = Some(match self.spec.pose {
             Some(Pose::Three(pose)) => Pose::Three(pose.scaled(scale)),
@@ -439,11 +589,21 @@ impl<N, I, A: SpawnEdits> PrefabSpawn<N, I, A> {
     }
 
     /// Add or replace a component on this spawn.
+    /// ```
+    /// use thrum::prelude::*;
+    /// #[derive(Component)] struct Health(u32);
+    /// fn shield(spawn: thrum::PrefabSpawn) -> impl Spawn { spawn.with(Health(8)) }
+    /// ```
     pub fn with(self, value: impl Component) -> PrefabSpawn<N, I, impl SpawnEdits> {
         self.add(Set(value))
     }
 
     /// Modify one of the spawn's components.
+    /// ```
+    /// use thrum::prelude::*;
+    /// #[derive(Component)] struct Health(u32);
+    /// fn heal(spawn: thrum::PrefabSpawn) -> impl Spawn { spawn.tweak(|health: &mut Health| health.0 += 1) }
+    /// ```
     pub fn tweak<T: Component>(
         self,
         apply: impl Fn(&mut T) + Send + Sync + 'static,
@@ -455,12 +615,21 @@ impl<N, I, A: SpawnEdits> PrefabSpawn<N, I, A> {
     }
 
     /// Make this spawn a child of an existing or reserved entity.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn add_child(spawn: thrum::PrefabSpawn, owner: Entity) -> impl Spawn { spawn.under(owner) }
+    /// ```
     pub fn under(mut self, parent: Entity) -> Self {
         self.spec.parent = Some(parent);
         self
     }
 
     /// Add a child after the definition's own children.
+    /// ```
+    /// use thrum::prelude::*;
+    /// #[derive(Component)] struct Orb;
+    /// fn armed(spawn: thrum::PrefabSpawn) -> impl Spawn { spawn.child((Orb,)) }
+    /// ```
     pub fn child(self, spawn: impl Spawn) -> PrefabSpawn<N, I, impl SpawnEdits> {
         self.add(OwnChild(spawn))
     }
@@ -475,6 +644,10 @@ impl<N, I, A: SpawnEdits> PrefabSpawn<N, I, A> {
     }
 
     /// Spawn disabled, also hiding its children from ordinary queries.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn sleep(spawn: thrum::PrefabSpawn) -> impl Spawn { spawn.disabled() }
+    /// ```
     pub fn disabled(mut self) -> Self {
         self.spec.disabled = true;
         self
@@ -529,6 +702,10 @@ pub(crate) trait FieldTweak {
     private_bounds,
     reason = "only SDK spawn edits may implement this trait"
 )]
+/// ```
+/// use thrum::prelude::*;
+/// fn start_asleep<A: thrum::SpawnEdits>(spawn: thrum::PrefabSpawn<(), (), A>) -> impl Spawn { spawn.disabled() }
+/// ```
 pub trait SpawnEdits: Decorations {}
 impl<T: Decorations> SpawnEdits for T {}
 
@@ -613,6 +790,11 @@ impl Child {
 /// The defaults, children and named parts of one prefab.
 #[derive(Default)]
 #[must_use]
+/// ```
+/// use thrum::prelude::*;
+/// #[derive(Component)] struct Health(u32);
+/// let _ = PrefabDef::new((Health(3),)).with(Health(8));
+/// ```
 pub struct PrefabDef {
     base: Option<u128>,
     changes: Vec<Change>,
@@ -625,6 +807,11 @@ impl PrefabDef {
         clippy::needless_pass_by_value,
         reason = "prefab definitions take the authored component tuple"
     )]
+    /// ```
+    /// use thrum::prelude::*;
+    /// #[derive(Component)] struct Health(u32);
+    /// let _ = PrefabDef::new((Health(3),));
+    /// ```
     pub fn new(bundle: impl Bundle) -> Self {
         let mut changes = Vec::new();
         bundle.fields(&mut |field| changes.push(Change::Set(field.copy_field())));
@@ -635,24 +822,42 @@ impl PrefabDef {
     }
 
     /// Add or replace a default component.
+    /// ```
+    /// use thrum::prelude::*;
+    /// #[derive(Component)] struct Health(u32);
+    /// let _ = PrefabDef::new((Health(3),)).with(Health(8));
+    /// ```
     pub fn with(mut self, value: impl Component) -> Self {
         self.changes.push(Change::Set(Box::new(Stored(value))));
         self
     }
 
     /// Modify one of the definition's components.
+    /// ```
+    /// use thrum::prelude::*;
+    /// #[derive(Component)] struct Health(u32);
+    /// let _ = PrefabDef::new((Health(3),)).tweak(|health: &mut Health| health.0 += 1);
+    /// ```
     pub fn tweak<T: Component>(mut self, apply: impl Fn(&mut T) + Send + Sync + 'static) -> Self {
         self.changes.push(Change::tweak(apply));
         self
     }
 
     /// Define a child in its local place.
+    /// ```
+    /// use thrum::prelude::*;
+    /// let _ = PrefabDef::new(()).child((Transform2d::at(1, 2),));
+    /// ```
     pub fn child(mut self, spawn: impl Spawn) -> Self {
         self.children.push(Child::new(None, spawn));
         self
     }
 
     /// Define a named child, or a socket from an empty tuple.
+    /// ```
+    /// use thrum::prelude::*;
+    /// let _ = PrefabDef::new(()).part(Part::new("back"), ());
+    /// ```
     pub fn part(mut self, part: crate::Part, spawn: impl Spawn) -> Self {
         self.children.push(Child::new(Some(part), spawn));
         self
@@ -860,10 +1065,7 @@ pub(crate) struct Catalog(Vec<Arc<Prepared>>);
 
 impl Catalog {
     pub(crate) fn compile(authored: Vec<Authored>) -> Result<Self> {
-        let mut declarations: Vec<_> = inventory::iter::<LinkedDeclaration>
-            .into_iter()
-            .map(|item| item.0)
-            .collect();
+        let mut declarations = DECLARATIONS.lock().expect("prefab declarations").clone();
         declarations.sort_unstable_by_key(|item| (item.name, item.block, item.constant));
         let mut names = BTreeMap::new();
         for (index, &declaration) in declarations.iter().enumerate() {

@@ -4,17 +4,37 @@ use crate::{Component, Data, Num, Vec2, vec2};
 
 /// Three portable coordinates.
 #[derive(Data, Copy, Default)]
+/// ```
+/// use thrum::prelude::*;
+/// assert_eq!(vec3(2, 3, 4), Vec3 { x: Num::from(2), y: Num::from(3), z: Num::from(4) });
+/// ```
 pub struct Vec3 {
     /// The first coordinate.
+    /// ```
+    /// use thrum::prelude::*;
+    /// assert_eq!(vec3(2, 3, 4).x, Num::from(2));
+    /// ```
     pub x: Num,
     /// The upward coordinate.
+    /// ```
+    /// use thrum::prelude::*;
+    /// assert_eq!(vec3(2, 3, 4).y, Num::from(3));
+    /// ```
     pub y: Num,
     /// The third coordinate.
+    /// ```
+    /// use thrum::prelude::*;
+    /// assert_eq!(vec3(2, 3, 4).z, Num::from(4));
+    /// ```
     pub z: Num,
 }
 
 impl Vec3 {
     /// A vector with all coordinates at zero.
+    /// ```
+    /// use thrum::prelude::*;
+    /// assert_eq!(Vec3::ZERO, vec3(0, 0, 0));
+    /// ```
     pub const ZERO: Self = Self {
         x: Num::ZERO,
         y: Num::ZERO,
@@ -23,6 +43,10 @@ impl Vec3 {
 }
 
 /// Make a vector from three portable coordinates.
+/// ```
+/// use thrum::prelude::*;
+/// assert_eq!(vec3(0, 0, 0), Vec3::ZERO);
+/// ```
 pub fn vec3(x: impl Into<Num>, y: impl Into<Num>, z: impl Into<Num>) -> Vec3 {
     Vec3 {
         x: x.into(),
@@ -33,18 +57,34 @@ pub fn vec3(x: impl Into<Num>, y: impl Into<Num>, z: impl Into<Num>) -> Vec3 {
 
 /// A portable angle, with a full turn represented by one.
 #[derive(Data, Copy, Default)]
+/// ```
+/// use thrum::prelude::*;
+/// assert_eq!(Angle::degrees(90), Angle::turns(Num::ONE / Num::from(4)));
+/// ```
 pub struct Angle(Num);
 
 impl Angle {
     /// The angle of zero turns.
+    /// ```
+    /// use thrum::prelude::*;
+    /// assert_eq!(Angle::ZERO, Angle::turns(0));
+    /// ```
     pub const ZERO: Self = Self(Num::ZERO);
 
     /// Make an angle from degrees.
+    /// ```
+    /// use thrum::prelude::*;
+    /// assert_eq!(Angle::degrees(360), Angle::ZERO);
+    /// ```
     pub fn degrees(degrees: impl Into<Num>) -> Self {
         Self::turns(degrees.into() / Num::from(360))
     }
 
     /// Make an angle from turns.
+    /// ```
+    /// use thrum::prelude::*;
+    /// assert_eq!(Angle::turns(2), Angle::ZERO);
+    /// ```
     pub fn turns(turns: impl Into<Num>) -> Self {
         let turns = turns.into();
         let wrapped = turns - Num(turns.0.floor());
@@ -113,13 +153,26 @@ fn quarter_sin_cos(fraction: Num) -> (Num, Num) {
 
 /// A rotation about the upward axis.
 #[derive(Data, Copy, Default)]
+/// ```
+/// use thrum::prelude::*;
+/// let turn = Rot3::about_y(Angle::degrees(90));
+/// assert_ne!(turn, Rot3::IDENTITY);
+/// ```
 pub struct Rot3(Angle);
 
 impl Rot3 {
     /// The rotation that leaves a vector where it is.
+    /// ```
+    /// use thrum::prelude::*;
+    /// assert_eq!(Rot3::IDENTITY, Rot3::about_y(Angle::ZERO));
+    /// ```
     pub const IDENTITY: Self = Self(Angle::ZERO);
 
     /// Turn by an angle about the upward axis.
+    /// ```
+    /// use thrum::prelude::*;
+    /// assert_eq!(Transform3d::at(1, 2, 3).turned_y(Angle::degrees(90)).rotation, Rot3::about_y(Angle::degrees(90)));
+    /// ```
     pub const fn about_y(angle: Angle) -> Self {
         Self(angle)
     }
@@ -127,28 +180,66 @@ impl Rot3 {
 
 /// The local position, turn and uniform scale of a 2D entity.
 #[derive(Component)]
+/// ```
+/// use thrum::prelude::*;
+/// let at = Transform2d::at(1, 2).scaled(2);
+/// assert_eq!(at.position, vec2(1, 2));
+/// ```
 pub struct Transform2d {
     /// The position relative to the parent, or in world space at the root.
+    /// ```
+    /// use thrum::prelude::*;
+    /// assert_eq!(Transform2d::at(1, 2).position, vec2(1, 2));
+    /// ```
     pub position: Vec2,
     /// The local rotation.
+    /// ```
+    /// use thrum::prelude::*;
+    /// assert_eq!(Transform2d::ORIGIN.turn, Angle::ZERO);
+    /// ```
     pub turn: Angle,
     /// The local uniform scale.
+    /// ```
+    /// use thrum::prelude::*;
+    /// assert_eq!(Transform2d::ORIGIN.scale, Num::ONE);
+    /// ```
     pub scale: Num,
 }
 
 /// The local position, rotation and uniform scale of a 3D entity.
 #[derive(Component)]
+/// ```
+/// use thrum::prelude::*;
+/// let at = Transform3d::at(1, 2, 3).scaled(2);
+/// assert_eq!(at.position, vec3(1, 2, 3));
+/// ```
 pub struct Transform3d {
     /// The position relative to the parent, or in world space at the root.
+    /// ```
+    /// use thrum::prelude::*;
+    /// assert_eq!(Transform3d::at(1, 2, 3).position, vec3(1, 2, 3));
+    /// ```
     pub position: Vec3,
     /// The local rotation.
+    /// ```
+    /// use thrum::prelude::*;
+    /// assert_eq!(Transform3d::ORIGIN.rotation, Rot3::IDENTITY);
+    /// ```
     pub rotation: Rot3,
     /// The local uniform scale.
+    /// ```
+    /// use thrum::prelude::*;
+    /// assert_eq!(Transform3d::ORIGIN.scale, Num::ONE);
+    /// ```
     pub scale: Num,
 }
 
 impl Transform2d {
     /// The unturned origin with unit scale.
+    /// ```
+    /// use thrum::prelude::*;
+    /// assert_eq!(Transform2d::ORIGIN, Transform2d::at(0, 0));
+    /// ```
     pub const ORIGIN: Self = Self {
         position: Vec2::ZERO,
         turn: Angle::ZERO,
@@ -156,6 +247,10 @@ impl Transform2d {
     };
 
     /// Place an entity at two coordinates.
+    /// ```
+    /// use thrum::prelude::*;
+    /// assert_eq!(Transform2d::at(5, -1).position, vec2(5, -1));
+    /// ```
     pub fn at(x: impl Into<Num>, y: impl Into<Num>) -> Self {
         Self {
             position: vec2(x, y),
@@ -165,6 +260,11 @@ impl Transform2d {
 
     /// Set the local turn.
     #[must_use]
+    /// ```
+    /// use thrum::prelude::*;
+    /// let turn = Angle::degrees(90);
+    /// assert_eq!(Transform2d::ORIGIN.turned(turn).turn, turn);
+    /// ```
     pub fn turned(mut self, turn: Angle) -> Self {
         self.turn = turn;
         self
@@ -172,12 +272,22 @@ impl Transform2d {
 
     /// Set the uniform scale.
     #[must_use]
+    /// ```
+    /// use thrum::prelude::*;
+    /// assert_eq!(Transform2d::ORIGIN.scaled(2).scale, Num::from(2));
+    /// ```
     pub fn scaled(mut self, scale: impl Into<Num>) -> Self {
         self.scale = scale.into();
         self
     }
 
     /// Move immediately to a different point.
+    /// ```
+    /// use thrum::prelude::*;
+    /// let mut at = Transform2d::ORIGIN;
+    /// at.teleport(vec2(3, 4));
+    /// assert_eq!(at.position, vec2(3, 4));
+    /// ```
     pub fn teleport(&mut self, point: Vec2) {
         self.position = point;
     }
@@ -185,6 +295,10 @@ impl Transform2d {
 
 impl Transform3d {
     /// The unturned origin with unit scale.
+    /// ```
+    /// use thrum::prelude::*;
+    /// assert_eq!(Transform3d::ORIGIN, Transform3d::at(0, 0, 0));
+    /// ```
     pub const ORIGIN: Self = Self {
         position: Vec3::ZERO,
         rotation: Rot3::IDENTITY,
@@ -192,6 +306,10 @@ impl Transform3d {
     };
 
     /// Place an entity at three coordinates.
+    /// ```
+    /// use thrum::prelude::*;
+    /// assert_eq!(Transform3d::at(5, -1, 2).position, vec3(5, -1, 2));
+    /// ```
     pub fn at(x: impl Into<Num>, y: impl Into<Num>, z: impl Into<Num>) -> Self {
         Self {
             position: vec3(x, y, z),
@@ -201,6 +319,11 @@ impl Transform3d {
 
     /// Set the turn about the upward axis.
     #[must_use]
+    /// ```
+    /// use thrum::prelude::*;
+    /// let angle = Angle::degrees(90);
+    /// assert_eq!(Transform3d::ORIGIN.turned_y(angle).rotation, Rot3::about_y(angle));
+    /// ```
     pub fn turned_y(mut self, angle: Angle) -> Self {
         self.rotation = Rot3::about_y(angle);
         self
@@ -208,12 +331,22 @@ impl Transform3d {
 
     /// Set the uniform scale.
     #[must_use]
+    /// ```
+    /// use thrum::prelude::*;
+    /// assert_eq!(Transform3d::ORIGIN.scaled(2).scale, Num::from(2));
+    /// ```
     pub fn scaled(mut self, scale: impl Into<Num>) -> Self {
         self.scale = scale.into();
         self
     }
 
     /// Move immediately to a different point.
+    /// ```
+    /// use thrum::prelude::*;
+    /// let mut at = Transform3d::ORIGIN;
+    /// at.teleport(vec3(3, 4, 5));
+    /// assert_eq!(at.position, vec3(3, 4, 5));
+    /// ```
     pub fn teleport(&mut self, point: Vec3) {
         self.position = point;
     }

@@ -270,7 +270,7 @@ macro_rules! settings {
                 self
             }
 
-            /// Define one name from a prefab declaration.
+            #[doc = example!("Define one name from a prefab declaration.", "# fn describe(bird: Prefab) {", concat!("let _game = ", $builder, ".prefab(bird, ());"), "# }")]
             #[expect(private_bounds, reason = "only SDK component bundles are valid prefab requirements")]
             pub fn prefab<N: Fields>(mut self, name: crate::Prefab<N>, definition: impl Into<crate::PrefabDef>) -> Self {
                 self.$description.prefabs.push(Authored::new(name, definition.into()));

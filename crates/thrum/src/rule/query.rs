@@ -30,9 +30,17 @@ pub struct With<T: Component>(PhantomData<T>);
 pub struct Without<T: Component>(PhantomData<T>);
 
 /// Select entities that are disabled directly or through an ancestor.
+/// ```
+/// use thrum::prelude::*;
+/// fn sleepers(query: Query<Entity, Disabled>) -> u32 { query.count() }
+/// ```
 pub struct Disabled;
 
 /// Include enabled and disabled entities in one query.
+/// ```
+/// use thrum::prelude::*;
+/// fn all_lives(query: Query<Entity, WithDisabled>) -> u32 { query.count() }
+/// ```
 pub struct WithDisabled;
 
 /// The rows that match one rule parameter, in spawn order.

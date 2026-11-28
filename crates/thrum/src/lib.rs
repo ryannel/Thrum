@@ -147,7 +147,7 @@ pub mod __derive {
     pub use crate::data::{DataReader, DataWriter, InvalidData, schema_id};
     pub use crate::entity::{Changes, family::FamilyRows};
     pub use crate::game::FirstScene;
-    pub use crate::prefab::{Declaration, LinkedDeclaration};
+    pub use crate::prefab::Declaration;
     pub use crate::rule::params::{Context, Param, ParameterList, ReadContext, ReadOnly};
     pub use crate::rule::query::Rows;
     pub use crate::rule::{
@@ -156,5 +156,4 @@ pub mod __derive {
     };
     pub use crate::scene::{Duration, PhaseDuration, SceneDescription};
     pub use crate::scene::{PhaseRequests, SceneRequests};
-    pub use inventory::submit as submit_prefab;
 }

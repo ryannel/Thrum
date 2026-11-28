@@ -817,3 +817,6 @@
   calls are the same, with a Tick-driven fixture selecting the item. For the three-coordinate prefab
   placement in R2, use `.at_point(vec3(x, y, z))`. Rust methods have one arity and the two-coordinate
   `.at(x, y)` spelling stays available. Free-angle cross-target proof is scheduled in WP2.3.
+- WP11 SDK-surface follow-up. Every new public item has a runnable example. The `prefabs!` example runs
+  as a standalone doctest so its declarations stay in that linked game. Prefab registration uses SDK
+  constructors and a private declaration list, keeping the link-time registration types off the public API.

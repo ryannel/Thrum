@@ -557,9 +557,3 @@ requirement = "=2.0.119"
 license = "MIT OR Apache-2.0"
 purpose = "Parse and generate the game SDK's deterministic world-data and parameter derives"
 target_cost = "Host-only procedural macro dependency, with no game runtime cost"
-
-[external_dependencies.inventory]
-requirement = "=0.3.25"
-license = "MIT OR Apache-2.0"
-purpose = "Register typed prefab declarations with the linked game"
-target_cost = "One constructor per declared prefab, read at game startup"

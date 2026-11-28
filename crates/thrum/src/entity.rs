@@ -887,11 +887,19 @@ fn mark_family(tree: &family::Tree, entity: Entity, output: &mut Vec<Entity>) {
 
 impl Entities<'_> {
     /// Read the hierarchy as it stood when this rule started.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn is_root(entities: Entities, entity: Entity) -> bool { entities.parent(entity).is_none() }
+    /// ```
     pub fn parent(&self, child: Entity) -> Option<Entity> {
         self.0.family.view().parent(child)
     }
 
     /// Read direct children in attachment order.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn count_parts(entities: Entities, root: Entity) -> usize { entities.children(root).len() }
+    /// ```
     pub fn children(&self, parent: Entity) -> impl ExactSizeIterator<Item = Entity> + use<> {
         self.0.family.tree.child_iter(parent)
     }
@@ -900,21 +908,39 @@ impl Entities<'_> {
     ///
     /// # Panics
     /// Only if the rule's request lock is poisoned.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn socket(entities: Entities, parent: Entity) -> Entity { entities.part(parent, Part::new("back")) }
+    /// ```
     pub fn part(&self, parent: Entity, part: Part) -> Entity {
         self.0.family.view().part(parent, part)
     }
 
     /// Read an entity's composed 2D transform.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn place(entities: Entities, entity: Entity) -> Vec2 { entities.world2d(entity).position }
+    /// ```
     pub fn world2d(&self, entity: Entity) -> Transform2d {
         self.0.family.view().world2d(entity)
     }
 
     /// Read an entity's composed 3D transform.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn place(entities: Entities, entity: Entity) -> Vec3 { entities.world3d(entity).position }
+    /// ```
     pub fn world3d(&self, entity: Entity) -> Transform3d {
         self.0.family.view().world3d(entity)
     }
 
     /// Choose the parent and placement of an attachment.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn carry(mut entities: Entities, child: Entity, socket: Entity) {
+    ///     entities.attach(child).to(socket).keep_local(Transform3d::ORIGIN);
+    /// }
+    /// ```
     pub fn attach(&mut self, child: Entity) -> Attach<'_> {
         Attach {
             edits: self.0,
@@ -923,6 +949,10 @@ impl Entities<'_> {
     }
 
     /// Choose the placement of an entity to detach.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn drop_at_hand(mut entities: Entities, child: Entity) { entities.detach(child).keep_world(); }
+    /// ```
     pub fn detach(&mut self, child: Entity) -> Detach<'_> {
         Detach(Reparenting {
             edits: self.0,
@@ -932,11 +962,19 @@ impl Entities<'_> {
     }
 
     /// Disable an entity and its descendants after this rule.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn hide(mut entities: Entities, item: Entity) -> bool { entities.disable(item) }
+    /// ```
     pub fn disable(&mut self, entity: Entity) -> bool {
         self.0.set_disabled(entity, true)
     }
 
     /// Enable an entity after this rule, retaining any independently disabled descendants.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn wake(mut entities: Entities, item: Entity) -> bool { entities.enable(item) }
+    /// ```
     pub fn enable(&mut self, entity: Entity) -> bool {
         self.0.set_disabled(entity, false)
     }
@@ -969,6 +1007,10 @@ impl Changes {
 
 /// An attachment awaiting its parent.
 #[must_use]
+/// ```
+/// use thrum::prelude::*;
+/// fn carry(attachment: thrum::Attach<'_>, parent: Entity) { attachment.to(parent).keep_world(); }
+/// ```
 pub struct Attach<'a> {
     edits: &'a mut Changes,
     child: Entity,
@@ -976,6 +1018,10 @@ pub struct Attach<'a> {
 
 impl<'a> Attach<'a> {
     /// Choose the entity that will own the child.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn carry(attachment: thrum::Attach<'_>, parent: Entity) { attachment.to(parent).keep_world(); }
+    /// ```
     pub fn to(self, parent: Entity) -> Reparenting<'a> {
         Reparenting {
             edits: self.edits,
@@ -987,6 +1033,10 @@ impl<'a> Attach<'a> {
 
 /// An attachment or detachment awaiting placement.
 #[must_use]
+/// ```
+/// use thrum::prelude::*;
+/// fn dock(move_to: thrum::Reparenting<'_>) { move_to.keep_local(Transform2d::ORIGIN); }
+/// ```
 pub struct Reparenting<'a> {
     edits: &'a mut Changes,
     child: Entity,
@@ -995,11 +1045,18 @@ pub struct Reparenting<'a> {
 
 impl Reparenting<'_> {
     /// Preserve the child's world transform within the hierarchy's bound.
+    /// ```
+    /// fn keep_place(move_to: thrum::Reparenting<'_>) { move_to.keep_world(); }
+    /// ```
     pub fn keep_world(self) {
         self.stage(Reparent::World);
     }
 
     /// Use the supplied pose relative to the new parent.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn move_to_socket(move_to: thrum::Reparenting<'_>) { move_to.keep_local(Transform3d::ORIGIN); }
+    /// ```
     pub fn keep_local(self, pose: impl Into<Pose>) {
         self.stage(Reparent::At(pose.into()));
     }
@@ -1013,20 +1070,33 @@ impl Reparenting<'_> {
 
 /// A detachment awaiting placement.
 #[must_use]
+/// ```
+/// fn drop_at_hand(detach: thrum::Detach<'_>) { detach.keep_world(); }
+/// ```
 pub struct Detach<'a>(Reparenting<'a>);
 
 impl Detach<'_> {
     /// Leave the entity at its composed world transform.
+    /// ```
+    /// fn keep_place(detach: thrum::Detach<'_>) { detach.keep_world(); }
+    /// ```
     pub fn keep_world(self) {
         self.0.stage(Reparent::World);
     }
 
     /// Use the former local transform as the new world transform.
+    /// ```
+    /// fn become_root(detach: thrum::Detach<'_>) { detach.keep_local(); }
+    /// ```
     pub fn keep_local(self) {
         self.0.stage(Reparent::Local);
     }
 
     /// Set the detached entity's world transform.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn put_down(detach: thrum::Detach<'_>) { detach.at(Transform2d::at(2, 3)); }
+    /// ```
     pub fn at(self, pose: impl Into<Pose>) {
         self.0.stage(Reparent::At(pose.into()));
     }

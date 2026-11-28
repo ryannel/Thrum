@@ -19,6 +19,11 @@ use crate::{
 
 /// The name of a part within a prefab.
 #[derive(Clone, Copy)]
+/// ```
+/// use thrum::prelude::*;
+/// const SOCKET: Part = Part::new("back");
+/// assert_eq!(SOCKET, Part::new("back"));
+/// ```
 pub struct Part {
     id: u128,
     label: Option<&'static str>,
@@ -26,6 +31,10 @@ pub struct Part {
 
 impl Part {
     /// Name a part shared by a prefab definition and the rules using it.
+    /// ```
+    /// use thrum::prelude::*;
+    /// assert_ne!(Part::new("eye"), Part::new("back"));
+    /// ```
     pub const fn new(name: &'static str) -> Self {
         Self {
             id: schema_id(name, &[]),
@@ -236,6 +245,10 @@ impl Tree {
 static EMPTY_TREE: std::sync::LazyLock<Arc<Tree>> = std::sync::LazyLock::new(Arc::default);
 
 #[doc(hidden)]
+/// ```
+/// use thrum::{Family, __derive::Param};
+/// let _ = <Family<'static> as Param>::State::default();
+/// ```
 pub struct FamilyRows {
     pub(super) tree: Arc<Tree>,
     live: Vec<Entity>,
@@ -315,20 +328,36 @@ fn get<T: Copy>(rows: &[(Entity, T)], entity: Entity) -> Option<T> {
 }
 
 /// Read the hierarchy and transforms as they stood when the rule began.
+/// ```
+/// use thrum::prelude::*;
+/// fn living(family: Family, entity: Entity) -> bool { family.alive(entity) }
+/// ```
 pub struct Family<'a>(&'a FamilyRows);
 
 impl Family<'_> {
     /// Whether the entity was alive when the rule began.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn living(family: Family, entity: Entity) -> bool { family.alive(entity) }
+    /// ```
     pub fn alive(&self, entity: Entity) -> bool {
         self.0.live.binary_search(&entity).is_ok()
     }
 
     /// The entity's parent, if attached.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn is_root(family: Family, entity: Entity) -> bool { family.parent(entity).is_none() }
+    /// ```
     pub fn parent(&self, child: Entity) -> Option<Entity> {
         self.0.tree.parent(child)
     }
 
     /// The direct children of this parent, in attachment order.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn first(family: Family, root: Entity) -> Option<Entity> { family.children(root).next() }
+    /// ```
     pub fn children(&self, parent: Entity) -> impl ExactSizeIterator<Item = Entity> + use<> {
         self.0.tree.child_iter(parent)
     }
@@ -337,6 +366,10 @@ impl Family<'_> {
     ///
     /// # Panics
     /// Only if the rule's request lock is poisoned.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn socket(family: Family, root: Entity) -> Entity { family.part(root, Part::new("back")) }
+    /// ```
     pub fn part(&self, parent: Entity, part: Part) -> Entity {
         if let Some(&entity) = self
             .0
@@ -364,11 +397,19 @@ impl Family<'_> {
     }
 
     /// Compose the 2D transform through its parents.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn place(family: Family, entity: Entity) -> Vec2 { family.world2d(entity).position }
+    /// ```
     pub fn world2d(&self, entity: Entity) -> Transform2d {
         self.0.tree.world(entity, |entity| get(&self.0.two, entity))
     }
 
     /// Compose the 3D transform through its parents.
+    /// ```
+    /// use thrum::prelude::*;
+    /// fn place(family: Family, entity: Entity) -> Vec3 { family.world3d(entity).position }
+    /// ```
     pub fn world3d(&self, entity: Entity) -> Transform3d {
         self.0
             .tree

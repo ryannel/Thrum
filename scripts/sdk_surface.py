@@ -14,7 +14,8 @@ OWN_CRATES = {"thrum_derive"}
 STANDARD_CRATES = {"core", "alloc", "std"}
 # Cargo uses the repository-pinned rustdoc. Fail explicitly on schema changes.
 RUSTDOC_FORMAT = 61
-RUST_EXAMPLE = re.compile(r"^\s*```(?:rust)?\s*$\n.+?^\s*```\s*$", re.M | re.S)
+# Standalone doctests isolate a linked game and its prefab declarations.
+RUST_EXAMPLE = re.compile(r"^\s*```(?:rust|standalone_crate)?\s*$\n.+?^\s*```\s*$", re.M | re.S)
 
 
 def cargo(arguments, directory=ROOT, crate=None):
