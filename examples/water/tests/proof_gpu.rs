@@ -1082,13 +1082,34 @@ fn under_light_cost(gpu: &thrum_test_support::Gpu, directory: &std::path::Path) 
     let mut fixture = support::Fixture::from_game(gpu, [2560, 1440], game, report);
     fixture.warm_cooked();
     let (depth, pitch) = if site == DiveSite::Swash {
-        (-2.0, 55.0)
+        (-2.0, -73.0)
     } else {
         (3.0, 0.0)
     };
     fixture.parameters(&format!(
         r#"{{"camera.depth":{depth},"camera.pitch":{pitch},"sun.elevation":60}}"#
     ));
+    let view = fixture
+        .host
+        .source()
+        .frame(fixture.host.world().source(), 0.0, [2560, 1440], None)
+        .expect("cost view")
+        .view;
+    let eye = glam::Vec3::from_array(view.camera_position());
+    let inverse = glam::Mat4::from_cols_array_2d(&view.view_proj_columns()).inverse();
+    let forward = (inverse.project_point3(glam::Vec3::Z) - eye).normalize();
+    let actual_pitch = forward.y.asin().to_degrees();
+    assert!(
+        (actual_pitch - pitch).abs() < 0.1,
+        "wrong cost view: {forward:?}"
+    );
+    if site == DiveSite::Swash {
+        // The upper edge of the widest vertical view still looks below the horizon.
+        assert!(
+            actual_pitch + 105.0 / 2.0 < 0.0,
+            "beach cost includes the sky"
+        );
+    }
     let mut frames = Vec::new();
     for index in 0..16 {
         let frame = fixture.frame(1.0 + f64::from(index) / 120.0);
@@ -1101,6 +1122,7 @@ fn under_light_cost(gpu: &thrum_test_support::Gpu, directory: &std::path::Path) 
         "commit": std::env::var("THRUM_WATER_COMMIT").expect("cost revision"),
         "wind": format!("{wind:?}"), "location": site.name(), "depth_m": depth,
         "pitch_degrees": pitch, "under_light": on, "frames": frames,
+        "camera_position_m": eye.to_array(), "camera_forward": forward.to_array(),
         "resources": fixture.report.lock().expect("water report").resources.clone(),
     });
     std::fs::write(

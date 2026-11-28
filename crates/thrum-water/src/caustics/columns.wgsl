@@ -4,10 +4,9 @@
 }
 
 @fragment fn caustic_columns_fragment(@builtin(position) clip: vec4<f32>) -> @location(0) vec4<f32> {
-    let window = caustic_draw.window;
-    let point = window.xy + clip.xy * (window.z / 512.0);
+    let bounds = caustic_draw.column_bounds;
+    if bounds.z == 0.0 { return caustic_draw.outside_column; }
+    let point = bounds.xy + clip.xy * (bounds.zw / 512.0);
     let row = surface_pixel(point, caustic_slot(point));
-    let beam = water_sun_beam(caustic_draw.sun.xyz, vec3(0.0, 1.0, 0.0));
-    let rate = CAUSTIC_BEAM_DIFFERENCE / max(-beam.y, 0.05);
-    return vec4(row.level, rate, 0.0, select(0.0, 1.0, row.owned));
+    return vec4(row.level, 0.0, 0.0, select(0.0, 1.0, row.owned));
 }

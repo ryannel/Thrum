@@ -10,6 +10,8 @@ struct ShaftMapping {
     window: vec4<f32>,
     sun: vec4<f32>,
     quality: vec4<u32>,
+    column_bounds: vec4<f32>,
+    outside_column: vec4<f32>,
 }
 
 fn shaft_extent(capacity: vec2<u32>) -> vec2<u32> {
@@ -31,7 +33,9 @@ fn march_shafts(@builtin(global_invocation_id) slot: vec3<u32>) {
     let uv = (vec2<f32>(slot.xy) + 0.5) / vec2<f32>(extent);
     let camera = view.camera_xyz_time.xyz;
     let window = shaft_mapping.window;
-    let column = caustic_column(camera.xz, window, shaft_columns);
+    let bounds = shaft_mapping.column_bounds;
+    let outside = shaft_mapping.outside_column;
+    let column = caustic_column(camera.xz, bounds, outside, shaft_columns);
     let level = select(water.level_dt_reset.x, column.x, column.w > 0.0);
     let ray = normalize(lens_point(uv) - camera);
     let reach = shaft_range(uv, camera, ray, level);
@@ -57,14 +61,14 @@ fn march_shafts(@builtin(global_invocation_id) slot: vec3<u32>) {
     // pixels on opposite sides of the brightest shallow caustic sheets.
     let jitter = mix(0.4, 0.6, noise);
     var result = vec3(0.0);
-    if shaft_mapping.window.w > 0.0 && length_m > 0.0 {
+    if window.w > 0.0 && length_m > 0.0 {
         for (var index = 0u; index < count; index++) {
             let t = (f32(index) + jitter) * step;
             let point = camera + ray * (entry + t);
-            let column = caustic_column(point.xz, window, shaft_columns);
-            let level_here = select(level, column.x, column.w > 0.0);
-            let depth = max(0.0, level_here - point.y);
-            let exit = water_sun_exit(point, level_here, sun);
+            let column = caustic_column(point.xz, bounds, outside, shaft_columns);
+            let depth = column.x - point.y;
+            if column.w == 0.0 || depth <= 0.0 { continue; }
+            let exit = water_sun_exit(point, column.x, sun);
             let focused = caustic_field_at(exit.xz, depth, footprint, shaft_mapping.window, shaft_field, shaft_sampler, shaft_mapping.quality.y);
             let visibility = point_sun_visibility(exit, shaft_shadow_sampler);
             let transmission = exp(-beam.loss * depth - optics.extinction_sight.xyz * t);

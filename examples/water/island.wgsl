@@ -36,8 +36,14 @@ fn cooked_surface(surface: CookedSurface, at: CookedSurfacePoint) -> CookedSurfa
     let pond = 8.0 + 0.24 * length((xz - vec2(104.0, 93.0)) * vec2(1.0, 1.13));
     let gravel = 1.0 - smoothstep(0.35, 1.55 + coarse * 0.7, abs(height - select(10.6, 12.0, lake < pond)));
     let upland = smoothstep(18.0, 33.0, height + 10.0 * cover);
-    out.base_colour = vec4(mix(beach, mix(grass, stone, max(gravel * 0.85, upland)),
-        smoothstep(1.3, 4.8, height + 1.3 * cover)), 1.0);
+    let terrain = mix(beach, mix(grass, stone, max(gravel * 0.85, upland)),
+        smoothstep(1.3, 4.8, height + 1.3 * cover));
+    // The sheltered pond's silt floor reflects the narrow light ridges.
+    // Blend it into the grassy bank across the surveyed pond's shoreline.
+    let pond_floor = (1.0 - smoothstep(10.4, 10.9, height))
+        * (1.0 - smoothstep(14.0, 20.0, length((xz - vec2(104.0, 93.0)) * vec2(1.0, 1.13))));
+    let silt = mix(beach, vec3(0.64, 0.56, 0.41), 0.65);
+    out.base_colour = vec4(mix(terrain, silt, pond_floor), 1.0);
     out.roughness = 0.9;
     return out;
 }

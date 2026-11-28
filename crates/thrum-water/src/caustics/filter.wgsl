@@ -9,7 +9,11 @@ fn focal_blur(slot: vec3<u32>, size: vec2<u32>, axis: vec2<f32>) -> f32 {
     // The normal spread of unresolved waves and the Sun's disc set one world
     // scale. Integrate within three deviations, pairing neighbouring texels
     // with linear reads. The support is contiguous even on deep rungs.
-    let spread = caustic_rung_depth(slot.z) * (0.00465 + 0.25 * caustic_draw.sun.w);
+    let depth = caustic_rung_depth(slot.z);
+    // The fine shallow grids resolve more of the projected convergence.
+    // Blend into the broader tail on the coarser rungs.
+    let tail_share = mix(0.04, 0.25, smoothstep(2.8, 5.7, depth));
+    let spread = depth * (0.00465 + tail_share * caustic_draw.sun.w);
     let sigma = spread * f32(size.x) / (sqrt(2.0) * caustic_draw.window.z);
     if sigma < 0.26 { return centre; }
     let pairs = min(12u, u32(ceil(1.5 * sigma)));

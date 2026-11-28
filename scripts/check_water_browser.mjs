@@ -187,6 +187,30 @@ function waterChroma(bytes, start, end){
 }
 
 const underLightObserver = `
+  const mappingBuffers=new WeakSet();
+  const createBuffer=GPUDevice.prototype.createBuffer;
+  GPUDevice.prototype.createBuffer=function(desc){
+    const buffer=createBuffer.call(this,desc);
+    if(desc.label==='Sun-path window mapping') mappingBuffers.add(buffer);
+    return buffer;
+  };
+  const writeBuffer=GPUQueue.prototype.writeBuffer;
+  GPUQueue.prototype.writeBuffer=function(buffer,offset,data,...rest){
+    // Move only the light window, keeping both the receiver and the caster fixed.
+    const shift=Number(new URLSearchParams(location.search).get('shadow-window-shift'));
+    if(shift&&offset===0&&mappingBuffers.has(buffer)){
+      const bytes=new Uint8Array(data.buffer??data,data.byteOffset??0,data.byteLength);
+      const elementBytes=data.BYTES_PER_ELEMENT??1;
+      const start=(rest[0]??0)*elementBytes;
+      const end=rest[1]===undefined?bytes.length:start+rest[1]*elementBytes;
+      const copy=bytes.slice(start,end);
+      if(copy.length<16)throw Error('incomplete Sun-path window upload');
+      const window=new DataView(copy.buffer);
+      window.setFloat32(4,window.getFloat32(4,true)+shift,true);
+      return writeBuffer.call(this,buffer,offset,copy);
+    }
+    return writeBuffer.call(this,buffer,offset,data,...rest);
+  };
   const lightTextures=new Map();
   const createTexture=GPUDevice.prototype.createTexture;
   GPUDevice.prototype.createTexture=function(desc){
@@ -1034,24 +1058,6 @@ try {
       const center=(Math.floor(${height}/2)*${width}+Math.floor(${width}/2))*4;
       return __capturePixels[center+1];
     })()`);
-    const shadowArms={};
-    for(const [name,isWater] of [['clear-bed',false],['shadowed-bed',false],['clear-water',true],['shadowed-water',true]]){
-      const search='?under-light-probe='+name;
-      await sample(name+'-start',search,{'camera.station':stations[0]});
-      const values=[];
-      for(const [i,x] of stations.entries()){
-        await evaluate(`game.edit_control('camera.station',${x})`);
-        await until(()=>evaluate('game.frame_ready()'),'free Sun path frame',30000);
-        if(isWater){
-          await drive(1000/60);
-          values.push((await shafts()).center);
-        }else{
-          await capture(name+'-'+i,1000/60);
-          values.push(await readBed());
-        }
-      }
-      shadowArms[name]=values;
-    }
     const shadowCentre=(clear,blocked)=>{
       const loss=clear.map((value,i)=>value-blocked[i]);
       const peak=Math.max(...loss);
@@ -1061,11 +1067,32 @@ try {
       assert(sum>1.5*peak,`too few dark shadow stations: ${loss}`);
       return {centre:weight.reduce((a,b,i)=>a+b*stations[i],0)/sum,loss};
     };
-    result.under_light.shadowArms=shadowArms;
-    const bed=shadowCentre(shadowArms['clear-bed'],shadowArms['shadowed-bed']);
-    const water=shadowCentre(shadowArms['clear-water'],shadowArms['shadowed-water']);
-    result.under_light.shadows={stations,bed,water,tolerance:0.45};
-    assert(Math.abs(bed.centre-water.centre)<0.45,`bed and volume shadow centres differ: ${bed.centre}, ${water.centre}`);
+    result.under_light.shadowStations={stations,tolerance:0.45};
+    result.under_light.shadows=[];
+    for(const shift of [0,8,11]){
+      const shadowArms={};
+      for(const [name,isWater] of [['clear-bed',false],['shadowed-bed',false],['clear-water',true],['shadowed-water',true]]){
+        const search=`?under-light-probe=${name}&shadow-window-shift=${shift}`;
+        await sample(`${name}-${shift}-start`,search,{'camera.station':stations[0]});
+        const values=[];
+        for(const [i,x] of stations.entries()){
+          await evaluate(`game.edit_control('camera.station',${x})`);
+          await until(()=>evaluate('game.frame_ready()'),'free Sun path frame',30000);
+          if(isWater){
+            await drive(1000/60);
+            values.push((await shafts()).center);
+          }else{
+            await capture(`${name}-${shift}-${i}`,1000/60);
+            values.push(await readBed());
+          }
+        }
+        shadowArms[name]=values;
+      }
+      const bed=shadowCentre(shadowArms['clear-bed'],shadowArms['shadowed-bed']);
+      const water=shadowCentre(shadowArms['clear-water'],shadowArms['shadowed-water']);
+      result.under_light.shadows.push({shift,shadowArms,bed,water});
+      assert(Math.abs(bed.centre-water.centre)<0.45,`bed and volume shadow centres differ: ${bed.centre}, ${water.centre}`);
+    }
     await sample('ripple-with-net','?under-light-probe=ripple-with-net',{'camera.station':-6.5});
     const net=await pixels('__capturePixels');
     await sample('ripple-without-net','?under-light-probe=ripple-without-net',{'camera.station':-6.5});

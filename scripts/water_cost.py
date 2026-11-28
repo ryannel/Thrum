@@ -27,7 +27,7 @@ RECORDS = {'first-frame': ROOT / 'tests/fixtures/waters/first-frame-cost.json',
            'rain-ground': ROOT / '.orchestrate/evidence/PUDDLES/WP5/rain-ground-cost.json',
            'rain-footfall': ROOT / '.orchestrate/evidence/PUDDLES/WP8/rain-footfall-cost.json',
            'under': ROOT / 'tests/fixtures/waters/dive-cost-prior.json',
-           'under-light': ROOT / 'tests/fixtures/waters/dive-cost-prior.json',
+           'under-light': ROOT / 'tests/fixtures/waters/under-light-wp15.json',
            'optics': ROOT / 'tests/fixtures/waters/optics-cost-prior.json'}
 WORKING = ROOT / '.orchestrate/evidence/WATERS'
 # The island record taken before the records moved to fixtures names the first-frame record by its old path,
@@ -1111,6 +1111,8 @@ def measure_dive(action):
 def under_light_summary(record, enabled):
     assert record['target'] == 'mac-metal' and record['extent'] == [2560, 1440]
     assert record['capture'] is False and record['under_light'] is enabled
+    depth, pitch = (-2.0, -73.0) if record['location'] == 'swash' else (3.0, 0.0)
+    assert record['depth_m'] == depth and record['pitch_degrees'] == pitch
     assert record['wind'] == 'Trade' and len(record['frames']) == 12
     passes = {}
     for frame in record['frames']:
@@ -1120,27 +1122,79 @@ def under_light_summary(record, enabled):
     assert ('water caustic rung 1' in passes) is enabled
     if record['location'] != 'swash' or not enabled:
         assert ('underwater Sun shafts' in passes) is enabled, (record['location'], enabled, passes.keys())
+    if enabled:
+        assert 'water caustic columns' in passes
+    sha = ('underwater Sun shafts' in passes)
+    shaft_pass = 'measured' if sha else ('dry lens above the beach' if enabled else 'capability disabled')
     return dict(gpu_ms=statistics.median(frame['gpu_ms'] for frame in record['frames']),
                 passes_ms={name: statistics.median(samples) for name, samples in passes.items()},
-                samples_by_pass={name: len(samples) for name, samples in passes.items()})
+                samples_by_pass={name: len(samples) for name, samples in passes.items()},
+                shafts=shaft_pass)
 
 
-def under_light_investigations(on, off):
+def under_light_samples(arm, name):
+    timings = []
+    for record in arm:
+        step, repeat = [], []
+        for frame in record['frames']:
+            group = step if frame['tick_frame'] else repeat
+            group.extend(value for label, value in frame['passes_ms'].items()
+                         if comparable_pass(label) == name)
+        samples = step + repeat
+        if samples:
+            timings.append(dict(median_ms=statistics.median(samples),
+                                range_ms=[min(samples), max(samples)],
+                                step_ms=statistics.median(step) if step else None,
+                                repeat_ms=statistics.median(repeat) if repeat else None))
+    return timings
+
+
+def under_light_investigations(arms, historical):
     rows = []
-    if on['gpu_ms'] > 1000 / 120:
-        slow = sorted(on['passes_ms'].items(), key=lambda pair: -pair[1])[:5]
-        rows.append(dict(wire='GPU pass sum exceeds one refresh interval',
-                         with_light_ms=on['gpu_ms'], wp15_ms=off['gpu_ms'], longest_passes=slow))
-    for name, current in on['passes_ms'].items():
-        previous = off['passes_ms'].get(name)
-        if previous is not None and current > previous * 1.25:
+    on = arms['enabled'][0]['summary']
+    off = arms['disabled'][0]['summary']
+    previous = historical['summary']
+    new_passes = {name: value for name, value in on['passes_ms'].items()
+                  if name.startswith('water caustic ') or name == 'underwater Sun shafts'}
+    cohorts = {name: [batch['record'] for batch in batches] for name, batches in arms.items()}
+    cohorts['wp15'] = [historical['record']]
+    for name, batches in arms.items():
+        times = [batch['summary']['gpu_ms'] for batch in batches]
+        if max(times) > 1000 / 120:
+            rows.append(dict(wire='GPU pass sum exceeds one refresh interval', arm=name,
+                             batch_medians_ms=times, wp15_ms=previous['gpu_ms'],
+                             same_revision_off_ms=off['gpu_ms'], under_light_passes_ms=new_passes,
+                             longest_passes=sorted(batches[0]['summary']['passes_ms'].items(),
+                                                   key=lambda pair: -pair[1])[:5],
+                             disposition='Keep the named effect and other scene work separate in the cost account. '
+                                         'The measured pass sum is a tripwire under recorded host load.'))
+    for name, added in on['passes_ms'].items():
+        current = under_light_samples(cohorts['enabled'], name)
+        for baseline, summary in (('disabled', off), ('wp15', previous)):
+            reference = under_light_samples(cohorts[baseline], name)
+            if not reference:
+                continue
+            old = summary['passes_ms'][name]
+            paired = reference if baseline == 'disabled' else reference * len(current)
+            if not any(after['median_ms'] >= before['median_ms'] * 1.25 > 0
+                       for after, before in zip(current, paired, strict=True)):
+                continue
+            after = [batch['median_ms'] for batch in current]
+            before = [batch['median_ms'] for batch in reference]
+            overlap = any(a['range_ms'][0] <= b['range_ms'][1] and b['range_ms'][0] <= a['range_ms'][1]
+                          for a in current for b in reference)
+            disabled = under_light_samples(cohorts['disabled'], name)
+            if 'forward' in name and baseline == 'disabled':
+                disposition = 'The enabled forward shader additionally reads the Sun-path provider. Retain the enabled/disabled difference as the measured cost of that path.'
+            elif min(after) <= max(before) * 1.25 or overlap:
+                disposition = 'The timing intervals overlap or the repeated batches disagree at the trigger. Keep the observation under load for a repeat if this pass becomes limiting.'
+            else:
+                disposition = 'The increase persisted across the measured batches. Keep this pass for follow-up. The scoped timestamps do not isolate the cause of the change.'
             rows.append(dict(wire='Matched pass costs at least 25% more', pass_name=name,
-                             with_light_ms=current, wp15_ms=previous,
-                             added_gpu_ms=on['gpu_ms'] - off['gpu_ms'],
-                             diagnosis=('Forward shades the same receivers and additionally reads the Sun-path '
-                                        'provider.' if 'forward' in name else
-                                        'This shared pass is timed beside the other work. The paired total and '
-                                        'the additional caustic and shaft pass durations locate the extra cost.')))
+                             baseline=baseline, with_light_ms=added, baseline_ms=old,
+                             measurements=dict(enabled=current, disabled=disabled, baseline=reference),
+                             sample_comparison='Each cohort retains tick-step and repeated-tick medians with the full frame range.',
+                             disposition=disposition))
     return rows
 
 
@@ -1160,23 +1214,34 @@ def measure_under_light():
                    THRUM_WATER_OUTPUT=staging, THRUM_ASSET_STORE=str(store), THRUM_REQUIRE_GPU='1',
                    THRUM_WATER_DIVE='trade')
         for site in ('sea', 'lake', 'swash'):
-            arms = {}
-            for name, enabled in (('wp15', False), ('wp16', True)):
+            arms = {'disabled': [], 'enabled': []}
+            for enabled in (False, True, True, False):
+                load = run(['uptime'], capture_output=True, text=True).stdout.strip()
                 run(proof, env=dict(env, THRUM_WATER_LOCATION=site,
                                     THRUM_WATER_UNDER_LIGHT_ARM='on' if enabled else 'off'))
                 record = json.loads((Path(staging) / f'{site}-{str(enabled).lower()}.json').read_text())
-                arms[name] = dict(record=record, summary=under_light_summary(record, enabled))
-            sites[site] = dict(arms=arms, prior_wp15=prior['locations'].get(site),
-                               investigations=under_light_investigations(arms['wp16']['summary'],
-                                                                         arms['wp15']['summary']))
+                arm = 'enabled' if enabled else 'disabled'
+                arms[arm].append(dict(record=record, summary=under_light_summary(record, enabled), load=load))
+            historical = prior['locations'][site]
+            assert historical['commit'] == prior['commit'] and prior['commit'] != commit
+            history = dict(record=historical, summary=under_light_summary(historical, False))
+            for batches in arms.values():
+                for batch in batches:
+                    row = batch['record']
+                    assert all(row[field] == historical[field] for field in (
+                        'location', 'wind', 'extent', 'depth_m', 'pitch_degrees', 'capture'))
+                    for field in ('camera_position_m', 'camera_forward'):
+                        assert all(abs(a - b) < 0.001 for a, b in zip(row[field], historical[field], strict=True))
+            sites[site] = dict(arms=arms, prior_wp15=history,
+                               investigations=under_light_investigations(arms, history))
     destination = WORKING / 'WP16'
     destination.mkdir(parents=True, exist_ok=True)
     path = destination / f'under-light-cost-{commit[:12]}.json'
     path.write_text(json.dumps(dict(commit=commit, target='mac-metal', extent=[2560, 1440],
-                                    host=platform.platform(),
-                                    load=run(['uptime'], capture_output=True, text=True).stdout.strip(),
+                                    host=platform.platform(), wp15_provenance=prior['provenance'],
                                     locations=sites), indent=2) + '\n')
     print(f'PASS paired 1440p Metal under-light cost record: {path.relative_to(ROOT)}')
+
 
 def rain_yard_cost(action):
     output = ROOT / 'tmp/puddles-wp3/cost-current'

@@ -21,6 +21,8 @@ use wgpu::util::DeviceExt;
 const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R16Float;
 const SIDE: u32 = 512;
 const RUNGS: u32 = 13;
+const HALF_RESOLUTION_START: u32 = 7;
+const QUARTER_RESOLUTION_START: u32 = 9;
 const BORDER_CELLS: u32 = 16;
 const COLUMNS_PASS: &str = "water caustic columns";
 const RECEIVER: &str = concat!(
@@ -61,6 +63,8 @@ struct DrawFrame {
     // World direction toward the Sun.
     sun: [f32; 4],
     quality: [u32; 4],
+    column_bounds: [f32; 4],
+    outside_column: [f32; 4],
 }
 
 pub(super) struct Caustics {
@@ -75,6 +79,7 @@ pub(super) struct Caustics {
     frame: wgpu::BindGroup,
     view: wgpu::BindGroup,
     grids: [wgpu::Buffer; 3],
+    beam_difference: f32,
     current: Option<quality::Values>,
     submitted: u64,
     pending: bool,
@@ -169,7 +174,7 @@ impl Caustics {
             }],
         });
         let source = format!(
-            "{source}\n{}\n{}",
+            "{source}\nconst HALF_RESOLUTION_START = {HALF_RESOLUTION_START}u;\nconst QUARTER_RESOLUTION_START = {QUARTER_RESOLUTION_START}u;\n{}\n{}",
             if mapped {
                 "fn caustic_slot(point: vec2<f32>) -> u32 {
                     let answer = map_sample(point);
@@ -187,16 +192,7 @@ impl Caustics {
         );
         let columns = surface
             .sun_path
-            .map(|target| {
-                Columns::new(
-                    surface,
-                    target.columns.clone(),
-                    &source,
-                    &layout,
-                    field,
-                    optics,
-                )
-            })
+            .map(|target| Columns::new(surface, target.columns.clone(), &source, &layout, field))
             .transpose()?;
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("water caustic refraction"),
@@ -254,6 +250,12 @@ impl Caustics {
             frame,
             view,
             grids,
+            beam_difference: {
+                let optics = optics.unwrap_or_default();
+                (Vec3::from_array(optics.extinction) - Vec3::from_array(optics.downwelling))
+                    .dot(Vec3::new(0.2126, 0.7152, 0.0722))
+                    .max(0.0)
+            },
             current: None,
             submitted: 0,
             pending: false,
@@ -306,7 +308,8 @@ impl Caustics {
         &mut self,
         queue: &wgpu::Queue,
         frame: &ContributionFrame,
-        level: f64,
+        map: Option<&thrum_water_model::Map>,
+        surface_level: f64,
         tail_variance: f64,
         quality: quality::Values,
     ) {
@@ -322,7 +325,26 @@ impl Caustics {
             .environment
             .map_or([0.0, 1.0, 0.0], |light| light.true_sun.toward_sun);
         let span = f64::from(quality.window) as f32;
+        let eye_xz = [f64::from(frame.camera[0]), f64::from(frame.camera[2])];
+        let level = map
+            .and_then(|map| map.sample(eye_xz))
+            .map_or(surface_level, |sample| sample.row.level);
         let origin = window_origin(frame, level as f32, span);
+        let (column_bounds, outside_level) = map.map_or(([0.0; 4], Some(surface_level)), |map| {
+            let (origin, spacing, size) = map.bed().lattice();
+            let span = size
+                .map(|count| spacing * f64::from(u32::try_from(count).expect("GPU map size") - 1));
+            let outside = map.sample([origin[0] - spacing, origin[1] - spacing]);
+            (
+                [
+                    origin[0] as f32,
+                    origin[1] as f32,
+                    span[0] as f32,
+                    span[1] as f32,
+                ],
+                outside.map(|sample| sample.row.level),
+            )
+        });
         let mapping = DrawFrame {
             window: [
                 origin[0],
@@ -336,6 +358,13 @@ impl Caustics {
                 quality.rungs,
                 quality.shaft_steps,
                 quality.shaft_divisor,
+            ],
+            column_bounds,
+            outside_column: [
+                outside_level.unwrap_or_default() as f32,
+                self.beam_difference,
+                0.0,
+                f32::from(u8::from(outside_level.is_some())),
             ],
         };
         queue.write_buffer(&self.uniform, 0, bytemuck::bytes_of(&mapping));
@@ -394,7 +423,11 @@ impl Caustics {
             return;
         }
         let cell_scale = self.current.expect("caustic values").cell_scale;
-        let grid = &self.grids[((rung / 4).max(cell_scale).min(2)) as usize];
+        // Retain the fine grid through the shallow rungs. Coarser grids start
+        // where the projected blur is wider than a fine cell.
+        let rung_scale =
+            u32::from(rung >= HALF_RESOLUTION_START) + u32::from(rung >= QUARTER_RESOLUTION_START);
+        let grid = &self.grids[rung_scale.max(cell_scale) as usize];
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, &self.view, &[frame.view_uniform_offset]);
         pass.set_bind_group(1, &self.frame, &[]);
@@ -472,7 +505,6 @@ impl Columns {
         field_source: &str,
         mapping: &wgpu::BindGroupLayout,
         field: &wgpu::BindGroupLayout,
-        optics: Option<super::Optics>,
     ) -> Result<Self, String> {
         let target = EffectDrawTarget::new(
             COLUMNS_PASS,
@@ -485,15 +517,7 @@ impl Columns {
         )
         .map_err(|error| error.to_string())?;
         let device = surface.device;
-        let optics = optics.unwrap_or_default();
-        let difference = (Vec3::from_array(optics.extinction)
-            - Vec3::from_array(optics.downwelling))
-        .dot(Vec3::new(0.2126, 0.7152, 0.0722))
-        .max(0.0);
-        let source = format!(
-            "{field_source}\nconst CAUSTIC_BEAM_DIFFERENCE: f32 = {difference:?};\n{}",
-            include_str!("caustics/columns.wgsl")
-        );
+        let source = format!("{field_source}\n{}", include_str!("caustics/columns.wgsl"));
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(COLUMNS_PASS),
             source: wgpu::ShaderSource::Wgsl(source.into()),

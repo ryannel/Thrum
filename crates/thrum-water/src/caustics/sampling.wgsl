@@ -1,6 +1,10 @@
-fn caustic_column(point: vec2<f32>, window: vec4<f32>, columns: texture_2d<f32>) -> vec4<f32> {
-    let uv = (point - window.xy) / window.z;
-    if any(uv < vec2(0.0)) || any(uv >= vec2(1.0)) { return vec4(0.0); }
+// Water ownership stays in world space when the irradiance window moves.
+fn caustic_column(
+    point: vec2<f32>, bounds: vec4<f32>, outside: vec4<f32>, columns: texture_2d<f32>,
+) -> vec4<f32> {
+    if bounds.z == 0.0 { return outside; }
+    let uv = (point - bounds.xy) / bounds.zw;
+    if any(uv < vec2(0.0)) || any(uv >= vec2(1.0)) { return outside; }
     let size = vec2<f32>(textureDimensions(columns));
     return textureLoad(columns, vec2<i32>(uv * size), 0);
 }

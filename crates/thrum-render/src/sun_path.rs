@@ -7,14 +7,14 @@ const COLUMNS: u32 = 28;
 const SAMPLER: u32 = 29;
 const MAPPING: u32 = 30;
 const SHADOW_SAMPLER: u32 = 31;
-const MAPPING_BYTES: u64 = 48;
+const MAPPING_BYTES: u64 = 80;
 
 pub(crate) const FIELD_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
 pub(crate) const COLUMN_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba32Float;
 
 /// Description of a GPU-written Sun-path field. Its shader defines
 /// `sun_path(point, toward_sun)` returning the visibility point, direct
-/// factor and transition weight in a `SunPathSample`.
+/// factor and submergence in a `SunPathSample`.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SunPathProvider {
     pub(crate) source: &'static str,
@@ -41,7 +41,7 @@ pub struct SunPathTarget {
     provider: SunPathProvider,
     /// Irradiance rungs with the full mip chain.
     pub field: wgpu::Texture,
-    /// Level and attenuation coefficients at each position in the window.
+    /// World-space water level and ownership.
     pub columns: wgpu::Texture,
     /// The window, Sun and current quality values.
     pub mapping: wgpu::Buffer,
@@ -205,8 +205,8 @@ pub(crate) fn compose(mut scene: String, provider: Option<&str>, shadowed: bool)
 @group(1) @binding({COLUMNS}) var sun_path_columns: texture_2d<f32>;
 @group(1) @binding({SAMPLER}) var sun_path_sampler: sampler;
 @group(1) @binding({SHADOW_SAMPLER}) var sun_path_shadow_sampler: sampler_comparison;
-struct SunPathSample {{ exit: vec3<f32>, factor: f32, weight: f32 }}
-struct SunPathMapping {{ window: vec4<f32>, sun: vec4<f32>, quality: vec4<u32> }}
+struct SunPathSample {{ exit: vec3<f32>, factor: f32, submerged: bool }}
+struct SunPathMapping {{ window: vec4<f32>, sun: vec4<f32>, quality: vec4<u32>, column_bounds: vec4<f32>, outside_column: vec4<f32> }}
 @group(1) @binding({MAPPING}) var<uniform> sun_path_mapping: SunPathMapping;
 {source}",
     )

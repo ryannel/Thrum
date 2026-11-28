@@ -799,14 +799,11 @@ impl SceneContribution for Water {
             .as_ref()
             .map(caustics::quality::Values::read);
         if let Some((caustics, quality)) = p.caustics.as_mut().zip(light_quality) {
-            let column = [f64::from(frame.camera[0]), f64::from(frame.camera[2])];
-            let level = displayed_map
-                .sample(column)
-                .map_or(row.level, |sample| sample.row.level);
             caustics.record(
                 &p.queue,
                 frame,
-                level,
+                self.mapped.then_some(displayed_map),
+                row.level,
                 self.spectrum.tail_slope_variance,
                 quality,
             );
