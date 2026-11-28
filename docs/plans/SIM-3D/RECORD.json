@@ -25,7 +25,7 @@
   },
   "work_packages": {
     "WP1": {
-      "definitions": "90f3a9587b8a980373d607ca49a76dd09647c615c6f888ffeefab5bba9a25a21",
+      "definitions": "0ccc71dbf53366c45f799983ecb107193a4cf08847ff073c8ad77325e6025e27",
       "reviews": [
         {
           "verdict": "fail",
@@ -237,8 +237,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "SIM-3D WP1 has failed three reviews in a row on items WP1.2, WP1.3 and WP1.4, each time on new exact-boundary cases the ",
-        "at": "2026-11-28T10:03:54Z"
+        "task": "The design review of SIM-3D at .orchestrate/evidence/SIM-3D/design-review.md asked for changes, with its 1 Must Fix find",
+        "at": "2026-11-28T10:15:55Z"
       }
     },
     "WP2": {
@@ -268,11 +268,15 @@
     {
       "task": "SIM-3D WP1 has failed three reviews in a row on items WP1.2, WP1.3 and WP1.4, each time on new exact-boundary cases the reviewer constructs: an exactly tangent ray missing a sphere, finite rays hitting just beyond or missing at their endpoint, exactly tangent shapes reporting a tiny positive distance, head-on cuboid face normals. Every earlier finding was fixed and the Mac, Chrome and iPhone simulator agree bit for bit, so the builder is converging only case by case. The design's contract (DESIGN.md: overlap 'true exactly where the distance is zero'; finite rays include their endpoint; normals within a dot bound) asks binary32 queries for exact answers at exact tangency, which an unbounded set of constructed cases can break. Decide the boundary contract from first principles for a game physics library (as shipped engines do: a stated contact tolerance or slop, closed-interval rules with a tolerance on ray endpoints, or exact predicates only where cheap) and state it so a reviewer can test it with a finite, named set of cases; update the WP1 items to match. Read .orchestrate/evidence/SIM-3D/WP1-review.md and WP1-review-1.md in .claude/worktrees/sim-3d for the cases. Keep determinism across devices as is. Change only what the boundary contract needs.",
       "at": "2026-11-28T10:03:54Z"
+    },
+    {
+      "task": "The design review of SIM-3D at .orchestrate/evidence/SIM-3D/design-review.md asked for changes, with its 1 Must Fix findings.",
+      "at": "2026-11-28T10:15:55Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-28T10:03:54Z"
+    "at": "2026-11-28T10:15:55Z"
   },
   "design_history": [
     {
