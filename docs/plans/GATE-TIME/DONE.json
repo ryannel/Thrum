@@ -880,7 +880,7 @@
     {
       "id": "WP16",
       "name": "The long tests on main pass every run: each test behind a Cargo feature runs in a process of its own, as tests do before a merge",
-      "status": "not_started",
+      "status": "blocked",
       "quality_bar": "A main-branch test run as dependable as the CI of a well-kept Rust workspace such as wgpu's, which runs its GPU tests through cargo-nextest: a test gives the same answer whichever tests run beside it, and a failure on main names a fault in the code.",
       "items": [
         {
@@ -897,7 +897,17 @@
         }
       ],
       "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      "failed_reviews_with_repeat": 0,
+      "blocked": {
+        "reason": "needs_dependency",
+        "what": "The ATMOSPHERE caster repair must land on `main` before WP16 can verify the published candidate and merge.",
+        "work": {
+          "commit": "f3b7028fef3e536c573e9122605c7ec2f5dfefa4",
+          "branch": "build/gate-time",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/GATE-TIME/WP16-handoff.md"
+      }
     },
     {
       "id": "WP5",
