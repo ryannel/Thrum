@@ -4,7 +4,7 @@ use crate::{
     QueryError, Shape, Vector3,
     hull::{Hull, box_axes, closest_on_segment},
     pair::pair,
-    predicates::{conditioned, cross, determinant, dot_sum, squared_gap},
+    predicates::{conditioned, cross, cylinder_gap, determinant, dot_sum, squared_gap},
     shape::validate_point,
 };
 
@@ -137,14 +137,22 @@ fn capsule(
         let edge_length = edge_direction.length();
         let center = cross(a, edge_direction) / edge_length;
         let speed = transverse.length() / (line.length() * edge_length);
-        let end_offset = cross(a - motion, edge_direction) / edge_length;
-        if let Some((fraction, _)) = finite_sphere(
-            center,
-            radius,
-            transverse,
-            speed * motion.length(),
-            [Vector3::ZERO, end_offset],
-        ) {
+        let endpoint = a - motion;
+        let toward = dot_sum(transverse, [cross(endpoint, edge_direction)]);
+        let fraction = if toward >= Number::ZERO {
+            let gap = cylinder_gap(endpoint, edge_direction, radius);
+            if gap > Number::ZERO {
+                return hit;
+            }
+            (gap == Number::ZERO).then_some(Number::ONE)
+        } else {
+            None
+        };
+        let fraction = fraction.or_else(|| {
+            let (when, _) = sphere(center, radius, transverse)?;
+            Some((when / (speed * motion.length())).min(Number::ONE))
+        });
+        if let Some(fraction) = fraction {
             let point = motion * fraction;
             let along = (point - a).dot(axis);
             if along >= Number::ZERO

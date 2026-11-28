@@ -2,7 +2,7 @@ use thrum_core::profile::Number;
 
 use crate::{
     QueryError, Shape, Vector3,
-    hull::{Hull, closest, intersection},
+    hull::{Hull, closest, projection_gap_exact, signed_overlap},
 };
 
 /// The shallowest translation that parts a pair of overlapping shapes.
@@ -73,7 +73,10 @@ pub(crate) fn pair(first: Shape, second: Shape) -> Pair {
     let radius = first_radius + second_radius;
     let first = Hull::new(first, origin);
     let second = Hull::new(second, origin);
-    if let Some((normal, depth)) = intersection(first, second) {
+    let projection = signed_overlap(first, second);
+    if let Some((normal, depth)) = projection
+        && depth >= Number::ZERO
+    {
         return Pair {
             gap: Number::ZERO,
             depth: depth + radius,
@@ -83,8 +86,10 @@ pub(crate) fn pair(first: Shape, second: Shape) -> Pair {
             intersecting_hulls: true,
         };
     }
-    let witness = closest(first, second);
-    let signed_gap = witness.distance - radius;
+    let separation = projection.map(|(axis, _)| (axis, -projection_gap_exact(second, first, axis)));
+    let witness = closest(first, second, separation);
+    let bound = separation.map_or(Number::ZERO, |(_, gap)| gap);
+    let signed_gap = witness.distance.max(bound) - radius;
     Pair {
         gap: signed_gap.max(Number::ZERO),
         depth: (-signed_gap).max(Number::ZERO),
@@ -101,7 +106,7 @@ impl Pair {
             // At the shallowest separating translation, closest features give
             // a deterministic witness on the struck hull's surface.
             let moved = Hull::new(first, self.origin).translated(self.normal * self.depth);
-            closest(moved, Hull::new(second, self.origin)).point_on_second
+            closest(moved, Hull::new(second, self.origin), None).point_on_second
         } else {
             self.point_on_hull
         };

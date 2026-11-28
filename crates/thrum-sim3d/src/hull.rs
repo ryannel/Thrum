@@ -2,7 +2,7 @@ use thrum_core::profile::Number;
 
 use crate::{
     Shape, Vector3, n,
-    predicates::{conditioned, cross, determinant, dot_sum},
+    predicates::{conditioned, cross, determinant, dot_sum, sum, two_sum},
 };
 
 /// Hull coordinates translated into the same local frame.
@@ -42,32 +42,25 @@ impl Hull {
         }
     }
 
-    pub(crate) fn vertices(self) -> ([Vector3; 8], usize) {
-        let mut points = [Vector3::ZERO; 8];
+    fn vertices(self) -> ([Vertex; 8], usize) {
+        let mut points = [Vertex::new(Vector3::ZERO); 8];
         let count = match self {
             Self::Point(point) => {
-                points[0] = point;
+                points[0] = Vertex::new(point);
                 1
             }
             Self::Segment(ends) => {
-                points[..2].copy_from_slice(&ends);
+                points[..2].copy_from_slice(&ends.map(Vertex::new));
                 2
             }
             Self::Box { center, half_edges } => {
                 for (index, point) in points.iter_mut().enumerate() {
-                    *point = center;
-                    for (axis, half_edge) in half_edges.into_iter().enumerate() {
-                        *point = if index & (1 << axis) == 0 {
-                            *point - half_edge
-                        } else {
-                            *point + half_edge
-                        };
-                    }
+                    *point = Vertex::cuboid(center, half_edges, index);
                 }
                 8
             }
             Self::Triangle(corners) => {
-                points[..3].copy_from_slice(&corners);
+                points[..3].copy_from_slice(&corners.map(Vertex::new));
                 3
             }
         };
@@ -94,6 +87,17 @@ impl Hull {
             ],
             Self::Triangle(_) => &[(0, 1), (1, 2), (2, 0)],
         }
+    }
+
+    fn edge(self, index: usize, vertices: &[Vertex; 8]) -> (Vertex, Vector3) {
+        let (start, end) = self.edges()[index];
+        let direction = match self {
+            // The four edges of each orientation use the supplied half-edge.
+            // Subtracting rounded vertices can make parallel edges diverge.
+            Self::Box { half_edges, .. } => half_edges[index / 4] * n(2),
+            _ => vertices[end].point - vertices[start].point,
+        };
+        (vertices[start], direction)
     }
 
     pub(crate) fn edge_directions(self) -> [Vector3; 3] {
@@ -169,7 +173,23 @@ impl Hull {
         terms
     }
 
-    fn closest_to_point(self, point: Vector3) -> (Vector3, Vector3) {
+    fn projection_scale(self) -> Number {
+        match self {
+            Self::Point(point) => point.max_component(),
+            Self::Segment(ends) => ends[0].max_component().max(ends[1].max_component()),
+            Self::Triangle(corners) => corners
+                .into_iter()
+                .map(Vector3::max_component)
+                .fold(Number::ZERO, Number::max),
+            Self::Box { center, half_edges } => half_edges
+                .into_iter()
+                .map(Vector3::max_component)
+                .fold(center.max_component(), Number::max),
+        }
+    }
+
+    fn closest_to_point(self, vertex: Vertex) -> (Vector3, Vector3) {
+        let Vertex { point, residual } = vertex;
         let nearest = match self {
             Self::Point(position) => position,
             Self::Segment(ends) => closest_on_segment(ends, point),
@@ -185,7 +205,8 @@ impl Hull {
                         -axis.edge
                     };
                     let direction = axis.scaled_direction();
-                    let excess = dot_sum(direction, [point, -center, -face]) / direction.length();
+                    let excess =
+                        dot_sum(direction, [point, residual, -center, -face]) / direction.length();
                     let outside = if projected >= Number::ZERO {
                         excess.max(Number::ZERO)
                     } else {
@@ -193,11 +214,49 @@ impl Hull {
                     };
                     delta = delta + axis.direction * outside;
                 }
-                return (point - delta, delta);
+                return (point + (residual - delta), delta);
             }
             Self::Triangle(corners) => closest_on_triangle(corners, point),
         };
-        (nearest, point - nearest)
+        (nearest, (point - nearest) + residual)
+    }
+}
+
+#[derive(Clone, Copy)]
+struct Vertex {
+    point: Vector3,
+    residual: Vector3,
+}
+
+impl Vertex {
+    fn new(point: Vector3) -> Self {
+        Self {
+            point,
+            residual: Vector3::ZERO,
+        }
+    }
+
+    fn cuboid(center: Vector3, edges: [Vector3; 3], index: usize) -> Self {
+        let [a, b, c] = std::array::from_fn(|axis| {
+            if index & (1 << axis) == 0 {
+                -edges[axis]
+            } else {
+                edges[axis]
+            }
+        });
+        let coordinate = |center, a, b, c| {
+            let (head, first) = two_sum(center, a);
+            let (head, second) = two_sum(head, b);
+            let (head, third) = two_sum(head, c);
+            (head, sum([first, second, third]))
+        };
+        let (x, x_tail) = coordinate(center.x, a.x, b.x, c.x);
+        let (y, y_tail) = coordinate(center.y, a.y, b.y, c.y);
+        let (z, z_tail) = coordinate(center.z, a.z, b.z, c.z);
+        Self {
+            point: Vector3::new(x, y, z),
+            residual: Vector3::new(x_tail, y_tail, z_tail),
+        }
     }
 }
 
@@ -345,53 +404,65 @@ impl Witness {
 /// between two edges. Edge endpoints are already covered by vertex projection.
 /// Keep the first witness on a tie: first-hull vertices, second-hull vertices,
 /// then edge pairs, all in stored order.
-pub(crate) fn closest(first: Hull, second: Hull) -> Witness {
+pub(crate) fn closest(first: Hull, second: Hull, separation: Option<(Vector3, Number)>) -> Witness {
     let (first_points, first_count) = first.vertices();
     let (second_points, second_count) = second.vertices();
     let (point, delta) = second.closest_to_point(first_points[0]);
-    let mut nearest = Witness::new(point, delta);
+    let mut fallback = Witness::new(point, delta);
+    let mut nearest = None;
+    let mut consider = |point, delta| {
+        if separation.is_none_or(|(axis, gap)| axis.dot(delta) >= gap - gap / n(1 << 16)) {
+            let candidate = Witness::new(point, delta);
+            if nearest.is_none_or(|best: Witness| candidate.distance < best.distance) {
+                nearest = Some(candidate);
+            }
+        }
+    };
+    consider(point, delta);
     for &point in &first_points[1..first_count] {
         let (nearest_point, delta) = second.closest_to_point(point);
-        nearest.consider(nearest_point, delta);
+        fallback.consider(nearest_point, delta);
+        consider(nearest_point, delta);
     }
-    if matches!(first, Hull::Point(_)) {
-        return nearest;
-    }
-    for &point in &second_points[..second_count] {
-        let (_, delta) = first.closest_to_point(point);
-        nearest.consider(point, -delta);
-    }
-    for &(a, b) in first.edges() {
-        for &(c, d) in second.edges() {
-            if let Some((point, delta)) = closest_inside_edges(
-                first_points[a],
-                first_points[b],
-                second_points[c],
-                second_points[d],
-            ) {
-                nearest.consider(point, delta);
+    if !matches!(first, Hull::Point(_)) {
+        for &point in &second_points[..second_count] {
+            let (_, delta) = first.closest_to_point(point);
+            let point = point.point + point.residual;
+            fallback.consider(point, -delta);
+            consider(point, -delta);
+        }
+        for first_edge in 0..first.edges().len() {
+            let (a, u) = first.edge(first_edge, &first_points);
+            for second_edge in 0..second.edges().len() {
+                let (c, v) = second.edge(second_edge, &second_points);
+                if let Some((point, delta)) = closest_inside_edges(a, u, c, v) {
+                    consider(point, delta);
+                }
             }
         }
     }
-    nearest
+    nearest.unwrap_or_else(|| {
+        let (axis, gap) = separation.expect("a separating plane excluded the rounded witnesses");
+        let correction = gap - axis.dot(fallback.delta);
+        Witness::new(fallback.point_on_second, fallback.delta + axis * correction)
+    })
 }
 
 fn closest_inside_edges(
-    a: Vector3,
-    b: Vector3,
-    c: Vector3,
-    d: Vector3,
+    a: Vertex,
+    first_edge: Vector3,
+    c: Vertex,
+    second_edge: Vector3,
 ) -> Option<(Vector3, Vector3)> {
-    let first_edge = b - a;
-    let second_edge = d - c;
     let u = first_edge.unit()?;
     let v = second_edge.unit()?;
-    let normal = cross(conditioned(first_edge), conditioned(second_edge)).unit()?;
+    let cross_axis = cross(conditioned(first_edge), conditioned(second_edge));
+    let normal = cross_axis.unit()?;
     let denominator = cross(u, v).dot(normal);
     if denominator <= Number::ZERO {
         return None;
     }
-    let between = c - a;
+    let between = (c.point - a.point) + (c.residual - a.residual);
     let first = between.cross(v).dot(normal) / denominator;
     let second = between.cross(u).dot(normal) / denominator;
     if first > Number::ZERO
@@ -401,16 +472,20 @@ fn closest_inside_edges(
     {
         // An interior edge pair differs only along its common normal.
         // Project the edge origins before adding the closest-point offsets.
-        Some((c + v * second, normal * dot_sum(normal, [a, -c])))
+        let offset = dot_sum(cross_axis, [a.point, a.residual, -c.point, -c.residual]);
+        Some((
+            c.point + (c.residual + v * second),
+            normal * (offset / cross_axis.length()),
+        ))
     } else {
         None
     }
 }
 
-/// The facet normals of the hull difference are the nonzero cross products of
-/// the edge directions. Keep the first normal on a tie, in shape/edge order,
-/// testing the cross product's positive sense before its negative sense.
-pub(crate) fn intersection(first: Hull, second: Hull) -> Option<(Vector3, Number)> {
+/// A positive projection overlap measures the shallowest hull penetration.
+/// A negative one bounds the closest witnesses on the separating side.
+/// The facet normals are the nonzero cross products of the edge directions.
+pub(crate) fn signed_overlap(first: Hull, second: Hull) -> Option<(Vector3, Number)> {
     let [a, b, c] = first.edge_directions().map(conditioned);
     let [d, e, f] = second.edge_directions().map(conditioned);
     let edges = [a, b, c, d, e, f];
@@ -438,7 +513,10 @@ pub(crate) fn intersection(first: Hull, second: Hull) -> Option<(Vector3, Number
         } else {
             Vector3::AXES[2]
         };
-        consider_axis(first, second, axis, &mut None)?;
+        let separation = overlap_on_axis(first, second, axis);
+        if separation.1 < Number::ZERO {
+            return Some(separation);
+        }
         return Some((perpendicular(line), Number::ZERO));
     };
 
@@ -451,47 +529,45 @@ pub(crate) fn intersection(first: Hull, second: Hull) -> Option<(Vector3, Number
         }
         // A shared plane has zero depth along either normal. Its in-plane
         // separating axes still distinguish disjoint coplanar hulls.
-        for edge in edges {
-            if let Some(axis) = cross(edge, plane).unit() {
-                consider_axis(first, second, axis, &mut None)?;
-            }
-        }
-        return Some((plane, Number::ZERO));
+        return edges
+            .into_iter()
+            .filter_map(|edge| cross(edge, plane).unit())
+            .map(|axis| overlap_on_axis(first, second, axis))
+            .fold(Some((plane, Number::ZERO)), keep_shallower);
     }
 
     let mut best = None;
     for (index, &edge) in edges.iter().enumerate() {
         for &next in &edges[index + 1..] {
             if let Some(axis) = cross(edge, next).unit() {
-                consider_axis(first, second, axis, &mut best)?;
+                best = keep_shallower(best, overlap_on_axis(first, second, axis));
             }
         }
     }
     best
 }
 
-fn consider_axis(
-    first: Hull,
-    second: Hull,
-    axis: Vector3,
-    best: &mut Option<(Vector3, Number)>,
-) -> Option<()> {
+fn keep_shallower(
+    best: Option<(Vector3, Number)>,
+    candidate: (Vector3, Number),
+) -> Option<(Vector3, Number)> {
+    if best.is_none_or(|(_, depth)| candidate.1 < depth) {
+        Some(candidate)
+    } else {
+        best
+    }
+}
+
+fn overlap_on_axis(first: Hull, second: Hull, axis: Vector3) -> (Vector3, Number) {
     let (first_min, first_max) = first.project(axis);
     let (second_min, second_max) = second.project(axis);
     let positive = projection_gap(second, first, axis, second_max, first_min);
     let negative = projection_gap(first, second, axis, first_max, second_min);
-    if positive < Number::ZERO || negative < Number::ZERO {
-        return None;
-    }
-    let candidate = if positive <= negative {
+    if positive <= negative {
         (axis, positive)
     } else {
         (-axis, negative)
-    };
-    if best.is_none_or(|(_, depth)| candidate.1 < depth) {
-        *best = Some(candidate);
     }
-    Some(())
 }
 
 fn projection_gap(
@@ -502,11 +578,18 @@ fn projection_gap(
     low: Number,
 ) -> Number {
     let rounded = high - low;
-    let margin = high.abs().max(low.abs()) / n(1 << 19);
+    let scale = high_hull
+        .projection_scale()
+        .max(low_hull.projection_scale());
+    let margin = scale / n(1 << 19);
     if rounded.abs() > margin {
         return rounded;
     }
-    let [a, b, c, d] = high_hull.support(axis);
-    let [e, f, g, h] = low_hull.support(-axis);
+    projection_gap_exact(high_hull, low_hull, axis)
+}
+
+pub(crate) fn projection_gap_exact(high: Hull, low: Hull, axis: Vector3) -> Number {
+    let [a, b, c, d] = high.support(axis);
+    let [e, f, g, h] = low.support(-axis);
     dot_sum(axis, [a, b, c, d, -e, -f, -g, -h])
 }

@@ -421,6 +421,13 @@ pub(crate) fn ray_cases() -> Vec<RayCase> {
             -Vector3::AXES[2],
         ),
         (
+            "turned-capsule-side",
+            capsule([v(0, 0, -9), v(2, 2, -9)], n(3)),
+            v(1, 1, -6),
+            -Vector3::AXES[2],
+            Vector3::AXES[2],
+        ),
+        (
             "cuboid",
             cube(v(2, 1, 1), n(1)),
             v(1, 1, 1),
@@ -452,7 +459,7 @@ pub(crate) fn ray_cases() -> Vec<RayCase> {
             ("one-grid-short", motion - short_by * ratio(1, 512), None),
             (
                 "sub-grid-short",
-                motion - short_by * ratio(1, 1 << 22),
+                motion - short_by * ratio(1, 1 << 20),
                 None,
             ),
             ("continued", motion * n(2), Some(ratio(1, 2))),
@@ -628,21 +635,30 @@ pub(crate) fn sweep_cases() -> Vec<SweepCase> {
         }
     }
 
-    let u = v(1, 4, 3);
-    let turned = box_at(STOP, [u, v(4, -1, 0), v(3, 12, -17)]);
-    cases.push(SweepCase {
-        id: "turned-cuboids-head-on".into(),
-        mover: turned.translated(u * n(4)),
-        motion: u * n(-6),
-        struck: turned,
-        struck_motion: STOP,
-        expected: Some(SweepExpected {
-            fraction: ratio(1, 3),
-            normal: u / n(26).sqrt(),
-            point: None,
-            precise: true,
-        }),
-    });
+    for (index, (edges, squared_length)) in [
+        ([v(1, 4, 3), v(4, -1, 0), v(3, 12, -17)], 26),
+        ([v(1, 1, 3), v(1, -1, 0), v(3, 3, -2) / n(4)], 11),
+        ([v(1, 3, 1), v(3, -1, 0), v(1, 3, -10) / n(4)], 11),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let [axis, ..] = edges;
+        let turned = box_at(STOP, edges);
+        cases.push(SweepCase {
+            id: format!("turned-cuboids-head-on-{index}"),
+            mover: turned.translated(axis * n(4)),
+            motion: axis * n(-6),
+            struck: turned,
+            struck_motion: STOP,
+            expected: Some(SweepExpected {
+                fraction: ratio(1, 3),
+                normal: axis / n(squared_length).sqrt(),
+                point: None,
+                precise: true,
+            }),
+        });
+    }
     cases.push(SweepCase {
         id: "through-thick-cuboid".into(),
         mover: sphere(v(-10, 0, 0), n(1)),

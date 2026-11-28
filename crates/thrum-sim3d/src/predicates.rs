@@ -80,14 +80,42 @@ pub(crate) fn squared_gap(first: Vector3, second: Vector3, mut radius: Number) -
     }
     let mut terms = [Number::ZERO; 20];
     for (index, (head, tail)) in offsets.into_iter().enumerate() {
-        let (squared, remainder) = product(head, head);
-        let (mixed, mixed_tail) = product(head + head, tail);
-        let (small, small_tail) = product(tail, tail);
-        terms[index * 6..index * 6 + 6]
-            .copy_from_slice(&[squared, remainder, mixed, mixed_tail, small, small_tail]);
+        terms[index * 6..index * 6 + 6].copy_from_slice(&square_terms(head, tail));
     }
     let (squared, remainder) = product(radius, radius);
     terms[18..].copy_from_slice(&[-squared, -remainder]);
+    sum(terms)
+}
+
+fn square_terms(head: Number, tail: Number) -> [Number; 6] {
+    let (squared, remainder) = product(head, head);
+    let (mixed, mixed_tail) = product(head + head, tail);
+    let (small, small_tail) = product(tail, tail);
+    [squared, remainder, mixed, mixed_tail, small, small_tail]
+}
+
+/// Compare the distance to a cylinder's axis with its radius in the
+/// unnormalised cross-section. Squaring after dividing by the edge length
+/// can move a point exactly on a turned cylinder's wall off the surface.
+pub(crate) fn cylinder_gap(offset: Vector3, edge: Vector3, radius: Number) -> Number {
+    let mut terms = [Number::ZERO; 36];
+    for (index, (a, b, c, d, component)) in [
+        (offset.y, edge.z, offset.z, edge.y, edge.x),
+        (offset.z, edge.x, offset.x, edge.z, edge.y),
+        (offset.x, edge.y, offset.y, edge.x, edge.z),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let (left, left_tail) = product(a, b);
+        let (right, right_tail) = product(c, d);
+        let (head, rounding) = two_sum(left, -right);
+        let tail = sum([rounding, left_tail, -right_tail]);
+        let (edge_radius, edge_tail) = product(component, radius);
+        terms[index * 12..index * 12 + 6].copy_from_slice(&square_terms(head, tail));
+        terms[index * 12 + 6..index * 12 + 12]
+            .copy_from_slice(&square_terms(edge_radius, edge_tail).map(|term| -term));
+    }
     sum(terms)
 }
 

@@ -256,7 +256,7 @@ origin/turned-vertex-0-touch/distance-ba distance 00000000
 origin/turned-vertex-0-touch/overlap-ba overlap 1
 origin/turned-vertex-0-outside/distance-ab distance 3f87c3b7
 origin/turned-vertex-0-outside/overlap-ab overlap 0
-origin/turned-vertex-0-outside/distance-ba distance 3f87c3b6
+origin/turned-vertex-0-outside/distance-ba distance 3f87c3b7
 origin/turned-vertex-0-outside/overlap-ba overlap 0
 origin/turned-vertex-0-inside/distance-ab distance 00000000
 origin/turned-vertex-0-inside/overlap-ab overlap 1
@@ -266,9 +266,9 @@ origin/turned-vertex-1-touch/distance-ab distance 00000000
 origin/turned-vertex-1-touch/overlap-ab overlap 1
 origin/turned-vertex-1-touch/distance-ba distance 00000000
 origin/turned-vertex-1-touch/overlap-ba overlap 1
-origin/turned-vertex-1-outside/distance-ab distance 3eb504f2
+origin/turned-vertex-1-outside/distance-ab distance 3eb504f3
 origin/turned-vertex-1-outside/overlap-ab overlap 0
-origin/turned-vertex-1-outside/distance-ba distance 3eb504f2
+origin/turned-vertex-1-outside/distance-ba distance 3eb504f3
 origin/turned-vertex-1-outside/overlap-ba overlap 0
 origin/turned-vertex-1-inside/distance-ab distance 00000000
 origin/turned-vertex-1-inside/overlap-ab overlap 1
@@ -343,6 +343,11 @@ origin/capsule-cap-endpoint-short/ray ray miss
 origin/capsule-cap-endpoint-one-grid-short/ray ray miss
 origin/capsule-cap-endpoint-sub-grid-short/ray ray miss
 origin/capsule-cap-endpoint-continued/ray ray hit 3effffff 3f7fffff 3f7fffff 3f7fffff b3000000 b3000000 bf800000 00000000
+origin/turned-capsule-side-endpoint-contact/ray ray hit 3f800000 3f800000 3f800000 c0c00000 00000000 00000000 3f800000 00000000
+origin/turned-capsule-side-endpoint-short/ray ray miss
+origin/turned-capsule-side-endpoint-one-grid-short/ray ray miss
+origin/turned-capsule-side-endpoint-sub-grid-short/ray ray miss
+origin/turned-capsule-side-endpoint-continued/ray ray hit 3f000000 3f800000 3f800000 c0c00000 00000000 00000000 3f800000 00000000
 origin/cuboid-endpoint-contact/ray ray hit 3f800000 3f800000 3f800000 3f800000 bf800000 00000000 00000000 00000000
 origin/cuboid-endpoint-short/ray ray miss
 origin/cuboid-endpoint-one-grid-short/ray ray miss
@@ -479,8 +484,12 @@ origin/sweep-capsule-triangle-corner/full sweep hit 3effb6dc 00000000 00000000 0
 origin/sweep-capsule-triangle-corner/half sweep hit 3effdb6f 00000000 00000000 00000000 be924923 bedb6db6 bf5b6db6 00000000
 origin/sweep-box-triangle-corner/full sweep hit 3effb61a 00000000 00000000 00000000 bf13cd3a bf13cd3a bf13cd3a 00000000
 origin/sweep-box-triangle-corner/half sweep hit 3effdb0d 00000000 00000000 00000000 bf13cd3a bf13cd3a bf13cd3a 00000000
-origin/sweep-turned-cuboids-head-on/full sweep hit 3eaa67b9 40000000 c10fffff 41a00000 3e48d2ab 3f48d2ab 3f169e00 00000000
-origin/sweep-turned-cuboids-head-on/half sweep hit 3eaa8932 c0bfffff c0e00000 41a00000 3e48d2ab 3f48d2ab 3f169e00 00000000
+origin/sweep-turned-cuboids-head-on-0/full sweep hit 3eaa67ba 00000000 41880000 c1600000 3e48d2ab 3f48d2ab 3f169e00 00000000
+origin/sweep-turned-cuboids-head-on-0/half sweep hit 3eaa8932 c0bfffff c0e00000 41a00000 3e48d0d2 3f48d0d2 3f16a09d 00000000
+origin/sweep-turned-cuboids-head-on-1/full sweep hit 3eaa43c1 bf400000 3fa00000 40600000 3e9a5f25 3e9a5f25 3f678fb9 00000000
+origin/sweep-turned-cuboids-head-on-1/half sweep hit 3eaa7736 bf3ffffc 3fa00001 40600000 3e9a5fb1 3e9a5fb1 3f678f8b 00000000
+origin/sweep-turned-cuboids-head-on-2/full sweep hit 3eaaaaaa 40700000 3fa00000 40600000 3e9a5fb2 3f678f8b 3e9a5fb2 00000000
+origin/sweep-turned-cuboids-head-on-2/half sweep hit 3eaaaaaa 40700000 3fa00000 40600000 3e9a5fb2 3f678f8b 3e9a5fb2 00000000
 origin/sweep-through-thick-cuboid/full sweep hit 3e993333 c0400000 00000000 00000000 bf800000 00000000 00000000 00000000
 origin/sweep-through-thick-cuboid/half sweep hit 3e996666 c0400000 00000000 00000000 bf800000 00000000 00000000 00000000
 origin/sweep-through-thin-triangle/full sweep hit 3f7fc779 00000000 00000000 00000000 bf800000 00000000 00000000 00000000
@@ -1238,7 +1247,7 @@ ppp/turned-vertex-0-touch/distance-ba distance 00000000
 ppp/turned-vertex-0-touch/overlap-ba overlap 1
 ppp/turned-vertex-0-outside/distance-ab distance 3f87c3b7
 ppp/turned-vertex-0-outside/overlap-ab overlap 0
-ppp/turned-vertex-0-outside/distance-ba distance 3f87c3b6
+ppp/turned-vertex-0-outside/distance-ba distance 3f87c3b7
 ppp/turned-vertex-0-outside/overlap-ba overlap 0
 ppp/turned-vertex-0-inside/distance-ab distance 00000000
 ppp/turned-vertex-0-inside/overlap-ab overlap 1
@@ -1248,9 +1257,9 @@ ppp/turned-vertex-1-touch/distance-ab distance 00000000
 ppp/turned-vertex-1-touch/overlap-ab overlap 1
 ppp/turned-vertex-1-touch/distance-ba distance 00000000
 ppp/turned-vertex-1-touch/overlap-ba overlap 1
-ppp/turned-vertex-1-outside/distance-ab distance 3eb504f2
+ppp/turned-vertex-1-outside/distance-ab distance 3eb504f3
 ppp/turned-vertex-1-outside/overlap-ab overlap 0
-ppp/turned-vertex-1-outside/distance-ba distance 3eb504f2
+ppp/turned-vertex-1-outside/distance-ba distance 3eb504f3
 ppp/turned-vertex-1-outside/overlap-ba overlap 0
 ppp/turned-vertex-1-inside/distance-ab distance 00000000
 ppp/turned-vertex-1-inside/overlap-ab overlap 1
@@ -1325,6 +1334,11 @@ ppp/capsule-cap-endpoint-short/ray ray miss
 ppp/capsule-cap-endpoint-one-grid-short/ray ray miss
 ppp/capsule-cap-endpoint-sub-grid-short/ray ray miss
 ppp/capsule-cap-endpoint-continued/ray ray hit 3effffff 46ffa200 46ffa200 46ffa200 b3000000 b3000000 bf800000 00000000
+ppp/turned-capsule-side-endpoint-contact/ray ray hit 3f800000 46ffa200 46ffa200 46ff9400 00000000 00000000 3f800000 00000000
+ppp/turned-capsule-side-endpoint-short/ray ray miss
+ppp/turned-capsule-side-endpoint-one-grid-short/ray ray miss
+ppp/turned-capsule-side-endpoint-sub-grid-short/ray ray miss
+ppp/turned-capsule-side-endpoint-continued/ray ray hit 3f000000 46ffa200 46ffa200 46ff9400 00000000 00000000 3f800000 00000000
 ppp/cuboid-endpoint-contact/ray ray hit 3f800000 46ffa200 46ffa200 46ffa200 bf800000 00000000 00000000 00000000
 ppp/cuboid-endpoint-short/ray ray miss
 ppp/cuboid-endpoint-one-grid-short/ray ray miss
@@ -1461,8 +1475,12 @@ ppp/sweep-capsule-triangle-corner/full sweep hit 3effb557 46ffa000 46ffa000 46ff
 ppp/sweep-capsule-triangle-corner/half sweep hit 3effdaac 46ffa000 46ffa000 46ffa000 be9246e8 bedb7ca0 bf5b6a5c 00000000
 ppp/sweep-box-triangle-corner/full sweep hit 3effb800 46ffa000 46ffa000 46ffa000 bf13cd3a bf13cd3a bf13cd3a 00000000
 ppp/sweep-box-triangle-corner/half sweep hit 3effd800 46ffa000 46ffa000 46ffa000 bf13cd3a bf13cd3a bf13cd3a 00000000
-ppp/sweep-turned-cuboids-head-on/full sweep hit 3eaa6aab 46ffa000 46ffc200 46ff8400 3e48d2ab 3f48d2ab 3f169e01 00000000
-ppp/sweep-turned-cuboids-head-on/half sweep hit 3eaa871c 46ffa000 46ffc200 46ff8400 3e48d2ab 3f48d2ab 3f169dff 00000000
+ppp/sweep-turned-cuboids-head-on-0/full sweep hit 3eaa6aab 46ff9401 46ff9200 46ffc800 3e48d2ab 3f48d2ab 3f169e00 00000000
+ppp/sweep-turned-cuboids-head-on-0/half sweep hit 3eaa871c 46ff9400 46ff9200 46ffc800 3e48d2ab 3f48d2ab 3f169e00 00000000
+ppp/sweep-turned-cuboids-head-on-1/full sweep hit 3eaa4001 46ffa180 46ffa580 46ffa500 3e9a5fb1 3e9a5fb1 3f678f8b 00000000
+ppp/sweep-turned-cuboids-head-on-1/half sweep hit 3eaa78e5 46ff9e80 46ffa280 46ffa700 3e9a5fb1 3e9a5fb1 3f678f8b 00000000
+ppp/sweep-turned-cuboids-head-on-2/full sweep hit 3eaa4001 46ffa780 46ffa280 46ffa700 3e9a5fb1 3f678f8b 3e9a5fb1 00000000
+ppp/sweep-turned-cuboids-head-on-2/half sweep hit 3eaa78e5 46ff9b80 46ffa680 46ffa700 3e9a5fb1 3f678f8b 3e9a5fb1 00000000
 ppp/sweep-through-thick-cuboid/full sweep hit 3e992ccd 46ff9a00 46ffa000 46ffa000 bf800000 00000000 00000000 00000000
 ppp/sweep-through-thick-cuboid/half sweep hit 3e996000 46ff9a00 46ffa000 46ffa000 bf800000 00000000 00000000 00000000
 ppp/sweep-through-thin-triangle/full sweep hit 3f7fc76c 46ffa000 46ffa000 46ffa000 bf800000 00000000 00000000 00000000
@@ -2220,7 +2238,7 @@ ppn/turned-vertex-0-touch/distance-ba distance 00000000
 ppn/turned-vertex-0-touch/overlap-ba overlap 1
 ppn/turned-vertex-0-outside/distance-ab distance 3f87c3b7
 ppn/turned-vertex-0-outside/overlap-ab overlap 0
-ppn/turned-vertex-0-outside/distance-ba distance 3f87c3b6
+ppn/turned-vertex-0-outside/distance-ba distance 3f87c3b7
 ppn/turned-vertex-0-outside/overlap-ba overlap 0
 ppn/turned-vertex-0-inside/distance-ab distance 00000000
 ppn/turned-vertex-0-inside/overlap-ab overlap 1
@@ -2230,9 +2248,9 @@ ppn/turned-vertex-1-touch/distance-ab distance 00000000
 ppn/turned-vertex-1-touch/overlap-ab overlap 1
 ppn/turned-vertex-1-touch/distance-ba distance 00000000
 ppn/turned-vertex-1-touch/overlap-ba overlap 1
-ppn/turned-vertex-1-outside/distance-ab distance 3eb504f2
+ppn/turned-vertex-1-outside/distance-ab distance 3eb504f3
 ppn/turned-vertex-1-outside/overlap-ab overlap 0
-ppn/turned-vertex-1-outside/distance-ba distance 3eb504f2
+ppn/turned-vertex-1-outside/distance-ba distance 3eb504f3
 ppn/turned-vertex-1-outside/overlap-ba overlap 0
 ppn/turned-vertex-1-inside/distance-ab distance 00000000
 ppn/turned-vertex-1-inside/overlap-ab overlap 1
@@ -2307,6 +2325,11 @@ ppn/capsule-cap-endpoint-short/ray ray miss
 ppn/capsule-cap-endpoint-one-grid-short/ray ray miss
 ppn/capsule-cap-endpoint-sub-grid-short/ray ray miss
 ppn/capsule-cap-endpoint-continued/ray ray hit 3effffff 46ffa200 46ffa200 c6ffa200 b3000000 b3000000 3f800000 00000000
+ppn/turned-capsule-side-endpoint-contact/ray ray hit 3f800000 46ffa200 46ffa200 c6ff9400 00000000 00000000 bf800000 00000000
+ppn/turned-capsule-side-endpoint-short/ray ray miss
+ppn/turned-capsule-side-endpoint-one-grid-short/ray ray miss
+ppn/turned-capsule-side-endpoint-sub-grid-short/ray ray miss
+ppn/turned-capsule-side-endpoint-continued/ray ray hit 3f000000 46ffa200 46ffa200 c6ff9400 00000000 00000000 bf800000 00000000
 ppn/cuboid-endpoint-contact/ray ray hit 3f800000 46ffa200 46ffa200 c6ffa200 bf800000 00000000 00000000 00000000
 ppn/cuboid-endpoint-short/ray ray miss
 ppn/cuboid-endpoint-one-grid-short/ray ray miss
@@ -2443,8 +2466,12 @@ ppn/sweep-capsule-triangle-corner/full sweep hit 3effb557 46ffa000 46ffa000 c6ff
 ppn/sweep-capsule-triangle-corner/half sweep hit 3effdaac 46ffa000 46ffa000 c6ffa000 be9246e8 bedb7ca0 3f5b6a5c 00000000
 ppn/sweep-box-triangle-corner/full sweep hit 3effb800 46ffa000 46ffa000 c6ffa000 bf13cd3a bf13cd3a 3f13cd3a 00000000
 ppn/sweep-box-triangle-corner/half sweep hit 3effd800 46ffa000 46ffa000 c6ffa000 bf13cd3a bf13cd3a 3f13cd3a 00000000
-ppn/sweep-turned-cuboids-head-on/full sweep hit 3eaa6aab 46ffa000 46ffc200 c6ff8400 3e48d2ab 3f48d2ab bf169e01 00000000
-ppn/sweep-turned-cuboids-head-on/half sweep hit 3eaa871c 46ffa000 46ffc200 c6ff8400 3e48d2ab 3f48d2ab bf169dff 00000000
+ppn/sweep-turned-cuboids-head-on-0/full sweep hit 3eaa6aab 46ff9401 46ff9200 c6ffc800 3e48d2ab 3f48d2ab bf169e00 00000000
+ppn/sweep-turned-cuboids-head-on-0/half sweep hit 3eaa871c 46ff9400 46ff9200 c6ffc800 3e48d2ab 3f48d2ab bf169e00 00000000
+ppn/sweep-turned-cuboids-head-on-1/full sweep hit 3eaa4001 46ffa180 46ffa580 c6ffa500 3e9a5fb1 3e9a5fb1 bf678f8b 00000000
+ppn/sweep-turned-cuboids-head-on-1/half sweep hit 3eaa78e5 46ff9e80 46ffa280 c6ffa700 3e9a5fb1 3e9a5fb1 bf678f8b 00000000
+ppn/sweep-turned-cuboids-head-on-2/full sweep hit 3eaa4001 46ffa780 46ffa280 c6ffa700 3e9a5fb1 3f678f8b be9a5fb1 00000000
+ppn/sweep-turned-cuboids-head-on-2/half sweep hit 3eaa78e5 46ff9b80 46ffa680 c6ffa700 3e9a5fb1 3f678f8b be9a5fb1 00000000
 ppn/sweep-through-thick-cuboid/full sweep hit 3e992ccd 46ff9a00 46ffa000 c6ffa000 bf800000 00000000 00000000 00000000
 ppn/sweep-through-thick-cuboid/half sweep hit 3e996000 46ff9a00 46ffa000 c6ffa000 bf800000 00000000 00000000 00000000
 ppn/sweep-through-thin-triangle/full sweep hit 3f7fc76c 46ffa000 46ffa000 c6ffa000 bf800000 00000000 00000000 00000000
@@ -3202,7 +3229,7 @@ pnp/turned-vertex-0-touch/distance-ba distance 00000000
 pnp/turned-vertex-0-touch/overlap-ba overlap 1
 pnp/turned-vertex-0-outside/distance-ab distance 3f87c3b7
 pnp/turned-vertex-0-outside/overlap-ab overlap 0
-pnp/turned-vertex-0-outside/distance-ba distance 3f87c3b6
+pnp/turned-vertex-0-outside/distance-ba distance 3f87c3b7
 pnp/turned-vertex-0-outside/overlap-ba overlap 0
 pnp/turned-vertex-0-inside/distance-ab distance 00000000
 pnp/turned-vertex-0-inside/overlap-ab overlap 1
@@ -3212,9 +3239,9 @@ pnp/turned-vertex-1-touch/distance-ab distance 00000000
 pnp/turned-vertex-1-touch/overlap-ab overlap 1
 pnp/turned-vertex-1-touch/distance-ba distance 00000000
 pnp/turned-vertex-1-touch/overlap-ba overlap 1
-pnp/turned-vertex-1-outside/distance-ab distance 3eb504f2
+pnp/turned-vertex-1-outside/distance-ab distance 3eb504f3
 pnp/turned-vertex-1-outside/overlap-ab overlap 0
-pnp/turned-vertex-1-outside/distance-ba distance 3eb504f2
+pnp/turned-vertex-1-outside/distance-ba distance 3eb504f3
 pnp/turned-vertex-1-outside/overlap-ba overlap 0
 pnp/turned-vertex-1-inside/distance-ab distance 00000000
 pnp/turned-vertex-1-inside/overlap-ab overlap 1
@@ -3289,6 +3316,11 @@ pnp/capsule-cap-endpoint-short/ray ray miss
 pnp/capsule-cap-endpoint-one-grid-short/ray ray miss
 pnp/capsule-cap-endpoint-sub-grid-short/ray ray miss
 pnp/capsule-cap-endpoint-continued/ray ray hit 3effffff 46ffa200 c6ffa200 46ffa200 b3000000 33000000 bf800000 00000000
+pnp/turned-capsule-side-endpoint-contact/ray ray hit 3f800000 46ffa200 c6ffa200 46ff9400 00000000 00000000 3f800000 00000000
+pnp/turned-capsule-side-endpoint-short/ray ray miss
+pnp/turned-capsule-side-endpoint-one-grid-short/ray ray miss
+pnp/turned-capsule-side-endpoint-sub-grid-short/ray ray miss
+pnp/turned-capsule-side-endpoint-continued/ray ray hit 3f000000 46ffa200 c6ffa200 46ff9400 00000000 00000000 3f800000 00000000
 pnp/cuboid-endpoint-contact/ray ray hit 3f800000 46ffa200 c6ffa200 46ffa200 bf800000 00000000 00000000 00000000
 pnp/cuboid-endpoint-short/ray ray miss
 pnp/cuboid-endpoint-one-grid-short/ray ray miss
@@ -3375,10 +3407,10 @@ pnp/sweep-2-0-pass/full sweep miss
 pnp/sweep-2-0-pass/half sweep miss
 pnp/sweep-2-0-leave/full sweep miss
 pnp/sweep-2-0-leave/half sweep miss
-pnp/sweep-2-1-head/full sweep hit 3ebf7800 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 00000000 00000000
-pnp/sweep-2-1-head/half sweep hit 3ebfb800 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 00000000 00000000
-pnp/sweep-2-1-slant/full sweep hit 3ebf7800 46ff9e00 c6ff9dfe 46ffa000 bf800000 80000000 00000000 00000000
-pnp/sweep-2-1-slant/half sweep hit 3ebfb800 46ff9e00 c6ff9dff 46ffa000 bf800000 80000000 00000000 00000000
+pnp/sweep-2-1-head/full sweep hit 3ebf7800 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 80000000 00000000
+pnp/sweep-2-1-head/half sweep hit 3ebfb800 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 80000000 00000000
+pnp/sweep-2-1-slant/full sweep hit 3ebf7800 46ff9e00 c6ff9dfe 46ffa000 bf800000 80000000 80000000 00000000
+pnp/sweep-2-1-slant/half sweep hit 3ebfb800 46ff9e00 c6ff9dff 46ffa000 bf800000 80000000 80000000 00000000
 pnp/sweep-2-1-pass/full sweep miss
 pnp/sweep-2-1-pass/half sweep miss
 pnp/sweep-2-1-leave/full sweep miss
@@ -3425,8 +3457,12 @@ pnp/sweep-capsule-triangle-corner/full sweep hit 3effb557 46ffa000 c6ffa000 46ff
 pnp/sweep-capsule-triangle-corner/half sweep hit 3effdaac 46ffa000 c6ffa000 46ffa000 be9246e8 3edb7ca0 bf5b6a5c 00000000
 pnp/sweep-box-triangle-corner/full sweep hit 3effb800 46ffa000 c6ffa000 46ffa000 bf13cd3a 3f13cd3a bf13cd3a 00000000
 pnp/sweep-box-triangle-corner/half sweep hit 3effd800 46ffa000 c6ffa000 46ffa000 bf13cd3a 3f13cd3a bf13cd3a 00000000
-pnp/sweep-turned-cuboids-head-on/full sweep hit 3eaa6aab 46ffa000 c6ffc200 46ff8400 3e48d2ab bf48d2ab 3f169e01 00000000
-pnp/sweep-turned-cuboids-head-on/half sweep hit 3eaa871c 46ffa000 c6ffc200 46ff8400 3e48d2ab bf48d2ab 3f169dff 00000000
+pnp/sweep-turned-cuboids-head-on-0/full sweep hit 3eaa6aab 46ff9401 c6ff9200 46ffc800 3e48d2ab bf48d2ab 3f169e00 00000000
+pnp/sweep-turned-cuboids-head-on-0/half sweep hit 3eaa871c 46ff9400 c6ff9200 46ffc800 3e48d2ab bf48d2ab 3f169e00 00000000
+pnp/sweep-turned-cuboids-head-on-1/full sweep hit 3eaa4001 46ffa180 c6ffa580 46ffa500 3e9a5fb1 be9a5fb1 3f678f8b 00000000
+pnp/sweep-turned-cuboids-head-on-1/half sweep hit 3eaa78e5 46ff9e80 c6ffa280 46ffa700 3e9a5fb1 be9a5fb1 3f678f8b 00000000
+pnp/sweep-turned-cuboids-head-on-2/full sweep hit 3eaa4001 46ffa780 c6ffa280 46ffa700 3e9a5fb1 bf678f8b 3e9a5fb1 00000000
+pnp/sweep-turned-cuboids-head-on-2/half sweep hit 3eaa78e5 46ff9b80 c6ffa680 46ffa700 3e9a5fb1 bf678f8b 3e9a5fb1 00000000
 pnp/sweep-through-thick-cuboid/full sweep hit 3e992ccd 46ff9a00 c6ffa000 46ffa000 bf800000 00000000 00000000 00000000
 pnp/sweep-through-thick-cuboid/half sweep hit 3e996000 46ff9a00 c6ffa000 46ffa000 bf800000 00000000 00000000 00000000
 pnp/sweep-through-thin-triangle/full sweep hit 3f7fc76c 46ffa000 c6ffa000 46ffa000 bf800000 00000000 00000000 00000000
@@ -3755,14 +3791,14 @@ pnp/initial-2-0-shallow-3/full sweep hit 00000000 46ff9e00 c6ffa000 46ffa000 bf8
 pnp/initial-2-0-clear-1/full sweep miss
 pnp/initial-2-0-clear-2/full sweep miss
 pnp/initial-2-0-clear-3/full sweep miss
-pnp/initial-2-1-close-0/full sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 00000000 00000000
-pnp/initial-2-1-close-1/full sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 00000000 00000000
-pnp/initial-2-1-close-2/full sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 00000000 00000000
-pnp/initial-2-1-close-3/full sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 00000000 00000000
-pnp/initial-2-1-shallow-0/full sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 00000000 00000000
-pnp/initial-2-1-shallow-1/full sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 00000000 00000000
-pnp/initial-2-1-shallow-2/full sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 00000000 00000000
-pnp/initial-2-1-shallow-3/full sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 00000000 00000000
+pnp/initial-2-1-close-0/full sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 80000000 00000000
+pnp/initial-2-1-close-1/full sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 80000000 00000000
+pnp/initial-2-1-close-2/full sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 80000000 00000000
+pnp/initial-2-1-close-3/full sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 80000000 00000000
+pnp/initial-2-1-shallow-0/full sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 80000000 00000000
+pnp/initial-2-1-shallow-1/full sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 80000000 00000000
+pnp/initial-2-1-shallow-2/full sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 80000000 00000000
+pnp/initial-2-1-shallow-3/full sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 80000000 00000000
 pnp/initial-2-1-clear-1/full sweep miss
 pnp/initial-2-1-clear-2/full sweep miss
 pnp/initial-2-1-clear-3/full sweep miss
@@ -3887,14 +3923,14 @@ pnp/initial-2-0-shallow-3/half sweep hit 00000000 46ff9e00 c6ffa000 46ffa000 bf8
 pnp/initial-2-0-clear-1/half sweep miss
 pnp/initial-2-0-clear-2/half sweep miss
 pnp/initial-2-0-clear-3/half sweep miss
-pnp/initial-2-1-close-0/half sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 00000000 00000000
-pnp/initial-2-1-close-1/half sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 00000000 00000000
-pnp/initial-2-1-close-2/half sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 00000000 00000000
-pnp/initial-2-1-close-3/half sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 00000000 00000000
-pnp/initial-2-1-shallow-0/half sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 00000000 00000000
-pnp/initial-2-1-shallow-1/half sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 00000000 00000000
-pnp/initial-2-1-shallow-2/half sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 00000000 00000000
-pnp/initial-2-1-shallow-3/half sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 00000000 00000000
+pnp/initial-2-1-close-0/half sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 80000000 00000000
+pnp/initial-2-1-close-1/half sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 80000000 00000000
+pnp/initial-2-1-close-2/half sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 80000000 00000000
+pnp/initial-2-1-close-3/half sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 80000000 00000000
+pnp/initial-2-1-shallow-0/half sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 80000000 00000000
+pnp/initial-2-1-shallow-1/half sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 80000000 00000000
+pnp/initial-2-1-shallow-2/half sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 80000000 00000000
+pnp/initial-2-1-shallow-3/half sweep hit 00000000 46ff9e00 c6ff9e00 46ffa000 bf800000 80000000 80000000 00000000
 pnp/initial-2-1-clear-1/half sweep miss
 pnp/initial-2-1-clear-2/half sweep miss
 pnp/initial-2-1-clear-3/half sweep miss
@@ -4184,7 +4220,7 @@ pnn/turned-vertex-0-touch/distance-ba distance 00000000
 pnn/turned-vertex-0-touch/overlap-ba overlap 1
 pnn/turned-vertex-0-outside/distance-ab distance 3f87c3b7
 pnn/turned-vertex-0-outside/overlap-ab overlap 0
-pnn/turned-vertex-0-outside/distance-ba distance 3f87c3b6
+pnn/turned-vertex-0-outside/distance-ba distance 3f87c3b7
 pnn/turned-vertex-0-outside/overlap-ba overlap 0
 pnn/turned-vertex-0-inside/distance-ab distance 00000000
 pnn/turned-vertex-0-inside/overlap-ab overlap 1
@@ -4194,9 +4230,9 @@ pnn/turned-vertex-1-touch/distance-ab distance 00000000
 pnn/turned-vertex-1-touch/overlap-ab overlap 1
 pnn/turned-vertex-1-touch/distance-ba distance 00000000
 pnn/turned-vertex-1-touch/overlap-ba overlap 1
-pnn/turned-vertex-1-outside/distance-ab distance 3eb504f2
+pnn/turned-vertex-1-outside/distance-ab distance 3eb504f3
 pnn/turned-vertex-1-outside/overlap-ab overlap 0
-pnn/turned-vertex-1-outside/distance-ba distance 3eb504f2
+pnn/turned-vertex-1-outside/distance-ba distance 3eb504f3
 pnn/turned-vertex-1-outside/overlap-ba overlap 0
 pnn/turned-vertex-1-inside/distance-ab distance 00000000
 pnn/turned-vertex-1-inside/overlap-ab overlap 1
@@ -4271,6 +4307,11 @@ pnn/capsule-cap-endpoint-short/ray ray miss
 pnn/capsule-cap-endpoint-one-grid-short/ray ray miss
 pnn/capsule-cap-endpoint-sub-grid-short/ray ray miss
 pnn/capsule-cap-endpoint-continued/ray ray hit 3effffff 46ffa200 c6ffa200 c6ffa200 b3000000 33000000 3f800000 00000000
+pnn/turned-capsule-side-endpoint-contact/ray ray hit 3f800000 46ffa200 c6ffa200 c6ff9400 00000000 00000000 bf800000 00000000
+pnn/turned-capsule-side-endpoint-short/ray ray miss
+pnn/turned-capsule-side-endpoint-one-grid-short/ray ray miss
+pnn/turned-capsule-side-endpoint-sub-grid-short/ray ray miss
+pnn/turned-capsule-side-endpoint-continued/ray ray hit 3f000000 46ffa200 c6ffa200 c6ff9400 00000000 00000000 bf800000 00000000
 pnn/cuboid-endpoint-contact/ray ray hit 3f800000 46ffa200 c6ffa200 c6ffa200 bf800000 00000000 00000000 00000000
 pnn/cuboid-endpoint-short/ray ray miss
 pnn/cuboid-endpoint-one-grid-short/ray ray miss
@@ -4357,10 +4398,10 @@ pnn/sweep-2-0-pass/full sweep miss
 pnn/sweep-2-0-pass/half sweep miss
 pnn/sweep-2-0-leave/full sweep miss
 pnn/sweep-2-0-leave/half sweep miss
-pnn/sweep-2-1-head/full sweep hit 3ebf7800 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 80000000 00000000
-pnn/sweep-2-1-head/half sweep hit 3ebfb800 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 80000000 00000000
-pnn/sweep-2-1-slant/full sweep hit 3ebf7800 46ff9e00 c6ff9dfe c6ffa000 bf800000 80000000 80000000 00000000
-pnn/sweep-2-1-slant/half sweep hit 3ebfb800 46ff9e00 c6ff9dff c6ffa000 bf800000 80000000 80000000 00000000
+pnn/sweep-2-1-head/full sweep hit 3ebf7800 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 00000000 00000000
+pnn/sweep-2-1-head/half sweep hit 3ebfb800 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 00000000 00000000
+pnn/sweep-2-1-slant/full sweep hit 3ebf7800 46ff9e00 c6ff9dfe c6ffa000 bf800000 80000000 00000000 00000000
+pnn/sweep-2-1-slant/half sweep hit 3ebfb800 46ff9e00 c6ff9dff c6ffa000 bf800000 80000000 00000000 00000000
 pnn/sweep-2-1-pass/full sweep miss
 pnn/sweep-2-1-pass/half sweep miss
 pnn/sweep-2-1-leave/full sweep miss
@@ -4407,8 +4448,12 @@ pnn/sweep-capsule-triangle-corner/full sweep hit 3effb557 46ffa000 c6ffa000 c6ff
 pnn/sweep-capsule-triangle-corner/half sweep hit 3effdaac 46ffa000 c6ffa000 c6ffa000 be9246e8 3edb7ca0 3f5b6a5c 00000000
 pnn/sweep-box-triangle-corner/full sweep hit 3effb800 46ffa000 c6ffa000 c6ffa000 bf13cd3a 3f13cd3a 3f13cd3a 00000000
 pnn/sweep-box-triangle-corner/half sweep hit 3effd800 46ffa000 c6ffa000 c6ffa000 bf13cd3a 3f13cd3a 3f13cd3a 00000000
-pnn/sweep-turned-cuboids-head-on/full sweep hit 3eaa6aab 46ffa000 c6ffc200 c6ff8400 3e48d2ab bf48d2ab bf169e01 00000000
-pnn/sweep-turned-cuboids-head-on/half sweep hit 3eaa871c 46ffa000 c6ffc200 c6ff8400 3e48d2ab bf48d2ab bf169dff 00000000
+pnn/sweep-turned-cuboids-head-on-0/full sweep hit 3eaa6aab 46ff9401 c6ff9200 c6ffc800 3e48d2ab bf48d2ab bf169e00 00000000
+pnn/sweep-turned-cuboids-head-on-0/half sweep hit 3eaa871c 46ff9400 c6ff9200 c6ffc800 3e48d2ab bf48d2ab bf169e00 00000000
+pnn/sweep-turned-cuboids-head-on-1/full sweep hit 3eaa4001 46ffa180 c6ffa580 c6ffa500 3e9a5fb1 be9a5fb1 bf678f8b 00000000
+pnn/sweep-turned-cuboids-head-on-1/half sweep hit 3eaa78e5 46ff9e80 c6ffa280 c6ffa700 3e9a5fb1 be9a5fb1 bf678f8b 00000000
+pnn/sweep-turned-cuboids-head-on-2/full sweep hit 3eaa4001 46ffa780 c6ffa280 c6ffa700 3e9a5fb1 bf678f8b be9a5fb1 00000000
+pnn/sweep-turned-cuboids-head-on-2/half sweep hit 3eaa78e5 46ff9b80 c6ffa680 c6ffa700 3e9a5fb1 bf678f8b be9a5fb1 00000000
 pnn/sweep-through-thick-cuboid/full sweep hit 3e992ccd 46ff9a00 c6ffa000 c6ffa000 bf800000 00000000 00000000 00000000
 pnn/sweep-through-thick-cuboid/half sweep hit 3e996000 46ff9a00 c6ffa000 c6ffa000 bf800000 00000000 00000000 00000000
 pnn/sweep-through-thin-triangle/full sweep hit 3f7fc76c 46ffa000 c6ffa000 c6ffa000 bf800000 00000000 00000000 00000000
@@ -4737,14 +4782,14 @@ pnn/initial-2-0-shallow-3/full sweep hit 00000000 46ff9e00 c6ffa000 c6ffa000 bf8
 pnn/initial-2-0-clear-1/full sweep miss
 pnn/initial-2-0-clear-2/full sweep miss
 pnn/initial-2-0-clear-3/full sweep miss
-pnn/initial-2-1-close-0/full sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 80000000 00000000
-pnn/initial-2-1-close-1/full sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 80000000 00000000
-pnn/initial-2-1-close-2/full sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 80000000 00000000
-pnn/initial-2-1-close-3/full sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 80000000 00000000
-pnn/initial-2-1-shallow-0/full sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 80000000 00000000
-pnn/initial-2-1-shallow-1/full sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 80000000 00000000
-pnn/initial-2-1-shallow-2/full sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 80000000 00000000
-pnn/initial-2-1-shallow-3/full sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 80000000 00000000
+pnn/initial-2-1-close-0/full sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 00000000 00000000
+pnn/initial-2-1-close-1/full sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 00000000 00000000
+pnn/initial-2-1-close-2/full sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 00000000 00000000
+pnn/initial-2-1-close-3/full sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 00000000 00000000
+pnn/initial-2-1-shallow-0/full sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 00000000 00000000
+pnn/initial-2-1-shallow-1/full sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 00000000 00000000
+pnn/initial-2-1-shallow-2/full sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 00000000 00000000
+pnn/initial-2-1-shallow-3/full sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 00000000 00000000
 pnn/initial-2-1-clear-1/full sweep miss
 pnn/initial-2-1-clear-2/full sweep miss
 pnn/initial-2-1-clear-3/full sweep miss
@@ -4869,14 +4914,14 @@ pnn/initial-2-0-shallow-3/half sweep hit 00000000 46ff9e00 c6ffa000 c6ffa000 bf8
 pnn/initial-2-0-clear-1/half sweep miss
 pnn/initial-2-0-clear-2/half sweep miss
 pnn/initial-2-0-clear-3/half sweep miss
-pnn/initial-2-1-close-0/half sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 80000000 00000000
-pnn/initial-2-1-close-1/half sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 80000000 00000000
-pnn/initial-2-1-close-2/half sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 80000000 00000000
-pnn/initial-2-1-close-3/half sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 80000000 00000000
-pnn/initial-2-1-shallow-0/half sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 80000000 00000000
-pnn/initial-2-1-shallow-1/half sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 80000000 00000000
-pnn/initial-2-1-shallow-2/half sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 80000000 00000000
-pnn/initial-2-1-shallow-3/half sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 80000000 00000000
+pnn/initial-2-1-close-0/half sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 00000000 00000000
+pnn/initial-2-1-close-1/half sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 00000000 00000000
+pnn/initial-2-1-close-2/half sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 00000000 00000000
+pnn/initial-2-1-close-3/half sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 00000000 00000000
+pnn/initial-2-1-shallow-0/half sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 00000000 00000000
+pnn/initial-2-1-shallow-1/half sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 00000000 00000000
+pnn/initial-2-1-shallow-2/half sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 00000000 00000000
+pnn/initial-2-1-shallow-3/half sweep hit 00000000 46ff9e00 c6ff9e00 c6ffa000 bf800000 80000000 00000000 00000000
 pnn/initial-2-1-clear-1/half sweep miss
 pnn/initial-2-1-clear-2/half sweep miss
 pnn/initial-2-1-clear-3/half sweep miss
@@ -5166,7 +5211,7 @@ npp/turned-vertex-0-touch/distance-ba distance 00000000
 npp/turned-vertex-0-touch/overlap-ba overlap 1
 npp/turned-vertex-0-outside/distance-ab distance 3f87c3b7
 npp/turned-vertex-0-outside/overlap-ab overlap 0
-npp/turned-vertex-0-outside/distance-ba distance 3f87c3b6
+npp/turned-vertex-0-outside/distance-ba distance 3f87c3b7
 npp/turned-vertex-0-outside/overlap-ba overlap 0
 npp/turned-vertex-0-inside/distance-ab distance 00000000
 npp/turned-vertex-0-inside/overlap-ab overlap 1
@@ -5176,9 +5221,9 @@ npp/turned-vertex-1-touch/distance-ab distance 00000000
 npp/turned-vertex-1-touch/overlap-ab overlap 1
 npp/turned-vertex-1-touch/distance-ba distance 00000000
 npp/turned-vertex-1-touch/overlap-ba overlap 1
-npp/turned-vertex-1-outside/distance-ab distance 3eb504f2
+npp/turned-vertex-1-outside/distance-ab distance 3eb504f3
 npp/turned-vertex-1-outside/overlap-ab overlap 0
-npp/turned-vertex-1-outside/distance-ba distance 3eb504f2
+npp/turned-vertex-1-outside/distance-ba distance 3eb504f3
 npp/turned-vertex-1-outside/overlap-ba overlap 0
 npp/turned-vertex-1-inside/distance-ab distance 00000000
 npp/turned-vertex-1-inside/overlap-ab overlap 1
@@ -5253,6 +5298,11 @@ npp/capsule-cap-endpoint-short/ray ray miss
 npp/capsule-cap-endpoint-one-grid-short/ray ray miss
 npp/capsule-cap-endpoint-sub-grid-short/ray ray miss
 npp/capsule-cap-endpoint-continued/ray ray hit 3effffff c6ffa200 46ffa200 46ffa200 33000000 b3000000 bf800000 00000000
+npp/turned-capsule-side-endpoint-contact/ray ray hit 3f800000 c6ffa200 46ffa200 46ff9400 00000000 00000000 3f800000 00000000
+npp/turned-capsule-side-endpoint-short/ray ray miss
+npp/turned-capsule-side-endpoint-one-grid-short/ray ray miss
+npp/turned-capsule-side-endpoint-sub-grid-short/ray ray miss
+npp/turned-capsule-side-endpoint-continued/ray ray hit 3f000000 c6ffa200 46ffa200 46ff9400 00000000 00000000 3f800000 00000000
 npp/cuboid-endpoint-contact/ray ray hit 3f800000 c6ffa200 46ffa200 46ffa200 3f800000 00000000 00000000 00000000
 npp/cuboid-endpoint-short/ray ray miss
 npp/cuboid-endpoint-one-grid-short/ray ray miss
@@ -5339,10 +5389,10 @@ npp/sweep-2-0-pass/full sweep miss
 npp/sweep-2-0-pass/half sweep miss
 npp/sweep-2-0-leave/full sweep miss
 npp/sweep-2-0-leave/half sweep miss
-npp/sweep-2-1-head/full sweep hit 3ebf7800 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 80000000 00000000
-npp/sweep-2-1-head/half sweep hit 3ebfb800 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 80000000 00000000
-npp/sweep-2-1-slant/full sweep hit 3ebf7800 c6ff9e00 46ff9dfe 46ffa000 3f800000 80000000 80000000 00000000
-npp/sweep-2-1-slant/half sweep hit 3ebfb800 c6ff9e00 46ff9dff 46ffa000 3f800000 80000000 80000000 00000000
+npp/sweep-2-1-head/full sweep hit 3ebf7800 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 00000000 00000000
+npp/sweep-2-1-head/half sweep hit 3ebfb800 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 00000000 00000000
+npp/sweep-2-1-slant/full sweep hit 3ebf7800 c6ff9e00 46ff9dfe 46ffa000 3f800000 80000000 00000000 00000000
+npp/sweep-2-1-slant/half sweep hit 3ebfb800 c6ff9e00 46ff9dff 46ffa000 3f800000 80000000 00000000 00000000
 npp/sweep-2-1-pass/full sweep miss
 npp/sweep-2-1-pass/half sweep miss
 npp/sweep-2-1-leave/full sweep miss
@@ -5389,8 +5439,12 @@ npp/sweep-capsule-triangle-corner/full sweep hit 3effb557 c6ffa000 46ffa000 46ff
 npp/sweep-capsule-triangle-corner/half sweep hit 3effdaac c6ffa000 46ffa000 46ffa000 3e9246e8 bedb7ca0 bf5b6a5c 00000000
 npp/sweep-box-triangle-corner/full sweep hit 3effb800 c6ffa000 46ffa000 46ffa000 3f13cd3a bf13cd3a bf13cd3a 00000000
 npp/sweep-box-triangle-corner/half sweep hit 3effd800 c6ffa000 46ffa000 46ffa000 3f13cd3a bf13cd3a bf13cd3a 00000000
-npp/sweep-turned-cuboids-head-on/full sweep hit 3eaa6aab c6ffa000 46ffc200 46ff8400 be48d2ab 3f48d2ab 3f169e01 00000000
-npp/sweep-turned-cuboids-head-on/half sweep hit 3eaa871c c6ffa000 46ffc200 46ff8400 be48d2ab 3f48d2ab 3f169dff 00000000
+npp/sweep-turned-cuboids-head-on-0/full sweep hit 3eaa6aab c6ff9401 46ff9200 46ffc800 be48d2ab 3f48d2ab 3f169e00 00000000
+npp/sweep-turned-cuboids-head-on-0/half sweep hit 3eaa871c c6ff9400 46ff9200 46ffc800 be48d2ab 3f48d2ab 3f169e00 00000000
+npp/sweep-turned-cuboids-head-on-1/full sweep hit 3eaa4001 c6ffa180 46ffa580 46ffa500 be9a5fb1 3e9a5fb1 3f678f8b 00000000
+npp/sweep-turned-cuboids-head-on-1/half sweep hit 3eaa78e5 c6ff9e80 46ffa280 46ffa700 be9a5fb1 3e9a5fb1 3f678f8b 00000000
+npp/sweep-turned-cuboids-head-on-2/full sweep hit 3eaa4001 c6ffa780 46ffa280 46ffa700 be9a5fb1 3f678f8b 3e9a5fb1 00000000
+npp/sweep-turned-cuboids-head-on-2/half sweep hit 3eaa78e5 c6ff9b80 46ffa680 46ffa700 be9a5fb1 3f678f8b 3e9a5fb1 00000000
 npp/sweep-through-thick-cuboid/full sweep hit 3e992ccd c6ff9a00 46ffa000 46ffa000 3f800000 00000000 00000000 00000000
 npp/sweep-through-thick-cuboid/half sweep hit 3e996000 c6ff9a00 46ffa000 46ffa000 3f800000 00000000 00000000 00000000
 npp/sweep-through-thin-triangle/full sweep hit 3f7fc76c c6ffa000 46ffa000 46ffa000 3f800000 00000000 00000000 00000000
@@ -5432,7 +5486,7 @@ npp/cuboid-cuboid-deep-2/half sweep hit 00000000 c6ffa800 46ff9e00 46ff9e00 bf80
 npp/cuboid-cuboid-deep-3/half sweep hit 00000000 c6ffa800 46ff9e00 46ff9e00 bf800000 00000000 00000000 3f800000
 npp/capsule-cuboid/depth depth 3f800000 bf800000 00000000 00000000
 npp/capsule-cuboid/parted-distance distance 00000000
-npp/capsule-cuboid/parted depth 00000000 bf800000 80000000 80000000
+npp/capsule-cuboid/parted depth 00000000 bf800000 00000000 80000000
 npp/capsule-cuboid-deep-0/full sweep hit 00000000 c6ffa800 46ff9800 46ffa000 bf800000 00000000 00000000 3f800000
 npp/capsule-cuboid-deep-1/full sweep hit 00000000 c6ffa800 46ff9800 46ffa000 bf800000 00000000 00000000 3f800000
 npp/capsule-cuboid-deep-2/full sweep hit 00000000 c6ffa800 46ff9800 46ffa000 bf800000 00000000 00000000 3f800000
@@ -5719,14 +5773,14 @@ npp/initial-2-0-shallow-3/full sweep hit 00000000 c6ff9e00 46ffa000 46ffa000 3f8
 npp/initial-2-0-clear-1/full sweep miss
 npp/initial-2-0-clear-2/full sweep miss
 npp/initial-2-0-clear-3/full sweep miss
-npp/initial-2-1-close-0/full sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 80000000 00000000
-npp/initial-2-1-close-1/full sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 80000000 00000000
-npp/initial-2-1-close-2/full sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 80000000 00000000
-npp/initial-2-1-close-3/full sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 80000000 00000000
-npp/initial-2-1-shallow-0/full sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 80000000 00000000
-npp/initial-2-1-shallow-1/full sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 80000000 00000000
-npp/initial-2-1-shallow-2/full sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 80000000 00000000
-npp/initial-2-1-shallow-3/full sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 80000000 00000000
+npp/initial-2-1-close-0/full sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 00000000 00000000
+npp/initial-2-1-close-1/full sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 00000000 00000000
+npp/initial-2-1-close-2/full sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 00000000 00000000
+npp/initial-2-1-close-3/full sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 00000000 00000000
+npp/initial-2-1-shallow-0/full sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 00000000 00000000
+npp/initial-2-1-shallow-1/full sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 00000000 00000000
+npp/initial-2-1-shallow-2/full sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 00000000 00000000
+npp/initial-2-1-shallow-3/full sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 00000000 00000000
 npp/initial-2-1-clear-1/full sweep miss
 npp/initial-2-1-clear-2/full sweep miss
 npp/initial-2-1-clear-3/full sweep miss
@@ -5851,14 +5905,14 @@ npp/initial-2-0-shallow-3/half sweep hit 00000000 c6ff9e00 46ffa000 46ffa000 3f8
 npp/initial-2-0-clear-1/half sweep miss
 npp/initial-2-0-clear-2/half sweep miss
 npp/initial-2-0-clear-3/half sweep miss
-npp/initial-2-1-close-0/half sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 80000000 00000000
-npp/initial-2-1-close-1/half sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 80000000 00000000
-npp/initial-2-1-close-2/half sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 80000000 00000000
-npp/initial-2-1-close-3/half sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 80000000 00000000
-npp/initial-2-1-shallow-0/half sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 80000000 00000000
-npp/initial-2-1-shallow-1/half sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 80000000 00000000
-npp/initial-2-1-shallow-2/half sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 80000000 00000000
-npp/initial-2-1-shallow-3/half sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 80000000 00000000
+npp/initial-2-1-close-0/half sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 00000000 00000000
+npp/initial-2-1-close-1/half sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 00000000 00000000
+npp/initial-2-1-close-2/half sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 00000000 00000000
+npp/initial-2-1-close-3/half sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 00000000 00000000
+npp/initial-2-1-shallow-0/half sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 00000000 00000000
+npp/initial-2-1-shallow-1/half sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 00000000 00000000
+npp/initial-2-1-shallow-2/half sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 00000000 00000000
+npp/initial-2-1-shallow-3/half sweep hit 00000000 c6ff9e00 46ff9e00 46ffa000 3f800000 80000000 00000000 00000000
 npp/initial-2-1-clear-1/half sweep miss
 npp/initial-2-1-clear-2/half sweep miss
 npp/initial-2-1-clear-3/half sweep miss
@@ -6148,7 +6202,7 @@ npn/turned-vertex-0-touch/distance-ba distance 00000000
 npn/turned-vertex-0-touch/overlap-ba overlap 1
 npn/turned-vertex-0-outside/distance-ab distance 3f87c3b7
 npn/turned-vertex-0-outside/overlap-ab overlap 0
-npn/turned-vertex-0-outside/distance-ba distance 3f87c3b6
+npn/turned-vertex-0-outside/distance-ba distance 3f87c3b7
 npn/turned-vertex-0-outside/overlap-ba overlap 0
 npn/turned-vertex-0-inside/distance-ab distance 00000000
 npn/turned-vertex-0-inside/overlap-ab overlap 1
@@ -6158,9 +6212,9 @@ npn/turned-vertex-1-touch/distance-ab distance 00000000
 npn/turned-vertex-1-touch/overlap-ab overlap 1
 npn/turned-vertex-1-touch/distance-ba distance 00000000
 npn/turned-vertex-1-touch/overlap-ba overlap 1
-npn/turned-vertex-1-outside/distance-ab distance 3eb504f2
+npn/turned-vertex-1-outside/distance-ab distance 3eb504f3
 npn/turned-vertex-1-outside/overlap-ab overlap 0
-npn/turned-vertex-1-outside/distance-ba distance 3eb504f2
+npn/turned-vertex-1-outside/distance-ba distance 3eb504f3
 npn/turned-vertex-1-outside/overlap-ba overlap 0
 npn/turned-vertex-1-inside/distance-ab distance 00000000
 npn/turned-vertex-1-inside/overlap-ab overlap 1
@@ -6235,6 +6289,11 @@ npn/capsule-cap-endpoint-short/ray ray miss
 npn/capsule-cap-endpoint-one-grid-short/ray ray miss
 npn/capsule-cap-endpoint-sub-grid-short/ray ray miss
 npn/capsule-cap-endpoint-continued/ray ray hit 3effffff c6ffa200 46ffa200 c6ffa200 33000000 b3000000 3f800000 00000000
+npn/turned-capsule-side-endpoint-contact/ray ray hit 3f800000 c6ffa200 46ffa200 c6ff9400 00000000 00000000 bf800000 00000000
+npn/turned-capsule-side-endpoint-short/ray ray miss
+npn/turned-capsule-side-endpoint-one-grid-short/ray ray miss
+npn/turned-capsule-side-endpoint-sub-grid-short/ray ray miss
+npn/turned-capsule-side-endpoint-continued/ray ray hit 3f000000 c6ffa200 46ffa200 c6ff9400 00000000 00000000 bf800000 00000000
 npn/cuboid-endpoint-contact/ray ray hit 3f800000 c6ffa200 46ffa200 c6ffa200 3f800000 00000000 00000000 00000000
 npn/cuboid-endpoint-short/ray ray miss
 npn/cuboid-endpoint-one-grid-short/ray ray miss
@@ -6321,10 +6380,10 @@ npn/sweep-2-0-pass/full sweep miss
 npn/sweep-2-0-pass/half sweep miss
 npn/sweep-2-0-leave/full sweep miss
 npn/sweep-2-0-leave/half sweep miss
-npn/sweep-2-1-head/full sweep hit 3ebf7800 c6ff9e00 46ff9e00 c6ffa000 3f800000 80000000 00000000 00000000
-npn/sweep-2-1-head/half sweep hit 3ebfb800 c6ff9e00 46ff9e00 c6ffa000 3f800000 80000000 00000000 00000000
-npn/sweep-2-1-slant/full sweep hit 3ebf7800 c6ff9e00 46ff9dfe c6ffa000 3f800000 80000000 00000000 00000000
-npn/sweep-2-1-slant/half sweep hit 3ebfb800 c6ff9e00 46ff9dff c6ffa000 3f800000 80000000 00000000 00000000
+npn/sweep-2-1-head/full sweep hit 3ebf7800 c6ff9e00 46ff9e00 c6ffa000 3f800000 00000000 80000000 00000000
+npn/sweep-2-1-head/half sweep hit 3ebfb800 c6ff9e00 46ff9e00 c6ffa000 3f800000 00000000 80000000 00000000
+npn/sweep-2-1-slant/full sweep hit 3ebf7800 c6ff9e00 46ff9dfe c6ffa000 3f800000 00000000 80000000 00000000
+npn/sweep-2-1-slant/half sweep hit 3ebfb800 c6ff9e00 46ff9dff c6ffa000 3f800000 00000000 80000000 00000000
 npn/sweep-2-1-pass/full sweep miss
 npn/sweep-2-1-pass/half sweep miss
 npn/sweep-2-1-leave/full sweep miss
@@ -6371,8 +6430,12 @@ npn/sweep-capsule-triangle-corner/full sweep hit 3effb557 c6ffa000 46ffa000 c6ff
 npn/sweep-capsule-triangle-corner/half sweep hit 3effdaac c6ffa000 46ffa000 c6ffa000 3e9246e8 bedb7ca0 3f5b6a5c 00000000
 npn/sweep-box-triangle-corner/full sweep hit 3effb800 c6ffa000 46ffa000 c6ffa000 3f13cd3a bf13cd3a 3f13cd3a 00000000
 npn/sweep-box-triangle-corner/half sweep hit 3effd800 c6ffa000 46ffa000 c6ffa000 3f13cd3a bf13cd3a 3f13cd3a 00000000
-npn/sweep-turned-cuboids-head-on/full sweep hit 3eaa6aab c6ffa000 46ffc200 c6ff8400 be48d2ab 3f48d2ab bf169e01 00000000
-npn/sweep-turned-cuboids-head-on/half sweep hit 3eaa871c c6ffa000 46ffc200 c6ff8400 be48d2ab 3f48d2ab bf169dff 00000000
+npn/sweep-turned-cuboids-head-on-0/full sweep hit 3eaa6aab c6ff9401 46ff9200 c6ffc800 be48d2ab 3f48d2ab bf169e00 00000000
+npn/sweep-turned-cuboids-head-on-0/half sweep hit 3eaa871c c6ff9400 46ff9200 c6ffc800 be48d2ab 3f48d2ab bf169e00 00000000
+npn/sweep-turned-cuboids-head-on-1/full sweep hit 3eaa4001 c6ffa180 46ffa580 c6ffa500 be9a5fb1 3e9a5fb1 bf678f8b 00000000
+npn/sweep-turned-cuboids-head-on-1/half sweep hit 3eaa78e5 c6ff9e80 46ffa280 c6ffa700 be9a5fb1 3e9a5fb1 bf678f8b 00000000
+npn/sweep-turned-cuboids-head-on-2/full sweep hit 3eaa4001 c6ffa780 46ffa280 c6ffa700 be9a5fb1 3f678f8b be9a5fb1 00000000
+npn/sweep-turned-cuboids-head-on-2/half sweep hit 3eaa78e5 c6ff9b80 46ffa680 c6ffa700 be9a5fb1 3f678f8b be9a5fb1 00000000
 npn/sweep-through-thick-cuboid/full sweep hit 3e992ccd c6ff9a00 46ffa000 c6ffa000 3f800000 00000000 00000000 00000000
 npn/sweep-through-thick-cuboid/half sweep hit 3e996000 c6ff9a00 46ffa000 c6ffa000 3f800000 00000000 00000000 00000000
 npn/sweep-through-thin-triangle/full sweep hit 3f7fc76c c6ffa000 46ffa000 c6ffa000 3f800000 00000000 00000000 00000000
@@ -6701,14 +6764,14 @@ npn/initial-2-0-shallow-3/full sweep hit 00000000 c6ff9e00 46ffa000 c6ffa000 3f8
 npn/initial-2-0-clear-1/full sweep miss
 npn/initial-2-0-clear-2/full sweep miss
 npn/initial-2-0-clear-3/full sweep miss
-npn/initial-2-1-close-0/full sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 80000000 00000000 00000000
-npn/initial-2-1-close-1/full sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 80000000 00000000 00000000
-npn/initial-2-1-close-2/full sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 80000000 00000000 00000000
-npn/initial-2-1-close-3/full sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 80000000 00000000 00000000
-npn/initial-2-1-shallow-0/full sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 80000000 00000000 00000000
-npn/initial-2-1-shallow-1/full sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 80000000 00000000 00000000
-npn/initial-2-1-shallow-2/full sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 80000000 00000000 00000000
-npn/initial-2-1-shallow-3/full sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 80000000 00000000 00000000
+npn/initial-2-1-close-0/full sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 00000000 80000000 00000000
+npn/initial-2-1-close-1/full sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 00000000 80000000 00000000
+npn/initial-2-1-close-2/full sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 00000000 80000000 00000000
+npn/initial-2-1-close-3/full sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 00000000 80000000 00000000
+npn/initial-2-1-shallow-0/full sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 00000000 80000000 00000000
+npn/initial-2-1-shallow-1/full sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 00000000 80000000 00000000
+npn/initial-2-1-shallow-2/full sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 00000000 80000000 00000000
+npn/initial-2-1-shallow-3/full sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 00000000 80000000 00000000
 npn/initial-2-1-clear-1/full sweep miss
 npn/initial-2-1-clear-2/full sweep miss
 npn/initial-2-1-clear-3/full sweep miss
@@ -6833,14 +6896,14 @@ npn/initial-2-0-shallow-3/half sweep hit 00000000 c6ff9e00 46ffa000 c6ffa000 3f8
 npn/initial-2-0-clear-1/half sweep miss
 npn/initial-2-0-clear-2/half sweep miss
 npn/initial-2-0-clear-3/half sweep miss
-npn/initial-2-1-close-0/half sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 80000000 00000000 00000000
-npn/initial-2-1-close-1/half sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 80000000 00000000 00000000
-npn/initial-2-1-close-2/half sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 80000000 00000000 00000000
-npn/initial-2-1-close-3/half sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 80000000 00000000 00000000
-npn/initial-2-1-shallow-0/half sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 80000000 00000000 00000000
-npn/initial-2-1-shallow-1/half sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 80000000 00000000 00000000
-npn/initial-2-1-shallow-2/half sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 80000000 00000000 00000000
-npn/initial-2-1-shallow-3/half sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 80000000 00000000 00000000
+npn/initial-2-1-close-0/half sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 00000000 80000000 00000000
+npn/initial-2-1-close-1/half sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 00000000 80000000 00000000
+npn/initial-2-1-close-2/half sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 00000000 80000000 00000000
+npn/initial-2-1-close-3/half sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 00000000 80000000 00000000
+npn/initial-2-1-shallow-0/half sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 00000000 80000000 00000000
+npn/initial-2-1-shallow-1/half sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 00000000 80000000 00000000
+npn/initial-2-1-shallow-2/half sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 00000000 80000000 00000000
+npn/initial-2-1-shallow-3/half sweep hit 00000000 c6ff9e00 46ff9e00 c6ffa000 3f800000 00000000 80000000 00000000
 npn/initial-2-1-clear-1/half sweep miss
 npn/initial-2-1-clear-2/half sweep miss
 npn/initial-2-1-clear-3/half sweep miss
@@ -7130,7 +7193,7 @@ nnp/turned-vertex-0-touch/distance-ba distance 00000000
 nnp/turned-vertex-0-touch/overlap-ba overlap 1
 nnp/turned-vertex-0-outside/distance-ab distance 3f87c3b7
 nnp/turned-vertex-0-outside/overlap-ab overlap 0
-nnp/turned-vertex-0-outside/distance-ba distance 3f87c3b6
+nnp/turned-vertex-0-outside/distance-ba distance 3f87c3b7
 nnp/turned-vertex-0-outside/overlap-ba overlap 0
 nnp/turned-vertex-0-inside/distance-ab distance 00000000
 nnp/turned-vertex-0-inside/overlap-ab overlap 1
@@ -7140,9 +7203,9 @@ nnp/turned-vertex-1-touch/distance-ab distance 00000000
 nnp/turned-vertex-1-touch/overlap-ab overlap 1
 nnp/turned-vertex-1-touch/distance-ba distance 00000000
 nnp/turned-vertex-1-touch/overlap-ba overlap 1
-nnp/turned-vertex-1-outside/distance-ab distance 3eb504f2
+nnp/turned-vertex-1-outside/distance-ab distance 3eb504f3
 nnp/turned-vertex-1-outside/overlap-ab overlap 0
-nnp/turned-vertex-1-outside/distance-ba distance 3eb504f2
+nnp/turned-vertex-1-outside/distance-ba distance 3eb504f3
 nnp/turned-vertex-1-outside/overlap-ba overlap 0
 nnp/turned-vertex-1-inside/distance-ab distance 00000000
 nnp/turned-vertex-1-inside/overlap-ab overlap 1
@@ -7217,6 +7280,11 @@ nnp/capsule-cap-endpoint-short/ray ray miss
 nnp/capsule-cap-endpoint-one-grid-short/ray ray miss
 nnp/capsule-cap-endpoint-sub-grid-short/ray ray miss
 nnp/capsule-cap-endpoint-continued/ray ray hit 3effffff c6ffa200 c6ffa200 46ffa200 33000000 33000000 bf800000 00000000
+nnp/turned-capsule-side-endpoint-contact/ray ray hit 3f800000 c6ffa200 c6ffa200 46ff9400 00000000 00000000 3f800000 00000000
+nnp/turned-capsule-side-endpoint-short/ray ray miss
+nnp/turned-capsule-side-endpoint-one-grid-short/ray ray miss
+nnp/turned-capsule-side-endpoint-sub-grid-short/ray ray miss
+nnp/turned-capsule-side-endpoint-continued/ray ray hit 3f000000 c6ffa200 c6ffa200 46ff9400 00000000 00000000 3f800000 00000000
 nnp/cuboid-endpoint-contact/ray ray hit 3f800000 c6ffa200 c6ffa200 46ffa200 3f800000 00000000 00000000 00000000
 nnp/cuboid-endpoint-short/ray ray miss
 nnp/cuboid-endpoint-one-grid-short/ray ray miss
@@ -7303,10 +7371,10 @@ nnp/sweep-2-0-pass/full sweep miss
 nnp/sweep-2-0-pass/half sweep miss
 nnp/sweep-2-0-leave/full sweep miss
 nnp/sweep-2-0-leave/half sweep miss
-nnp/sweep-2-1-head/full sweep hit 3ebf7800 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 80000000 00000000
-nnp/sweep-2-1-head/half sweep hit 3ebfb800 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 80000000 00000000
-nnp/sweep-2-1-slant/full sweep hit 3ebf7800 c6ff9e00 c6ff9dfe 46ffa000 3f800000 00000000 80000000 00000000
-nnp/sweep-2-1-slant/half sweep hit 3ebfb800 c6ff9e00 c6ff9dff 46ffa000 3f800000 00000000 80000000 00000000
+nnp/sweep-2-1-head/full sweep hit 3ebf7800 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 00000000 00000000
+nnp/sweep-2-1-head/half sweep hit 3ebfb800 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 00000000 00000000
+nnp/sweep-2-1-slant/full sweep hit 3ebf7800 c6ff9e00 c6ff9dfe 46ffa000 3f800000 00000000 00000000 00000000
+nnp/sweep-2-1-slant/half sweep hit 3ebfb800 c6ff9e00 c6ff9dff 46ffa000 3f800000 00000000 00000000 00000000
 nnp/sweep-2-1-pass/full sweep miss
 nnp/sweep-2-1-pass/half sweep miss
 nnp/sweep-2-1-leave/full sweep miss
@@ -7353,8 +7421,12 @@ nnp/sweep-capsule-triangle-corner/full sweep hit 3effb557 c6ffa000 c6ffa000 46ff
 nnp/sweep-capsule-triangle-corner/half sweep hit 3effdaac c6ffa000 c6ffa000 46ffa000 3e9246e8 3edb7ca0 bf5b6a5c 00000000
 nnp/sweep-box-triangle-corner/full sweep hit 3effb800 c6ffa000 c6ffa000 46ffa000 3f13cd3a 3f13cd3a bf13cd3a 00000000
 nnp/sweep-box-triangle-corner/half sweep hit 3effd800 c6ffa000 c6ffa000 46ffa000 3f13cd3a 3f13cd3a bf13cd3a 00000000
-nnp/sweep-turned-cuboids-head-on/full sweep hit 3eaa6aab c6ffa000 c6ffc200 46ff8400 be48d2ab bf48d2ab 3f169e01 00000000
-nnp/sweep-turned-cuboids-head-on/half sweep hit 3eaa871c c6ffa000 c6ffc200 46ff8400 be48d2ab bf48d2ab 3f169dff 00000000
+nnp/sweep-turned-cuboids-head-on-0/full sweep hit 3eaa6aab c6ff9401 c6ff9200 46ffc800 be48d2ab bf48d2ab 3f169e00 00000000
+nnp/sweep-turned-cuboids-head-on-0/half sweep hit 3eaa871c c6ff9400 c6ff9200 46ffc800 be48d2ab bf48d2ab 3f169e00 00000000
+nnp/sweep-turned-cuboids-head-on-1/full sweep hit 3eaa4001 c6ffa180 c6ffa580 46ffa500 be9a5fb1 be9a5fb1 3f678f8b 00000000
+nnp/sweep-turned-cuboids-head-on-1/half sweep hit 3eaa78e5 c6ff9e80 c6ffa280 46ffa700 be9a5fb1 be9a5fb1 3f678f8b 00000000
+nnp/sweep-turned-cuboids-head-on-2/full sweep hit 3eaa4001 c6ffa780 c6ffa280 46ffa700 be9a5fb1 bf678f8b 3e9a5fb1 00000000
+nnp/sweep-turned-cuboids-head-on-2/half sweep hit 3eaa78e5 c6ff9b80 c6ffa680 46ffa700 be9a5fb1 bf678f8b 3e9a5fb1 00000000
 nnp/sweep-through-thick-cuboid/full sweep hit 3e992ccd c6ff9a00 c6ffa000 46ffa000 3f800000 00000000 00000000 00000000
 nnp/sweep-through-thick-cuboid/half sweep hit 3e996000 c6ff9a00 c6ffa000 46ffa000 3f800000 00000000 00000000 00000000
 nnp/sweep-through-thin-triangle/full sweep hit 3f7fc76c c6ffa000 c6ffa000 46ffa000 3f800000 00000000 00000000 00000000
@@ -7396,7 +7468,7 @@ nnp/cuboid-cuboid-deep-2/half sweep hit 00000000 c6ffa800 c6ff9e00 46ff9e00 bf80
 nnp/cuboid-cuboid-deep-3/half sweep hit 00000000 c6ffa800 c6ff9e00 46ff9e00 bf800000 00000000 00000000 3f800000
 nnp/capsule-cuboid/depth depth 3f800000 bf800000 80000000 80000000
 nnp/capsule-cuboid/parted-distance distance 00000000
-nnp/capsule-cuboid/parted depth 00000000 bf800000 00000000 00000000
+nnp/capsule-cuboid/parted depth 00000000 bf800000 80000000 80000000
 nnp/capsule-cuboid-deep-0/full sweep hit 00000000 c6ffa800 c6ff9800 46ffa000 bf800000 80000000 80000000 3f800000
 nnp/capsule-cuboid-deep-1/full sweep hit 00000000 c6ffa800 c6ff9800 46ffa000 bf800000 80000000 80000000 3f800000
 nnp/capsule-cuboid-deep-2/full sweep hit 00000000 c6ffa800 c6ff9800 46ffa000 bf800000 80000000 80000000 3f800000
@@ -7683,14 +7755,14 @@ nnp/initial-2-0-shallow-3/full sweep hit 00000000 c6ff9e00 c6ffa000 46ffa000 3f8
 nnp/initial-2-0-clear-1/full sweep miss
 nnp/initial-2-0-clear-2/full sweep miss
 nnp/initial-2-0-clear-3/full sweep miss
-nnp/initial-2-1-close-0/full sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 80000000 00000000
-nnp/initial-2-1-close-1/full sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 80000000 00000000
-nnp/initial-2-1-close-2/full sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 80000000 00000000
-nnp/initial-2-1-close-3/full sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 80000000 00000000
-nnp/initial-2-1-shallow-0/full sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 80000000 00000000
-nnp/initial-2-1-shallow-1/full sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 80000000 00000000
-nnp/initial-2-1-shallow-2/full sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 80000000 00000000
-nnp/initial-2-1-shallow-3/full sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 80000000 00000000
+nnp/initial-2-1-close-0/full sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 00000000 00000000
+nnp/initial-2-1-close-1/full sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 00000000 00000000
+nnp/initial-2-1-close-2/full sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 00000000 00000000
+nnp/initial-2-1-close-3/full sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 00000000 00000000
+nnp/initial-2-1-shallow-0/full sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 00000000 00000000
+nnp/initial-2-1-shallow-1/full sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 00000000 00000000
+nnp/initial-2-1-shallow-2/full sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 00000000 00000000
+nnp/initial-2-1-shallow-3/full sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 00000000 00000000
 nnp/initial-2-1-clear-1/full sweep miss
 nnp/initial-2-1-clear-2/full sweep miss
 nnp/initial-2-1-clear-3/full sweep miss
@@ -7815,14 +7887,14 @@ nnp/initial-2-0-shallow-3/half sweep hit 00000000 c6ff9e00 c6ffa000 46ffa000 3f8
 nnp/initial-2-0-clear-1/half sweep miss
 nnp/initial-2-0-clear-2/half sweep miss
 nnp/initial-2-0-clear-3/half sweep miss
-nnp/initial-2-1-close-0/half sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 80000000 00000000
-nnp/initial-2-1-close-1/half sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 80000000 00000000
-nnp/initial-2-1-close-2/half sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 80000000 00000000
-nnp/initial-2-1-close-3/half sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 80000000 00000000
-nnp/initial-2-1-shallow-0/half sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 80000000 00000000
-nnp/initial-2-1-shallow-1/half sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 80000000 00000000
-nnp/initial-2-1-shallow-2/half sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 80000000 00000000
-nnp/initial-2-1-shallow-3/half sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 80000000 00000000
+nnp/initial-2-1-close-0/half sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 00000000 00000000
+nnp/initial-2-1-close-1/half sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 00000000 00000000
+nnp/initial-2-1-close-2/half sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 00000000 00000000
+nnp/initial-2-1-close-3/half sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 00000000 00000000
+nnp/initial-2-1-shallow-0/half sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 00000000 00000000
+nnp/initial-2-1-shallow-1/half sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 00000000 00000000
+nnp/initial-2-1-shallow-2/half sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 00000000 00000000
+nnp/initial-2-1-shallow-3/half sweep hit 00000000 c6ff9e00 c6ff9e00 46ffa000 3f800000 00000000 00000000 00000000
 nnp/initial-2-1-clear-1/half sweep miss
 nnp/initial-2-1-clear-2/half sweep miss
 nnp/initial-2-1-clear-3/half sweep miss
@@ -8112,7 +8184,7 @@ nnn/turned-vertex-0-touch/distance-ba distance 00000000
 nnn/turned-vertex-0-touch/overlap-ba overlap 1
 nnn/turned-vertex-0-outside/distance-ab distance 3f87c3b7
 nnn/turned-vertex-0-outside/overlap-ab overlap 0
-nnn/turned-vertex-0-outside/distance-ba distance 3f87c3b6
+nnn/turned-vertex-0-outside/distance-ba distance 3f87c3b7
 nnn/turned-vertex-0-outside/overlap-ba overlap 0
 nnn/turned-vertex-0-inside/distance-ab distance 00000000
 nnn/turned-vertex-0-inside/overlap-ab overlap 1
@@ -8122,9 +8194,9 @@ nnn/turned-vertex-1-touch/distance-ab distance 00000000
 nnn/turned-vertex-1-touch/overlap-ab overlap 1
 nnn/turned-vertex-1-touch/distance-ba distance 00000000
 nnn/turned-vertex-1-touch/overlap-ba overlap 1
-nnn/turned-vertex-1-outside/distance-ab distance 3eb504f2
+nnn/turned-vertex-1-outside/distance-ab distance 3eb504f3
 nnn/turned-vertex-1-outside/overlap-ab overlap 0
-nnn/turned-vertex-1-outside/distance-ba distance 3eb504f2
+nnn/turned-vertex-1-outside/distance-ba distance 3eb504f3
 nnn/turned-vertex-1-outside/overlap-ba overlap 0
 nnn/turned-vertex-1-inside/distance-ab distance 00000000
 nnn/turned-vertex-1-inside/overlap-ab overlap 1
@@ -8199,6 +8271,11 @@ nnn/capsule-cap-endpoint-short/ray ray miss
 nnn/capsule-cap-endpoint-one-grid-short/ray ray miss
 nnn/capsule-cap-endpoint-sub-grid-short/ray ray miss
 nnn/capsule-cap-endpoint-continued/ray ray hit 3effffff c6ffa200 c6ffa200 c6ffa200 33000000 33000000 3f800000 00000000
+nnn/turned-capsule-side-endpoint-contact/ray ray hit 3f800000 c6ffa200 c6ffa200 c6ff9400 00000000 00000000 bf800000 00000000
+nnn/turned-capsule-side-endpoint-short/ray ray miss
+nnn/turned-capsule-side-endpoint-one-grid-short/ray ray miss
+nnn/turned-capsule-side-endpoint-sub-grid-short/ray ray miss
+nnn/turned-capsule-side-endpoint-continued/ray ray hit 3f000000 c6ffa200 c6ffa200 c6ff9400 00000000 00000000 bf800000 00000000
 nnn/cuboid-endpoint-contact/ray ray hit 3f800000 c6ffa200 c6ffa200 c6ffa200 3f800000 00000000 00000000 00000000
 nnn/cuboid-endpoint-short/ray ray miss
 nnn/cuboid-endpoint-one-grid-short/ray ray miss
@@ -8285,10 +8362,10 @@ nnn/sweep-2-0-pass/full sweep miss
 nnn/sweep-2-0-pass/half sweep miss
 nnn/sweep-2-0-leave/full sweep miss
 nnn/sweep-2-0-leave/half sweep miss
-nnn/sweep-2-1-head/full sweep hit 3ebf7800 c6ff9e00 c6ff9e00 c6ffa000 3f800000 00000000 00000000 00000000
-nnn/sweep-2-1-head/half sweep hit 3ebfb800 c6ff9e00 c6ff9e00 c6ffa000 3f800000 00000000 00000000 00000000
-nnn/sweep-2-1-slant/full sweep hit 3ebf7800 c6ff9e00 c6ff9dfe c6ffa000 3f800000 00000000 00000000 00000000
-nnn/sweep-2-1-slant/half sweep hit 3ebfb800 c6ff9e00 c6ff9dff c6ffa000 3f800000 00000000 00000000 00000000
+nnn/sweep-2-1-head/full sweep hit 3ebf7800 c6ff9e00 c6ff9e00 c6ffa000 3f800000 80000000 80000000 00000000
+nnn/sweep-2-1-head/half sweep hit 3ebfb800 c6ff9e00 c6ff9e00 c6ffa000 3f800000 80000000 80000000 00000000
+nnn/sweep-2-1-slant/full sweep hit 3ebf7800 c6ff9e00 c6ff9dfe c6ffa000 3f800000 80000000 80000000 00000000
+nnn/sweep-2-1-slant/half sweep hit 3ebfb800 c6ff9e00 c6ff9dff c6ffa000 3f800000 80000000 80000000 00000000
 nnn/sweep-2-1-pass/full sweep miss
 nnn/sweep-2-1-pass/half sweep miss
 nnn/sweep-2-1-leave/full sweep miss
@@ -8335,8 +8412,12 @@ nnn/sweep-capsule-triangle-corner/full sweep hit 3effb557 c6ffa000 c6ffa000 c6ff
 nnn/sweep-capsule-triangle-corner/half sweep hit 3effdaac c6ffa000 c6ffa000 c6ffa000 3e9246e8 3edb7ca0 3f5b6a5c 00000000
 nnn/sweep-box-triangle-corner/full sweep hit 3effb800 c6ffa000 c6ffa000 c6ffa000 3f13cd3a 3f13cd3a 3f13cd3a 00000000
 nnn/sweep-box-triangle-corner/half sweep hit 3effd800 c6ffa000 c6ffa000 c6ffa000 3f13cd3a 3f13cd3a 3f13cd3a 00000000
-nnn/sweep-turned-cuboids-head-on/full sweep hit 3eaa6aab c6ffa000 c6ffc200 c6ff8400 be48d2ab bf48d2ab bf169e01 00000000
-nnn/sweep-turned-cuboids-head-on/half sweep hit 3eaa871c c6ffa000 c6ffc200 c6ff8400 be48d2ab bf48d2ab bf169dff 00000000
+nnn/sweep-turned-cuboids-head-on-0/full sweep hit 3eaa6aab c6ff9401 c6ff9200 c6ffc800 be48d2ab bf48d2ab bf169e00 00000000
+nnn/sweep-turned-cuboids-head-on-0/half sweep hit 3eaa871c c6ff9400 c6ff9200 c6ffc800 be48d2ab bf48d2ab bf169e00 00000000
+nnn/sweep-turned-cuboids-head-on-1/full sweep hit 3eaa4001 c6ffa180 c6ffa580 c6ffa500 be9a5fb1 be9a5fb1 bf678f8b 00000000
+nnn/sweep-turned-cuboids-head-on-1/half sweep hit 3eaa78e5 c6ff9e80 c6ffa280 c6ffa700 be9a5fb1 be9a5fb1 bf678f8b 00000000
+nnn/sweep-turned-cuboids-head-on-2/full sweep hit 3eaa4001 c6ffa780 c6ffa280 c6ffa700 be9a5fb1 bf678f8b be9a5fb1 00000000
+nnn/sweep-turned-cuboids-head-on-2/half sweep hit 3eaa78e5 c6ff9b80 c6ffa680 c6ffa700 be9a5fb1 bf678f8b be9a5fb1 00000000
 nnn/sweep-through-thick-cuboid/full sweep hit 3e992ccd c6ff9a00 c6ffa000 c6ffa000 3f800000 00000000 00000000 00000000
 nnn/sweep-through-thick-cuboid/half sweep hit 3e996000 c6ff9a00 c6ffa000 c6ffa000 3f800000 00000000 00000000 00000000
 nnn/sweep-through-thin-triangle/full sweep hit 3f7fc76c c6ffa000 c6ffa000 c6ffa000 3f800000 00000000 00000000 00000000
@@ -8378,7 +8459,7 @@ nnn/cuboid-cuboid-deep-2/half sweep hit 00000000 c6ffa800 c6ff9e00 c6ff9e00 bf80
 nnn/cuboid-cuboid-deep-3/half sweep hit 00000000 c6ffa800 c6ff9e00 c6ff9e00 bf800000 00000000 00000000 3f800000
 nnn/capsule-cuboid/depth depth 3f800000 bf800000 00000000 00000000
 nnn/capsule-cuboid/parted-distance distance 00000000
-nnn/capsule-cuboid/parted depth 00000000 bf800000 80000000 80000000
+nnn/capsule-cuboid/parted depth 00000000 bf800000 80000000 00000000
 nnn/capsule-cuboid-deep-0/full sweep hit 00000000 c6ffa800 c6ff9800 c6ffa000 bf800000 00000000 00000000 3f800000
 nnn/capsule-cuboid-deep-1/full sweep hit 00000000 c6ffa800 c6ff9800 c6ffa000 bf800000 00000000 00000000 3f800000
 nnn/capsule-cuboid-deep-2/full sweep hit 00000000 c6ffa800 c6ff9800 c6ffa000 bf800000 00000000 00000000 3f800000
@@ -8665,14 +8746,14 @@ nnn/initial-2-0-shallow-3/full sweep hit 00000000 c6ff9e00 c6ffa000 c6ffa000 3f8
 nnn/initial-2-0-clear-1/full sweep miss
 nnn/initial-2-0-clear-2/full sweep miss
 nnn/initial-2-0-clear-3/full sweep miss
-nnn/initial-2-1-close-0/full sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 00000000 00000000 00000000
-nnn/initial-2-1-close-1/full sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 00000000 00000000 00000000
-nnn/initial-2-1-close-2/full sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 00000000 00000000 00000000
-nnn/initial-2-1-close-3/full sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 00000000 00000000 00000000
-nnn/initial-2-1-shallow-0/full sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 00000000 00000000 00000000
-nnn/initial-2-1-shallow-1/full sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 00000000 00000000 00000000
-nnn/initial-2-1-shallow-2/full sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 00000000 00000000 00000000
-nnn/initial-2-1-shallow-3/full sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 00000000 00000000 00000000
+nnn/initial-2-1-close-0/full sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 80000000 80000000 00000000
+nnn/initial-2-1-close-1/full sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 80000000 80000000 00000000
+nnn/initial-2-1-close-2/full sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 80000000 80000000 00000000
+nnn/initial-2-1-close-3/full sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 80000000 80000000 00000000
+nnn/initial-2-1-shallow-0/full sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 80000000 80000000 00000000
+nnn/initial-2-1-shallow-1/full sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 80000000 80000000 00000000
+nnn/initial-2-1-shallow-2/full sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 80000000 80000000 00000000
+nnn/initial-2-1-shallow-3/full sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 80000000 80000000 00000000
 nnn/initial-2-1-clear-1/full sweep miss
 nnn/initial-2-1-clear-2/full sweep miss
 nnn/initial-2-1-clear-3/full sweep miss
@@ -8797,14 +8878,14 @@ nnn/initial-2-0-shallow-3/half sweep hit 00000000 c6ff9e00 c6ffa000 c6ffa000 3f8
 nnn/initial-2-0-clear-1/half sweep miss
 nnn/initial-2-0-clear-2/half sweep miss
 nnn/initial-2-0-clear-3/half sweep miss
-nnn/initial-2-1-close-0/half sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 00000000 00000000 00000000
-nnn/initial-2-1-close-1/half sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 00000000 00000000 00000000
-nnn/initial-2-1-close-2/half sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 00000000 00000000 00000000
-nnn/initial-2-1-close-3/half sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 00000000 00000000 00000000
-nnn/initial-2-1-shallow-0/half sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 00000000 00000000 00000000
-nnn/initial-2-1-shallow-1/half sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 00000000 00000000 00000000
-nnn/initial-2-1-shallow-2/half sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 00000000 00000000 00000000
-nnn/initial-2-1-shallow-3/half sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 00000000 00000000 00000000
+nnn/initial-2-1-close-0/half sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 80000000 80000000 00000000
+nnn/initial-2-1-close-1/half sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 80000000 80000000 00000000
+nnn/initial-2-1-close-2/half sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 80000000 80000000 00000000
+nnn/initial-2-1-close-3/half sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 80000000 80000000 00000000
+nnn/initial-2-1-shallow-0/half sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 80000000 80000000 00000000
+nnn/initial-2-1-shallow-1/half sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 80000000 80000000 00000000
+nnn/initial-2-1-shallow-2/half sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 80000000 80000000 00000000
+nnn/initial-2-1-shallow-3/half sweep hit 00000000 c6ff9e00 c6ff9e00 c6ffa000 3f800000 80000000 80000000 00000000
 nnn/initial-2-1-clear-1/half sweep miss
 nnn/initial-2-1-clear-2/half sweep miss
 nnn/initial-2-1-clear-3/half sweep miss
