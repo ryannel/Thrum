@@ -3033,21 +3033,21 @@
       "ends_stretch": true
     },
     "WP23": {
-      "definitions": "88ccf585fb047b8bd1a75d1f540eb8dfb1da718a31ca17731d1be8c12f3cf7e8",
+      "definitions": "7dee2a77d970983702398e2971f28e61d687c015d2f228fea89e60036345f444",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 7 Must Fix find",
-        "at": "2026-11-28T00:55:35Z"
+        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its Must Fix findin",
+        "at": "2026-11-28T03:16:12Z"
       }
     },
     "WP24": {
-      "definitions": "48d99a8c121b4faaa1bd6b8b9e35eb7b0c0dd93c88fc9aecfc4b7cfdbfb6e653",
+      "definitions": "290dc050d40dd7b6edc7b1cca6cb77758a099092acffb1761e7a88c8c3c52612",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 5 Must Fix find",
-        "at": "2026-11-28T01:22:46Z"
+        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its Must Fix findin",
+        "at": "2026-11-28T03:16:12Z"
       }
     },
     "WP25": {
@@ -3240,11 +3240,15 @@
     {
       "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 5 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
       "at": "2026-11-28T01:22:46Z"
+    },
+    {
+      "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its Must Fix findings.",
+      "at": "2026-11-28T03:16:12Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-28T01:22:46Z"
+    "at": "2026-11-28T03:16:12Z"
   },
   "design_history": [
     {
