@@ -1087,12 +1087,12 @@
       }
     },
     "WP13": {
-      "definitions": "685090714bcc2e7008b7b0131fb02de43180df96e71319922934b23765c5057e",
+      "definitions": "abe5d83fb2aabfd79ee18687f9418b28a86038c8d3465a08cfd67bfae4772d8a",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 7 Must ",
-        "at": "2026-11-27T23:20:18Z"
+        "task": "Unblock ATMOSPHERE WP13. The builder wrote: WP13.6 needs a planner-approved design response to the residual sphere-shado",
+        "at": "2026-11-28T02:14:19Z"
       }
     },
     "WP14": {
@@ -1238,11 +1238,15 @@
     {
       "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 13 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
       "at": "2026-11-28T00:40:17Z"
+    },
+    {
+      "task": "Unblock ATMOSPHERE WP13. The builder wrote: WP13.6 needs a planner-approved design response to the residual sphere-shadow step. Ten of eleven items pass on build/atmosphere at 6a49b48dffca (unmerged; read it with git show). The handoff, .orchestrate/evidence/ATMOSPHERE/WP13-handoff.md, and .orchestrate/evidence/ATMOSPHERE/WP13/c1-edge-witness/README.md show the C1 sphere's ground-shadow edge advancing about two source pixels and then retreating across submissions 403-418 with the camera held and reconstruction off; the same crawl is on main, and its cause is open. This back-and-forth crawl is the flicker the owner reported, so WP13 should not merge without addressing it, but don't make the builder guess: find the cause first (diagnose from the retained frames and the shader, not by more tuning), research how current shipped engines keep a moving Sun's cascaded shadow edges stable frame to frame (modern techniques only), and give WP13.6 a design response the builder can build and prove. Keep the design's exclusions unless the cause shows one is wrong, and say so if you change one. Keep WP13's ten passing items. Note: WP14's design revision of 28 Nov still owes a design review, which the lead will run after this plan lands.",
+      "at": "2026-11-28T02:14:19Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-28T00:40:17Z"
+    "at": "2026-11-28T02:14:19Z"
   },
   "design_history": [
     {
