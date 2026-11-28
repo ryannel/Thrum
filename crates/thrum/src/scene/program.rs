@@ -10,10 +10,10 @@ use thrum_core::sim::{
 };
 
 use crate::{
-    Error, Result, Seconds, Tick, TickNumber,
+    Error, Result, Tick, TickNumber,
     entity::{Changes, contains_entities},
     rule::{
-        Invocation, ReadContextParts, Rule, RuleStreams,
+        Invocation, ReadContextParts, Rule, RuleNames, RuleOrigin,
         access::{Bindings, Column, Signature},
         params::Context,
     },
@@ -21,7 +21,7 @@ use crate::{
         Authority, Candidate, Operation, SceneValue, State, Transition, collect_entities,
         despawn_all,
     },
-    time::PhaseSpan,
+    time::PhaseTicks,
 };
 
 use super::{Definition, Duration, Expiry, Landing, Names};
@@ -33,11 +33,12 @@ pub(crate) struct Program {
     slots: Vec<Slot>,
     scenes: Vec<ScenePlan>,
     pub(crate) columns: Vec<Column>,
-    streams: RuleStreams,
+    pub(crate) rule_names: RuleNames,
     rate: u32,
 }
 
 struct ScenePlan {
+    label: &'static str,
     resources: Vec<crate::runtime::ValueRef>,
     first_phase: Option<usize>,
     signatures: Vec<(&'static str, Signature)>,
@@ -86,7 +87,7 @@ impl Step {
         base.into_iter().chain(conditions).chain(duration)
     }
 
-    fn identify(&mut self, slot: u32, streams: &mut RuleStreams) -> Result {
+    fn register_names(&self, names: &mut RuleNames, origin: RuleOrigin) -> Result {
         let rule = match self {
             Self::Main(_, _, rule)
             | Self::ExpiryRule(_, _, rule)
@@ -94,13 +95,13 @@ impl Step {
             | Self::EnterScene(_, rule)
             | Self::EnterPhase(_, _, rule) => rule,
             Self::Length(_, _, Duration::Read(read)) => {
-                return streams.register(read, u64::from(slot));
+                return names.register(read, origin);
             }
             _ => return Ok(()),
         };
-        streams.register(&mut rule.invoke, u64::from(slot))?;
-        for (index, condition) in (1_u64..).zip(&rule.conditions) {
-            condition.identify((index << 32) | u64::from(slot), streams)?;
+        names.register(&rule.invoke, origin)?;
+        for condition in &rule.conditions {
+            condition.register(names, origin)?;
         }
         Ok(())
     }
@@ -175,15 +176,15 @@ impl Program {
                         .into_iter()
                         .map(|rule| Step::Exit(scene, Some(phase), rule)),
                 );
+                if let Some(length) = definition.duration {
+                    phases.push(Step::Length(scene, phase, length));
+                }
                 phases.extend(
                     definition
                         .enter
                         .into_iter()
                         .map(|rule| Step::EnterPhase(scene, phase, rule)),
                 );
-                if let Some(length) = definition.duration {
-                    phases.push(Step::Length(scene, phase, length));
-                }
             }
             exits.extend(phase_exits);
             exits.extend(
@@ -193,6 +194,7 @@ impl Program {
                     .map(|rule| Step::Exit(scene, None, rule)),
             );
             scenes.push(ScenePlan {
+                label: definition.label,
                 resources: definition.resources,
                 first_phase: definition.first_phase,
                 signatures: Vec::new(),
@@ -231,10 +233,12 @@ impl Program {
 
         let mut slots = Vec::new();
         let mut systems = Vec::new();
-        let mut streams = RuleStreams::default();
-        for (index, mut step) in main.into_iter().enumerate() {
+        let mut rule_names = RuleNames::default();
+        for (index, step) in main.into_iter().enumerate() {
             let id = u32::try_from(index).map_err(|_| Error::invalid("scene", "too many rules"))?;
-            step.identify(id, &mut streams)?;
+            if let Some(scene) = step.scene() {
+                step.register_names(&mut rule_names, RuleOrigin::Scene(scenes[scene].label, id))?;
+            }
             let writes_structure = matches!(step, Step::Manual | Step::Install)
                 || step
                     .signatures()
@@ -293,7 +297,7 @@ impl Program {
                 slots,
                 scenes,
                 columns,
-                streams,
+                rule_names,
                 rate,
             },
             registry,
@@ -309,12 +313,7 @@ impl Program {
         }
     }
 
-    pub(crate) fn prepare_manual<O>(
-        &self,
-        invocation: &mut Invocation<O>,
-        state: &State,
-    ) -> Result {
-        self.streams.prepare_manual(invocation)?;
+    pub(crate) fn prepare_manual<O>(&self, invocation: &Invocation<O>, state: &State) -> Result {
         let signature = &invocation.signature;
         let rule = invocation.name;
         signature.validate(
@@ -372,28 +371,24 @@ impl Program {
             number: TickNumber(call.tick),
             rate: self.rate,
             scene_entered: TickNumber(call.candidate.state.scene_entered),
-            phase_time: Seconds::ZERO,
-        };
-        let tick = Tick {
-            phase_time: if call.candidate.state.phase.is_some() {
-                call.candidate
-                    .state
-                    .phase_elapsed(call.tick, self.rate)
-                    .seconds()
-            } else {
-                Seconds::ZERO
-            },
-            ..tick
+            phase_time: call.candidate.state.phase_clock.time(self.rate),
         };
         let entities = std::mem::take(&mut call.candidate.entities);
         let mut scratch = call.slot.scratch.lock().expect("rule scratch");
         scratch.reset();
+        let run =
+            if call.world.system_id().0 != 0 && invocation.signature.random_parameter().is_some() {
+                call.candidate.state.count_random_run(invocation.name)
+            } else {
+                0
+            };
         let parts = ReadContextParts {
             entities: &entities,
             executor: call.executor,
             tick,
             seed: call.candidate.state.seed,
             stream: invocation.stream,
+            run,
             stage,
             names: &self.names,
         };
@@ -499,10 +494,10 @@ impl Program {
                 for resource in &self.scenes[*index].resources {
                     candidate.state.resources.install(resource.as_ref(), true);
                 }
-                set_phase(candidate, None, call.tick);
+                set_phase(candidate, None);
             }
             Some(Transition::Phase(phase)) => {
-                set_phase(candidate, Some(*phase), call.tick);
+                set_phase(candidate, Some(*phase));
             }
             None => {}
         }
@@ -520,8 +515,20 @@ impl Program {
         match step {
             Step::Manual => {
                 let mut operation = authority.operation.lock().expect("operation");
-                if let Operation::Manual(invocation) = &mut *operation {
-                    self.invoke(invocation, Landing::Rules, call)?;
+                match &mut *operation {
+                    Operation::Tick => {
+                        let state = &mut call.candidate.state;
+                        for (_, count) in &mut state.random_runs {
+                            *count = 0;
+                        }
+                        if phase.is_some() {
+                            state.phase_clock.advance();
+                        }
+                    }
+                    Operation::Manual(invocation) => {
+                        self.invoke(invocation, Landing::Rules, call)?;
+                    }
+                    _ => {}
                 }
             }
             Step::Main(when_scene, when_phase, rule)
@@ -534,10 +541,7 @@ impl Program {
                     let elapsed = if rule.cadence.is_none() {
                         0
                     } else if when_phase.is_some() {
-                        call.candidate
-                            .state
-                            .phase_elapsed(call.tick, self.rate)
-                            .whole_ticks()
+                        call.candidate.state.phase_clock.elapsed
                     } else {
                         call.tick.saturating_sub(call.candidate.state.scene_entered)
                     };
@@ -550,8 +554,7 @@ impl Program {
                 if matches!(
                     *authority.operation.lock().expect("operation"),
                     Operation::Tick
-                ) && let Some(end) = call.candidate.state.phase_end
-                    && end <= call.tick
+                ) && call.candidate.state.phase_clock.remaining == Some(0)
                 {
                     let mut requests = call.candidate.requests.lock().expect("requests");
                     if requests.next.is_none()
@@ -567,15 +570,14 @@ impl Program {
                 if matches!(
                     *authority.operation.lock().expect("operation"),
                     Operation::Tick
-                ) && !call.candidate.state.phase_expired
-                    && call
-                        .candidate
-                        .state
-                        .phase_end
-                        .is_some_and(|end| end <= call.tick)
+                ) && call.candidate.state.phase_clock.remaining == Some(0)
                 {
-                    let elapsed = call.candidate.state.phase_elapsed(call.tick, self.rate);
-                    self.rule(rule, Landing::Rules, elapsed.whole_ticks(), call)?;
+                    self.rule(
+                        rule,
+                        Landing::Rules,
+                        call.candidate.state.phase_clock.elapsed,
+                        call,
+                    )?;
                 }
             }
             Step::Choose => {
@@ -589,14 +591,9 @@ impl Program {
                     Operation::Tick | Operation::Manual(_) => requests.next.take(),
                 };
                 if matches!(*operation, Operation::Tick)
-                    && call
-                        .candidate
-                        .state
-                        .phase_end
-                        .is_some_and(|end| end <= call.tick)
+                    && call.candidate.state.phase_clock.remaining == Some(0)
                 {
-                    call.candidate.state.phase_expired = true;
-                    call.candidate.state.phase_end = None;
+                    call.candidate.state.phase_clock.remaining = None;
                 }
             }
             Step::Exit(when_scene, when_phase, rule) if *when_scene == scene => {
@@ -636,15 +633,11 @@ impl Program {
                     .resume
                     .take();
                 if let Some((phase, clock)) = resume {
-                    set_phase(call.candidate, Some(phase), call.tick);
+                    set_phase(call.candidate, Some(phase));
                     call.candidate.resumed = true;
-                    call.candidate.state.phase_offset = clock.elapsed;
-                    call.candidate.state.phase_end = clock
-                        .remaining
-                        .map(|left| call.tick.saturating_add(left.ticks_ceil(self.rate)));
-                    call.candidate.state.phase_expired = clock.expired;
+                    call.candidate.state.phase_clock = clock.ticks(self.rate);
                 } else {
-                    set_phase(call.candidate, self.scenes[scene].first_phase, call.tick);
+                    set_phase(call.candidate, self.scenes[scene].first_phase);
                 }
             }
             Step::EnterPhase(when_scene, when_phase, rule)
@@ -659,8 +652,7 @@ impl Program {
                     Duration::Fixed(seconds) => *seconds,
                     Duration::Read(read) => self.invoke(read, Landing::EnteringPhase, call)?,
                 };
-                call.candidate.state.phase_end =
-                    Some(call.tick.saturating_add(time.ticks(self.rate)));
+                call.candidate.state.phase_clock.remaining = Some(time.ticks(self.rate).max(1));
             }
             Step::Finish => {
                 let held = call
@@ -743,12 +735,9 @@ fn dispatch(
     )
 }
 
-fn set_phase(candidate: &mut Candidate, phase: Option<usize>, tick: u64) {
+fn set_phase(candidate: &mut Candidate, phase: Option<usize>) {
     candidate.state.phase = phase;
-    candidate.state.phase_entered = tick;
-    candidate.state.phase_end = None;
-    candidate.state.phase_offset = PhaseSpan::default();
-    candidate.state.phase_expired = false;
+    candidate.state.phase_clock = PhaseTicks::default();
 }
 
 fn rule_failure(name: &str, tick: u64, error: &Error) -> Error {

@@ -777,3 +777,19 @@
 - 2026-11-28 Notes for builders, kept out of the plan file. WP1.3(c) and (i) are where the `DefaultHasher`
   fallback in `rule.rs` shows. For WP2.10, one way to ask the compiler is a copy of the package with one
   more root item named `rules`, which compiles only where the name was free.
+
+### WP1 clock, random and parallel review fixes
+
+- A phase owns two counts, elapsed and optionally remaining ticks. The new phase's length is resolved
+  after the former phase and scene hooks and before its own enter functions. A captured clock carries
+  the counts directly, including a zero awaiting expiry. A clock made by hand converts its durations to
+  ticks at resume. Time reads round once, and phase cadence follows the elapsed count.
+- A random key uses the named function's qualified path, the seed, tick and count of its prior runs in
+  that tick. The registered world journals that count. Harness calls use the first-run draw and keep a
+  separate note solely for rejecting two distinct functions with the same path. `T0204` refuses closures
+  and pointers that take `Random`. `T0206` names both registrations of a duplicated random function path.
+- The SDK's parallel query traversal uses bounded, reusable native worker mailboxes. Small queries,
+  contended calls and the browser use caller traversal. Native workers receive disjoint stack-borrowed
+  chunks and finish before the query releases its loans, including on panic. This narrow unsafe
+  transfer avoids the recurring queue allocation observed with Rayon submission. Existing core callers
+  keep their executor behavior. [Mac proofs](../../../.orchestrate/evidence/GAME-SDK/WP1/)

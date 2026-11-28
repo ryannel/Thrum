@@ -17,6 +17,9 @@ use std::{
     },
 };
 
+#[cfg(not(target_arch = "wasm32"))]
+mod scoped_workers;
+
 static NEXT_RUNTIME: AtomicU64 = AtomicU64::new(1);
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -158,6 +161,21 @@ impl Executor {
             return;
         }
         jobs.iter_mut().for_each(run);
+    }
+
+    /// Execute borrowed, independent query rows with reusable native worker
+    /// mailboxes. Small, contended and browser calls run on the caller.
+    #[cfg_attr(
+        target_arch = "wasm32",
+        expect(clippy::unused_self, reason = "browser query rows run on the caller")
+    )]
+    pub fn for_each_query_row<T: Send>(self, rows: &mut [T], run: impl Fn(&mut T) + Send + Sync) {
+        #[cfg(not(target_arch = "wasm32"))]
+        if self.mode() != ExecutionMode::Serial {
+            scoped_workers::run(rows, run);
+            return;
+        }
+        rows.iter_mut().for_each(run);
     }
 }
 

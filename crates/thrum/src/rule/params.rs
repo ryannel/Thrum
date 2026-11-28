@@ -68,6 +68,7 @@ pub struct ReadContext<'a> {
     pub(crate) stage: crate::scene::Landing,
     pub(crate) names: &'a std::sync::Arc<crate::scene::Names>,
     pub(crate) stream: u64,
+    pub(crate) run: u64,
 }
 
 /// The view used to submit a rule's changes.
@@ -379,9 +380,9 @@ impl ReadOnly for Tick {}
 
 /// A reproducible stream of draws for the current rule and tick.
 ///
-/// Pass the rule's named function or closure directly. Rust function pointers
-/// and erased callables lack the original rule identity and are refused when
-/// they take this parameter.
+/// Pass a named function directly. Closures and function pointers that take
+/// this parameter are refused with T0204. Distinct named functions sharing a
+/// qualified path are refused with T0206.
 /// ```
 /// use thrum::{Num, Random};
 /// fn roll(mut random: Random) -> Num { random.between(Num::ZERO, Num::ONE) }
@@ -390,6 +391,7 @@ pub struct Random {
     seed: u64,
     tick: u64,
     stream: u64,
+    run: u64,
     draw: u128,
     entity: u128,
 }
@@ -397,7 +399,9 @@ pub struct Random {
 impl Random {
     fn word(&mut self) -> u64 {
         let key = self.draw ^ self.entity.rotate_left(64);
-        let value = thrum_core::profile::random_u64(self.seed ^ self.stream, self.tick, key, 0);
+        let seed = self.seed ^ self.stream ^ self.run.wrapping_mul(0x9e37_79b9_7f4a_7c15);
+        let stream = u32::try_from(self.stream >> 32).expect("high word");
+        let value = thrum_core::profile::random_u64(seed, self.tick, key, stream);
         self.draw = self.draw.wrapping_add(1);
         value
     }
@@ -453,6 +457,7 @@ impl Random {
             seed: self.seed,
             tick: self.tick,
             stream: self.stream,
+            run: self.run,
             draw: 0,
             entity: entity.0,
         }
@@ -475,6 +480,7 @@ unsafe impl Param for Random {
             seed: context.seed,
             tick: context.tick.number().0,
             stream: context.stream,
+            run: context.run,
             draw: 0,
             entity: 0,
         }

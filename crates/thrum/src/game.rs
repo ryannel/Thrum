@@ -13,8 +13,8 @@ use crate::{
     Component, Data, Entities, Entity, Error, Event, Filter, PhaseType, ResMut, Resource, Result,
     Scene, SceneType, Seconds, Spawn,
     rule::{
-        Invocation, ReadContextParts, RuleFunction, access::Column, params::Context,
-        query::matching,
+        Invocation, ReadContextParts, RuleFunction, RuleNames, RuleOrigin, access::Column,
+        params::Context, query::matching,
     },
     runtime::{
         Authority, Candidate, EventBuffers, Operation, State, Transition, ValueRef,
@@ -176,6 +176,7 @@ impl Game {
         program.bind(&runtime);
         let mut state = State {
             seed,
+            random_runs: program.rule_names.run_counters(),
             ..State::default()
         };
         for resource in resources {
@@ -201,6 +202,7 @@ impl Game {
             authority,
             candidate,
             history,
+            manual_names: RuleNames::default(),
         })
     }
 }
@@ -322,6 +324,7 @@ pub struct TestGame {
     authority: Authority,
     candidate: Candidate,
     history: RuntimeHistory<State, ()>,
+    manual_names: RuleNames,
 }
 
 impl TestGame {
@@ -626,15 +629,25 @@ impl TestGame {
     /// result, or proposes an invalid edit.
     ///
     /// For a rule that takes [`crate::Random`], pass the named function
-    /// directly or pass a closure. Function pointers erase the rule's identity.
+    /// directly. Each call draws as that function's first run at this tick.
     ///
     /// # Panics
     /// Only if an internal harness invariant is broken.
     pub fn run<M, O: Send + 'static>(&mut self, function: impl RuleFunction<M, O>) -> Result<O> {
         let mut invocation = function.compile();
+        let random_identity = invocation.random_identity()?;
+        if let Some(identity) = random_identity {
+            self.authority.program.rule_names.check(
+                invocation.name,
+                identity,
+                RuleOrigin::Manual,
+            )?;
+            self.manual_names
+                .check(invocation.name, identity, RuleOrigin::Manual)?;
+        }
         self.authority
             .program
-            .prepare_manual(&mut invocation, &self.authority.state)?;
+            .prepare_manual(&invocation, &self.authority.state)?;
         let output = Arc::new(Mutex::new(None));
         let result = Arc::clone(&output);
         let name = invocation.name;
@@ -657,6 +670,10 @@ impl TestGame {
             identity,
             invoke: Box::new(invoke),
         }))?;
+        if let Some(identity) = random_identity {
+            self.manual_names
+                .remember(name, identity, RuleOrigin::Manual);
+        }
         Ok(output
             .lock()
             .expect("manual result")

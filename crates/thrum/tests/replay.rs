@@ -235,75 +235,203 @@ fn rule_draw(mut random: Random) -> u32 {
     random.below(u32::MAX)
 }
 
+#[derive(Resource, Default)]
+struct LootLog {
+    loot: [u32; 3],
+    weather: [u32; 3],
+    first: [u32; 3],
+    condition: bool,
+}
+
+fn three(mut draw: Random) -> [u32; 3] {
+    [
+        draw.below(u32::MAX),
+        draw.below(u32::MAX),
+        draw.below(u32::MAX),
+    ]
+}
+
+fn loot(draw: Random, mut log: ResMut<'_, LootLog>) {
+    log.loot = three(draw);
+}
+
+fn weather(draw: Random, mut log: ResMut<'_, LootLog>) {
+    log.weather = three(draw);
+}
+
+fn omen(mut draw: Random) -> u32 {
+    draw.below(u32::MAX)
+}
+
 #[test]
-fn manual_draws_are_independent_of_calls_on_a_rewound_tick() -> Result {
-    let loot = |mut random: Random| random.below(u32::MAX);
-    let weather = |mut random: Random| random.below(u32::MAX);
+fn loot_is_build_stable_and_has_one_stream_through_every_route() -> Result {
+    const FIRST_LOOT: [u32; 3] = [3_485_800_425, 1_699_994_307, 565_622_368];
+
+    fn alone(scene: &mut Scene) {
+        scene.rules(loot);
+    }
+    fn tuple(scene: &mut Scene) {
+        scene.rules((weather, loot));
+    }
+    fn phase(scene: &mut Scene) {
+        scene.phases(Stage::A);
+        scene.phase(Stage::A).rules(loot);
+    }
+    fn cadence(scene: &mut Scene) {
+        scene.rules(loot.every(seconds(1)));
+    }
+    fn condition(scene: &mut Scene) {
+        scene.rules(loot.when(|| true));
+    }
+    fn expiry(scene: &mut Scene) {
+        scene.phases(Stage::A);
+        scene.phase(Stage::A).lasts(seconds(1)).then_run(loot);
+    }
+    fn request(mut scenes: Scenes<'_>) {
+        assert!(scenes.go_to(Over(0)));
+    }
+    fn arriving(scene: &mut Scene<Over>) {
+        scene.on_enter(loot);
+    }
+
+    let setup = || {
+        Game::new("random routes")
+            .tick_rate(1)
+            .resource(LootLog::default())
+    };
+    let descriptions: [fn(&mut Scene); 6] = [alone, tuple, phase, cadence, condition, expiry];
+    for describe in descriptions {
+        let mut game = setup().scene(describe).test_setup().seed(17).start()?;
+        game.step()?;
+        assert_eq!(game.resource::<LootLog>()?.loot, FIRST_LOOT);
+    }
+    let mut landing = setup()
+        .scene(|scene: &mut Scene| scene.rules(request))
+        .scene(arriving)
+        .test_setup()
+        .seed(17)
+        .start()?;
+    landing.step()?;
+    assert_eq!(landing.resource::<LootLog>()?.loot, FIRST_LOOT);
+
+    let mut manual = setup()
+        .scene(|_: &mut Scene| {})
+        .test_setup()
+        .seed(17)
+        .start()?;
+    manual.step()?;
+    manual.run(loot)?;
+    assert_eq!(manual.resource::<LootLog>()?.loot, FIRST_LOOT);
+    let digest = manual.digest();
+    manual.run(loot)?;
+    assert_eq!(manual.resource::<LootLog>()?.loot, FIRST_LOOT);
+    assert_eq!(manual.digest(), digest);
+    Ok(())
+}
+
+#[test]
+fn repeated_runs_count_inside_the_tick_and_replay_at_another_tick_and_seed() -> Result {
+    fn capture(mut log: ResMut<'_, LootLog>) {
+        log.first = log.loot;
+    }
+    let setup = |seed| {
+        Game::new("random count")
+            .resource(LootLog::default())
+            .scene(|scene: &mut Scene| scene.rules((loot, capture, loot, weather)))
+            .test_setup()
+            .seed(seed)
+            .start()
+    };
+
+    let mut first = setup(17)?;
+    let mut rebuilt = setup(17)?;
+    let mut other_seed = setup(18)?;
+    first.step()?;
+    rebuilt.step()?;
+    other_seed.step()?;
+    let expected = first.resource::<LootLog>()?;
+    assert_ne!(expected.first, expected.loot);
+    assert_ne!(expected.first, expected.weather);
+    assert_ne!(expected.loot, expected.weather);
+    assert_eq!(first.digest(), rebuilt.digest());
+    assert_ne!(expected.first, other_seed.resource::<LootLog>()?.first);
+    assert_ne!(expected.weather, other_seed.resource::<LootLog>()?.weather);
+    first.step()?;
+    let replay = first.digest();
+    assert_ne!(expected.first, first.resource::<LootLog>()?.first);
+    assert_ne!(expected.weather, first.resource::<LootLog>()?.weather);
+    first.rewind(1)?;
+    assert_eq!(first.resource::<LootLog>()?, expected);
+    first.step()?;
+    assert_eq!(first.digest(), replay);
+
+    // The manual read is the first run of loot even after two scheduled runs.
+    first.run(loot)?;
+    let after_read = first.resource::<LootLog>()?;
+    assert_eq!(after_read.loot, after_read.first);
+    first.step()?;
+    rebuilt.step_ticks(2)?;
+    assert_eq!(first.digest(), rebuilt.digest());
+    Ok(())
+}
+
+#[test]
+fn a_read_on_a_discarded_tick_leaves_the_next_draw_unchanged() -> Result {
     let setup = || {
         Game::new("manual streams")
+            .resource(LootLog::default())
             .scene(|_: &mut Scene| {})
             .test_setup()
             .seed(17)
             .start()
     };
     let mut first = setup()?;
-    let mut second = setup()?;
-    let digest = second.digest();
-    let expected = first.run(loot)?;
-    assert_ne!(expected, first.run(weather)?);
-
-    second.step()?;
-    second.run(weather)?;
-    second.rewind(1)?;
-    assert_eq!(digest, second.digest());
-    assert_eq!(expected, second.run(loot)?);
-    assert_eq!(first.run(weather)?, second.run(weather)?);
+    let mut rewound = setup()?;
+    let start = rewound.digest();
+    first.run(loot)?;
+    rewound.step()?;
+    rewound.run(omen)?;
+    rewound.rewind(1)?;
+    assert_eq!(rewound.digest(), start);
+    rewound.run(loot)?;
+    assert_eq!(rewound.resource::<LootLog>()?, first.resource::<LootLog>()?);
+    assert_eq!(rewound.digest(), first.digest());
     Ok(())
 }
 
 #[test]
-fn scheduled_and_manual_calls_share_each_concrete_rule_stream() -> Result {
-    fn record_weather(mut random: Random, mut draws: ResMut<'_, Draws>) {
-        draws.condition = random.below(u32::MAX);
+fn random_conditions_and_lengths_share_their_harness_draws() -> Result {
+    fn condition(mut random: Random) -> bool {
+        random.below(u32::MAX).is_multiple_of(2)
     }
-    let limit = std::hint::black_box(u32::MAX);
-    let record_loot = move |mut random: Random, mut draws: ResMut<'_, Draws>| {
-        draws.rule = random.below(limit);
-    };
-    let mut game = Game::new("scheduled streams")
-        .resource(Draws::default())
-        .scene(move |scene: &mut Scene| scene.rules((record_weather, record_loot)))
-        .test()?;
+    fn duration(mut random: Random) -> Seconds {
+        seconds(i32::try_from(random.below(10) + 1).unwrap())
+    }
+    fn mark(mut log: ResMut<'_, LootLog>) {
+        log.condition = true;
+    }
+    let mut game = Game::new("read-only random")
+        .tick_rate(1)
+        .resource(LootLog::default())
+        .scene(|scene: &mut Scene| {
+            scene.phases(Stage::A);
+            scene
+                .phase(Stage::A)
+                .lasts(duration)
+                .rules(mark.when(condition));
+        })
+        .test_setup()
+        .seed(17)
+        .start()?;
+    let clock = game.run(|phase: Phase<'_, Stage>| phase.clock())?;
+    assert_eq!(clock.left(), Some(game.run(duration)?));
     game.step()?;
-    let scheduled = game.resource::<Draws>()?;
-    assert_ne!(scheduled.condition, scheduled.rule);
-    let digest = game.digest();
-    game.run(record_loot)?;
-    game.run(record_weather)?;
-    assert_eq!(game.digest(), digest);
-    game.rewind(1)?;
-    game.step()?;
-    assert_eq!(game.digest(), digest);
+    assert_eq!(game.resource::<LootLog>()?.condition, game.run(condition)?);
     Ok(())
 }
 
 #[test]
-fn random_requires_a_concrete_callable_in_debug_and_release() -> Result {
-    fn loot(mut random: Random) -> [u32; 3] {
-        [
-            random.below(u32::MAX),
-            random.below(u32::MAX),
-            random.below(u32::MAX),
-        ]
-    }
-    fn weather(mut random: Random) -> [u32; 3] {
-        [
-            random.below(u32::MAX),
-            random.below(u32::MAX),
-            random.below(u32::MAX),
-        ]
-    }
-
+fn random_refuses_closures_and_pointers_before_they_run() -> Result {
     #[derive(Params)]
     struct Bundle<'t> {
         _score: Res<'t, Counter>,
@@ -312,35 +440,105 @@ fn random_requires_a_concrete_callable_in_debug_and_release() -> Result {
     fn bundled(mut bundle: Bundle<'_>) {
         bundle.random.below(10);
     }
+    fn pointer(_: Random) {
+        panic!("erased pointer must never run");
+    }
+    let table: [fn(Random); 1] = [pointer];
+    let closure = |_: Random| -> Result { panic!("random closure must never run") };
+
+    for startup in [
+        Game::new("closure")
+            .scene(move |s: &mut Scene| s.rules(closure))
+            .test(),
+        Game::new("pointer")
+            .scene(move |s: &mut Scene| s.rules(table[0]))
+            .test(),
+    ] {
+        let Err(error) = startup else {
+            panic!("startup admitted an unnamed Random callable");
+        };
+        assert_eq!(error.code(), "T0204");
+        assert!(error.to_string().contains("Write a named function"));
+    }
 
     let mut game = Game::new("manual streams")
+        .resource(Counter::default())
         .scene(|_: &mut Scene| {})
         .test()?;
     let start = game.digest();
-    assert_ne!(game.run(loot)?, game.run(weather)?);
-
-    // Optimized builds may fold these two bodies into the same address.
-    let table: [fn(Random) -> [u32; 3]; 2] = [loot, weather];
-    for callback in table {
-        let error = game.run(callback).unwrap_err();
+    let callback: fn(Bundle<'_>) = bundled;
+    for error in [
+        game.run(closure).unwrap_err(),
+        game.run(table[0]).unwrap_err(),
+        game.run(callback).unwrap_err(),
+    ] {
         assert_eq!(error.code(), "T0204");
-        assert!(error.to_string().contains("Pass a named function directly"));
-        assert_eq!(game.digest(), start);
+        assert!(error.to_string().contains("Write a named function"));
+    }
+    assert_eq!(game.digest(), start);
+
+    let ordinary = |mut value: ResMut<'_, Counter>| value.value += 1;
+    let plain: fn(ResMut<'_, Counter>) = |mut value| value.value += 2;
+    let mut control = Game::new("plain callables")
+        .resource(Counter::default())
+        .scene(move |s: &mut Scene| s.rules((ordinary, plain)))
+        .test()?;
+    control.step()?;
+    assert_eq!(control.resource::<Counter>()?.value, 3);
+    control.run(ordinary)?;
+    control.run(plain)?;
+    assert_eq!(control.resource::<Counter>()?.value, 6);
+    Ok(())
+}
+
+#[test]
+fn same_qualified_random_names_are_refused_at_startup_and_in_the_harness() -> Result {
+    let first = {
+        fn same(mut random: Random) {
+            random.below(10);
+        }
+        same
+    };
+    let second = {
+        fn same(mut random: Random) {
+            random.below(11);
+        }
+        same
+    };
+    let startup = Game::new("two scenes")
+        .scene(move |s: &mut Scene| s.rules(first))
+        .scene(move |s: &mut Scene<Over>| s.rules(second))
+        .test();
+    let Err(error) = startup else {
+        panic!("allowed the same Random path twice");
+    };
+    assert_eq!(error.code(), "T0206");
+    assert!(error.to_string().contains("::same"));
+    assert!(error.to_string().contains("another name"));
+
+    let mut scheduled = Game::new("one scheduled")
+        .scene(move |s: &mut Scene| s.rules(first))
+        .test()?;
+    let mut manual = Game::new("two manual").scene(|_: &mut Scene| {}).test()?;
+    manual.run(first)?;
+    for game in [&mut scheduled, &mut manual] {
+        let digest = game.digest();
+        assert_eq!(game.run(second).unwrap_err().code(), "T0206");
+        assert_eq!(game.digest(), digest);
     }
 
-    let callback: fn(Bundle<'_>) = bundled;
-    let scheduled = Game::new("scheduled streams")
-        .resource(Counter::default())
-        .scene(move |scene: &mut Scene| scene.rules(callback))
-        .test();
-    let Err(error) = scheduled else {
-        panic!("startup accepted an erased random rule");
+    let plain_first = {
+        fn same() {}
+        same
     };
-    assert_eq!(error.code(), "T0204");
-    assert!(error.to_string().contains(".random"));
-
-    let plain: fn() -> u32 = || 7;
-    assert_eq!(game.run(plain)?, 7);
+    let plain_second = {
+        fn same() {}
+        same
+    };
+    let mut control = Game::new("same plain names")
+        .scene(move |s: &mut Scene| s.rules((plain_first, plain_second)))
+        .test()?;
+    control.step()?;
     Ok(())
 }
 

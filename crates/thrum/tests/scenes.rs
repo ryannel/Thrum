@@ -342,9 +342,201 @@ fn resume_keeps_fixed_length_and_does_not_call_enter_or_expiry_again() -> Result
     );
     assert_eq!(at_expiry.expired, 1);
     at_deadline.go_to(())?;
-    at_deadline.step_ticks(2)?;
+    let due = at_deadline.run(|phase: Phase<'_, Stage>| phase.clock())?;
+    assert_eq!(due.left(), Some(Seconds::ZERO));
+    assert_eq!(at_deadline.resource::<ClockLog>()?.expired, 1);
+    let mut pending = at_deadline.resource::<ClockLog>()?;
+    pending.clock = Some(due);
+    at_deadline.set_resource(pending)?;
+    at_deadline.go_to(())?;
+    at_deadline.step()?;
+    assert_eq!(at_deadline.resource::<ClockLog>()?.expired, 2);
+    let consumed = at_deadline.run(|phase: Phase<'_, Stage>| phase.clock())?;
+    assert_eq!(consumed.left(), None);
+    let mut after = at_deadline.resource::<ClockLog>()?;
+    after.clock = Some(consumed);
+    at_deadline.set_resource(after)?;
+    at_deadline.go_to(())?;
+    at_deadline.step_ticks(10)?;
     assert_eq!(at_deadline.resource::<ClockLog>()?.expired, 2);
 
+    Ok(())
+}
+
+#[derive(Resource, Default)]
+struct EntryClock {
+    saved: Option<PhaseClock>,
+    length: i32,
+    executions: u32,
+}
+
+fn leave_wave(mut log: ResMut<'_, EntryClock>) {
+    log.length = 2;
+}
+
+fn install_wave(mut phase: PhaseMut<'_, Stage>, mut log: ResMut<'_, EntryClock>) {
+    if let Some(clock) = log.saved {
+        assert!(phase.resume(Stage::A, clock));
+    } else {
+        log.length = 2;
+    }
+}
+
+#[expect(
+    clippy::needless_pass_by_value,
+    reason = "the SDK lends Res to a length function by value"
+)]
+fn duration(log: Res<'_, EntryClock>) -> Seconds {
+    assert_eq!(log.length, 2);
+    seconds(log.length)
+}
+
+#[expect(
+    clippy::needless_pass_by_value,
+    reason = "the SDK lends Phase by value"
+)]
+fn capture_entry(phase: Phase<'_, Stage>, mut log: ResMut<'_, EntryClock>) {
+    assert_eq!(phase.time(), Seconds::ZERO);
+    assert_eq!(phase.clock().left(), Some(seconds(2)));
+    log.saved = Some(phase.clock());
+    log.length = 20;
+}
+
+fn expired(mut log: ResMut<'_, EntryClock>) {
+    log.executions += 1;
+}
+
+#[test]
+fn phase_entry_captures_both_forms_of_deadline_and_restores_both_expiries() -> Result {
+    for computed in [false, true] {
+        for transition in [false, true] {
+            let setup = || {
+                Game::new("clock at phase entry")
+                    .tick_rate(1)
+                    .resource(EntryClock::default())
+                    .scene(move |scene: &mut Scene| {
+                        scene.on_enter(install_wave);
+                        scene.phases(Stage::A);
+                        scene.phase(Stage::B);
+                        let wave = scene.phase(Stage::A).on_enter(capture_entry);
+                        let deadline = if computed {
+                            wave.lasts(duration)
+                        } else {
+                            wave.lasts(seconds(2))
+                        };
+                        if transition {
+                            deadline.then(Stage::B);
+                        } else {
+                            deadline.then_run(expired);
+                        }
+                    })
+                    .test()
+            };
+            let mut straight = setup()?;
+            let mut resumed = setup()?;
+            let saved = straight.resource::<EntryClock>()?.saved.unwrap();
+            assert_eq!(
+                straight.run(|phase: Phase<'_, Stage>| phase.clock())?,
+                saved
+            );
+            resumed.go_to(())?;
+            assert_eq!(resumed.run(|phase: Phase<'_, Stage>| phase.clock())?, saved);
+            for tick in [1, 2] {
+                straight.step()?;
+                resumed.step()?;
+                let expected = if tick == 2 && transition {
+                    Stage::B
+                } else {
+                    Stage::A
+                };
+                assert_eq!(straight.phase::<Stage>()?, expected);
+                assert_eq!(resumed.phase::<Stage>()?, expected);
+                let times = u32::from(tick == 2 && !transition);
+                assert_eq!(straight.resource::<EntryClock>()?.executions, times);
+                assert_eq!(resumed.resource::<EntryClock>()?.executions, times);
+            }
+            let digest = resumed.digest();
+            resumed.rewind(1)?;
+            resumed.step()?;
+            assert_eq!(resumed.digest(), digest);
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn computed_length_reads_the_old_phase_exit_before_the_new_phase_enter() -> Result {
+    let mut game = Game::new("phase hook order")
+        .tick_rate(1)
+        .resource(EntryClock {
+            length: 7,
+            ..EntryClock::default()
+        })
+        .scene(|scene: &mut Scene| {
+            scene.phases(Stage::B);
+            scene.phase(Stage::B).on_exit(leave_wave);
+            scene
+                .phase(Stage::A)
+                .on_enter(capture_entry)
+                .lasts(duration)
+                .then_run(expired);
+        })
+        .test()?;
+    game.go_to_phase(Stage::A)?;
+    assert_eq!(game.resource::<EntryClock>()?.length, 20);
+    game.step()?;
+    assert_eq!(game.resource::<EntryClock>()?.executions, 0);
+    game.step()?;
+    assert_eq!(game.resource::<EntryClock>()?.executions, 1);
+    Ok(())
+}
+
+#[test]
+fn due_transition_survives_multiple_entries_before_the_first_tick() -> Result {
+    #[expect(
+        clippy::needless_pass_by_value,
+        reason = "the SDK lends Phase by value"
+    )]
+    fn read_clock(phase: Phase<'_, Stage>) -> PhaseClock {
+        phase.clock()
+    }
+    let mut game = Game::new("pending deadline")
+        .tick_rate(1)
+        .resource(EntryClock::default())
+        .scene(|scene: &mut Scene| {
+            scene.on_enter(install_wave);
+            scene.phases(Stage::A);
+            scene.phase(Stage::B);
+            scene
+                .phase(Stage::A)
+                .lasts(seconds(1))
+                .rules(|phase: Phase<'_, Stage>, mut log: ResMut<'_, EntryClock>| {
+                    log.saved = Some(phase.clock());
+                })
+                .then(Stage::B);
+        })
+        .test()?;
+    game.step()?;
+    assert_eq!(game.phase::<Stage>()?, Stage::B);
+    assert_eq!(
+        game.resource::<EntryClock>()?.saved.unwrap().left(),
+        Some(Seconds::ZERO)
+    );
+    for _ in 0..3 {
+        game.go_to(())?;
+        assert_eq!(game.phase::<Stage>()?, Stage::A);
+        let pending = game.run(read_clock)?;
+        assert_eq!(pending.left(), Some(Seconds::ZERO));
+        let mut log = game.resource::<EntryClock>()?;
+        log.saved = Some(pending);
+        game.set_resource(log)?;
+    }
+    game.step()?;
+    assert_eq!(game.phase::<Stage>()?, Stage::B);
+    let digest = game.digest();
+    game.rewind(1)?;
+    game.step()?;
+    assert_eq!(game.digest(), digest);
     Ok(())
 }
 
@@ -358,7 +550,7 @@ fn resumed_phase_keeps_elapsed_precision_cadence_and_deadline() -> Result {
         expired: u32,
     }
 
-    fn play(scene: &mut Scene) {
+    fn play(scene: &mut Scene, cadence: Seconds, length: Seconds) {
         scene.phases(Stage::A);
         scene.on_enter(
             |mut phase: PhaseMut<'_, Stage>, progress: Res<'_, Progress>| {
@@ -375,18 +567,18 @@ fn resumed_phase_keeps_elapsed_precision_cadence_and_deadline() -> Result {
                     progress.threshold = phase.time() >= seconds(1);
                     progress.saved = Some(phase.clock());
                 },
-                (|mut progress: ResMut<'_, Progress>| progress.cadence += 1).every(seconds(1)),
+                (|mut progress: ResMut<'_, Progress>| progress.cadence += 1).every(cadence),
             ))
-            .lasts(seconds(2))
+            .lasts(length)
             .then_run(|mut progress: ResMut<'_, Progress>| progress.expired += 1);
     }
 
-    for (rate, restore_at) in [(5, 4), (60, 1)] {
+    for (rate, restore_at, cadence, length) in [(1, 4, 5, 10), (60, 1, 1, 1)] {
         let setup = || {
             Game::new("resume time and cadence")
                 .tick_rate(rate)
                 .resource(Progress::default())
-                .scene(play)
+                .scene(move |scene: &mut Scene| play(scene, seconds(cadence), seconds(length)))
                 .test()
         };
         let mut uninterrupted = setup()?;
@@ -395,20 +587,154 @@ fn resumed_phase_keeps_elapsed_precision_cadence_and_deadline() -> Result {
         resumed.step_ticks(restore_at)?;
         resumed.go_to(())?;
 
-        let interval = u64::from(rate);
-        for tick in (restore_at + 1)..=(2 * interval) {
+        let ticks_per_second = u64::from(rate);
+        let interval = ticks_per_second * u64::try_from(cadence).unwrap();
+        let deadline = ticks_per_second * u64::try_from(length).unwrap();
+        for tick in (restore_at + 1)..=(2 * ticks_per_second).max(deadline) {
             uninterrupted.step()?;
             resumed.step()?;
 
             let progress = resumed.resource::<Progress>()?;
             assert_eq!(progress, uninterrupted.resource::<Progress>()?);
-            assert_eq!(progress.threshold, tick >= interval);
+            assert_eq!(progress.threshold, tick >= ticks_per_second);
             assert_eq!(progress.cadence, u32::try_from(tick / interval).unwrap());
-            assert_eq!(progress.expired, u32::from(tick == 2 * interval));
+            assert_eq!(progress.expired, u32::from(tick >= deadline));
         }
         let digest = resumed.digest();
         resumed.rewind(1)?;
         resumed.step()?;
+        assert_eq!(resumed.digest(), digest);
+    }
+    Ok(())
+}
+
+#[test]
+fn every_phase_clock_capture_route_continues_for_120_ticks() -> Result {
+    #[derive(Clone, Copy, PartialEq, Eq)]
+    enum Capture {
+        Entry,
+        Rule,
+        Harness,
+        Authored,
+    }
+
+    #[derive(Resource, Default)]
+    struct Sample {
+        saved: Option<PhaseClock>,
+        phase: u32,
+        scene: u32,
+        expiries: u32,
+        scene_time: Seconds,
+    }
+
+    #[expect(
+        clippy::needless_pass_by_value,
+        reason = "the SDK lends Phase by value"
+    )]
+    fn capture(phase: Phase<'_, Stage>, mut sample: ResMut<'_, Sample>) {
+        assert_eq!(sample.saved, None);
+        sample.saved = Some(phase.clock());
+    }
+
+    #[expect(
+        clippy::needless_pass_by_value,
+        reason = "the SDK lends Phase by value"
+    )]
+    fn verify(tick: Tick, phase: Phase<'_, Stage>, mut sample: ResMut<'_, Sample>) {
+        assert_eq!(tick.in_phase(), phase.time());
+        sample.scene_time = tick.in_scene();
+    }
+
+    #[expect(clippy::needless_pass_by_value, reason = "the SDK lends Res by value")]
+    fn entry(mut phase: PhaseMut<'_, Stage>, sample: Res<'_, Sample>) {
+        if let Some(clock) = sample.saved {
+            assert!(phase.resume(Stage::A, clock));
+        }
+    }
+
+    fn describe(scene: &mut Scene, route: Capture, duration: Seconds) {
+        scene.on_enter(entry);
+        scene.rules((|mut sample: ResMut<'_, Sample>| sample.scene += 1).every(seconds(1)));
+        scene.phases(Stage::A);
+        scene.phase(Stage::A).rules((
+            verify,
+            (|mut sample: ResMut<'_, Sample>| sample.phase += 1).every(seconds(1)),
+        ));
+        if route == Capture::Entry {
+            scene.phase(Stage::A).on_enter(capture);
+        }
+        if route == Capture::Rule {
+            scene
+                .phase(Stage::A)
+                .rules(capture.when(|tick: Tick| tick.number() == Tick::test(1).number()));
+        }
+        scene
+            .phase(Stage::A)
+            .lasts(duration)
+            .then_run(|mut sample: ResMut<'_, Sample>| sample.expiries += 1);
+    }
+
+    #[expect(
+        clippy::needless_pass_by_value,
+        reason = "the SDK lends Phase by value"
+    )]
+    fn clock(phase: Phase<'_, Stage>) -> PhaseClock {
+        phase.clock()
+    }
+
+    for route in [
+        Capture::Entry,
+        Capture::Rule,
+        Capture::Harness,
+        Capture::Authored,
+    ] {
+        let duration = if route == Capture::Authored {
+            seconds(10)
+        } else {
+            seconds(1)
+        };
+        let setup = || {
+            Game::new("clock route")
+                .resource(Sample::default())
+                .scene(move |s: &mut Scene| {
+                    describe(s, route, duration);
+                })
+                .test()
+        };
+        let mut uninterrupted = setup()?;
+        let mut resumed = setup()?;
+        if route != Capture::Entry {
+            uninterrupted.step()?;
+            resumed.step()?;
+        }
+        if matches!(route, Capture::Harness | Capture::Authored) {
+            let saved = resumed.run(clock)?;
+            let mut sample = resumed.resource::<Sample>()?;
+            sample.saved = Some(if route == Capture::Authored {
+                PhaseClock::at(saved.time()).ending_in(saved.left().unwrap())
+            } else {
+                saved
+            });
+            resumed.set_resource(sample)?;
+        }
+        resumed.go_to(())?;
+        for elapsed in 1..=120 {
+            uninterrupted.step()?;
+            resumed.step()?;
+            let expected = uninterrupted.run(clock)?;
+            let actual = resumed.run(clock)?;
+            assert_eq!(actual.time(), expected.time());
+            assert_eq!(actual.left(), expected.left());
+            let sample = resumed.resource::<Sample>()?;
+            let control = uninterrupted.resource::<Sample>()?;
+            assert_eq!(sample.phase, control.phase);
+            assert_eq!(sample.expiries, control.expiries);
+            assert_eq!(sample.scene_time, Tick::test(elapsed).seconds());
+            assert_eq!(u64::from(sample.scene), elapsed / 60);
+        }
+        let digest = resumed.digest();
+        resumed.rewind(3)?;
+        resumed.step_ticks(3)?;
         assert_eq!(resumed.digest(), digest);
     }
     Ok(())

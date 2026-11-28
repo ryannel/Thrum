@@ -143,7 +143,7 @@ impl<D: QueryData, F: Filter> Query<'_, D, F> {
     /// ```
     pub fn par_each(&mut self, run: impl Fn(D::Item<'_>) + Send + Sync) {
         let columns = &self.columns;
-        self.executor.for_each_mut(self.rows, |row| {
+        self.executor.for_each_query_row(self.rows, |row| {
             run(D::item(columns, row.entity, row.physical, &mut row.data));
         });
     }

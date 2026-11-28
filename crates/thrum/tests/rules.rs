@@ -223,7 +223,7 @@ fn parallel_query_matches_the_serial_loop() -> Result {
         Game::new("query work")
             .scene(move |scene: &mut Scene| {
                 scene.on_enter(|mut entities: Entities<'_>| {
-                    for health in 0..4 {
+                    for health in 0..256 {
                         entities.spawn((Health(health),));
                     }
                 });
@@ -244,6 +244,52 @@ fn parallel_query_matches_the_serial_loop() -> Result {
     serial.step_ticks(3)?;
     parallel.step_ticks(3)?;
     assert_eq!(parallel.digest(), serial.digest());
+    Ok(())
+}
+
+#[test]
+fn a_parallel_panic_restores_every_chunk_and_can_retry() -> Result {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    static REFUSE: AtomicBool = AtomicBool::new(true);
+
+    fn increment(mut rows: Query<'_, &mut Health>) {
+        rows.par_each(|health| {
+            let before = health.0;
+            health.0 += 1;
+            assert!(
+                before != 900 || !REFUSE.load(Ordering::Relaxed),
+                "parallel refusal"
+            );
+        });
+    }
+
+    let setup = || {
+        Game::new("parallel rollback")
+            .max_entities(1024)
+            .scene(|scene: &mut Scene| {
+                scene.on_enter(|mut entities: Entities<'_>| {
+                    for health in 0..1024 {
+                        entities.spawn((Health(health),));
+                    }
+                });
+                scene.rules(increment);
+            })
+            .test()
+    };
+    let mut game = setup()?;
+    let before = game.digest();
+    let refused = game.step().unwrap_err();
+    assert!(refused.to_string().contains("parallel refusal"));
+    assert_eq!(game.digest(), before);
+    REFUSE.store(false, Ordering::Relaxed);
+    game.step()?;
+    let mut control = setup()?;
+    control.step()?;
+    assert_eq!(game.digest(), control.digest());
+    game.rewind(1)?;
+    assert_eq!(game.digest(), before);
+    game.step()?;
+    assert_eq!(game.digest(), control.digest());
     Ok(())
 }
 

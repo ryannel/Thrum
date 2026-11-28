@@ -39,12 +39,16 @@ impl Seconds {
     }
 
     pub(crate) fn ticks(self, rate: u32) -> u64 {
-        let ticks = (u128::from(self.0) * u128::from(rate)).div_ceil(u128::from(NANOS_PER_SECOND));
+        let rate = u128::from(rate);
+        let ticks = (u128::from(self.0) * rate)
+            .saturating_sub(rate / 2)
+            .div_ceil(u128::from(NANOS_PER_SECOND));
         u64::try_from(ticks).unwrap_or(u64::MAX)
     }
 
     pub(crate) fn from_ticks(ticks: u64, rate: u32) -> Self {
-        let nanos = u128::from(ticks) * u128::from(NANOS_PER_SECOND) / u128::from(rate);
+        let rate = u128::from(rate);
+        let nanos = (u128::from(ticks) * u128::from(NANOS_PER_SECOND) + rate / 2) / rate;
         Self(u64::try_from(nanos).unwrap_or(u64::MAX))
     }
 }
@@ -409,64 +413,33 @@ impl Default for Cooldown {
     }
 }
 
-/// Exact phase time, in units of 1/rate nanoseconds.
-#[derive(Data, Copy, Eq)]
-pub(crate) struct PhaseSpan {
-    units: u128,
-    rate: u32,
+#[derive(Data, Copy, Default)]
+pub(crate) struct PhaseTicks {
+    pub(crate) elapsed: u64,
+    pub(crate) remaining: Option<u64>,
 }
 
-impl Default for PhaseSpan {
-    fn default() -> Self {
-        Self::from_seconds(Seconds::ZERO)
+impl PhaseTicks {
+    pub(crate) fn advance(&mut self) {
+        self.elapsed = self.elapsed.saturating_add(1);
+        self.remaining = self.remaining.map(|ticks| ticks.saturating_sub(1));
+    }
+
+    pub(crate) fn time(self, rate: u32) -> Seconds {
+        Seconds::from_ticks(self.elapsed, rate)
     }
 }
 
-impl PhaseSpan {
-    fn from_seconds(value: Seconds) -> Self {
-        Self {
-            units: u128::from(value.0),
-            rate: 1,
-        }
-    }
-
-    pub(crate) fn from_ticks(ticks: u64, rate: u32) -> Self {
-        Self {
-            units: u128::from(ticks) * u128::from(NANOS_PER_SECOND),
-            rate,
-        }
-    }
-
-    pub(crate) fn advance(self, ticks: u64, rate: u32) -> Self {
-        let mut span = Self::from_ticks(ticks, rate);
-        let offset = if self.rate == rate || self.units == 0 {
-            self.units
-        } else {
-            self.units.saturating_mul(u128::from(rate)) / u128::from(self.rate.max(1))
-        };
-        span.units = span.units.saturating_add(offset);
-        span
-    }
-
-    pub(crate) fn whole_ticks(self) -> u64 {
-        u64::try_from(self.units / u128::from(NANOS_PER_SECOND)).unwrap_or(u64::MAX)
-    }
-
-    pub(crate) fn ticks_ceil(self, rate: u32) -> u64 {
-        let ticks = if self.rate == rate {
-            self.units.div_ceil(u128::from(NANOS_PER_SECOND))
-        } else {
-            self.units
-                .saturating_mul(u128::from(rate))
-                .div_ceil(u128::from(self.rate.max(1)) * u128::from(NANOS_PER_SECOND))
-        };
-        u64::try_from(ticks).unwrap_or(u64::MAX)
-    }
-
-    pub(crate) fn seconds(self) -> Seconds {
-        let nanos = self.units / u128::from(self.rate.max(1));
-        Seconds(u64::try_from(nanos).unwrap_or(u64::MAX))
-    }
+#[derive(Data, Copy)]
+enum ClockValue {
+    Authored {
+        elapsed: Seconds,
+        remaining: Option<Seconds>,
+    },
+    Captured {
+        ticks: PhaseTicks,
+        rate: u32,
+    },
 }
 
 /// A phase's elapsed time and any remaining time.
@@ -475,24 +448,33 @@ impl PhaseSpan {
 /// assert_eq!(PhaseClock::at(seconds(2)).time(), seconds(2));
 /// ```
 #[derive(Data, Copy)]
-pub struct PhaseClock {
-    pub(crate) elapsed: PhaseSpan,
-    pub(crate) remaining: Option<PhaseSpan>,
-    pub(crate) expired: bool,
-}
+pub struct PhaseClock(ClockValue);
 
 impl PhaseClock {
+    pub(crate) fn capture(ticks: PhaseTicks, rate: u32) -> Self {
+        Self(ClockValue::Captured { ticks, rate })
+    }
+
+    pub(crate) fn ticks(self, rate: u32) -> PhaseTicks {
+        match self.0 {
+            ClockValue::Authored { elapsed, remaining } => PhaseTicks {
+                elapsed: elapsed.ticks(rate),
+                remaining: remaining.map(|time| time.ticks(rate)),
+            },
+            ClockValue::Captured { ticks, .. } => ticks,
+        }
+    }
+
     /// Make a clock with elapsed time and no scheduled end.
     /// ```
     /// use thrum::{PhaseClock, seconds};
     /// assert_eq!(PhaseClock::at(seconds(3)).left(), None);
     /// ```
     pub fn at(time: Seconds) -> Self {
-        Self {
-            elapsed: PhaseSpan::from_seconds(time),
+        Self(ClockValue::Authored {
+            elapsed: time,
             remaining: None,
-            expired: false,
-        }
+        })
     }
 
     /// Add remaining time to a clock made by hand.
@@ -501,10 +483,17 @@ impl PhaseClock {
     /// assert_eq!(PhaseClock::at(seconds(3)).ending_in(seconds(2)).left(), Some(seconds(2)));
     /// ```
     #[must_use]
-    pub fn ending_in(mut self, left: Seconds) -> Self {
-        self.remaining = Some(PhaseSpan::from_seconds(left));
-        self.expired = false;
-        self
+    pub fn ending_in(self, left: Seconds) -> Self {
+        Self(match self.0 {
+            ClockValue::Authored { elapsed, .. } => ClockValue::Authored {
+                elapsed,
+                remaining: Some(left),
+            },
+            ClockValue::Captured { mut ticks, rate } => {
+                ticks.remaining = Some(left.ticks(rate));
+                ClockValue::Captured { ticks, rate }
+            }
+        })
     }
 
     /// Elapsed time when the clock was read.
@@ -513,7 +502,10 @@ impl PhaseClock {
     /// assert_eq!(PhaseClock::at(seconds(3)).time(), seconds(3));
     /// ```
     pub fn time(self) -> Seconds {
-        self.elapsed.seconds()
+        match self.0 {
+            ClockValue::Authored { elapsed, .. } => elapsed,
+            ClockValue::Captured { ticks, rate } => ticks.time(rate),
+        }
     }
 
     /// Remaining time if an end is scheduled and has yet to run.
@@ -522,6 +514,11 @@ impl PhaseClock {
     /// assert_eq!(PhaseClock::at(seconds(3)).left(), None);
     /// ```
     pub fn left(self) -> Option<Seconds> {
-        self.remaining.map(PhaseSpan::seconds)
+        match self.0 {
+            ClockValue::Authored { remaining, .. } => remaining,
+            ClockValue::Captured { ticks, rate } => {
+                ticks.remaining.map(|left| Seconds::from_ticks(left, rate))
+            }
+        }
     }
 }

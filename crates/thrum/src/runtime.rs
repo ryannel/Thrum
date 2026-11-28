@@ -10,7 +10,7 @@ use thrum_core::{
     sim::{Edit, EditWriter, SystemId, TickGame, WorldRead},
 };
 
-use crate::{Data, Entity, Event, PhaseClock, Result, Tick, data::DataWriter, time::PhaseSpan};
+use crate::{Data, Entity, Event, PhaseClock, Result, Tick, data::DataWriter, time::PhaseTicks};
 
 pub(crate) trait Value: Send + Sync {
     fn id(&self) -> TypeId;
@@ -340,13 +340,11 @@ pub(crate) struct State {
     pub(crate) scene: usize,
     pub(crate) scene_entered: u64,
     pub(crate) phase: Option<usize>,
-    pub(crate) phase_entered: u64,
-    pub(crate) phase_offset: PhaseSpan,
-    pub(crate) phase_end: Option<u64>,
-    pub(crate) phase_expired: bool,
+    pub(crate) phase_clock: PhaseTicks,
     pub(crate) held: Option<Transition>,
     pub(crate) next_entity: u128,
     pub(crate) seed: u64,
+    pub(crate) random_runs: Vec<(&'static str, u64)>,
 }
 
 impl Clone for State {
@@ -362,13 +360,11 @@ impl Clone for State {
         self.scene = source.scene;
         self.scene_entered = source.scene_entered;
         self.phase = source.phase;
-        self.phase_entered = source.phase_entered;
-        self.phase_offset = source.phase_offset;
-        self.phase_end = source.phase_end;
-        self.phase_expired = source.phase_expired;
+        self.phase_clock = source.phase_clock;
         self.held.clone_from(&source.held);
         self.next_entity = source.next_entity;
         self.seed = source.seed;
+        self.random_runs.clone_from(&source.random_runs);
     }
 }
 
@@ -380,19 +376,19 @@ impl State {
             .or_else(|| self.resources.get::<T>())
     }
 
-    pub(crate) fn phase_elapsed(&self, tick: u64, rate: u32) -> PhaseSpan {
-        self.phase_offset
-            .advance(tick.saturating_sub(self.phase_entered), rate)
+    pub(crate) fn count_random_run(&mut self, name: &str) -> u64 {
+        let index = self
+            .random_runs
+            .binary_search_by_key(&name, |&(registered, _)| registered)
+            .expect("registered Random function");
+        let count = &mut self.random_runs[index].1;
+        let previous = *count;
+        *count = count.saturating_add(1);
+        previous
     }
 
     pub(crate) fn clock(&self, tick: Tick) -> PhaseClock {
-        PhaseClock {
-            elapsed: self.phase_elapsed(tick.number.0, tick.rate),
-            remaining: self
-                .phase_end
-                .map(|end| PhaseSpan::from_ticks(end.saturating_sub(tick.number.0), tick.rate)),
-            expired: self.phase_expired,
-        }
+        PhaseClock::capture(self.phase_clock, tick.rate)
     }
 }
 
@@ -406,16 +402,26 @@ impl StateEncode for State {
         self.phase
             .map_or(u64::MAX, |phase| phase as u64)
             .encode(digest);
-        self.phase_entered.encode(digest);
-        self.phase_offset.write(&mut DataWriter(digest));
-        self.phase_end.unwrap_or(u64::MAX).encode(digest);
-        self.phase_expired.encode(digest);
+        self.phase_clock.write(&mut DataWriter(digest));
         self.held.is_some().encode(digest);
         if let Some(request) = &self.held {
             request.encode(digest);
         }
         self.next_entity.encode(digest);
         self.seed.encode(digest);
+        (self
+            .random_runs
+            .iter()
+            .filter(|(_, count)| *count != 0)
+            .count() as u64)
+            .encode(digest);
+        for &(name, count) in &self.random_runs {
+            if count != 0 {
+                (name.len() as u64).encode(digest);
+                digest.bytes(name.as_bytes());
+                count.encode(digest);
+            }
+        }
         self.resources.encode(digest);
     }
 }

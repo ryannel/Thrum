@@ -1,7 +1,6 @@
 use std::{
     any::{TypeId, type_name},
     collections::HashMap,
-    hash::{DefaultHasher, Hash, Hasher},
     panic::{AssertUnwindSafe, catch_unwind, resume_unwind},
     sync::{Arc, Mutex},
 };
@@ -32,52 +31,66 @@ pub struct Invocation<O> {
 }
 
 #[derive(Clone, Copy)]
-pub(crate) enum RuleIdentity {
-    Concrete(TypeId),
-    Erased,
-}
+pub(crate) struct RuleIdentity(Option<TypeId>);
 
 impl RuleIdentity {
     fn of<F: 'static>() -> Self {
-        // Function items are zero-sized. Closures keep a concrete type even
-        // when their captures occupy storage. A pointer or trait object loses
-        // the identity of the function it calls.
-        let name = type_name::<F>();
-        if size_of::<F>() == 0 || (!name.starts_with('&') && name.ends_with("::{{closure}}")) {
-            Self::Concrete(TypeId::of::<F>())
-        } else {
-            Self::Erased
+        // A named function item has its own zero-sized type. Closures and
+        // function pointers cannot supply a distinct, portable name.
+        let named = size_of::<F>() == 0 && !type_name::<F>().ends_with("::{{closure}}");
+        Self(named.then(TypeId::of::<F>))
+    }
+}
+
+#[derive(Clone, Copy)]
+pub(crate) enum RuleOrigin {
+    Scene(&'static str, u32),
+    Manual,
+}
+
+impl std::fmt::Display for RuleOrigin {
+    fn fmt(&self, out: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Scene(scene, slot) => write!(out, "scene {scene}, callback {slot}"),
+            Self::Manual => out.write_str("game.run"),
         }
     }
 }
 
 #[derive(Default)]
-pub(crate) struct RuleStreams(HashMap<TypeId, u64>);
+pub(crate) struct RuleNames(HashMap<&'static str, (TypeId, RuleOrigin)>);
 
-impl RuleStreams {
-    pub(crate) fn register<O>(&mut self, invocation: &mut Invocation<O>, slot: u64) -> Result {
-        if let Some(identity) = invocation.random_identity()? {
-            // Slots and names are portable. TypeId is only a local lookup key
-            // and makes repeated use of one callable share its first slot.
-            invocation.stream = *self
-                .0
-                .entry(identity)
-                .or_insert_with(|| stream(invocation.name, 0x7363_6865_6475_6c65 ^ slot));
+impl RuleNames {
+    pub(crate) fn check(&self, name: &str, identity: TypeId, origin: RuleOrigin) -> Result {
+        if let Some(&(known, first)) = self.0.get(name)
+            && known != identity
+        {
+            return Err(Error::refused(
+                "T0206",
+                name,
+                format!("two functions taking Random share this name at {first} and {origin}"),
+                "Give one of the two functions another name.",
+            ));
         }
         Ok(())
     }
 
-    pub(crate) fn prepare_manual<O>(&self, invocation: &mut Invocation<O>) -> Result {
+    pub(crate) fn remember(&mut self, name: &'static str, identity: TypeId, origin: RuleOrigin) {
+        self.0.entry(name).or_insert((identity, origin));
+    }
+
+    pub(crate) fn register<O>(&mut self, invocation: &Invocation<O>, origin: RuleOrigin) -> Result {
         if let Some(identity) = invocation.random_identity()? {
-            invocation.stream = self.0.get(&identity).copied().unwrap_or_else(|| {
-                // A harness-only rule has no slot. Its identity is local to
-                // this build and independent of every earlier invocation.
-                let mut hash = DefaultHasher::new();
-                identity.hash(&mut hash);
-                stream(invocation.name, hash.finish())
-            });
+            self.check(invocation.name, identity, origin)?;
+            self.remember(invocation.name, identity, origin);
         }
         Ok(())
+    }
+
+    pub(crate) fn run_counters(&self) -> Vec<(&'static str, u64)> {
+        let mut counts: Vec<_> = self.0.keys().map(|&name| (name, 0)).collect();
+        counts.sort_unstable_by_key(|&(name, _)| name);
+        counts
     }
 }
 
@@ -87,24 +100,24 @@ pub(crate) struct ReadContextParts<'a> {
     pub(crate) tick: crate::Tick,
     pub(crate) seed: u64,
     pub(crate) stream: u64,
+    pub(crate) run: u64,
     pub(crate) stage: crate::scene::Landing,
     pub(crate) names: &'a Arc<crate::scene::Names>,
 }
 
 impl<O> Invocation<O> {
-    fn random_identity(&self) -> Result<Option<TypeId>> {
+    pub(crate) fn random_identity(&self) -> Result<Option<TypeId>> {
         let Some(parameter) = self.signature.random_parameter() else {
             return Ok(None);
         };
-        match self.identity {
-            RuleIdentity::Concrete(identity) => Ok(Some(identity)),
-            RuleIdentity::Erased => Err(Error::refused(
+        self.identity.0.map(Some).ok_or_else(|| {
+            Error::refused(
                 "T0204",
                 format!("{}, {parameter}", self.name),
-                "Random requires the identity of a rule erased by this callable type",
-                "Pass a named function directly or define a closure that takes Random.",
-            )),
-        }
+                "only a named function has a portable identity for Random",
+                "Write a named function and pass it directly.",
+            )
+        })
     }
 
     pub(crate) fn call(
@@ -189,12 +202,10 @@ where
 impl<F: Fn() -> O + Copy + Send + 'static, O: 'static> ScheduledFunction<(), O> for F {}
 impl<F: Fn() -> O + Copy + Send + 'static, O: 'static> ReadFunction<(), O> for F {}
 
-fn stream(name: &str, discriminator: u64) -> u64 {
-    name.bytes()
-        .chain(discriminator.to_le_bytes())
-        .fold(0xcbf2_9ce4_8422_2325, |hash, byte| {
-            (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3)
-        })
+fn stream(name: &str) -> u64 {
+    name.bytes().fold(0xcbf2_9ce4_8422_2325, |hash, byte| {
+        (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3)
+    })
 }
 
 macro_rules! functions {
@@ -208,13 +219,14 @@ macro_rules! functions {
                 let mut list = ParameterList::default();
                 $($parameter::describe(&format!("parameter {} ({})", $index + 1, type_name::<$parameter>()), &mut list);)*
                 let name = type_name::<F>();
+                let stream = list.0.random_parameter().map_or(0, |_| stream(name));
                 let loan_types = list.0.loan_types();
                 let mut loans = Loans::default();
                 let mut state: ($($parameter::State,)*) = Default::default();
                 Invocation {
                     name,
                     identity: RuleIdentity::of::<F>(),
-                    stream: 0,
+                    stream,
                     signature: list.0,
                     invoke: Box::new(move |context, parts| {
                         let read = ReadContext {
@@ -228,6 +240,7 @@ macro_rules! functions {
                             name,
                             seed: parts.seed,
                             stream: parts.stream,
+                            run: parts.run,
                             stage: parts.stage,
                             names: parts.names,
                         };
@@ -346,9 +359,9 @@ impl Condition {
         }
     }
 
-    pub(crate) fn identify(&self, registration: u64, streams: &mut RuleStreams) -> Result {
-        let mut state = self.state.lock().expect("condition scratch");
-        streams.register(&mut state.invocation, registration)
+    pub(crate) fn register(&self, names: &mut RuleNames, origin: RuleOrigin) -> Result {
+        let state = self.state.lock().expect("condition scratch");
+        names.register(&state.invocation, origin)
     }
 
     pub(crate) fn evaluate(
