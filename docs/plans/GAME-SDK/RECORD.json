@@ -268,7 +268,7 @@
         {
           "verdict": "fail",
           "commit": "582ff17be1e7a0370687cf291ee2254da5991727",
-          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review-4.md",
           "items": {
             "WP1.1": "pass",
             "WP1.2": "fail",
@@ -315,6 +315,49 @@
             "turns": 1
           },
           "at": "2026-11-28T03:38:09Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "99e01d3a13c8babb05b0cf203ae080a12120737d",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md",
+          "items": {
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "fail",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "Distinct 64-bit game seeds produce identical draw streams",
+              "item": "WP1.3",
+              "different": "The named function now draws identically across debug and release. The new failure occurs within either build when different seeds collapse to the same generator key.",
+              "repeat": false
+            },
+            {
+              "name": "Setting a component to its current value discards rewind history",
+              "repeat": false
+            }
+          ],
+          "summary": "WP1 fails one of seven items. Two distinct game seeds produced identical loot and weather draws on every tested tick, and a separate harness defect discarded rewind history after a write that preserved the committed world. The three Must Fix findings from the previous review are resolved.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 172006,
+            "cached": 5807232,
+            "output": 18103,
+            "turns": 1
+          },
+          "at": "2026-11-28T05:42:01Z"
         }
       ],
       "authorised": {

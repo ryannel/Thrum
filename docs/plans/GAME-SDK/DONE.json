@@ -4,7 +4,7 @@
     {
       "id": "WP1",
       "name": "An agent writes a game's scenes, phases and rules in plain Rust against one crate, in the order they run, and proves them in an ordinary test with no window",
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "Game code that reads as plainly as Bevy's `breakout` example with less ceremony: a scene function reads top to bottom as one tick, and no line names engine plumbing. Compiler and startup messages as useful as Rust's own, each naming the object, the cause and the next step. Correctness held as `SIM-2D` holds it: one trace, one digest. The reference for how game code reads is the design's worked examples, which the owner approves.",
       "items": [
         {
@@ -19,8 +19,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GAME-SDK/WP1/review4-WP1.1.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
         {
           "id": "WP1.2",
@@ -34,8 +34,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GAME-SDK/WP1/review4-WP1.2.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
         {
           "id": "WP1.3",
@@ -47,10 +47,10 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GAME-SDK/WP1/review4-WP1.3.log",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
         {
           "id": "WP1.4",
@@ -64,8 +64,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GAME-SDK/WP1/review4-WP1.4.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
         {
           "id": "WP1.5",
@@ -81,8 +81,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GAME-SDK/WP1/review4-WP1.5.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
         {
           "id": "WP1.6",
@@ -91,8 +91,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GAME-SDK/WP1/review4-WP1.6-engine-layer.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
         {
           "id": "WP1.7",
@@ -101,12 +101,24 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GAME-SDK/WP1/review4-WP1.7-worked-examples.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         }
       ],
-      "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      "failed_reviews": 1,
+      "failed_reviews_with_repeat": 0,
+      "findings": [
+        {
+          "name": "Distinct 64-bit game seeds produce identical draw streams",
+          "item": "WP1.3",
+          "different": "The named function now draws identically across debug and release. The new failure occurs within either build when different seeds collapse to the same generator key.",
+          "repeat": false
+        },
+        {
+          "name": "Setting a component to its current value discards rewind history",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "WP11",
