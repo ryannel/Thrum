@@ -1195,7 +1195,7 @@ impl super::SyntheticTargetInputs {
             return Ok(None);
         }
 
-        let layers_end = shadow::LAYERS + self.sun_outline_count * shadow::OUTLINE_EXTRA as u32;
+        let layers_end = shadow::LAYERS + self.sun_outline_count * shadow::OUTLINE_EXTRA;
         let maps = graph.resource(
             ResourceDescriptor::Texture {
                 dimension: crate::graph::TextureKind::D2,

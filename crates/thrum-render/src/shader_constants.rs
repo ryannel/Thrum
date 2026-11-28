@@ -7,8 +7,9 @@ pub(crate) const CLUSTER_WORKGROUP: u32 = 64;
 pub(crate) const AIR_SHADOW_SIZE: u32 = 512;
 pub(crate) const SUN_CASCADE_COUNT: u32 = 10;
 pub(crate) const SUN_OUTLINE_RADIUS: f32 = 16.0;
+pub(crate) const SUN_OUTLINE_SAMPLES: u32 = 4;
 // Rotated-grid positions relative to the texel centre, in texture XY.
-pub(crate) const SUN_OUTLINE_OFFSETS: [[f32; 2]; 4] = [
+pub(crate) const SUN_OUTLINE_OFFSETS: [[f32; 2]; SUN_OUTLINE_SAMPLES as usize] = [
     [-0.125, -0.375],
     [0.375, -0.125],
     [-0.375, 0.125],

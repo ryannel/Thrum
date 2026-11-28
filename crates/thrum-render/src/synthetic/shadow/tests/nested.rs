@@ -218,7 +218,7 @@ fn sun_cascades_gpu_threshold_casts_at_quarter_texel_grid_placements() {
         .fit(None)
         .unwrap();
     let texel = fit.samples.cascade_metrics[0][1];
-    let size = fit.caster_view(0).minimum_cast_width[0];
+    let size = fit.caster_view(0, MAPS).minimum_cast_width[0];
     let mut points = Vec::new();
     for (i, instance) in scene.instances.iter_mut().enumerate() {
         let x = (24.0 * (i as f32 - 8.0) + i as f32 * 0.25) * texel;

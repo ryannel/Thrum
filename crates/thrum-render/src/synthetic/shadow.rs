@@ -17,7 +17,7 @@ use crate::graph::{CompiledPass, GraphDepthAttachment, ResourceId};
 use crate::records::{ShadowCascades, ShadowView};
 use crate::shader_constants::{
     SHADOW_HEIGHT_LAYER, SHADOW_HEIGHT_SIZE, SUN_ANGULAR_RADIUS, SUN_CASCADE_COUNT,
-    SUN_OUTLINE_OFFSETS, SUN_OUTLINE_RADIUS,
+    SUN_OUTLINE_OFFSETS, SUN_OUTLINE_RADIUS, SUN_OUTLINE_SAMPLES,
 };
 
 pub(super) const SIZE: u32 = 2048;
@@ -41,27 +41,33 @@ const MINIMUM_DEPTH_BIAS: f32 = 4e-7;
 pub(super) mod cast_width;
 mod secondary;
 
-pub(super) const OUTLINE_EXTRA: usize = SUN_OUTLINE_OFFSETS.len() - 1;
-pub(super) const SECONDARY_CASCADES: usize = 2;
-pub(super) const SECONDARY_LAYERS: usize = SECONDARY_CASCADES * SUN_OUTLINE_OFFSETS.len();
+pub(super) const OUTLINE_EXTRA: u32 = SUN_OUTLINE_SAMPLES - 1;
+pub(super) const SECONDARY_CASCADES: u32 = 2;
+pub(super) const SECONDARY_LAYERS: u32 = SECONDARY_CASCADES * SUN_OUTLINE_SAMPLES;
 
 pub(super) fn layer_sample(index: usize, base: usize) -> (usize, usize) {
     if index < base {
         (index, 0)
     } else {
         let offset = index - base;
-        (offset / OUTLINE_EXTRA, offset % OUTLINE_EXTRA + 1)
+        (
+            offset / OUTLINE_EXTRA as usize,
+            offset % OUTLINE_EXTRA as usize + 1,
+        )
     }
 }
 
-pub(super) fn cascade_radius(count: u32, reach: f32, index: u32) -> f32 {
-    reach / (1u32 << (count - index - 1)) as f32
+pub(super) fn cascade_radius(count: u32, reach: f32, index: usize) -> f32 {
+    reach / (1u32 << (count as usize - index - 1)) as f32
 }
 
 pub(super) fn outline_count(count: u32, reach: f32) -> u32 {
-    (0..count)
-        .take_while(|&index| cascade_radius(count, reach, index) <= SUN_OUTLINE_RADIUS)
-        .count() as u32
+    u32::try_from(
+        (0..count as usize)
+            .take_while(|&index| cascade_radius(count, reach, index) <= SUN_OUTLINE_RADIUS)
+            .count(),
+    )
+    .expect("outline count fits the cascade count")
 }
 
 fn shifted_matrix(matrix: Mat4, offset: [f32; 2]) -> Mat4 {
@@ -178,8 +184,8 @@ impl FittedShadow {
             .all(|matrix| matrix_contains_caster(*matrix, instance, caster))
     }
 
-    fn caster_view(&self, index: usize) -> ShadowView {
-        let (cascade, sample) = layer_sample(index, self.samples.profile[3] as usize);
+    fn caster_view(&self, index: usize, base: usize) -> ShadowView {
+        let (cascade, sample) = layer_sample(index, base);
         let metrics = self.samples.cascade_metrics.get(cascade);
         let multisampled =
             metrics.is_some_and(|metrics| metrics[0] > 0.0 && metrics[0] <= SUN_OUTLINE_RADIUS);
@@ -285,12 +291,12 @@ impl ShadowPrepared {
         let (count, reach) = inputs
             .profile
             .unwrap_or((SUN_CASCADE_COUNT, RECEIVER_REACH));
-        let layers = MAPS + outline_count(count, reach) as usize * OUTLINE_EXTRA;
+        let layers = MAPS + outline_count(count, reach) as usize * OUTLINE_EXTRA as usize;
         let cascades = (0..layers)
             .map(|index| {
                 let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some("synthetic Sun cascade matrix"),
-                    contents: bytemuck::bytes_of(&fitted.caster_view(index)),
+                    contents: bytemuck::bytes_of(&fitted.caster_view(index, MAPS)),
                     usage: wgpu::BufferUsages::UNIFORM
                         | wgpu::BufferUsages::COPY_DST
                         | super::draw_witness_usage(),
@@ -413,7 +419,7 @@ impl ShadowPrepared {
 
     #[cfg(feature = "creation-counters")]
     pub(super) fn drawing_views(&self, count: u32, outlines: u32) -> Vec<&wgpu::Buffer> {
-        let end = MAPS + outlines as usize * OUTLINE_EXTRA;
+        let end = MAPS + outlines as usize * OUTLINE_EXTRA as usize;
         (0..count as usize)
             .chain(MAPS..end)
             .chain(std::iter::once(HEIGHT_LAYER))
@@ -441,7 +447,7 @@ impl ShadowPrepared {
         let fitted = cooked.as_ref().unwrap_or(&self.fitted);
         let count = if cascades { self.count() as usize } else { 0 };
         let extra = if cascades {
-            self.outline_count() as usize * OUTLINE_EXTRA
+            self.outline_count() as usize * OUTLINE_EXTRA as usize
         } else {
             0
         };
@@ -453,7 +459,7 @@ impl ShadowPrepared {
             self.queue.write_buffer(
                 &cascade.buffer,
                 0,
-                bytemuck::bytes_of(&fitted.caster_view(index)),
+                bytemuck::bytes_of(&fitted.caster_view(index, MAPS)),
             );
         }
         self.queue
@@ -639,7 +645,7 @@ impl FitInputs {
             ..bytemuck::Zeroable::zeroed()
         };
         for (index, matrix) in matrices.iter_mut().enumerate().take(count as usize) {
-            let radius = cascade_radius(count, reach, index as u32);
+            let radius = cascade_radius(count, reach, index);
             let cascade = cascade_matrix(self.camera, radius, rotation, caster_depth)?;
             *matrix = if radius <= SUN_OUTLINE_RADIUS {
                 shifted_matrix(cascade.matrix, SUN_OUTLINE_OFFSETS[0])

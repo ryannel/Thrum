@@ -108,14 +108,14 @@ fn sun_cascade_layout_places_the_four_drawings_on_a_rotated_grid() {
             *layer = MAPS + 3 * cascade + sample - 1;
         }
         for (layer, [x, y]) in drawings.into_iter().zip(expected) {
-            let draw = fit.caster_view(layer);
+            let draw = fit.caster_view(layer, MAPS);
             let matrix = Mat4::from_cols_array_2d(&draw.light_view_proj);
             let phase = matrix.w_axis * (SIZE as f32 / 2.0);
             assert_eq!([-phase.x, phase.y], [x, y]);
             assert_eq!(matrix.row(2), fit.matrices[cascade].row(2));
             assert_eq!(
                 draw.minimum_cast_width,
-                fit.caster_view(cascade).minimum_cast_width
+                fit.caster_view(cascade, MAPS).minimum_cast_width
             );
         }
     }
@@ -146,7 +146,7 @@ fn sun_cascade_layout_profiles_and_bias() {
             );
             // The only fixed precision floor is in normalized depth, not metres.
             assert_eq!(
-                fit.caster_view(index).minimum_cast_width[0],
+                fit.caster_view(index, MAPS).minimum_cast_width[0],
                 texel * CAST_WIDTH_TEXELS
             );
         }
@@ -156,7 +156,10 @@ fn sun_cascade_layout_profiles_and_bias() {
                 .flatten()
                 .all(|&value| value.to_bits() == 0)
         );
-        assert_eq!(fit.caster_view(HEIGHT_LAYER).minimum_cast_width[0], 0.0);
+        assert_eq!(
+            fit.caster_view(HEIGHT_LAYER, MAPS).minimum_cast_width[0],
+            0.0
+        );
     }
     for reach in [0.0, -1.0, f32::INFINITY, f32::NAN] {
         assert!(camera.with_sun_shadow_profile(1, reach).is_err());
@@ -382,7 +385,7 @@ fn sun_cascade_layout_membership_uses_smallest_axis_instead_of_bounds() {
         let texel = fit.samples.cascade_metrics[rejected][1];
         assert!((width / texel - 0.6).abs() < 0.04);
         for layer in rejected..fit.count as usize {
-            assert!(width < fit.caster_view(layer).minimum_cast_width[0]);
+            assert!(width < fit.caster_view(layer, MAPS).minimum_cast_width[0]);
         }
         let accepted = layer_at(0.125);
         assert!(width >= fit.caster_view(accepted).minimum_cast_width[0]);

@@ -41,7 +41,7 @@ impl Sun {
                         views: prepared
                             .caster_views()
                             .into_iter()
-                            .take(shadow::SECONDARY_CASCADES)
+                            .take(shadow::SECONDARY_CASCADES as usize)
                             .collect(),
                     },
                 );
@@ -72,7 +72,7 @@ impl Sun {
             size: wgpu::Extent3d {
                 width: shadow::SIZE,
                 height: shadow::SIZE,
-                depth_or_array_layers: shadow::SECONDARY_LAYERS as u32,
+                depth_or_array_layers: shadow::SECONDARY_LAYERS,
             },
             mip_level_count: 1,
             sample_count: 1,
@@ -104,7 +104,7 @@ impl Sun {
                 dimension: crate::graph::TextureKind::D2,
                 width: shadow::SIZE,
                 height: shadow::SIZE,
-                layers: shadow::SECONDARY_LAYERS as u32,
+                layers: shadow::SECONDARY_LAYERS,
                 mips: 1,
                 samples: 1,
                 format: shadow::FORMAT,
@@ -128,7 +128,7 @@ impl Sun {
             accesses.extend(
                 matrices
                     .iter()
-                    .take(shadow::SECONDARY_CASCADES)
+                    .take(shadow::SECONDARY_CASCADES as usize)
                     .map(|matrix| {
                         Access::new(
                             matrix.clone(),
@@ -173,8 +173,9 @@ impl Sun {
         } else {
             None
         };
-        for (layer, matrix) in (0..).zip(matrices) {
-            let (cascade, _) = shadow::layer_sample(layer as usize, shadow::SECONDARY_CASCADES);
+        for (layer, matrix) in (0..shadow::SECONDARY_LAYERS).zip(matrices) {
+            let (cascade, _) =
+                shadow::layer_sample(layer as usize, shadow::SECONDARY_CASCADES as usize);
             let stage = SecondaryStage::Sun(layer);
             let key = PipelineRole::Secondary {
                 view: crate::pass_key::pass_index(index),
@@ -284,7 +285,7 @@ impl SceneContext<'_> {
         let Some(request) = slot.handle.asked() else {
             return Ok(());
         };
-        let (cascade, sample) = shadow::layer_sample(layer, shadow::SECONDARY_CASCADES);
+        let (cascade, sample) = shadow::layer_sample(layer, shadow::SECONDARY_CASCADES as usize);
         if cascade >= request.cascades as usize
             || (sample != 0
                 && cascade

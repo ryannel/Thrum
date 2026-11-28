@@ -63,13 +63,18 @@ impl ShadowPrepared {
         fitted.samples.height_view_proj = world_fit.samples.height_view_proj;
         fitted.samples.horizon = world_fit.samples.horizon;
         fitted.samples.profile[3] = SECONDARY_CASCADES as f32;
-        let active_drawings = SECONDARY_CASCADES
-            + super::outline_count(profile.0, profile.1) as usize * super::OUTLINE_EXTRA;
-        for (index, cascade) in self.cascades.iter().take(active_drawings).enumerate() {
+        let active_drawings =
+            SECONDARY_CASCADES + super::outline_count(profile.0, profile.1) * super::OUTLINE_EXTRA;
+        for (index, cascade) in self
+            .cascades
+            .iter()
+            .take(active_drawings as usize)
+            .enumerate()
+        {
             self.queue.write_buffer(
                 &cascade.buffer,
                 0,
-                bytemuck::bytes_of(&fitted.caster_view(index)),
+                bytemuck::bytes_of(&fitted.caster_view(index, SECONDARY_CASCADES as usize)),
             );
         }
         self.queue

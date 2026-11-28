@@ -159,7 +159,7 @@ pub(crate) fn validate_pass_timings(
         PassKey::Display,
     ];
     let shadow_layers = super::shadow::LAYERS;
-    let outline_end = shadow_layers + layout.outlines * super::shadow::OUTLINE_EXTRA as u32;
+    let outline_end = shadow_layers + layout.outlines * super::shadow::OUTLINE_EXTRA;
     let mut names = (0..layout.cascades)
         .chain(shadow_layers..outline_end)
         .map(PassKey::sun_cascade)
