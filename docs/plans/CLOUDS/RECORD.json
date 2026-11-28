@@ -3022,7 +3022,44 @@
     },
     "WP23": {
       "definitions": "7dee2a77d970983702398e2971f28e61d687c015d2f228fea89e60036345f444",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "88238ba0762e767dea83755f0048583a34472a7e",
+          "review": ".orchestrate/evidence/CLOUDS/WP23-review.md",
+          "items": {
+            "WP23.1": "pass",
+            "WP23.2": "pass"
+          },
+          "findings": [
+            {
+              "name": "Puff form drops broken-deck bank shaping",
+              "repeat": false
+            },
+            {
+              "name": "Puff clusters exceed their cells\u2019 radius and depth",
+              "repeat": false
+            }
+          ],
+          "summary": "Both written items pass. The ten query behaviours hold on their specified witnesses, and the independent CPU stills show distinct billowed heaps rising, thinning and breaking apart. WP23 fails on two design requirements outside those items. Selecting puffs removes existing erosion from broken cloud decks, and generated clusters extend beyond their cells\u2019 radius and depth.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 131654,
+            "cached": 4215296,
+            "output": 15240,
+            "turns": 1
+          },
+          "at": "2026-11-28T04:59:43Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its Must Fix findin",

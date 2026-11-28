@@ -1947,7 +1947,7 @@
     {
       "id": "WP23",
       "name": "The weather's own clouds take a new form, a cluster of rounded heaps, in what a game reads and in stills drawn from it on the CPU",
-      "status": "ready_for_review",
+      "status": "in_progress",
       "depends_on": [],
       "quality_bar": "The outline and relief of fair-weather cumulus as in Red Dead Redemption 2 or Horizon Forbidden West, looked at one cloud at a time from the ground: rounded heaps of different heights on one level base, crowns in billows, no two clouds alike. These stills are judged for form alone; the engine's light, colour and motion are WP17's.",
       "items": [
@@ -1957,24 +1957,34 @@
           "check": "sh -c 'cargo test --locked --offline -p thrum-cloud-model --test it puff 2>&1 | tee /dev/stderr | grep -Eq \"test result: ok. [1-9][0-9]* passed\"'",
           "ask": "Do the tests whose names contain `puff` assert each of the ten behaviours on a profile that names the puff form? Does the switched cell of the third fail its assertion? Does the fifth take its own sum from point densities, and show the column summed from samples 50 m apart failing on the grazing column? Do the ninth and the tenth form their expected values from the cells' puffs and strengths, and does each show its wrong version failing?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP23/revised/README.md#wp231-query-evidence",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP23-review.md"
         },
         {
           "id": "WP23.2",
           "statement": "Marched on the CPU through the model's own full density, with no weather map and no graphics device, a fair sky of the puff form holds up from the ground one cloud at a time. The stills are of the fair weather the valley's game has, with the puff form named and no placed or directed shape, from 2 m over the ground under the noon Sun, toward, across and away from it, each as opacity and under one simple light the record states. Beside each is the same weather in the turret form from the same tool, and it shows at least one of the flaws the puff stills must not: a tool that draws both forms well, or both badly, proves nothing. A strip follows one cell at six ages from its birth to its death. Record: the stills, the tool and its inputs, in the work package's evidence.",
           "inspect": "Look at the six puff stills whole and at full size, at the six turret stills beside them, and at the life strip. In the puff stills: 1. the larger clouds are clusters of rounded heaps of different heights, and their crowns are in billows; 2. each cloud's base is level and ragged, and its rim is a rounded underside, with no thin skirt, lip or level band standing out from it; 3. no cloud is a smooth dome, lens or cap, and none has a level terrace on its side or a fold or squared break in its outline; 4. no face is a vertical curtain or a cylinder, with or without streaks down it; 5. where a far cloud shows below or behind a near one, they read as two clouds at two distances, and not as a shelf of one; 6. outlines differ from cloud to cloud, and no dome, lens, cap, cone or tower repeats across the frame. 7. the turret stills show at least one flaw of points 2 to 4 where the puff stills show none; 8. in the life strip the cloud first shows as tufts on its base and grows by rising, and each age up to the grown cloud reads as a smaller cloud of the same kind; 9. past its grown age it frays and thins, and at no age does it read as a solid shape sunk into its base.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP23/revised/README.md#wp232-visual-evidence",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP23-review.md"
         }
       ],
-      "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      "failed_reviews": 1,
+      "failed_reviews_with_repeat": 0,
+      "findings": [
+        {
+          "name": "Puff form drops broken-deck bank shaping",
+          "repeat": false
+        },
+        {
+          "name": "Puff clusters exceed their cells\u2019 radius and depth",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "WP24",
