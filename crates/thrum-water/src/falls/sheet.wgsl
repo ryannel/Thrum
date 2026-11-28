@@ -319,9 +319,7 @@ fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let current = view.unjittered_view_proj * vec4(point, 1.0);
     let motion = (previous.xy / previous.w - current.xy / current.w)
         * vec2(0.5, -0.5) * view_aux.viewport_inv_viewport.xy;
-    let pass_colour = select(vec3(0.08, 1.0, 0.08), vec3(1.0, 0.04, 0.06), solid)
-        * (20000.0 * environment_storage_scale());
-    return FallOutput(vec4(pass_colour, opacity), select(motion, vec2(65504.0), sheet_clock.z > 0.5),
+    return FallOutput(vec4(colour, opacity), select(motion, vec2(65504.0), sheet_clock.z > 0.5),
         white * presence * contact_cover * streak_cover);
 }
 
