@@ -30,6 +30,8 @@ and [the seam rulings](../ARCHITECTURE.md#seam-rulings-for-game-sdk) before any 
 - Assumption: a game with a `rules` module refuses a function pointer as a rule. A sketch and a test's `game.run` take one.
 - Assumption: a phase's length is fixed before its enter functions run, so a `lasts` function cannot read what they set up.
 - Assumption: a scene resumed from a save carries on its phase's clock and nothing else. The scene's own time, `Tick::in_scene()`, starts again, and a game that wants it kept saves it.
+- Assumption: at a game's crate root only the module is named `rules`. The check refuses anything else of that name.
+- Assumption: a test, and a program Cargo built alone, are held to that name only when the check next runs.
 
 ## WP1 An agent writes a game's scenes, phases and rules in plain Rust against one crate, in the order they run, and proves them in an ordinary test with no window
 
@@ -50,12 +52,11 @@ The work on `build/game-sdk` stands. Build these two contracts from the design, 
 findings one at a time ([log](LOG.md#design-review-of-28-november)):
 
 - **[A rule's identity is its function's name](DESIGN.md#3-rules-and-the-tick).** Take out every other
-  source of a random stream, `RuleStreams` with its `TypeId` and `DefaultHasher` included. WP1.3's check
-  runs its tests in a debug build and in a release build.
+  source of a random stream, `RuleStreams` with its `TypeId` and `DefaultHasher` included.
 - **[A phase's clock is two counts of whole ticks](DESIGN.md#4-scenes-phases-time-and-pause)**, set before
   the phase's enter functions run, where `scene/program.rs` installs the length after them today.
 
-WP1.4, WP1.5 and WP1.7 are as they were, so keep what they rest on.
+Keep what WP1.4, WP1.5 and WP1.7 rest on.
 
 ## WP11 A game names a reusable thing, spawns it and variants of it, attaches one thing to another and takes a thing out of play
 

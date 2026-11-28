@@ -754,3 +754,26 @@
   A named function's type has no size and its type name is its path; a function pointer's type always
   has a size, in every build profile. The two new refusals are proved under WP1.3, and each code is
   documented as every other message's is.
+
+## Second design review of 28 November
+
+- 2026-11-28 [The design review](../../../.orchestrate/evidence/GAME-SDK/design-review.md) at 67838a7b5
+  asked for four changes. It was the second in a row to ask, so the design left here is the one builders
+  start from. WP1.2, WP1.3 and WP2.10 changed; WP1.1 and WP1.4 to WP1.7 did not.
+  [What changed, what was rejected and why](../../../.orchestrate/evidence/GAME-SDK/round-12-revision.md).
+- 2026-11-28 Finding 1, a function in the body of a root `fn rules()` has the module's path. The name
+  `rules` at a game's crate root is now the module's alone: the check refuses anything else of that name,
+  asking the compiler. Section 1, section 8, risk 21 and WP2.10's three games.
+- 2026-11-28 Left out of finding 1, as an assumption for the owner: `test()` and a program Cargo built
+  alone do not ask the compiler, so they are held to the name when the check next runs.
+- 2026-11-28 Finding 2, a committed world with no time left and what follows still to come. A scene
+  resumed with such a clock stands committed with it until its first tick, and a save taken there keeps
+  it. Section 4, `PhaseClock` in R2, WP1.2 clause 8 and WP13's proof list.
+- 2026-11-28 Finding 3, WP1.3(f) changed the world before its rewind. The call on the discarded tick is
+  now a read-only named function, and section 13 states when a rewind reaches past a test's call.
+- 2026-11-28 Finding 4, WP1.3(i) could pass through the registered stream. Its `game.run` half, and (c)'s,
+  use a game whose description lists `loot` nowhere.
+- 2026-11-28 Suggestion taken: WP13's pause-menu save has a capture that takes `Random`.
+- 2026-11-28 Notes for builders, kept out of the plan file. WP1.3(c) and (i) are where the `DefaultHasher`
+  fallback in `rule.rs` shows. For WP2.10, one way to ask the compiler is a copy of the package with one
+  more root item named `rules`, which compiles only where the name was free.
