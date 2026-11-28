@@ -15,7 +15,7 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 - Assumption: a headless game asking whether it can see through a placed cloud gets a marked estimate unless it gives the cloud's voxels.
 - Assumption: "a flexible set of cloud capabilities" is taken up: shade, the visible sky, the world's light, shapes and ground condensate are each left out by a scene at no cost.
 - Assumption: a scene with no visible sky that wants the shade of cooked shapes keeps their volumes loaded (27 MiB).
-- Assumption: a game may place up to 16 shapes itself, so a demo can compose its sky. The owner did not ask for this.
+- Assumption: a game may place up to 16 shapes to compose its sky.
 - Assumption: cloud light takes its first-order phase from the droplets, so the sky will differ from Broadsides' accepted stills near the Sun.
 - Assumption: for light scattered many times the design keeps its flux solution as a starting point. Nothing holds it to photon transport, and a builder may tune it by eye.
 - Assumption: the owner's words of 14 November are the licence for what Broadsides' authors wrote, the cloud library included; Third-party material keeps its own licence, and nothing GPL or share-alike is copied.
@@ -25,10 +25,10 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 - Assumption: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item (brief decision 3), except in WP20 and WP25, by [their rule](DESIGN.md#holding-the-displays-refresh-while-clouds-drift-wp19-and-wp20).
 - Assumption: what the game loses with clouds absent stops nothing here; it is listed for `PLATFORM-RUNTIME-MAC` and the performance phase.
 - Assumption: only the fair preset's sky is held to the refresh. The broken and overcast skies' cost and the finished sky's presented cadence are recorded and investigated (WP12.5, WP12.6), and the rest is the performance phase's.
-- Assumption: "each cloud holds up on its own" is met by a new form for the weather's own clouds (heaps in a 3D volume of about 80 MiB), not by library shapes. Until WP17 passes, main shows it unjudged.
+- Assumption: WP17 judges whether each procedural cloud holds up on its own with library shapes disabled.
 - Assumption: near heaps are drawn half a second of play behind a query's weather, and past about 25 km a heap loses its overhangs.
-- Assumption: a query can call a column clear while cloud still draws and shades there: for up to a second of play through a preset change, and within one map texel of a far cloud (1,600 m). No query lags with the picture ([what a game may rely on](DESIGN.md#the-weather-volume)).
-- Assumption: the weather volume's fill cadence is no governor knob, though the brief asks that every cadence be one, because moving it would freeze or jump the near clouds.
+- Assumption: the game queries committed weather. Clear samples throughout the contributing filter footprints at their retained states guarantee a clear drawn column. [Near and far sampling guarantees](DESIGN.md#the-weather-volume).
+- Assumption: the weather volume uses a fixed fill cadence at every governor setting. [Weather volume](DESIGN.md#the-weather-volume).
 - Assumption: WP25 measures the release V1 game in its 1920×1080 window, on the Apple recipe with TAAU under the fair preset, in one more sitting alone.
 - Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX work packages.
 - Assumption: the finished sky closes at WP12 with weak noon relief on broad lobes of library shapes as a listed weakness ([risk 14](DESIGN.md#risks)); [the noon-relief follow-up](DESIGN.md#the-noon-relief-follow-up) is no work package and waits for the lead.
@@ -107,11 +107,9 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 
 ## WP23 The weather's own clouds take a new form, a cluster of rounded heaps, in what a game reads and in stills drawn from it on the CPU
 
-Keep the form on main at `9c2708105`. Give its deck
-[the deck's own erosion](DESIGN.md#one-density-in-m¹) (WP23.3) and fit
-[each cluster inside its cell](DESIGN.md#one-weather-field-in-the-air-frame) (WP23.4). The fit moves
-puffs: WP23.1's puff witnesses move with it, and WP23.2's stills are taken again.
-[Risk 2](DESIGN.md#risks): when to end `BLOCKED`.
+Preserve the broken-deck opening and fit each puff inside its cell. Move WP23.1's witnesses with
+the fit, then repeat WP23.2's stills. Inspect near clouds from below and look for repeated towers.
+[Form and erosion](DESIGN.md#one-weather-field-in-the-air-frame) · [When to end `BLOCKED`](DESIGN.md#risks).
 
 ## WP24 The engine draws, shades and answers for the new cloud form on the Mac and in Chrome, and the old form is gone
 
@@ -119,8 +117,8 @@ Judge no look here.
 
 ## WP17 Each fair-weather cloud holds up on its own: a cluster of heaps of different heights, with no shelf, fold or repeated outline
 
-[Risk 2](DESIGN.md#risks) says what the builder may tune, and what to do if WP17.6 shows a cut. Take
-WP17.1's stills first.
+Take WP17.1's stills first. For WP17.6, frame a heap across a face whose parts sample different stages
+of the fair-to-clear change. [Tuning and remedies for a visible cut](DESIGN.md#risks).
 
 ## WP25 With the new clouds drifting, the player still sees a new frame as steadily as in the same game without them
 

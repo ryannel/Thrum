@@ -114,13 +114,13 @@ no filter reaches into another part ([part XXV](#check-that-it-can-work)). WP24.
 again. No interface with another module changed.
 Revised once more that day after [WP23's review](../../../.orchestrate/evidence/CLOUDS/WP23-review.md) passed
 the form's stills and failed its build on two rules no item held, and
-[the design's review](../../../.orchestrate/evidence/CLOUDS/design-review.md) asked for four changes. The
+[the design's review](../../../.orchestrate/evidence/CLOUDS/design-review-36.md) asked for four changes. The
 form stands as it passed. [The deck's erosion is the deck's own](#one-density-in-m¹) under either heaped
 form (new WP23.3). [A cluster stands inside its cell](#one-weather-field-in-the-air-frame), its radius and
-its depth (new WP23.4). A change from fair to clear at 60× is inspected across a near cloud
+its depth (new WP23.4). A change from fair to clear at 60× is inspected across a visible heap spanning two differently timed parts of the volume
 (new WP17.6, [risk 2](#risks)). And [what a game may rely on](#the-weather-volume) says what is drawn at a
 centre and between centres: a point is drawn clear where the query is clear across the reach of the filters
-that draw it, and the effect's report is whole at a map texel's centre (new WP24.7; WP12.8 written again).
+that draw it, and the reported map state identifies the map contribution at a texel centre (new WP24.7; WP12.8 written again).
 No interface with another module changed.
 
 ## The request
@@ -578,7 +578,9 @@ with no GPU:
   lifts a query's top above it, and [the weather volume](#the-weather-volume) is as tall as that depth and
   no taller. And a cell's radius says which columns its cluster can reach. So the cluster is fitted to the
   cell, and never the cell to the cluster: a stack ends at its reach, and its last puff does not carry it
-  past. How a cluster is fitted is the builder's, inside the three bounds above. A cluster shrunk whole
+  past. The fit keeps the bounded, leaning stacks and the two-scale erosion with a firm edge from the
+  [WP23 unblock](../../../.orchestrate/evidence/CLOUDS/WP23-unblock/README.md). The same curve shapes
+  the uneroded density the query integrates. How a cluster is fitted is the builder's. A cluster shrunk whole
   keeps every proportion its stills were judged on. The form's first build fitted neither
   ([WP23's review](../../../.orchestrate/evidence/CLOUDS/WP23-review.md)): under a type 1,600 m deep a
   column's top stood 1,702.75 m over its base, and a cell of 1,380.62 m radius had cloud 1,669.86 m from
@@ -678,24 +680,15 @@ inside a puff. How it integrates between those heights is the builder's. Where a
 integral is of the greater of the two uneroded densities at each height, taken the same way. The GPU's map evaluates
 the same rule at its texel centres.
 
-The column optical depth is an upper **bound** on the column that is drawn there, because
-noise only removes extinction, and it is zero exactly where the sky is clear. The field holds no average: a
-query never answers for a neighbourhood, and no form of a cloud is fitted to another's mean. The averages in
-this design are named where they are made: the GPU reads the field through filtered textures, so what it draws
-over a point is a local average of the model's density over a texel, held to the model at stated points within
-a tolerance its test states; the [coarse density](#one-density-in-m¹) takes the detail noise at its mean; and
-the Sun path's [far value](#the-suns-path-one-optical-depth-product) is a mean transmittance. Two more
-differences from the query are stated where they are made: past [the weather volume](#the-weather-volume) a
-heaped cell's column form keeps its column's optical depth and not where in the column it lies, and the
-volume shows heaped cloud one key interval of ticks late.
-
-**The bound is by state.** A query answers for the state it is given. Each GPU product holds the model at
-a state it names, the state it was last written from, and the bound above holds between a product and the
-query at that state. While the weather stands still every such state gives one column, and the query at
-the committed tick bounds what is drawn. Through a preset change it does not: a query at the committed
-tick can answer clear over a puff the volume still shows.
-[The states the drawn sky holds](#the-weather-volume) says which states bound the drawn column then, and
-what a game may rely on.
+The query's column bounds the eroded **model** density integrated at that location and state, because
+erosion only removes extinction. A zero column means the model has clear air at every height there.
+The query answers at a point. Each GPU product samples the field on its own grid and at the states it
+retains. Even in still weather a clear map texel can sit beside a cloudy one, or four clear map texels
+can surround a heap sampled by the volume. [What a game may rely on](#the-weather-volume) gives the
+bounds for the drawn column. Past the weather volume a heap also loses its vertical detail, and inside
+the volume the two keys show it one key interval late. The [coarse density](#one-density-in-m¹) takes the
+detail noise at its mean, and the Sun path's [far value](#the-suns-path-one-optical-depth-product) is
+a mean transmittance.
 
 ### Time: drift at the display's time, evolution on the tick
 
@@ -1104,91 +1097,80 @@ in the air frame, so wind costs nothing.
 - **The states the drawn sky holds.** A query answers for the committed state. No GPU product holds
   that state for long. A part of the map holds the state it was last written from, `M`, which
   [its age](#the-weather-map) bounds. A part of the volume holds its two keys' states, `A` and `B`, with
-  the part's weight `w` between them. So over a point the deck, a placed shape and a heaped cell's column
-  form are drawn at `M`, and heaped cloud inside the volume at `A` and `B`: those of the one part the
-  point lies in, at a face too, because no filter reaches into another part. The map has no apron: where
+  the part's weight `w` between them. Each contributing map texel supplies the deck and far heaped part at its own
+  `M`. A placed shape is drawn by [its own reader](#placed-volumes). Inside the volume the heaped
+  profile comes from the containing part's `A` and `B`, including at a face. The map has no apron: where
   the texels its filter reads lie in two parts of the map, each is drawn at its own part's state, and the
   two states are within the map's age bound of each other. They are joined as the model
   joins them: the deck's density and the heaped one by the greater at each point, whichever form or blend
   gives the heaped one, and a shape's coefficient added. Every reader draws from those products alone. None
   scales or gates what it reads by the committed state or by the map's column, so the view, the Sun's
   path, the overlay and the medium coefficients show one sky and its own shade, and a heap that
-  [every map centre misses](#the-weather-map) is still drawn.
-- **The bound: the column of two states.** The model's column rule takes the deck and the heaped cells
-  from one state. Given the deck from `M` and the heaped cells from `X`, it is the **column of two
-  states**, `τ(M, X)`: the integral up the column of the greater of `M`'s deck density and `X`'s heaped
-  density at each height, with nothing eroded and `M`'s placed column added. `τ(M, M)` is the query's
-  column at `M`. The model gives each condensate's uneroded density at a point for a state, so a test
-  forms `τ(M, X)` by its own sum.
-  With nothing eroded, the column the GPU draws at a point is no more than, within the allowance for
-  filtering that the test states:
-  - past the volume, `τ(M, M)`, and exactly it where the column holds heaped cloud alone or with a placed
-    shape;
-  - inside the volume, `(1 − w) · τ(M, A) + w · τ(M, B)`, with `A`, `B` and `w` those of the column's
-    part, which are one up the column because a part is whole columns. It holds because the reader blends
-    densities, each key's from one state at every height, and the greater of the deck's density and a
-    blend of two is no more than the same blend of the two greaters;
-  - in the band, the band's blend of those two, because its weight is one number up the column;
-  - in a band between two levels of the volume, the band's blend of the two levels' bounds, each with
-    its own part's `A`, `B` and `w`, for the same reason.
-- **Where the bound holds: at a centre, and by the filter between centres.** A product holds the model at
-  its own centres, and a filter draws between them. The bounds above are for a column through a map
-  texel's centre, on the level that draws it. Inside the volume the heaped cloud is read through the
-  volume's own filter, between voxels a sixth and a third of a fade length wide, and the test's allowance
-  covers it. Between the map's centres its filter draws a blend of the columns its texels hold, by
-  weights that sum to one, each texel at the state its own part of the map holds. So the column drawn
-  there is no more than that blend of the bounds at those centres, within the same allowance. It is not
-  bounded by the query at the point itself. On a level whose texel is wider than a puff, take a 300 m
-  puff alone over the centre of one 1,600 m texel, with the next centre clear. A column 400 m toward the
-  clear centre passes outside the puff, and the query there is clear at every state. The filter gives
-  the cloudy texel three quarters of the weight there, and the column form draws three quarters of that
-  centre's heaped part. That is [the far level's broader heap](#the-weather-map), in still weather as
-  through a change, and no later state clears it. WP24.7 holds what is drawn there.
-- **Through a preset change.** While the weather stands still `M`, `A` and `B` give one column, and the
-  bound is the query's at the committed tick. While a preset ramps they differ, and the picture follows
-  the query: the deck, the shapes and the far heaps within the map's age, and the near heaps within two
-  key intervals of the ramp's end, which is a second of play. Under the game's 5 s response at 60×, a
-  change from fair to clear takes coverage through 0.50, 0.30, 0.10 and 0 on four ticks. On the third the
-  query is clear over a mature puff and so is the map, while both of its part's keys still hold the puff
-  whole, and the view and the Sun's path draw it and its shade. The part's next turn, within `K` ticks,
-  writes a clear key, the puff thins as `S` moves to that key, and it is gone when both keys are clear. A
-  change from fair to overcast draws the new deck from `M` under the old puff from `A` and `B`. No point
-  is denser than the denser of the two, and the column is no more than `τ(M, A)` and `τ(M, B)` blended,
+  [every map centre misses](#the-weather-map) still draws where the volume samples it.
+- **What bounds the drawn column.** Erosion can only reduce the density reconstructed from each product.
+  For the deck the reader uses the filtered deck column. A placed shape contributes once, through its
+  own volume or footprint and the weights of its [two forms](#placed-volumes). For a heap the source
+  depends on where the column lies.
+  - Past the weather volume, the uneroded column form integrates to the map's heaped part. At a texel
+    centre that is the model's heaped part at that texel's state. Between centres it is the bilinear
+    blend of those parts, each at its own state. On a 1,600 m grid put a lone 300 m radius puff at one
+    centre and clear air at the next. At 400 m toward the clear centre the query is clear, but the
+    column form draws three quarters of the first centre's heaped part (WP24.7).
+  - Inside the volume, each key holds the model's heaped profile at its voxel centres, including the
+    apron at the owning part's key tick. At each height the reader filters those profiles in space,
+    makes an uneroded density for each key, then blends the densities by the part's weight. Integrating
+    that density gives the heaped bound there. At 15 km a 150 m radius heap midway between four map
+    centres spaced 320 m apart lies 226 m from each centre. All four columns are clear, yet a voxel
+    on the 100 m grid samples the heap. The view and the Sun path both draw from that voxel (WP24.6 case 3).
+  - Across a transition band the heaped contribution is the band's blend of the two reconstructions.
+    At the outer edge these are the volume and the map. Between volume levels each level supplies
+    its own voxels, keys and weight. The band weight is constant up the column.
+
+  For the whole column take the greater of the reconstructed deck and heaped densities at each height,
+  integrate, and add the placed contribution. Inside the volume, form that uneroded sum separately for
+  keys `A` and `B`, using the same reconstructed deck and placed contribution for both. Their weighted
+  sum bounds the drawn column because taking the greater with the deck after blending the two heaped
+  densities gives at most the blend of their separate greaters. At a map centre the deck has one state
+  `M`. Writing `τ(M, X)` for the sum with that deck and the heap reconstructed from volume key `X`,
+  the **column of two states** bound there is `(1 − w) · τ(M, A) + w · τ(M, B)`. In a band the
+  same argument applies to its two bounds. For the far column form, the sum is at most the deck's column
+  plus the filtered heaped part and the placed column. With no deck and nothing eroded, the heaped
+  part and the placed column add exactly. The WP24.6 probes allow for finite sampling where they
+  compare to the model. A map filter gives no bound on a heap supplied by the volume.
+- **Through a preset change.** In still weather the keys agree in time and each spatial filter still
+  applies. After a ramp ends, every map texel samples the new weather within the map's age bound. Both
+  keys of every volume part do so within two key intervals, a second of play on the first profile.
+  Under the game's 5 s response at 60×, a change from fair to clear takes coverage through 0.50, 0.30,
+  0.10 and 0 on four ticks. On the third the query is clear over a mature puff and so is the map,
+  while both of its part's keys still hold the puff whole, and the view and the Sun's path draw it and its shade. The part's next turn, within `K` ticks,
+  writes a clear key, the puff thins as `S` moves to that key, and it is gone when both keys are clear.
+  At a map centre a change from fair to overcast draws the new deck from `M` under the old puff from `A` and `B`.
+  The column is bounded by the weighted blend of `τ(M, A)` and `τ(M, B)`,
   which is at most the deck's column and the puff's together
   ([part XXII](#check-that-it-can-work)).
 - **What a game may rely on.** Its query is exact for the state it gives, with no lag, and a server needs
-  nothing else. The picture at tick `C` is bounded by the model at the states its products hold, and each
-  of them is a committed state no older than two key intervals or the map's age bound, whichever is
-  longer. After a hitch the span also holds the last state the effect received before it, for one key
-  interval more. The query at the committed tick is what the picture reaches at every centre by the end
-  of that span.
-- **What is drawn clear.** A product is clear at a centre where the query was clear at the state the
-  product holds there, and every point is drawn through filters. So a point is drawn clear when the query
-  has answered clear, at every tick of that span, over the reach of the filters that draw it: every
-  column within one cell of the point, on the coarsest product that draws it. That cell is a texel of the
-  coarsest map level that draws the point, a voxel of the volume's level there, or a texel of a placed
-  shape's own volume, whichever is widest. Every centre a filter reads for the point lies within that
-  reach, and a clear column is clear at every height, so each of those centres holds nothing. The columns
-  are the air frame's: the wind carries them through the span, and the query at each tick is asked where
-  that tick's travel puts them. A query
-  that is clear at the point alone promises nothing of the picture there, in still weather or through a
-  change: [a clear column beside a far heap](#the-weather-volume) is drawn with cloud in it. On the first
-  profile's far level the reach is 1,600 m.
-- **What the effect reports.** Code that must match the picture at a tick asks the effect. For a world
-  point it reports the states the picture is drawn from there: the two key states `A` and `B` and the
-  weight of the volume part the point lies in, and the state `M` of the map part that holds the point's
-  own texel on the level that draws it. In a band between two levels it gives each level's, with the
-  band's weight. The caller evaluates the model at them. For the volume the report is whole at every
-  point: a reader takes nothing from another part's keys, so it serves at a face between two parts as at
-  a voxel's centre. For the map it is whole at a texel's centre, where the filter reads that texel alone
-  and what is drawn is the model's column at `M`. Between centres the filter also reads the neighbouring
-  texels, and one of them may lie in a part of the map written on another tick. While the weather stands
-  still every state gives one column, and `M` serves between centres too, filtered from the centres as
-  the map's filter does. While the weather changes, `M` alone does not give what is drawn between
-  centres, and nothing is promised of the picture there but
-  [the filter's bound](#the-weather-volume). Code that needs more takes its points at texel centres. The
-  report is for presentation code and tests. A simulation never reads the effect, because its answers
-  must not depend on a renderer.
+  nothing else. At tick `C` each product samples committed states no older than two key intervals or the
+  map's age bound, whichever is longer. After a hitch the span also includes the last state the effect
+  received before it for one more key interval. Once the weather has held steady for that span, all contributing
+  products sample that weather on their respective grids.
+- **When a column is drawn clear.** If every contributing sample is clear at the state used, the drawn
+  column is clear. This includes the map texels at their respective row states, the volume voxels and
+  apron at both key states, both active levels in a band, and a placed shape's contributing samples.
+  A sufficient test over the retained time span covers the union of these filter footprints, following
+  each column in the air frame with that tick's wind travel. For bilinear sampling the centres lie within
+  one spacing **on each horizontal axis of the sampled grid**. On the far map that is up to 1,600 m on
+  each axis. At (240, 240) the centre at (1600, 1600) contributes 0.0225 even though the edge of a
+  300 m radius puff there is over 1,600 m away. A far puff entirely between centres can also go
+  unsampled, so the picture can be clear where the model contains cloud.
+- **What the effect reports.** For a world point the effect reports the containing volume part's key
+  states and weight, and the state `M` of the map part holding the point's own texel. In a level band
+  it reports each level's values and the band weight. The volume keys apply to every voxel its filter
+  reads, including the part's apron. The map state identifies the map contribution at a texel centre.
+  Between centres in still weather the caller can filter the neighbouring model columns at that same
+  state. During a ramp the neighbouring rows can have different ages. The reported `M` then
+  identifies the state of the point's own row. Reproducing the blend would also need the neighbouring
+  rows' states and the spatial weights. This report is for presentation code and tests. Simulation queries the model at
+  the committed state.
 - **It belongs to the weather, not to the sky.** The Sun's path integrates it. A scene with Shade and no
   visible sky holds it, and its ground field is the same bytes as with the sky drawn.
 - **Its size.** Its reach, its voxels and its key interval are profile constants, and none is a
@@ -1867,7 +1849,7 @@ The owner's bar of 17 November 2026 ([the request](#the-request), and
   and then asserts it, and a miss against a reference neither fails an item nor ends `BLOCKED`.
 - **What a game reads is tested.** The weather field is the game's: it is deterministic, and its CPU query is
   what a server reads. So the GPU's weather map and ground condensate are tested against the query, at a
-  tolerance the test states: cloud and mist stand where the query has them and not where it is clear (WP2, WP4.1,
+  tolerance the test states: cloud and mist agree with the model at the sampled locations and states (WP2, WP4.1,
   WP6.2, WP6.9, WP7.6, WP14.2), and [the weather volume](#the-weather-volume)'s voxels hold the model's
   heaped profile at their centres, each key at its key tick, a part's apron at that part's key ticks, and
   its reader shows one shown tick (WP24.1).
@@ -1887,8 +1869,9 @@ The owner's bar of 17 November 2026 ([the request](#the-request), and
   condensate: through ground condensate, the optical depth along a sight line, summed from the GPU's coarse
   extinction, against the query's optical depth between the same two points (WP14.2); over a directed shape,
   the map's column optical depth against the query's (WP6.9); and for the column the GPU draws, through a placed
-  cloud's two forms and their blend and through eroded cells and the deck, that it is never more than the
-  query's column, which is [the bound a query promises](#one-weather-field-in-the-air-frame) (WP6.2, WP7.6).
+  cloud's two forms and their blend and through eroded cells and the deck, the amount at the WP6.2 and WP7.6 probe columns against
+  the query there. For the puff form the [public guarantee](#the-weather-volume) follows the product that
+  supplies each contribution.
   Each test states its allowance for the map's filtering and shows that twice the amount fails. These compare
   two answers to one question a game asks. Neither is a reference for light, and no photon is counted.
 - **Contracts are tested.** The frame contract's motion, reactive coverage and history (WP3.4, WP15.7, and
@@ -2755,8 +2738,10 @@ with no largest fill, is turned away too (WP24.5).
    where their turns fall five ticks apart ([part XXV](#check-that-it-can-work)). At the face between them
    that difference is a step, because [no filter crosses a face](#the-weather-volume). Nothing here shows
    whether half a second of it is seen, and WP7.3 judged minute-long changes at 1×, where the lines
-   agree. So WP17.6 judges it in the game: a change from fair to clear at 60× with a procedural cloud
-   near the camera, looked at frame by frame for a straight cut across the cloud as it thins. If its
+   agree. WP17.6 follows one near procedural heap whose visible billows span a face. Time the fair-to-clear
+   control at 60× so the adjacent parts sample different stages of the ramp on their turns. Locate the
+   face in the frame and identify those keys on each side. The judgement is whether a visitor can see
+   the cut as the heap thins in the running game. If its
    sequence shows the parts or their faces, the fixes in order: a shorter key interval, which is the
    builder's, at the cost WP24.5 records and WP25 holds; then one pair of key ticks for the whole volume,
    each new key filled over an interval before it is shown, which costs a third key's memory or twice the
@@ -3144,7 +3129,8 @@ water scene, WP11.5 uses `scripts/check_water_browser.mjs`.
   its constants, its tests and the choice. Nothing else may read the choice. WP23.3's test compares the
   two forms while both exist; WP24 takes that comparison out and keeps the test's gap and its bank.
 - **Checks by name.** WP23.1's check runs the tests whose names contain `puff`, WP23.3's those with
-  `broken_deck`, WP23.4's those with `cluster_extent`, WP24.1's those with `weather_volume`, WP24.6's
+  `broken_deck`, WP23.4's those with `cluster_extent` in both the model's unit tests (puff extents) and
+  its integration tests (public query), WP24.1's those with `weather_volume`, WP24.6's
   those with `heaped_column` and WP24.7's those with `between_centres`; none counts tests. WP24.5's and WP17.5's checks
   look in a record's `pass_gpu_ns` and `resources` for names that contain `weather volume`, in each
   clouds-visible run, and read the runs `check` measured from the last line it prints. WP24.5's also reads

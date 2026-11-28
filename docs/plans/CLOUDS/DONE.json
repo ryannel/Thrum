@@ -1985,7 +1985,7 @@
         {
           "id": "WP23.4",
           "statement": "A cluster stands inside its cell, in two behaviours on the fair sky of WP23's review, which the test builds from its own constants: the puff form, seed 39, a lattice pitch of 4,600 m, a fade length of 300 m and a type of cells alone. 1. Under a depth range the test states, for the cell of generation 0 at each of the 121 sites of a square 11 lattice sites across about the origin, with the cluster standing whole: no puff's surface is farther from the cell's centre, measured level, than the cell's radius, and none is higher over the base than the cell's depth. The test takes each extreme from the puffs' own centres and radii, and not from a bound the cluster carries. 2. With the type's least and greatest depth both 1,600 m, at the half life of the cell at site (\u22125, \u22125) of generation 0: the query at X/Z (\u221220939.81, \u221219242.98) returns a top no more than 1,600 m over its base, and 1,651.37 m over the base in that column the uneroded, the full and the coarse density are exactly zero. The build reviewed at `9c2708105` returned a top 1,702.75 m over the base and an uneroded density of 0.01387 m\u207b\u00b9 there, and at site (\u22124, \u22122) had cloud 1,669.86 m from the centre of a cell of 1,380.62 m radius. Guard: CPU tests of the model on a small world, in `./dev check`.",
-          "check": "sh -c 'cargo test --locked --offline -p thrum-cloud-model --test it cluster_extent 2>&1 | tee /dev/stderr | grep -Eq \"test result: ok. [1-9][0-9]* passed\"'",
+          "check": "bash -o pipefail -c 'cargo test --locked --offline -p thrum-cloud-model --lib --test it cluster_extent | tee /dev/stderr | grep -Ec \"^test result: ok[.] [1-9][0-9]* passed\" | grep -qx 2'",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -2001,7 +2001,7 @@
       "name": "The engine draws, shades and answers for the new cloud form on the Mac and in Chrome, and the old form is gone",
       "status": "not_started",
       "depends_on": [],
-      "quality_bar": "A GPU held to what a game reads, as WP2 and WP7.6 held it: each product the engine draws and shades from holds the weather the CPU query answers at the state that product names, cloud where the query has it there and never more of it, and through a preset change the drawn column is no more than the model's column for the states its products hold. No look is judged here; WP17 judges the sky this leaves on main.",
+      "quality_bar": "The view and the Sun path draw the same weather. The map holds the model's columns at its texel centres and each volume key holds the model's heaped profiles at its voxel centres. Between centres and through a preset change each contribution follows its own filter and recorded states. WP17 judges the resulting sky.",
       "items": [
         {
           "id": "WP24.1",
@@ -2149,8 +2149,8 @@
         },
         {
           "id": "WP17.6",
-          "statement": "At 60x under the fair preset with the placed share at 0, a visitor sends the sky to clear while a procedural cloud stands near the camera, and the cloud thins away as one cloud. No straight cut, flat face or square block shows across it or at its edge while it thins, and nothing in it appears or vanishes between two frames.",
-          "inspect": "Capture a `realtime` sequence at 60x from 40 m with a procedural cloud within 10 km filling a third or more of the frame's width, and change the preset from fair to clear with the game's control while it is in view. Judge every frame from the change until that cloud is gone, whole and in a native-size crop of the cloud: 1. the cloud thins and breaks up along its own billows, and no straight line, flat cut or square block shows across it or at its edge in any frame; 2. no piece of the cloud appears or vanishes between two frames.",
+          "statement": "At 60x a visitor changes the fair sky to clear while a visible procedural heap spans a face between two parts of the weather volume. The parts sample the change on different ticks. The heap thins along its billows without a straight cut, flat face, square block or a piece popping in or out between frames. Record: one realtime Metal sequence through the change.",
+          "inspect": "From 40 m with the placed share at 0 and no directed shapes, frame a procedural heap within 10 km that fills at least a third of the frame width. Choose a face with visible billows of that heap on both sides. In the realtime capture use the game's fair-to-clear control at 60x and keep the face in view until the heap disappears. Mark where the face crosses the billows in one saved frame. For that frame record the control tick, the two parts' key ticks and their keyed coverage values showing that they sampled different stages of this change. Watch the unobstructed sequence and step through the heap at native size. Does the heap thin along its billows without a straight line, flat cut or square block at the face or the outline? Does it thin without a piece popping in or out between frames?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -2280,7 +2280,7 @@
         {
           "id": "WP12.8",
           "statement": "A game maker can add clouds to a scene from the public documentation: the profile and its capabilities, the weather state and its step, directed shapes, the type table, the library's stacked product and its records, the point query and what the picture promises of it, the limits, counters and knobs, and the stated approximations.",
-          "ask": "Could a game maker use clouds from the documentation and the design alone? Does the documentation state the supported range for geometry and camera, the air inside a cloud's interval, the haze scale and what happens below the lowest Sun elevation? Does it say what the picture promises of a query, as the design's weather volume section has it: near heaps drawn a key interval late, a point drawn clear only where the query has been clear across the reach of the filters that draw it, and an effect's report that is whole at a map texel's centre and at every point of the weather volume?",
+          "ask": "Could a game maker use clouds from the documentation and the design alone? Does the documentation state the supported range for geometry and camera, the air inside a cloud's interval, the haze scale and what happens below the lowest Sun elevation? Does it explain that a near heap is drawn one key interval late from filtered voxel profiles at the reported keys, a far heap from filtered map columns, and a heap in the transition band from both? Does it give the sufficient condition for a clear drawn column (every contributing sample clear at its retained state), the bilinear footprint of up to one spacing on each horizontal axis, and the two cases where a point query and the picture differ (a far puff missed by every centre and a cloudy texel beside a clear point)? Does it say where the reported states suffice: throughout a volume part including its apron, and for the map at a texel centre, while a single map tick cannot reproduce a blend across rows of different ages?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

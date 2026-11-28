@@ -1435,3 +1435,8 @@ The column integrates the same uneroded curve over the clipped sphere chords.
 The Mac passed all ten numerical behaviours and the unchanged turret tests.
 The paired noon stills passed two locations and a six-age life strip in the
 builder's inspection and a fresh visual read. [Tests, captures and inspection](../../../.orchestrate/evidence/CLOUDS/WP23/revised/README.md)
+
+- 2026-11-28 Planner closed the four design findings. WP23 retains the deck probes and checks puff
+  extents privately and through the public query. WP17.6 inspects a heap spanning a staggered update
+  face. WP12.8 documents the clear-air guarantee for each contributing product.
+  [Findings, changes and WP23 handoff](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-28-7.md)
