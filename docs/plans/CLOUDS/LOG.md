@@ -1373,3 +1373,12 @@ The replacement command and validator exercised the same comparison with a fresh
   cluster of puffs held near the camera in a weather volume, and a column's top may step at a heap's edge.
   New WP23 and WP24 build it before WP17, whose items are written again. Nothing on `build/clouds` at
   `aeb56f582` merges. [What changed and why](../../../.orchestrate/evidence/CLOUDS/WP17-unblock.md)
+
+- 2026-11-28 Planner, after the design review of the puff form asked for changes (seven Must Fix findings).
+  A heaped column's optical depth is taken over the whole line; the column form keeps it; the map holds the
+  deck's column apart; a ray skips only what its own texels call empty; and the weather volume is filled a
+  part a tick and read between two keys, 30 ticks late. New WP24.6 and WP25, and WP23.1, WP24.1 to WP24.3,
+  WP24.5, WP17.4 and WP17.5 written again. No interface with another module changed.
+  [What changed for each finding](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-28.md)
+- 2026-11-28 Planner: four assumptions the owner has since settled left `PLAN.md` (the 2 s test aim, first
+  principles, when builders start, and the lowered bar's tests); the note above lists them.

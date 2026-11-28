@@ -9,8 +9,6 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 
 ## Open for the human
 
-- Assumption: aim for about 2 s per fast test when run alone on a quiet Mac.
-- Assumption: the owner's "it should start from first principles" (14 November) governs.
 - Assumption: "taking into account mist / fog" and "top quality atmosphere" (14 November) are met by mist, fog and low cloud as the clouds' own droplets in this module's one weather field. `ATMOSPHERE`'s view volume draws them near the camera and this module's trace beyond.
 - Assumption: "changing with the weather and time of day" means the mist itself forms after dusk and burns off after sunrise, as well as taking the day's light. The narrower reading leaves every amount to the game and drops WP13.4 and WP16.1.
 - Assumption: "low cloud the camera can enter" includes coming out above it on a summit. The camera stays 2 to 40 m over the ground. Only a layered deck on the hills is inspected.
@@ -20,19 +18,18 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 - Assumption: a game may place up to 16 shapes itself, so a demo can compose its sky. The owner did not ask for this.
 - Assumption: cloud light takes its first-order phase from the droplets, so the sky will differ from Broadsides' accepted stills near the Sun.
 - Assumption: for light scattered many times the design keeps its flux solution as a starting point. Nothing holds it to photon transport, and a builder may tune it by eye.
-- Assumption: the lowered bar keeps tests where a game reads the weather (the GPU's map against the CPU query) and on the frame contract, and drops every test of how light was computed.
 - Assumption: the owner's words of 14 November are the licence for what Broadsides' authors wrote, the cloud library included; Third-party material keeps its own licence, and nothing GPL or share-alike is copied.
-- Assumption: "bring that across when it makes sense" (13 November) means work packages start when their dependencies are Done, which can be before G7.
 - Assumption: clouds are shown through a selection inside `examples/v1-game` and `examples/water`, off by default; the V1 exit scene is unchanged.
 - Assumption: finished excludes the Broadsides game's ten genera, squall and warm front, rain, a cloud a simulation writes, a cloud held against the wind, and lamps glowing in fog.
 - Assumption: time-lapse runs from 1× to 60×, and "continuous to the horizon" means about 200 km.
-- Assumption: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item (brief decision 3), except in WP20, by [its rule](DESIGN.md#holding-the-displays-refresh-while-clouds-drift-wp19-and-wp20).
+- Assumption: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item (brief decision 3), except in WP20 and WP25, by [their rule](DESIGN.md#holding-the-displays-refresh-while-clouds-drift-wp19-and-wp20).
 - Assumption: what the game loses with clouds absent stops nothing here; it is listed for `PLATFORM-RUNTIME-MAC` and the performance phase.
 - Assumption: only the fair preset's sky is held to the refresh. The broken and overcast skies' cost and the finished sky's presented cadence are recorded and investigated (WP7.8, WP12.5, WP12.6), and the rest is the performance phase's.
-- Assumption: "each cloud holds up on its own" is met by a new form for the weather's own clouds (heaps held in a 3D volume, about 40 MiB more), not by library shapes filling the fair sky. From WP24 until WP17 passes, main shows it unjudged.
+- Assumption: "each cloud holds up on its own" is met by a new form for the weather's own clouds (heaps held in a 3D volume, about 72 MiB more), not by library shapes filling the fair sky. From WP24 until WP17 passes, main shows it unjudged.
+- Assumption: near heaps are drawn half a second of play behind the weather a query answers (30 seconds of weather at 60×), and past about 25 km a heap loses its overhangs.
+- Assumption: the game WP20 and WP25 measure is the release V1 game in its 1920×1080 window, on the Apple recipe with TAAU under the fair preset. WP25 needs one more sitting with no other agent working.
 - Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX work packages.
-- Assumption: the game WP20 measures is the release V1 game in its 1920×1080 window, on the Apple recipe with TAAU under the fair preset.
-- Assumption: the finished sky closes at WP12 with weak noon relief on broad lobes of library shapes as a listed weakness ([risk 14](DESIGN.md#risks)). The relief work is no work package: [the noon-relief follow-up](DESIGN.md#the-noon-relief-follow-up) holds it, and waits for the lead to schedule it.
+- Assumption: the finished sky closes at WP12 with weak noon relief on broad lobes of library shapes as a listed weakness ([risk 14](DESIGN.md#risks)); [the noon-relief follow-up](DESIGN.md#the-noon-relief-follow-up) is no work package and waits for the lead.
 - Assumption: WP14 to WP12 pass without a shaft of sunlight followed inside mist below broken cloud ([risk 15](DESIGN.md#risks)); WP22, last, takes it up.
 - Assumption: a scene that declares Ground pays its full-refresh trace at every fog amount, zero included. With no mist it is held to the look of the same scene without Ground, not to the bytes it drew before WP15.
 - Assumption: from inside upper cloud only the far-mist toggle is inspected (WP15.16), not how the cloud looks from within.
@@ -110,16 +107,21 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 
 Start from main: `build/clouds` holds only the failed turret looks.
 [The form control](../../../.orchestrate/evidence/CLOUDS/design-proof/form-control/README.md)'s numbers are a
-starting point. WP23.1's check runs the tests whose names contain `puff`. If WP23.2's stills
+starting point. If WP23.2's stills
 show the turret flaws or curtains, end `BLOCKED` with `needs_context` ([risk 2](DESIGN.md#risks)).
 
 ## WP24 The engine draws, shades and answers for the new cloud form on the Mac and in Chrome, and the old form is gone
 
-WP24.1's check runs the tests whose names contain `weather_volume`. Judge no look here.
+Judge no look here.
 
 ## WP17 Each fair-weather cloud holds up on its own: a cluster of heaps of different heights, with no shelf, fold or repeated outline
 
 [Risk 2](DESIGN.md#risks) says what is the builder's to tune. Take WP17.1's stills first.
+
+## WP25 With the new clouds drifting, the player still sees a new frame as steadily as in the same game without them
+
+By [WP20's protocol](DESIGN.md#holding-the-displays-refresh-while-clouds-drift-wp19-and-wp20): if a cloud run
+does not hold, end `BLOCKED` with the series and build no repair.
 
 ## WP12 On the Mac's Apple recipe the sky runs with MetalFX and the governor, its cadence on the built-in display is on record, and the module is closed
 

@@ -1953,9 +1953,9 @@
       "items": [
         {
           "id": "WP23.1",
-          "statement": "Under a profile that names the puff form, the point query keeps what a game reads from the weather, in seven behaviours. 1. A clear column has coverage, age and column optical depth exactly zero and its top exactly at its base, and the base is the type's condensation level in cloud and in clear air. 2. The field at a world point after any travel equals the field with no travel at that point less the travel, bit for bit. 3. At fixed air-frame points over a day, across births, deaths and generation boundaries, a ramp of coverage and a ramp of type, each halving of the time step shrinks the largest change in column optical depth, in coverage, in top and in thickness by at least the factor the test states, and a cell the test switches on between two samples fails that assertion. 4. Along a line that crosses overlapping cells, each halving of the step shrinks the largest change in column optical depth and in coverage by at least that factor; the top is left out there, because it steps at a heap's edge. 5. The column optical depth a query returns equals the model's own sum of the uneroded density up that column, and the full and the coarse density each integrate to no more than it, and to zero where it is zero. 6. As coverage rises from 0 to 1 the share of cloudy columns in a square 20 lattice sites across never falls. 7. A mature cell has a column that holds clear air between two heights that hold cloud, which a form of one height a column cannot. The turret form's own tests are unchanged and pass. Guard: CPU tests of the model on a small world, in `./dev check`.",
-          "check": "sh -c 'cargo test --locked --offline -p thrum-cloud-model --test it puff 2>&1 | tee /dev/stderr | grep -Eq \"test result: ok. ([7-9]|[1-9][0-9]+) passed\"'",
-          "ask": "Do the tests whose names contain `puff` assert each of the seven behaviours on a profile that names the puff form, and does the switched cell of the third fail its assertion?",
+          "statement": "Under a profile that names the puff form, the point query keeps what a game reads from the weather, in eight behaviours. 1. A clear column has coverage, age and column optical depth exactly zero and its top exactly at its base, and the base is the type's condensation level in cloud and in clear air. 2. The field at a world point after any travel equals the field with no travel at that point less the travel, bit for bit. 3. At fixed air-frame points over a day, across births, deaths and generation boundaries, a ramp of coverage and a ramp of type, each halving of the time step shrinks the largest change in column optical depth, in coverage, in top and in thickness by at least the factor the test states, and a cell the test switches on between two samples fails that assertion. 4. Along a line that crosses overlapping cells, each halving of the step shrinks the largest change in column optical depth and in coverage by at least that factor; the top is left out there, because it steps at a heap's edge. 5. The column optical depth a query returns is conservative on three columns: one through a cluster's core, one through a puff that overhangs clear air, and one that grazes a single puff over 10 to 50 m of height. On each it is no less than the uneroded point density summed up the column by the test itself, at steps of 0.1 m or less and with none of the query's own integration, and more than that sum by no more than the share the test states. On the grazing column the coverage is above zero too, and a column optical depth made by summing point samples 50 m apart fails. 6. On those three columns the full and the coarse density each integrate to no more than the query's column optical depth. 7. As coverage rises from 0 to 1 the share of cloudy columns in a square 20 lattice sites across never falls. 8. A mature cell has a column that holds clear air between two heights that hold cloud, which a form of one height a column cannot. Under a type with a deck and cells, a column where a puff stands over a shallower deck has the deck's density at a point in the deck, the puff's at a point in the puff, and none between the deck's top and the puff's underside. The turret form's own tests are unchanged and pass. Guard: CPU tests of the model on a small world, in `./dev check`.",
+          "check": "sh -c 'cargo test --locked --offline -p thrum-cloud-model --test it puff 2>&1 | tee /dev/stderr | grep -Eq \"test result: ok. [1-9][0-9]* passed\"'",
+          "ask": "Do the tests whose names contain `puff` assert each of the eight behaviours on a profile that names the puff form? Does the switched cell of the third fail its assertion? Does the fifth take its own sum from point densities, and show the column summed from samples 50 m apart failing on the grazing column?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1985,7 +1985,7 @@
       "items": [
         {
           "id": "WP24.1",
-          "statement": "Each voxel of the weather volume holds the model's heaped profile at its own centre, on every level, at the tick its part was last written, within the tolerance the test states. The centres compared include ones in a cloud's core, ones in its fade and clear ones, and at least one clear centre lies below a cloudy one in the same column. No part is older than its cadence allows in weather time, at 1x and at 60x. That holds after a day of travel at 40 m/s, and after repeated ticks, a pause, a hitch, a backward tick and a replaced device. A volume filled from the map's column, one height a column, fails the comparison. Guard: a GPU test in `./dev check` on the smallest volume that has every level; only a device shows what the compute passes wrote.",
+          "statement": "Each voxel of the weather volume holds, in each of its two keys, the model's heaped profile at its own centre at the tick that key was written, on every level, within the tolerance the test states. The centres compared include ones in a cloud's core, ones in its fade and clear ones, and at least one clear centre lies below a cloudy one in the same column. A part is written once in every key interval of ticks, at 1x and at 60x alike, so no part's newer key is more than one interval old. What a reader takes at a voxel's centre is the older key in the tick the newer is written, the newer key one interval later, and between those ticks their blend by the ticks passed. After a cut and after a replaced device both keys hold the committed tick. That holds after a day of travel at 40 m/s, where a voxel that entered the volume's reach holds each key at that key's own tick, and after repeated ticks, a pause, a hitch and a backward tick. A volume filled from the map's column, one height a column, fails the comparison. Guard: a GPU test in `./dev check` on the smallest volume that has every level; only a device shows what the compute passes wrote.",
           "check": "sh -c 'cargo test --locked --offline -p thrum-clouds --test it weather_volume 2>&1 | tee /dev/stderr | grep -Eq \"test result: ok. [1-9][0-9]* passed\"'",
           "target": "mac-metal",
           "lock": "gpu",
@@ -1994,9 +1994,9 @@
         },
         {
           "id": "WP24.2",
-          "statement": "What a game reads and what shades the ground hold under the puff form, by the tests that held them under turrets. They are: the weather-map test, where on every level each texel holds the CPU query's column at its own centre and the coarsest level's centres include clear ones and cloudy ones (WP2.2's and WP3.15's); the shade-only test, where the ground field holds the same bytes with visible clouds off under a sky where the detail noise changes the full density (WP3.8's); the five weather-range tests, where the map follows presets, ramps and wind and the column the GPU draws through cells, the deck, broken banks and placed columns is no more than the queried column plus 0.12, and twice the density fails (WP7.6's); and the Sun-path test on the native recipe and under WebGPU's default limits, within the bounds it states today, which at a 20\u00b0 Sun on the far level are a largest transmittance error of 0.35 and a root-mean-square error of 0.075. Guard: these tests, as they stand in `./dev check`.",
+          "statement": "What a game reads and what shades the ground hold under the puff form, by the tests that held them under turrets, each with its assertions, its stated tolerances and the wrong versions it rejects. They are: the weather-map test, where on every level each texel holds the CPU query's column at its own centre, the column optical depth and the deck's own thickness and coverage with it, and the coarsest level's centres include clear ones and cloudy ones (WP2.2's and WP3.15's); the shade-only test, where the ground field holds the same bytes with visible clouds off under a sky where the detail noise changes the full density (WP3.8's); the five weather-range tests, where the map follows presets, ramps and wind and the column the GPU draws through cells, the deck, broken banks and placed columns is no more than the queried column plus 0.12, and twice the density fails (WP7.6's); and the Sun-path test on the native recipe and under WebGPU's default limits, within the bounds it states today, which at a 20\u00b0 Sun on the far level are a largest transmittance error of 0.35 and a root-mean-square error of 0.075. One assertion of the map test names the turret rule that WP24.3 removes: its fixture holds the coarsest texel wider than twice the turret pitch. Its purpose is kept in the puff form's terms: the fixture's coarsest texel is wider than its widest puff, and among that level's centres the test finds one that stands in heaped cloud and one that is clear. Guard: these tests, as they stand in `./dev check`.",
           "check": "cargo test --locked --offline -p thrum-clouds --features thrum-render/creation-counters --test it --test weather_range_gpu",
-          "ask": "In this work package's changes, did those tests move only in expected values and probe points, with every assertion, every stated tolerance and every wrong version they reject kept?",
+          "ask": "In this work package's changes, did those tests move only in expected values, in probe points and in that one fixture assertion, with every other assertion, every stated tolerance and every wrong version they reject kept? Does the map test's fixture hold its coarsest texel wider than its widest puff, and does the test find a heaped centre and a clear centre on that level?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "open",
@@ -2006,11 +2006,14 @@
         },
         {
           "id": "WP24.3",
-          "statement": "The engine has one heaped form. The turret rule, its profile constants and the profile's choice between forms are gone from the engine's crates and from the example games, and the tests that only the turret rule had go with them: WP23.1's seven behaviours guard what a game reads from then on. Guard: a search of `crates` and `examples`.",
-          "check": "sh -c '! git grep -q -e turret_pitch -e turret_least -e turret_fade -- crates examples && git grep -q -i puff -- crates/thrum-cloud-model/src crates/thrum-clouds/src'",
+          "statement": "The engine has one heaped form. The turret rule, its profile constants, its shader function and the profile's choice between forms are gone from the engine's crates and from the example games, and the tests that only the turret rule had go with them: WP23.1's eight behaviours guard what a game reads from then on. Both example games build their profile with the puff form. Each reader of a heaped cell's profile takes it from the puff rule or from the weather volume: the point query, the weather map's passes, the weather volume's passes, the view march and its light samples, the Sun's path, the sky overlay and the medium coefficients. The word turret is left only in the cloud library's files, where a shape is named for its twin turrets. Guard: a search of `crates` and `examples`.",
+          "check": "sh -c 'test -z \"$(git grep -il turret -- crates examples | grep -v \"^examples/v1-game/assets/clouds/\")\" && git grep -qi puff -- crates/thrum-cloud-model/src && git grep -qi puff -- crates/thrum-clouds/src'",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "ask": "Do the cloud selections of `examples/v1-game` and of `examples/water` each build their profile with the puff form, with no choice of form left? Reading the point query, the weather map's and the weather volume's compute passes, the trace and its light samples, the Sun's path, the sky overlay and the medium coefficients: does each take a heaped cell's profile from the puff rule or from the weather volume, with no copy of the turret rule left under another name?",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP24.4",
@@ -2023,12 +2026,24 @@
         },
         {
           "id": "WP24.5",
-          "statement": "The weather's cost under the puff form is on record. On this Mac at 2560\u00d71440, capture off, the shade scene's paired record is taken again at 1x, 8x and 60x, and names the weather volume's pass and its bytes beside the weather map's and the Sun path's. Each tripwire it trips has its investigation beside it. No figure in the record decides this item. Record: the shade scene's paired cost record, which is test data the check reads.",
-          "check": "sh -c 'python3 scripts/cloud_cost.py check --scene shade && grep -qi weather.volume tests/fixtures/clouds/shade-cost.json'",
+          "statement": "The weather's cost under the puff form is on record. On this Mac at 2560\u00d71440, capture off, the shade scene's paired record is taken again at 1x, 8x and 60x. In each of its three shade runs the committed record holds a GPU time above zero under a pass named for the weather volume and a byte count above zero under a resource named for it, beside the weather map's and the Sun path's, and it gives the largest fill of the weather volume in one frame beside the largest Sun-path refill. `check` prints the runs it measured itself as its last line, and they hold the same named entries. The record WP2.9 left, which has neither entry, fails with or without a note that names the volume. Each tripwire it trips has its investigation beside it. No figure in the record decides this item. Record: the shade scene's paired cost record, which is test data the check reads.",
+          "check": "set -o pipefail; python3 scripts/cloud_cost.py check --scene shade | python3 -c 'import json,sys; named=lambda r: any(\"weather volume\" in k and v>0 for k,v in r[\"pass_gpu_ns\"].items()) and any(\"weather volume\" in n and b>0 for n,b in r[\"resources\"]); held=lambda runs: (lambda s: len(s)==3 and all(map(named,s)))([r for r in runs if r.get(\"selection\")==\"shade\"]); saved=json.load(open(\"tests/fixtures/clouds/shade-cost.json\"))[\"runs\"]; fresh=json.loads(sys.stdin.read().strip().splitlines()[-1]).get(\"runs\",[]); sys.exit(0 if held(saved) and held(fresh) else \"a saved or fresh shade run lacks the weather volume pass time or bytes\")'",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "open",
           "evidence": ""
+        },
+        {
+          "id": "WP24.6",
+          "statement": "The GPU draws the model's cloud in three places where a column alone misleads a reader, each on the smallest weather that shows it, with both keys of the weather volume at the committed tick, as after a cut. 1. An overhang: a column through a puff that stands over clear air. Inside the volume the density the view march reads is zero at a point in the gap and the model's at a point in the puff, within the test's tolerance. Past the volume, with nothing eroded, the column the GPU draws is the query's column optical depth within the allowance the test states, and a column form made from coverage times the vertical profile over the column's height, which on this column is more than twice the query's, fails. In the band between the two forms it is no more than the query's plus that allowance. 2. A puff over a shallower deck, inside the volume: the density is the model's at a point in the deck and at a point in the puff, and zero at a point between the deck's top and the puff's underside. A reader that spreads the deck over the column's whole height fails in the gap, and one that reads the puff alone fails in the deck. 3. A heap that every weather-map texel centre misses and a voxel's centre holds, inside the volume: a ray of the submitted trace through it returns a transmittance below 1 by more than the test's tolerance, and the submitted ground field holds an optical depth above zero by more than that tolerance where the Sun's ray through the heap meets the ground. A ray through the clear air beside it returns exactly 1. A march that asks the map's column before it reads the volume fails. Guard: a GPU test in `./dev check` on the smallest map and volume that have these columns; only a device shows what the submitted passes drew.",
+          "check": "sh -c 'cargo test --locked --offline -p thrum-clouds --test it heaped_column 2>&1 | tee /dev/stderr | grep -Eq \"test result: ok. [1-9][0-9]* passed\"'",
+          "ask": "Are the third case's ray and ground value read back from the effect's submitted trace and Sun-path passes, and not from a helper that evaluates the density alone? Does each of the four wrong readers the statement names fail its assertion in the test?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "failed_reviews": 0,
@@ -2076,8 +2091,8 @@
         },
         {
           "id": "WP17.4",
-          "statement": "At 8x and at 60x under the fair preset with the placed share at 0, a cloud followed through its life is born on its base, rises into heaps, frays and thins away. Nothing pops, nothing slides inside a cloud's shape, nothing reappears where it stood on a beat, and no cloud sinks into its base as a solid shape.",
-          "inspect": "Capture `realtime` sequences at 8x and at 60x from 40 m, each long enough to hold whole lives. Judge consecutive frames, following at least three clouds from birth to death, and then the whole frame for any rhythm: 1. each cloud first shows as tufts on its base and grows by rising; 2. its billows change as structure, and no texture slides through its shape; 3. it frays and thins before it is gone, and does not read as a solid shape sinking; 4. no cloud or part of one appears or vanishes between two frames; 5. no beat shows across the sky.",
+          "statement": "At 8x and at 60x under the fair preset with the placed share at 0, a cloud followed through its life is born on its base, rises into heaps, frays and thins away. Nothing pops, nothing slides inside a cloud's shape, nothing reappears where it stood on a beat, no cloud sinks into its base as a solid shape, and no cloud's edge doubles or trails as it rises or subsides.",
+          "inspect": "Capture `realtime` sequences at 8x and at 60x from 40 m, each long enough to hold whole lives. Judge consecutive frames, following at least three clouds from birth to death, and then the whole frame for any rhythm: 1. each cloud first shows as tufts on its base and grows by rising; 2. its billows change as structure, and no texture slides through its shape; 3. it frays and thins before it is gone, and does not read as a solid shape sinking; 4. no cloud or part of one appears or vanishes between two frames; 5. no beat shows across the sky; 6. at 60x a rising or subsiding cloud keeps one edge, with no second outline ahead of it or behind it.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -2086,8 +2101,8 @@
         },
         {
           "id": "WP17.5",
-          "statement": "The sky's cost under the puff form is on record. On this Mac at 2560\u00d71440, capture off, under the fair preset, the first-frame scene's paired record is taken again beside WP3.9's, with each cloud pass's GPU time by name, the rays traced, the samples a ray and the bytes of each resource, the weather volume's among them. Each tripwire it trips has its investigation beside it. No figure in the record decides this item. Record: the first-frame scene's paired cost record, which is test data the check reads.",
-          "check": "sh -c 'python3 scripts/cloud_cost.py check --scene first-frame && grep -qi weather.volume tests/fixtures/clouds/first-frame-cost.json'",
+          "statement": "The sky's cost under the puff form is on record. On this Mac at 2560\u00d71440, capture off, under the fair preset, the first-frame scene's paired record is taken again beside WP3.9's, with each cloud pass's GPU time by name, the rays traced, the samples a ray and the bytes of each resource. In every clouds-visible run the committed record holds a GPU time above zero under a pass named for the weather volume and a byte count above zero under a resource named for it. `check` prints the runs it measured itself as its last line, and they hold the same named entries. The record WP3.9 left, which has neither entry, fails with or without a note that names the volume. Each tripwire it trips has its investigation beside it. No figure in the record decides this item. Record: the first-frame scene's paired cost record, which is test data the check reads.",
+          "check": "set -o pipefail; python3 scripts/cloud_cost.py check --scene first-frame | python3 -c 'import json,sys; named=lambda r: any(\"weather volume\" in k and v>0 for k,v in r[\"pass_gpu_ns\"].items()) and any(\"weather volume\" in n and b>0 for n,b in r[\"resources\"]); held=lambda runs: (lambda s: len(s)>0 and all(map(named,s)))([r for r in runs if r.get(\"selection\")==\"sky\"]); saved=json.load(open(\"tests/fixtures/clouds/first-frame-cost.json\"))[\"runs\"]; fresh=json.loads(sys.stdin.read().strip().splitlines()[-1]).get(\"runs\",[]); sys.exit(0 if held(saved) and held(fresh) else \"a saved or fresh sky run lacks the weather volume pass time or bytes\")'",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "open",
@@ -2096,6 +2111,34 @@
           "review": ""
         }
       ]
+    },
+    {
+      "id": "WP25",
+      "name": "With the new clouds drifting, the player still sees a new frame as steadily as in the same game without them",
+      "status": "not_started",
+      "depends_on": [],
+      "alone": true,
+      "quality_bar": "Smooth at the display's full refresh, as the project's bar asks of a shipped game's sky and as WP20 held the sky before the weather volume: in the game as a player runs it, the drifting puff sky costs the player no new frame that the same game without clouds shows, and stands still no longer at once than that game does, by the times the OS reports each frame reached the display.",
+      "items": [
+        {
+          "id": "WP25.1",
+          "statement": "ATTENDED SETUP: with the puff form drawn from the weather volume, in one wind series taken with no other agent working, each of the five cloud runs holds the display's refresh by the OS-reported presented times: still air, 10 m/s and 40 m/s at 1\u00d7, 40 m/s at 60\u00d7, and 40 m/s at 1\u00d7 across a 90\u00b0 change of direction, each measured for 20 seconds after its first second in the release game's ordinary 1920\u00d71080 window on the built-in 120 Hz display, on the Apple recipe with TAAU under the fair preset, with no frame limit, frame-rate cap, capture, profiler or GPU timing, and with the presented-time witness as the one observer of every run, the clouds-absent runs included. A run loses a refresh for each refresh period of its 20 seconds in which no new frame was presented. A stall is a run of consecutive lost refreshes, so one presented interval of n + 1 refresh periods is a stall of n. A cloud run holds when both are true against the two clouds-absent runs beside it: it loses at most one refresh more than the worse of them, and its longest stall is at most one refresh longer than the longest stall in either. What a clouds-absent run loses fails nothing: the record gives each run's lost refreshes and its longest stall, with when in the 20 seconds that stall began, each cloud run's beside its two neighbours', and lists each refresh a clouds-absent run lost with its place. A series with a run missing, a run occluded, or a run whose presented times do not cover its 20 seconds is not a measurement, and the check says so and fails. Record: the one whole series the check took, made by the module's cost tool.",
+          "check": "python3 scripts/cloud_cost.py hold --scene wind",
+          "ask": "Is the record one whole series from the script's run in the sitting, on the reviewed commit, whose game draws heaped cloud from the weather volume and has no turret rule, with each run's launch settings the ones the statement names and no others? Is each run's count of lost refreshes taken from the OS-reported presented times, as `PLATFORM-RUNTIME-MAC`'s witness command gives them, and never from present calls, callback times or the account? Do the presented times cover each run's 20 seconds? Does each cloud run hold by both parts of the rule against its own two neighbours, with its lost refreshes and its longest stall recomputed from the presented times agreeing with the record? Judge the series the script took in the sitting: a series taken beside other work decides nothing here.",
+          "lock": "gpu.alone",
+          "target": "mac-metal",
+          "needs": {
+            "type": "access",
+            "what": "Unlock the Mac for one sitting. The agent wakes the built-in display for each of its eleven runs of about 25 seconds, and launches, records and reviews; nothing else is needed."
+          },
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
     },
     {
       "id": "WP12",
