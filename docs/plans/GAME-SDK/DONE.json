@@ -4,7 +4,7 @@
     {
       "id": "WP1",
       "name": "An agent writes a game's scenes, phases and rules in plain Rust against one crate, in the order they run, and proves them in an ordinary test with no window",
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "Game code that reads as plainly as Bevy's `breakout` example with less ceremony: a scene function reads top to bottom as one tick, and no line names engine plumbing. Compiler and startup messages as useful as Rust's own, each naming the object, the cause and the next step. Correctness held as `SIM-2D` holds it: one trace, one digest. The reference for how game code reads is the design's worked examples, which the owner approves.",
       "items": [
         {
@@ -49,7 +49,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GAME-SDK/WP1/review5-WP1.3.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md"
         },
         {
@@ -106,19 +106,7 @@
         }
       ],
       "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
-      "findings": [
-        {
-          "name": "Distinct 64-bit game seeds produce identical draw streams",
-          "item": "WP1.3",
-          "different": "The named function now draws identically across debug and release. The new failure occurs within either build when different seeds collapse to the same generator key.",
-          "repeat": false
-        },
-        {
-          "name": "Setting a component to its current value discards rewind history",
-          "repeat": false
-        }
-      ]
+      "failed_reviews_with_repeat": 0
     },
     {
       "id": "WP11",

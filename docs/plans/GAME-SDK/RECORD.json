@@ -319,7 +319,7 @@
         {
           "verdict": "fail",
           "commit": "99e01d3a13c8babb05b0cf203ae080a12120737d",
-          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review-5.md",
           "items": {
             "WP1.1": "pass",
             "WP1.2": "pass",
@@ -358,6 +358,37 @@
             "turns": 1
           },
           "at": "2026-11-28T05:42:01Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "326c4439866e9cdf25eaabc69632497fc2524d61",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md",
+          "items": {
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "pass",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass"
+          },
+          "summary": "All seven WP1 items pass. On the M3 Max, the formerly colliding seeds produced different draws in debug and release, and a game rewound across two exact component replacements and reproduced every digest in its 64-tick run. Both Must Fix findings from the latest review are resolved.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 147191,
+            "cached": 4635392,
+            "output": 12878,
+            "turns": 1
+          },
+          "at": "2026-11-28T08:10:16Z"
         }
       ],
       "authorised": {
@@ -390,6 +421,13 @@
           "output": 124015,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "326c4439866e9cdf25eaabc69632497fc2524d61",
+        "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md",
+        "checked": "38e887a1f6739c2b043389178e13ef918c949d13",
+        "at": "2026-11-28T08:10:16Z"
       }
     },
     "WP2": {
