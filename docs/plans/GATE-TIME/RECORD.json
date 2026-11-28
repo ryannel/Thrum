@@ -21,7 +21,10 @@
       "output": 2247,
       "turns": 1
     },
-    "at": "2026-11-28T06:40:10Z"
+    "at": "2026-11-28T06:40:10Z",
+    "items_owed": [
+      "WP17"
+    ]
   },
   "work_packages": {
     "WP1": {
@@ -1404,6 +1407,15 @@
         "task": "The design review of GATE-TIME at .orchestrate/evidence/GATE-TIME/design-review.md asked for changes, with its 2 Must Fi",
         "at": "2026-11-28T06:38:11Z"
       }
+    },
+    "WP17": {
+      "definitions": "0df85f72607f9b9ff273550f402a485f75f587411b581fcc9b4a1a1d1f008411",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Merges are failing on test timeouts, not faults. The last two failed merge checks (THRUM_MERGE_VERIFY=1 ./dev check; log",
+        "at": "2026-11-28T12:18:53Z"
+      }
     }
   },
   "tasks": [
@@ -1470,11 +1482,15 @@
     {
       "task": "The design review of GATE-TIME at .orchestrate/evidence/GATE-TIME/design-review.md asked for changes, with its 2 Must Fix findings.",
       "at": "2026-11-28T06:38:11Z"
+    },
+    {
+      "task": "Merges are failing on test timeouts, not faults. The last two failed merge checks (THRUM_MERGE_VERIFY=1 ./dev check; logs .git/orchestrate/checks/1b74202a8e22401a813258fe-*-1795866564151477000.* and 21bba2010cede89fda69e944-*-1795866627884064000.*) had 63 and 68 GPU tests hit the 10 s merge-tier limit while the machine ran ~10 builders and overlapping merge checks (load ~15-70); the serial retry still left 4 timing out each time, so the merge failed. Since about 06:00 on 28 Nov, merges of WATERS, ATMOSPHERE, GAME-SDK and RIVERS have failed this way repeatedly, each costing 15-45 min of check time plus a builder round. Decide the fix from first principles so a merge's check judges the change, not the machine's load: for example, the serial retry gets its own longer limit or runs with the GPU lock, fewer GPU tests run side by side, or a timeout is retried and only a repeat fails. Keep the merge check fast on a quiet machine. Plan it as GATE-TIME's next work, before or within WP16 as you judge (WP16 is Blocked on an ATMOSPHERE caster fix that this same problem keeps from merging).",
+      "at": "2026-11-28T12:18:53Z"
     }
   ],
   "planner": {
     "host": "codex",
-    "at": "2026-11-28T06:38:11Z"
+    "at": "2026-11-28T12:18:53Z"
   },
   "design_history": [
     {
