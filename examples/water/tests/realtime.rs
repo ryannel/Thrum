@@ -273,6 +273,8 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         ([1280, 720], 6.0 * shot_seconds, 15.0, RIVER_SUBMISSIONS)
     } else if fall_dry || plunge_inspection {
         ([1280, 720], 12.0, 9.0, MAX_SUBMISSIONS)
+    } else if fall && route == "fall-streak" {
+        ([960, 540], 3.0, 30.0, MAX_SUBMISSIONS)
     } else if fall {
         ([1280, 720], 3.0, 24.0, MAX_SUBMISSIONS)
     } else if river {

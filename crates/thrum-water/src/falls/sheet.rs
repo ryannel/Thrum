@@ -143,7 +143,7 @@ impl Sheet {
                 + "fn fall_foam(point: vec2<f32>) -> vec2<f32> { return foam_at(point, vec4(0.0)).stocks.xy; }",
         );
         let source = format!(
-            "{library}\n{}\nconst FALL_LOOP: f32 = {:?};\nconst FALL_CONTACT_DROPS: f32 = {}.0;\nconst FALL_TEAR: f32 = {:?};\nconst FALL_STRAND_EDGE: f32 = {STRAND_EDGE:?};\nconst FALL_STRAND_ROLL: f32 = {STRAND_ROLL_START:?};\nfn fall_cloud(point: vec3<f32>) -> f32 {{ return {cloud}; }}\n{}\n{stocks}\n{}\n{}",
+            "{library}\n{}\nconst FALL_LOOP: f32 = {:?};\nconst FALL_CONTACT_DROPS: f32 = {}.0;\nconst FALL_TEAR: f32 = {:?};\nconst FALL_STRAND_EDGE: f32 = {STRAND_EDGE:?};\nconst FALL_STRAND_SIDES: f32 = {STRAND_SIDES}.0;\nconst FALL_STRAND_ROLL: f32 = {STRAND_ROLL_START:?};\nfn fall_cloud(point: vec3<f32>) -> f32 {{ return {cloud}; }}\n{}\n{stocks}\n{}\n{}",
             crate::VIEW_RECORDS,
             thrum_sea_model::LOOP_SECONDS,
             SPLASHES_PER_SEGMENT / 2,
@@ -605,7 +605,9 @@ fn strand_section([left, centre, right]: [Vertex; 3], spread: f32) -> [Vertex; S
         let point =
             Vec3::from_slice(&vertex.world_time) + normal * depth * roll * (0.025 + width * 0.37);
         vertex.world_time = point.extend(vertex.world_time[3]).to_array();
-        vertex.edge_receiver[0] = STRAND_EDGE + angle;
+        // Rounded sections store their side index and half their blend
+        // weight above the flat sheet and trickle edge values.
+        vertex.edge_receiver[0] = STRAND_EDGE + index as f32 + 0.5 * spread;
         vertex
     })
 }
