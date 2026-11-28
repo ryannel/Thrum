@@ -1969,8 +1969,8 @@
           "statement": "In Chrome the lake and the sea pass WP16.6's, WP16.7's and WP16.8's lists at noon.",
           "inspect": "`fixed` stills and `realtime` sequences in Chrome at those items' views at noon, judged by their lists and against the Mac's portable recipe.",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP16/revised/chrome.md",
           "verdict": "",
           "review": ""
         },

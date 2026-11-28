@@ -2072,3 +2072,17 @@
   depth inspection retain their passes. The work package remains unmerged.
   [Frame comparisons and receipts](../../../.orchestrate/evidence/WATERS/WP16/continuation/README.md)
   · [Handoff](../../../.orchestrate/evidence/WATERS/WP16-handoff.md).
+
+
+## WP16 revised inspection proofs
+
+- 2026-11-28 The approved WP16.6 and WP16.7 lists pass on Metal. The
+  shallow beds show fine moving lines, the retained deep beds show wider
+  and softer moving light, and the retained shaft stations and controls
+  meet the revised list. [Metal inspection](../../../.orchestrate/evidence/WATERS/WP16/revised/metal.md).
+- Hardware Chrome noon captures cover the remaining receiver and shaft
+  views, the translating window, and the depth and lens crossings. The
+  native-pixel comparisons match the portable Metal cues across differing wave
+  phases. The eight configured target checks passed.
+  [Chrome inspection](../../../.orchestrate/evidence/WATERS/WP16/revised/chrome.md)
+  · [Target checks](../../../.orchestrate/evidence/WATERS/WP16/revised/target-checks.json).
