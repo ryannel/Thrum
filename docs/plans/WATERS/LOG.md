@@ -1840,3 +1840,21 @@
 - 2026-11-28 Planner, the review's suggestion, taken in part: WP26.8 takes its four pictures and four causes
   from WP26.6 by reference, and its list has seven questions for nine. WP26.6 is unchanged, since the review
   found it settled and a change would give the next review more to read.
+- 2026-11-28 Planner, for the two Must Fix findings of the design review at `b2ecef8bf2`, the last round
+  before building. Only WP26.9 and [the keel's study](DESIGN.md#dark-water-beside-the-keel) with its line in
+  [WP26's proof](DESIGN.md#proof-for-wp26) changed. Neither went against a decision, and nothing was left
+  out as beyond scope. The review made no suggestions.
+- 2026-11-28 Planner, Must Fix 1, a view could be blamed whenever all its lines of sight crossed some shadow:
+  the cause is now read from how far each line passes through shadowed water. The view is a cause only where
+  no line through the frame's open water passes through shadowed water for a different distance from the
+  lines next to it, as when the shadow lies outside that water. Where neighbouring lines differ in that
+  distance, whether or not either is clear of the shadow, a finer sum that holds darker water next to lighter
+  names the march, and one that holds none names the shadow's own light. Evidence that shows none of the
+  three leaves the cause open. The review's case, a lens 2 cm inside the edge with lines 0.077 m and 0.725 m
+  in shadow, now reaches the finer sum and cannot name the view.
+- 2026-11-28 Planner, Must Fix 2, the reviewer question asked for a finer sum of a record that named the view
+  alone: WP26.9 names two kinds of evidence, the shadow's place and the finer sum. Saying the view, or ruling
+  a remedy out on it, takes the first alone. Saying the march or the shadow's own light, or ruling a remedy
+  out on either, takes both. The list asks them apart (questions 5 and 6, the later ones now 7 to 9), and the
+  reviewer question asks of the shadow's place for any of the three and of the finer sum only for the march
+  or the shadow's own light.

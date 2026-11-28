@@ -3355,23 +3355,38 @@ Four leads, none of them a cause until WP26.9's evidence shows it:
   water's scattering (`crates/thrum-water/src/caustics/shafts.wgsl` at `da0e65a1d`), and the caster pair
   shows a change near the Sun without showing shadowed water beside lit. So the difference says which
   pixels the shadow changes, and no cause is named from it.
-- *Inside the shadow's loss.* It stays open among three: the view, whose open water may hold no shadowed
-  water beside lit water; the march, which may lose a difference the shadow makes; and the shadow's own
+- *Inside the shadow's loss.* It stays open among three: the view, whose open water may give the eye
+  nothing to compare; the march, which may lose a difference the shadow makes; and the shadow's own
   light, which over a short stretch of clear water may be too little to see however finely it is summed.
-  The record says which, or rules a candidate remedy out on one, only with further evidence for that
-  view, from the same camera at the same engine time. For any of the three: where the water the hull
-  shadows lies relative to the view, which is which of the frame's lines of sight through open water
-  pass through shadowed water, and for how far. For the march or the shadow's own light, also what the
-  shadow takes from the scattered light along those lines of sight, summed from the source and the Sun's
-  visibility the march reads, at many more steps and at the frame's full resolution, beside what the
-  march returns. The view is a cause where the frame's open water holds no lines of sight through
-  shadowed water next to lines clear of it. The march is a cause where it holds them side by side, the
-  finer sum holds darker water next to lit water there that the eye finds, and the march's output does
-  not. The shadow's own light is a cause where it holds them side by side and the finer sum holds no
-  darker water the eye finds. The builder chooses both diagnostics, as
-  [the bar](#proof-and-builder-handoff) has a diagnostic. Without that evidence the cause stays open, a
-  remedy may answer any of the three, and no candidate is ruled out on it. Whether the remedy works is
-  WP26.2's to judge, in the ordinary view.
+  What there is to compare is how far each line of sight passes through shadowed water, because the
+  march sums the shadow's loss along that distance. Darker water can stand next to lighter wherever
+  neighbouring lines pass through shadowed water for different distances, whether or not either line is
+  clear of it. A lens just inside the shadow's edge has every line start in shadow, and one line leaves
+  it within centimetres where its neighbour stays in it for most of a metre: the design review of
+  28 November worked that case at 0.077 m and 0.725 m, found the handoff's sixteen steps over 32 m miss
+  both, and found a continuous sum tells them apart. So a view is not at fault because all its lines
+  cross some shadow.
+  The record says which of the three it is, or rules a candidate remedy out on one, only with further
+  evidence for that view, from the same camera at the same engine time. There are two kinds, and each
+  claim takes the evidence that shows it and no more:
+  - *The shadow's place:* which of the frame's lines of sight through open water pass through the water
+    the hull shadows, and for how far.
+  - *The finer sum:* what the shadow takes from the scattered light along those lines of sight, summed
+    from the source and the Sun's visibility the march reads, at many more steps and at the frame's full
+    resolution, beside what the march returns.
+
+  The view is a cause where the shadow's place shows that no line of sight through the frame's open
+  water passes through shadowed water for a different distance from the lines next to it, as when the
+  shadowed water lies wholly outside the frame's open water. That diagnosis, and a remedy ruled out on
+  it, rests on the shadow's place alone: there is nothing for a finer sum to sum, and none is asked. The
+  march and the shadow's own light each take both kinds. The march is a cause where the shadow's place
+  shows neighbouring lines that pass through shadowed water for different distances, the finer sum holds
+  darker water next to lighter water there that the eye finds, and the march's output does not. The
+  shadow's own light is a cause where the shadow's place shows such lines and the finer sum holds no
+  darker water next to lighter water there that the eye finds. The builder chooses both diagnostics, as
+  [the bar](#proof-and-builder-handoff) has a diagnostic. Evidence that shows none of the three, and a
+  record without that evidence, leave the cause open: a remedy may answer any of the three, and no
+  candidate is ruled out on it. Whether the remedy works is WP26.2's to judge, in the ordinary view.
 - *What shipped games show.* Frames from under water beside or beneath a hull or another floating object
   in sunlight, in Subnautica and Sea of Thieves and in at least two high-end 3D games released from 2022
   on: whether the water in its shadow is darker than the lit water next to it, whether an edge or beams
@@ -3442,8 +3457,11 @@ on the hull and the float and WP26.8 that of the net on the deeper beds, whose p
 between the field and the frame; and WP26.9 the part of the dark water beside the keel. The reviewer
 questions of WP26.6, WP26.8 and WP26.9 ask that their diagnostics are what the record says they are, and
 WP26.1's that the record's note on each account read agrees with the account. WP26.9's applies only
-where the record says the shadow's loss is the view's, the march's or the shadow's own light's, because
-its five pictures are the frame with one thing left out. WP26.2 judges the two stations on Metal, with a calm
+where the record says the shadow's loss is the view's, the march's or the shadow's own light's, or
+rules a remedy out on one, because its five pictures are the frame with one thing left out. It asks of
+each claim the evidence that claim rests on: of any of the three, how the shadow's place was found; of
+the march or the shadow's own light, also how the finer sum was made. A record that names the view
+alone holds no finer sum and passes on the shadow's place. WP26.2 judges the two stations on Metal, with a calm
 and a sequence under temporal sampling, the water beside the keel at three views, WP16.7's list again,
 and a body whose water the remedy changed by WP16.8's descent. WP26.7 judges the net on the hull's sunlit
 side and the sunk float on Metal, the lake's and the sea's beds from 0.5 m and from 3 m under the
