@@ -646,7 +646,10 @@ mailbox usable. The Maps retry follows the same rule with its own surface and th
     shadows, and the record says so.
   - **Every effect together.** Lamp shadows and traced ambient occlusion added through their own selections,
     judged by the lists of WP3 to WP5. The report names traced as the occlusion method, and the frame
-    records no screen-space occlusion pass. No sentence of the record gives this result as the opt-in's.
+    records no screen-space occlusion pass. The report and the pass names are the proof that one method
+    replaced the other. The two looks are not compared for brightness: rays see an occluder outside the frame
+    that the screen-space gather misses, and lamp shadows are on in one launch and off in the other, so a
+    contact may rightly be much darker here. No sentence of the record gives this result as the opt-in's.
 - **The paired timing is a tripwire.** On the final build with capture off, at 1280×720 and at 1920×1080, the
   valley's route runs from two launches. One is the opt-in launch as the record's launch line gives it, with
   no recipe named: `Traced` with the penumbra, the default quality values, lamp shadows off and ambient

@@ -262,3 +262,8 @@
   method, which replaces the screen-space one and never stacks. A traced request that cannot be met now falls
   back to screen-space. WP6.1, WP6.3, WP6.4 and WP6.5 follow, and WP6 waits for `ATMOSPHERE` WP14. No Done
   work package changed. [The record](../../../.orchestrate/evidence/ATMOSPHERE/WP14-plan/README.md)
+- 2026-11-28 Design review, Must Fix 1: WP6.4 no longer compares a contact's darkness between the traced frame
+  and WP6.3's screen-space frame, and its statement drops "no contact is darkened by both". A correctly lit
+  contact can be much darker when traced, from an occluder outside the frame or a lamp's shadow. The capture's
+  report and the frame's pass names prove the replacement, and WP5's lists judge the contact.
+  [The design](DESIGN.md#selection-fallback-and-the-opt-in) says the same. No Done work package changed.
