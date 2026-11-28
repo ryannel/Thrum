@@ -1,10 +1,10 @@
 {
   "module": "SIM-3D",
   "design": {
-    "verdict": "changes",
+    "verdict": "ok",
     "review": ".orchestrate/evidence/SIM-3D/design-review.md",
-    "commit": "2aafd1c2bb18e3a506062dcf04c289c7e3f027c8",
-    "hash": "7302fabd478d38894226b012b9491ddd9222849c9f4cd6bb1e0d327690c5a301",
+    "commit": "6eed97c07ce7f85121e3795beed35f11c2c27ca3",
+    "hash": "fc8d6ec2427640b787a0c5ee916fd459eecd6d5e8bd1a6e468e172fbdda70999",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -16,12 +16,12 @@
     "cli": "codex-cli 0.171.0-alpha.13.2",
     "path": "headless",
     "usage": {
-      "input": 96686,
-      "cached": 1356928,
-      "output": 7240,
+      "input": 48522,
+      "cached": 319744,
+      "output": 2162,
       "turns": 1
     },
-    "at": "2026-11-28T10:13:39Z"
+    "at": "2026-11-28T10:17:46Z"
   },
   "work_packages": {
     "WP1": {
@@ -334,6 +334,29 @@
         ".orchestrate/evidence/SIM-3D/design-review.md"
       ],
       "at": "2026-11-28T03:34:37Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/SIM-3D/design-review-3.md",
+      "commit": "2aafd1c2bb18e3a506062dcf04c289c7e3f027c8",
+      "hash": "7302fabd478d38894226b012b9491ddd9222849c9f4cd6bb1e0d327690c5a301",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13.2",
+      "path": "headless",
+      "usage": {
+        "input": 96686,
+        "cached": 1356928,
+        "output": 7240,
+        "turns": 1
+      },
+      "at": "2026-11-28T10:13:39Z"
     }
   ]
 }
