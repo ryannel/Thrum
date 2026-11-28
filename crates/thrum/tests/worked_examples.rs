@@ -22,9 +22,10 @@ mod rockfall {
         let rock = Rock {
             fall_speed: random.between(Num::from(4), Num::from(9)),
         };
+        let half_width = Num::from(23) / Num::from(2);
         entities.spawn((
             rock,
-            Position(vec2(random.between(Num::from(-11), Num::from(11)), 10)),
+            Position(vec2(random.between(-half_width, half_width), 10)),
         ));
     }
 
@@ -108,13 +109,19 @@ mod swarm {
     }
 
     impl Health {
-        fn is_spent(self) -> bool {
+        #[expect(
+            clippy::trivially_copy_pass_by_ref,
+            reason = "keep the example's all(Health::is_spent)"
+        )]
+        fn is_spent(&self) -> bool {
             self.0 == 0
         }
     }
 
+    const LAST_WAVE: u32 = 2;
+
     fn next_wave(mut run: ResMut<'_, Run>, mut scenes: Scenes<'_>) {
-        if run.wave == 2 {
+        if run.wave == LAST_WAVE {
             scenes.go_to(Ended {
                 won: true,
                 wave: run.wave,
