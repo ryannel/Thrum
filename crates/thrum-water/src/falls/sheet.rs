@@ -480,13 +480,10 @@ fn mesh(
             for fraction in stations() {
                 let bottom = ribbons(strip(fraction), spread);
                 for (a, b) in top.into_iter().zip(bottom) {
-                    stitch(vertices, a, b);
                     if spread > 0.0 && fraction > 0.21 {
-                        stitch(
-                            vertices,
-                            back_of_strand(a, spread),
-                            back_of_strand(b, spread),
-                        );
+                        stitch_strand(vertices, a, b, spread);
+                    } else {
+                        stitch(vertices, a, b);
                     }
                 }
                 top = bottom;
@@ -572,6 +569,33 @@ fn back_of_strand(mut section: [Vertex; 3], spread: f32) -> [Vertex; 3] {
     let back = middle.lerp(centre * 2.0 - middle, crown);
     vertex.world_time = back.extend(vertex.world_time[3]).to_array();
     section
+}
+
+fn stitch_strand(vertices: &mut Vec<Vertex>, top: [Vertex; 3], bottom: [Vertex; 3], spread: f32) {
+    let [ax, _, az, _] = bottom[1].across_fraction;
+    let velocity = Vec3::from_slice(&bottom[1].velocity_along);
+    let normal = Vec3::new(ax, 0.0, az).cross(velocity);
+    let front_faces_out = normal.dot(Vec3::new(velocity.x, 0.12, velocity.z)) >= 0.0;
+    let face = |mut section: [Vertex; 3], flip| {
+        if flip {
+            section.reverse();
+        }
+        for vertex in &mut section {
+            // The shader still draws an unsplit sheet from both sides.
+            vertex.edge_receiver[0] += 4.0;
+        }
+        section
+    };
+    stitch(
+        vertices,
+        face(top, !front_faces_out),
+        face(bottom, !front_faces_out),
+    );
+    stitch(
+        vertices,
+        face(back_of_strand(top, spread), front_faces_out),
+        face(back_of_strand(bottom, spread), front_faces_out),
+    );
 }
 
 #[expect(

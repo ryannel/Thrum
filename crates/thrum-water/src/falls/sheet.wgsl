@@ -10,6 +10,7 @@ struct SheetVertex {
     @location(5) receiving: vec3<f32>,
     @location(6) foam: vec2<f32>,
     @location(7) strand_motion: vec3<f32>,
+    @location(8) @interpolate(flat) closed_strand: u32,
 }
 
 fn sheet_age(age: f32) -> f32 { return age - floor(age / FALL_LOOP) * FALL_LOOP; }
@@ -81,7 +82,7 @@ fn splash_vertex(world_time: vec4<f32>, velocity_along: vec4<f32>, discharge: ve
     let world = vec4(point, phase);
     return SheetVertex(view.view_proj * vec4(point, 1.0), world, velocity_along,
         vec4(random, kick, strength, select(0.0, 1.0, impact)),
-        vec4(corner.x, -1.0, corner.y, phase), 0.0, vec3(0.0), foam, vec3(0.0));
+        vec4(corner.x, -1.0, corner.y, phase), 0.0, vec3(0.0), foam, vec3(0.0), 0u);
 }
 
 fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<f32>,
@@ -109,11 +110,13 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
     if is_splash { return splash_vertex(world_time, velocity_along, discharge, across_fraction); }
     let birth = sheet_age(sheet_clock.x - world_time.w);
     let is_filament = across_fraction.y <= -2.0;
+    let closed_strand = edge_receiver.x >= 4.0;
+    let edge = edge_receiver.x - select(0.0, 4.0, closed_strand);
     let weight = fold_weight(across_fraction.w) * select(1.0, 0.18, is_filament);
     let fold = sheet_fold(velocity_along.w, birth, across_fraction.xz) * weight;
     var position = world_time.xyz + fold;
     var strand_motion = vec3(0.0);
-    if is_filament { position += strand_swelling(birth, velocity_along, across_fraction, edge_receiver.x); }
+    if is_filament { position += strand_swelling(birth, velocity_along, across_fraction, edge); }
     let breakup = strand_breakup(discharge.w);
     if !is_filament && breakup > 0.0 && across_fraction.w > 0.21 {
         let parcel = sheet_noise(vec2(edge_receiver.w, birth), FALL_LOOP, vec2(3.5, 3.6), vec2(9.0, 0.0));
@@ -143,8 +146,8 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
     }
     let world = vec4(position, world_time.w);
     return SheetVertex(view.view_proj * vec4(world.xyz, 1.0), world, velocity_along, discharge,
-        across_fraction, edge_receiver.x, vec3(receiving_motion, position.y - receiving_level, edge_receiver.z),
-        foam, strand_motion);
+        across_fraction, edge, vec3(receiving_motion, position.y - receiving_level, edge_receiver.z),
+        foam, strand_motion, u32(closed_strand));
 }
 
 struct FallOutput {
@@ -172,7 +175,7 @@ fn splash_shade(input: SheetVertex) -> FallOutput {
     return FallOutput(vec4(colour, alpha), vec2(0.0), alpha);
 }
 
-fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
+fn sheet_shade(input: SheetVertex, solid: bool, front: bool) -> FallOutput {
     let point = input.world_time.xyz;
     let look = normalize(view.camera_xyz_time.xyz - point);
     let lip = input.velocity_along.w;
@@ -188,6 +191,7 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let rank = 0.28 * coarse + 0.10 * fine + 0.62 * grouped;
     let pixel = max(length(dpdx(xy)), length(dpdy(xy)));
     let geometry_normal = normalize(cross(dpdx(point), dpdy(point)));
+    if input.closed_strand != 0u && !front { discard; }
     if input.across_fraction.y < 0.0 && input.across_fraction.y > -1.5 {
         if solid { discard; }
         return splash_shade(input);
@@ -305,5 +309,9 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
         white * presence * contact_cover * streak_cover);
 }
 
-@fragment fn sheet_thin(input: SheetVertex) -> FallOutput { return sheet_shade(input, false); }
-@fragment fn sheet_solid(input: SheetVertex) -> FallOutput { return sheet_shade(input, true); }
+@fragment fn sheet_thin(input: SheetVertex, @builtin(front_facing) front: bool) -> FallOutput {
+    return sheet_shade(input, false, front);
+}
+@fragment fn sheet_solid(input: SheetVertex, @builtin(front_facing) front: bool) -> FallOutput {
+    return sheet_shade(input, true, front);
+}
