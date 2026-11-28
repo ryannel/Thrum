@@ -1,10 +1,4 @@
 //! Game SDK derives for portable, named world data.
-//!
-//! ```
-//! use thrum_derive::Data;
-//! #[derive(Data)] struct Points(u32);
-//! assert_eq!(Points(3), Points(3).clone());
-//! ```
 
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, TokenStream as Tokens};
@@ -12,79 +6,36 @@ use quote::{format_ident, quote};
 use syn::{Data, DeriveInput, Fields, Member, parse_macro_input, spanned::Spanned};
 
 /// Declare portable world data.
-/// ```
-/// use thrum_derive::Data;
-/// #[derive(Data)] struct Points(u32);
-/// assert_eq!(Points(3), Points(3).clone());
-/// ```
 #[proc_macro_derive(Data)]
 pub fn data(input: TokenStream) -> TokenStream {
     derive_data(input, None)
 }
 
 /// Declare data attached to an entity.
-/// ```
-/// use thrum_derive::Component;
-/// #[derive(Component)] struct Health(u32);
-/// let health = Health(3);
-/// let copy = health;
-/// assert_eq!(health, copy);
-/// ```
 #[proc_macro_derive(Component)]
 pub fn component(input: TokenStream) -> TokenStream {
     derive_data(input, Some("Component"))
 }
 
 /// Declare data shared across rules.
-/// ```
-/// use thrum_derive::Resource;
-/// #[derive(Resource)] struct Score(u32);
-/// let game = thrum::Game::new("Example").resource(Score(3))
-///     .scene(|_: &mut thrum::Scene| {}).test().unwrap();
-/// assert_eq!(game.resource::<Score>().unwrap().0, 3);
-/// ```
 #[proc_macro_derive(Resource)]
 pub fn resource(input: TokenStream) -> TokenStream {
     derive_data(input, Some("Resource"))
 }
 
 /// Declare data sent to later rules of a tick.
-/// ```
-/// use thrum_derive::Event;
-/// #[derive(Event)] struct Scored(u32);
-/// let mut game = thrum::Game::new("Example").scene(|scene: &mut thrum::Scene| {
-///     scene.rules(|mut events: thrum::Emit<Scored>| events.send(Scored(3)));
-/// }).test().unwrap();
-/// game.step().unwrap();
-/// assert_eq!(game.events::<Scored>(), [Scored(3)]);
-/// ```
 #[proc_macro_derive(Event)]
 pub fn event(input: TokenStream) -> TokenStream {
     derive_data(input, Some("Event"))
 }
 
 /// Declare the data a scene is entered with.
-/// ```
-/// use thrum_derive::Scene;
-/// #[derive(Scene, Default)] struct Play;
-/// let game = thrum::Game::new("Example")
-///     .scene(|_: &mut thrum::Scene<Play>| {}).test().unwrap();
-/// assert!(game.in_scene::<Play>());
-/// ```
 #[proc_macro_derive(Scene)]
 pub fn scene(input: TokenStream) -> TokenStream {
     derive_data(input, Some("SceneType"))
 }
 
 /// Declare the phases of a scene.
-/// ```
-/// use thrum_derive::Phase;
-/// #[derive(Phase)] enum Stage { Play }
-/// let game = thrum::Game::new("Example").scene(|scene: &mut thrum::Scene| {
-///     scene.phases(Stage::Play);
-/// }).test().unwrap();
-/// assert_eq!(game.phase::<Stage>().unwrap(), Stage::Play);
-/// ```
 #[proc_macro_derive(Phase)]
 pub fn phase(input: TokenStream) -> TokenStream {
     derive_data(input, Some("PhaseType"))
@@ -339,16 +290,6 @@ fn value_traits(
 }
 
 /// Bundle named rule parameters into one user-defined parameter.
-/// ```
-/// use thrum_derive::Params;
-/// #[derive(thrum::Resource)] struct Score(u32);
-/// #[derive(Params)] struct Access<'a> { score: thrum::ResMut<'a, Score> }
-/// fn score(mut access: Access<'_>) { access.score.0 += 1; }
-/// let mut game = thrum::Game::new("Example").resource(Score(0))
-///     .scene(|scene: &mut thrum::Scene| { scene.rules(score); }).test().unwrap();
-/// game.step().unwrap();
-/// assert_eq!(game.resource::<Score>().unwrap().0, 1);
-/// ```
 #[proc_macro_derive(Params)]
 pub fn params(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);

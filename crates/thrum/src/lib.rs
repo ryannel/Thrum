@@ -28,8 +28,88 @@ pub use rule::params::{Emit, Events, Random, Res, ResMut};
 pub use rule::query::{Filter, Iter, IterMut, Query, QueryData, Single, With, Without};
 pub use rule::{ConfiguredRules, Rules};
 pub use scene::{Phase, PhaseBlock, PhaseMut, Scene, Scenes};
-pub use thrum_derive::{Component, Data, Event, Params, Phase, Resource, Scene};
 pub use time::{Cooldown, PhaseClock, Seconds, Tick, TickNumber, Timer, seconds};
+
+/// Declare data attached to an entity.
+/// ```
+/// use thrum::Component;
+/// #[derive(Component)] struct Health(u32);
+/// let health = Health(3);
+/// let copy = health;
+/// assert_eq!(health, copy);
+/// ```
+#[doc(inline)]
+pub use thrum_derive::Component;
+
+/// Declare portable world data.
+/// ```
+/// use thrum::Data;
+/// #[derive(Data)] struct Points(u32);
+/// assert_eq!(Points(3), Points(3).clone());
+/// ```
+#[doc(inline)]
+pub use thrum_derive::Data;
+
+/// Declare data sent to later rules of a tick.
+/// ```
+/// use thrum::Event;
+/// #[derive(Event)] struct Scored(u32);
+/// let mut game = thrum::Game::new("Example").scene(|scene: &mut thrum::Scene| {
+///     scene.rules(|mut events: thrum::Emit<Scored>| events.send(Scored(3)));
+/// }).test().unwrap();
+/// game.step().unwrap();
+/// assert_eq!(game.events::<Scored>(), [Scored(3)]);
+/// ```
+#[doc(inline)]
+pub use thrum_derive::Event;
+
+/// Bundle named rule parameters into one user-defined parameter.
+/// ```
+/// use thrum::Params;
+/// #[derive(thrum::Resource)] struct Score(u32);
+/// #[derive(Params)] struct Access<'a> { score: thrum::ResMut<'a, Score> }
+/// fn score(mut access: Access<'_>) { access.score.0 += 1; }
+/// let mut game = thrum::Game::new("Example").resource(Score(0))
+///     .scene(|scene: &mut thrum::Scene| { scene.rules(score); }).test().unwrap();
+/// game.step().unwrap();
+/// assert_eq!(game.resource::<Score>().unwrap().0, 1);
+/// ```
+#[doc(inline)]
+pub use thrum_derive::Params;
+
+/// Declare the phases of a scene.
+/// ```
+/// use thrum::Phase;
+/// #[derive(Phase)] enum Stage { Play }
+/// let game = thrum::Game::new("Example").scene(|scene: &mut thrum::Scene| {
+///     scene.phases(Stage::Play);
+/// }).test().unwrap();
+/// assert_eq!(game.phase::<Stage>().unwrap(), Stage::Play);
+/// ```
+#[doc(inline)]
+pub use thrum_derive::Phase;
+
+/// Declare data shared across rules.
+/// ```
+/// use thrum::Resource;
+/// #[derive(Resource)] struct Score(u32);
+/// let game = thrum::Game::new("Example").resource(Score(3))
+///     .scene(|_: &mut thrum::Scene| {}).test().unwrap();
+/// assert_eq!(game.resource::<Score>().unwrap().0, 3);
+/// ```
+#[doc(inline)]
+pub use thrum_derive::Resource;
+
+/// Declare the data a scene is entered with.
+/// ```
+/// use thrum::Scene;
+/// #[derive(Scene, Default)] struct Play;
+/// let game = thrum::Game::new("Example")
+///     .scene(|_: &mut thrum::Scene<Play>| {}).test().unwrap();
+/// assert!(game.in_scene::<Play>());
+/// ```
+#[doc(inline)]
+pub use thrum_derive::Scene;
 
 /// Game data derives and their marker traits.
 /// ```

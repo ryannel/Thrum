@@ -648,5 +648,6 @@
 - Derived component schemas now include resolved field schemas. A Mac build with a four-byte alias and
   one with an eight-byte alias reported different fingerprints and empty-world digests. The Mac probes
   also confirmed exact rollback and replay and zero calling-thread allocations during warmed event ticks
-  with a harness read after each step. SDK and derive documentation examples exercise their own items.
+  with a harness read after each step. SDK documentation examples exercise their own items. The seven public derive
+  examples run from the SDK's re-exports, where game authors use the derives.
   [Mac proofs](../../../.orchestrate/evidence/GAME-SDK/WP1/)

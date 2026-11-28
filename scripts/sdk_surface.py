@@ -61,11 +61,16 @@ class Surface:
         self.examples = examples
         self.errors = set()
         self.visited = set()
+        self.exported_derives = {}
+        self.documented_derives = set()
         self.entries = {int(key): value for key, value in document["index"].items()}
         self.paths = {int(key): value for key, value in document["paths"].items()}
 
     def check(self):
         self.visit(self.document["root"], self.entries[self.document["root"]]["name"])
+        for derive_id, label in self.exported_derives.items():
+            if derive_id not in self.documented_derives:
+                self.errors.add(f"{label} needs a runnable Rust documentation example")
         return sorted(self.errors)
 
     def check_path(self, path_id, owner, followed=None):
@@ -101,8 +106,14 @@ class Surface:
             return
         self.visited.add(item_id)
         if kind == "use":
-            self.check_path(payload["id"], label)
-            self.visit(payload["id"], label, inherited=True)
+            target = payload["id"]
+            path = self.paths.get(target)
+            if self.examples and path and path["kind"] == "proc_derive":
+                self.exported_derives.setdefault(target, label)
+                if RUST_EXAMPLE.search(entry["docs"] or ""):
+                    self.documented_derives.add(target)
+            self.check_path(target, label)
+            self.visit(target, label, inherited=True)
             return
         signature = payload
         nested = []
@@ -199,7 +210,9 @@ def controls():
 
 def check():
     errors = Surface(document("thrum"), True).check()
-    errors.extend(Surface(document("thrum-derive"), True).check())
+    # The SDK owns the examples on its derive exports and runs them with the
+    # public game API. The implementation crate has no SDK test dependency.
+    errors.extend(Surface(document("thrum-derive"), False).check())
     if errors:
         raise ValueError("\n".join(sorted(errors)))
     print("Game SDK public signatures and documentation examples passed")

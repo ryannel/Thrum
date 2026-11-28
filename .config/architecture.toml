@@ -20,8 +20,7 @@ allowed_workspace_dependencies = ["thrum-core", "thrum-derive"]
 
 [packages.thrum-derive]
 manifest = "crates/thrum-derive/Cargo.toml"
-# Dev dependency for running the public derive examples against the SDK.
-allowed_workspace_dependencies = ["thrum"]
+allowed_workspace_dependencies = []
 
 [packages.thrum-sim2d]
 manifest = "crates/thrum-sim2d/Cargo.toml"
