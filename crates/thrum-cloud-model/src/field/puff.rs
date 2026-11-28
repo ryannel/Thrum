@@ -1,5 +1,7 @@
 //! CPU puff geometry and point density. The column integral lives alongside them.
 mod column;
+#[cfg(test)]
+mod tests;
 
 use crate::{Density, Field, PuffProfile, State, Type, smooth};
 use std::cell::RefCell;
@@ -217,19 +219,24 @@ impl Field {
                 radius *= 0.76 + 0.16 * h(level, 13);
             }
         }
-        // Bound the computed cluster to one pitch so a one-ring search is sufficient.
+        // Fit the whole cluster around its condensation base so the stacks
+        // and their shoulders keep the same proportions.
         let reach = puffs
             .iter()
             .map(|p| p.centre[0].hypot(p.centre[2]) + p.radius)
             .fold(0.0, f64::max);
-        let scale = (self.profile.pitch / reach).min(1.0);
-        let mut top: f64 = 0.0;
+        let top = puffs
+            .iter()
+            .map(|p| p.centre[1] + p.radius)
+            .fold(0.0, f64::max);
+        let scale = 1.0_f64.min(cell.radius / reach).min(depth / top);
         for puff in &mut puffs {
             puff.radius *= scale;
             puff.centre[0] = cell.centre[0] + puff.centre[0] * scale;
+            puff.centre[1] *= scale;
             puff.centre[2] = cell.centre[1] + puff.centre[2] * scale;
-            top = top.max(puff.centre[1] + puff.radius);
         }
+        let top = top * scale;
         let offset = (strength - 1.0) * top;
         Cluster {
             centre: cell.centre,
@@ -256,11 +263,7 @@ impl Field {
             return 0.0;
         }
         let air = [point[0], point[2]];
-        let erosion = self.profile.erosion;
-        let detail = std::cell::LazyCell::new(|| match fidelity {
-            Density::Full => self.detail_noise(point),
-            _ => self.profile.detail_mean,
-        });
+        let extinction = kind.extinction();
         let eroding = !matches!(fidelity, Density::Uneroded);
         let heaped = self.with_clusters(
             air,
@@ -284,19 +287,21 @@ impl Field {
         };
         let deck = if kind.deck > 0.0 {
             let (coverage, depth) = self.deck(air, state.time(), parameters, kind);
-            let profile = column::Deck::new(coverage, depth, kind.profile).at(height);
-            if eroding && erosion > 0.0 && profile > 0.0 {
-                let threshold = erosion * (1.0 - self.shape_noise(point));
-                let edge = (1.0 - threshold).clamp(0.0001, 0.12);
-                let shaped = ((profile - threshold) / edge).clamp(0.0, 1.0);
-                profile * (shaped - erosion * *detail * (1.0 - shaped)).max(0.0)
+            let sigma = extinction * column::Deck::new(coverage, depth, kind.profile).at(height);
+            if eroding && self.profile.erosion > 0.0 && sigma > 0.0 {
+                let detail = match fidelity {
+                    Density::Full => self.detail_noise(point),
+                    _ => self.profile.detail_mean,
+                };
+                self.erode(sigma, extinction, self.shape_noise(point), detail, false)
+                    * self.bank_shape(point, height / depth, kind.deck)
             } else {
-                profile
+                sigma
             }
         } else {
             0.0
         };
-        kind.extinction() * heaped_density.max(deck)
+        (extinction * heaped_density).max(deck)
     }
 
     fn puff_threshold(&self, point: [f64; 3], fidelity: Density, erosion: f64) -> f64 {

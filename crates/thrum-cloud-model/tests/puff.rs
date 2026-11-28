@@ -4,10 +4,11 @@ use thrum_cloud_model::{Column, Density, Field, Parameters, Profile, PuffProfile
 
 const BASE: f64 = 700.0;
 const PITCH: f64 = 1300.0;
+const HEAPED_DEPTH: [f64; 2] = [260.0, 950.0];
 const CORE: [f64; 2] = [1_070.286_263_176_24, 1_098.399_745_742_790_4];
-const OVERHANG: [f64; 2] = [980.0, 640.0];
-const GRAZE: [f64; 2] = [898.272_380_324, 694.157_133_144];
-const MIXED: [f64; 2] = [960.0, 640.0];
+const OVERHANG: [f64; 2] = [950.0, 706.0];
+const GRAZE: [f64; 2] = [826.528_395_374_335, 918.859_950_494_997];
+const MIXED: [f64; 2] = [880.0, 770.0];
 const CONVERGENCE: f64 = 0.8;
 
 fn model(deck: f64, varying_type: bool) -> Field {
@@ -17,7 +18,7 @@ fn model(deck: f64, varying_type: bool) -> Field {
 fn model_with_fade(deck: f64, varying_type: bool, fade: f64) -> Field {
     let heaped = Type {
         base: BASE,
-        depth: [260.0, 950.0],
+        depth: HEAPED_DEPTH,
         liquid_water: 0.0003,
         droplet_radius: 9e-6,
         deck,
@@ -238,11 +239,11 @@ fn puff_temporal_continuity_rejects_a_cell_switched_on_between_samples() {
 fn puff_spatial_continuity_through_overlapping_cells() {
     let field = model(0.0, false);
     let state = mature(&field, parameters(1.0, 1.0));
-    let sample = |x| field.query([x, 0.0, 825.0], &state);
+    let sample = |x| field.query([x, 0.0, 890.0], &state);
     let mut overlapping_winners = false;
-    let mut previous = sample(1200.0);
-    for i in 1..=600 {
-        let next = sample(1200.0 + f64::from(i) * 0.5);
+    let mut previous = sample(1100.0);
+    for i in 1..=640 {
+        let next = sample(1100.0 + f64::from(i) * 0.5);
         // A change of dominant cell while coverage stays substantial.
         overlapping_winners |= next.age.to_bits() != previous.age.to_bits()
             && next.coverage.min(previous.coverage) > 0.1
@@ -255,7 +256,7 @@ fn puff_spatial_continuity_through_overlapping_cells() {
     );
     let series = [4, 2, 1].map(|step| {
         largest((0..=320 / step).map(|i| {
-            let c = sample(1200.0 + f64::from(i * step));
+            let c = sample(1100.0 + f64::from(i * step));
             [c.optical_depth, c.coverage]
         }))
     });
@@ -273,7 +274,7 @@ fn puff_column_bound_covers_core_overhang_and_substep_graze() {
         let mut last = 0.0_f64;
         let mut sums = [0.0; 3];
         let mut y = BASE + 0.05;
-        while y < column.top + 0.1 {
+        while y < BASE + HEAPED_DEPTH[1] {
             for (i, fidelity) in [Density::Uneroded, Density::Coarse, Density::Full]
                 .into_iter()
                 .enumerate()
@@ -299,8 +300,8 @@ fn puff_column_bound_covers_core_overhang_and_substep_graze() {
             // This witness crosses one sphere at its rim. Check the public
             // density against the sphere across the chord, independently
             // of both the column bound and the numerical sum.
-            let centre = 868.653_113_128;
-            let radius: f64 = 108.842_567_896;
+            let centre = BASE + 230.246_953_522_295;
+            let radius: f64 = 133.967_229_675_229;
             let half: f64 = 17.0;
             for offset in [-17.1_f64, -13.0, -8.0, 0.0, 8.0, 13.0, 17.1] {
                 let distance = (radius.powi(2) - half.powi(2) + offset.powi(2)).sqrt();
@@ -313,7 +314,7 @@ fn puff_column_bound_covers_core_overhang_and_substep_graze() {
             }
             let mut y = BASE;
             let mut undersampled = 0.0;
-            while y <= column.top + 50.0 {
+            while y <= BASE + HEAPED_DEPTH[1] {
                 undersampled += 50.0 * density(&field, &state, air, y, Density::Uneroded);
                 y += 50.0;
             }
@@ -357,9 +358,9 @@ fn puff_overhang_retains_air_between_cloudy_heights_and_above_deck() {
     let full = parameters(1.0, 1.0);
     let state = mature(&field, full);
     let at_overhang = |h| density(&field, &state, OVERHANG, BASE + h, Density::Uneroded);
-    assert!(at_overhang(169.0) > 0.0);
-    assert_eq!(at_overhang(212.0), 0.0);
-    assert!(at_overhang(280.0) > 0.0);
+    assert!(at_overhang(151.0) > 0.0);
+    assert_eq!(at_overhang(196.0), 0.0);
+    assert!(at_overhang(255.0) > 0.0);
 
     let profile = |field, state, y| density(field, state, MIXED, y, Density::Uneroded);
     let mixed = model(0.16, false);
@@ -429,12 +430,12 @@ fn puff_depth_uses_the_deepest_sphere_at_a_join() {
     let field = model(0.0, false);
     let state = mature(&field, parameters(1.0, 1.0));
     let a = PuffWitness {
-        centre: [1_305.780_303_115, 192.086_630_642, 1_007.314_871_604],
-        radius: 126.899_081_723,
+        centre: [1_297.565_000_170, 182.749_370_369, 1_021.987_388_819],
+        radius: 120.730_564_162,
     };
     let b = PuffWitness {
-        centre: [1_444.053_304_736, 103.328_054_092, 1_065.842_945_184],
-        radius: 180.692_498_394,
+        centre: [1_429.116_602_178, 98.305_315_490, 1_077.670_434_328],
+        radius: 171.909_102_688,
     };
     let fraction = 0.35;
     let point = std::array::from_fn(|i| a.centre[i] + (b.centre[i] - a.centre[i]) * fraction);
@@ -480,21 +481,21 @@ fn puff_density_uses_one_weighted_heaped_profile_before_erosion() {
     let one = partial.centre;
     let raw = partial.profile(one);
     let near = PuffWitness {
-        centre: [1_139.013_734_053, 291.136_078_469, 971.660_999_019],
-        radius: 97.454_266_948,
+        centre: [1_117.280_655_522, 79.625_048_752, 1_067.113_668_107],
+        radius: 190.278_073_761,
     };
     let far = PuffWitness {
-        centre: [1_214.182_383_506, 299.053_143_988, 985.767_203_891],
-        radius: 59.566_265_987,
+        centre: [1_241.312_281_920, 42.792_059_696, 1_113.196_518_747],
+        radius: 120.302_003_973,
     };
-    let overlap = [1_175.669_617_556, 292.481_712_684, 982.923_942_871];
+    let overlap = [1_229.416_779_779, 104.767_844_587, 1_096.929_933_043];
     let weights = [0.996_254_780_415, 1.0_f64];
     let profiles = [near.profile(overlap), far.profile(overlap)];
     assert!(profiles[0] > 0.0 && profiles[1] > 0.0 && weights[0] < weights[1]);
     let heaped = (weights[0] * profiles[0]).max(weights[1] * profiles[1]);
 
     for (fidelity, part_fine, overlap_fine) in [
-        (Density::Full, 0.446_779_528_165, 0.392_406_892_594),
+        (Density::Full, 0.446_779_528_165, 0.490_812_546_254),
         (Density::Coarse, 0.5, 0.5),
     ] {
         let t = threshold([0.806_329_817_028, part_fine]);
@@ -503,7 +504,7 @@ fn puff_density_uses_one_weighted_heaped_profile_before_erosion() {
         let wrong = 0.05 * part_strength * eroded(raw, t);
         assert!((actual - wrong).abs() > 0.0001);
 
-        let t = threshold([0.705_789_477_347, overlap_fine]);
+        let t = threshold([0.854_584_032_856, overlap_fine]);
         let actual = density_at(&field, &state, overlap, fidelity);
         close(actual, 0.05 * eroded(heaped, t), 3e-9);
     }
@@ -524,4 +525,118 @@ fn puff_cluster_cache_distinguishes_fade_lengths() {
     let other = ordinary.query(sample, &state);
     assert!(expected.top < other.top);
     assert_eq!(small.query(sample, &state), expected);
+}
+
+fn review_field(puff: bool, depth: [f64; 2]) -> Field {
+    // Local constants for the recorded fair and broken weather witnesses.
+    let weather = Profile {
+        pitch: 4600.0,
+        turret_pitch: 1300.0,
+        turret_least: 0.22,
+        turret_fade: 0.12,
+        period: 1800.0,
+        detail_mean: 0.5,
+        erosion: 0.61,
+    };
+    let types = vec![
+        Type {
+            base: 1600.0,
+            depth: [465.0, 680.0],
+            liquid_water: 0.00035,
+            droplet_radius: 0.00001,
+            deck: 1.0,
+            profile: [0.65, 0.19],
+        },
+        Type {
+            base: 1600.0,
+            depth: [1550.0, 2900.0],
+            liquid_water: 0.000_335,
+            droplet_radius: 0.000_011,
+            deck: 0.5,
+            profile: [0.45, 0.33],
+        },
+        Type {
+            base: 1600.0,
+            depth,
+            liquid_water: 0.00032,
+            droplet_radius: 0.000_012,
+            deck: 0.0,
+            profile: [0.25, 0.47],
+        },
+    ];
+    if puff {
+        Field::new_puff(
+            39,
+            PuffProfile {
+                weather,
+                fade: 300.0,
+                erosion: 0.85,
+            },
+            types,
+        )
+    } else {
+        Field::new(39, weather, types)
+    }
+    .expect("valid weather witness field")
+}
+
+#[test]
+fn broken_deck_keeps_its_gap_and_bank_under_either_form() {
+    const GAP: [f64; 2] = [-6400.0, -5600.0];
+    const BANK: [f64; 2] = [-5600.0, -5600.0];
+    const TOLERANCE: f64 = 1e-12;
+    let weather = parameters(0.726, 0.42);
+    let state = at(0.0, weather);
+    let puff = review_field(true, [1450.0, 3800.0]);
+    let turret = review_field(false, [1450.0, 3800.0]);
+    let gap_y = 1600.0 + 332.8;
+    let uneroded = density(&puff, &state, GAP, gap_y, Density::Uneroded);
+    assert!(uneroded > 0.0);
+    println!("gap at {GAP:?}, y={gap_y}: uneroded {uneroded} m^-1");
+
+    for air in [GAP, BANK] {
+        let deck = puff.procedural_column(air, 0.0, weather, 0.0);
+        assert!(deck.coverage > 0.0);
+        assert_eq!(puff.query(point(air, 0.0), &state), deck);
+        assert_eq!(turret.query(point(air, 0.0), &state), deck);
+        // Forty intervals span the entire ~740 m deck at both witnesses.
+        let spacing = (deck.top - deck.base) / 40.0;
+        assert!(spacing <= 25.0);
+        for fidelity in [Density::Full, Density::Coarse] {
+            assert_eq!(density(&puff, &state, GAP, gap_y, fidelity), 0.0);
+            let mut peak = 0.0_f64;
+            for i in 0..=40 {
+                let y = deck.base + f64::from(i) * spacing;
+                let actual = density(&puff, &state, air, y, fidelity);
+                close(
+                    actual,
+                    density(&turret, &state, air, y, fidelity),
+                    TOLERANCE,
+                );
+                peak = peak.max(actual);
+            }
+            if air == BANK {
+                assert!(peak > 0.0);
+            }
+            println!("{air:?}, {fidelity:?}: peak {peak} m^-1, spacing {spacing} m");
+        }
+    }
+}
+
+#[test]
+fn cluster_extent_caps_the_public_column_and_density() {
+    let field = review_field(true, [1600.0, 1600.0]);
+    let cell = field.cell(-5, -5, 0);
+    let state = at(cell.birth + 0.5 * cell.life, parameters(0.5, 1.0));
+    let air = [-20_939.81, -19_242.98];
+    let column = field.query(point(air, 0.0), &state);
+    let height = column.top - column.base;
+    assert!(column.coverage > 0.0 && height <= 1600.0, "{column:?}");
+    for fidelity in [Density::Uneroded, Density::Full, Density::Coarse] {
+        assert_eq!(
+            density(&field, &state, air, column.base + 1651.37, fidelity),
+            0.0
+        );
+    }
+    println!("column top is {height} m above base, all densities at 1651.37 m are zero");
 }
