@@ -1844,9 +1844,9 @@
     {
       "id": "WP16",
       "name": "Under water the Sun casts a moving net of light on the bed and plays on the hull, shafts of light stand in the water, and the picture stays readable as the camera goes down",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
+      "status": "in_progress",
+      "failed_reviews": 2,
+      "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
       "depends_on": [
         "EFFECT-GRAPH:WP7"
@@ -1897,7 +1897,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP16/review-repair/metal-shadow.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP16-review.md"
         },
         {
@@ -1917,8 +1917,8 @@
           "statement": "Under a rippled surface the Sun's light moves on what lies under water, and in the shallows it draws a net. Seen from above through the pond and the beach's shallows, the bed carries a fine net of bright lines that outline darker cells. Under the lake at noon and with the Sun 15 degrees up, and under the sea at noon, the sunlit bed carries uneven light that is broader and softer than the net in the shallows. On each of those beds the light travels as the waves pass. The hull's sunlit side and a sunk float carry light that moves as the waves pass. On the bed, the hull and the float there is none in a glassy calm, at night or under a cloud's shade, and there is none inside the hull's shadow on the bed. The pattern shows no repeating tile, does not swim with the camera, and has no edge where the window ends. Whether the light on the lake's and the sea's beds, the hull and the float joins into a net is WP26's, and so is what the sea's bed carries with the Sun 15 degrees up: nothing here judges the shape of the light in those places, or asks light of that bed at that Sun.",
           "inspect": "`fixed` stills and `realtime` sequences at noon and low Sun, in a calm, a breeze and a trade wind: from 2 m above the pond and the beach's shallows looking down through the water, and from 0.5 m and 3 m under the lake and the sea looking down and level; one still at night and one under a cloud's shade, each in a breeze; and a sequence under the lake and one under the sea in which the camera travels at one depth far enough to carry the window's end across the view. The bed near and far, the hull's sunlit side and its shadow, the float, and the place the window ends. 1. In a breeze and a trade wind, does the bed of the pond and of the beach's shallows carry a fine net of bright lines that outline darker cells? A line with gaps in it passes, and patches with no lines fail. 2. In a breeze and a trade wind, does the sunlit bed carry uneven light under the lake at noon and at low Sun, and under the sea at noon? Its shape is not judged: patches and streaks that do not join pass. 3. Is the light on the lake's and the sea's beds broader and softer than the net in the pond and the beach's shallows? 4. On the beds of questions 1 and 2, does the light travel as the waves pass? 5. In a breeze and a trade wind, do the hull's sunlit side and the float carry light that moves as the waves pass? Its shape is not judged: patches, blocks, dashes and streaks that do not join pass. 6. In the calm, is there no net and no moving light on any bed, the hull or the float? 7. At night and under the cloud's shade, is there none? 8. Is there none inside the hull's shadow on the bed? 9. Is the pattern free of a repeating tile? 10. As the camera travels, does the pattern keep its place and not swim with the camera, with no edge where the window ends?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP16/review-repair/metal-inspection.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/WP16-review.md"
         },
@@ -1961,7 +1961,7 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP16/review-repair/chrome-shadow.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP16-review.md"
         },
         {
@@ -1982,39 +1982,19 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP16/review-repair/cost-analysed.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP16-review.md"
         }
       ],
       "findings": [
         {
-          "name": "The Metal bed shadow changes position with the camera",
-          "item": "WP16.14",
-          "repeat": false
-        },
-        {
-          "name": "Chrome separates the bed and shaft shadows outside the caustic window",
-          "item": "WP16.10",
-          "repeat": false
-        },
-        {
-          "name": "The pond bed lacks a readable fine net",
+          "name": "Refracted shadows stripe the far beach bed",
           "item": "WP16.6",
+          "different": "The pond now shows the required caustic net. The new defect is a repeated shadow pattern on the far beach bed, visible even in glassy calm.",
           "repeat": false
         },
         {
-          "name": "The beach cost camera looks into the sky",
-          "item": "WP16.12",
-          "repeat": false
-        },
-        {
-          "name": "The comparison lacks WP15 records for the measured views",
-          "item": "WP16.12",
-          "repeat": false
-        },
-        {
-          "name": "Tripped pass comparisons have no recorded investigation of their cause",
-          "item": "WP16.12",
+          "name": "The shaft march runs across a wholly dry lens",
           "repeat": false
         }
       ]

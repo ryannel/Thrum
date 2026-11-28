@@ -2809,7 +2809,7 @@
         {
           "verdict": "fail",
           "commit": "05c9f5f75e999d1d02d487b4b0373e6c1f8f9a58",
-          "review": ".orchestrate/evidence/WATERS/WP16-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP16-review-1.md",
           "items": {
             "WP16.1": "pass",
             "WP16.2": "pass",
@@ -2873,6 +2873,54 @@
             "turns": 1
           },
           "at": "2026-11-28T01:51:20Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "9a7873d2a05dbffb84296323d0701d98247ef0d6",
+          "review": ".orchestrate/evidence/WATERS/WP16-review.md",
+          "items": {
+            "WP16.1": "pass",
+            "WP16.2": "pass",
+            "WP16.4": "pass",
+            "WP16.14": "pass",
+            "WP16.5": "pass",
+            "WP16.6": "fail",
+            "WP16.7": "pass",
+            "WP16.8": "pass",
+            "WP16.9": "pass",
+            "WP16.10": "pass",
+            "WP16.11": "pass",
+            "WP16.12": "pass"
+          },
+          "findings": [
+            {
+              "name": "Refracted shadows stripe the far beach bed",
+              "item": "WP16.6",
+              "different": "The pond now shows the required caustic net. The new defect is a repeated shadow pattern on the far beach bed, visible even in glassy calm.",
+              "repeat": false
+            },
+            {
+              "name": "The shaft march runs across a wholly dry lens",
+              "repeat": false
+            }
+          ],
+          "summary": "WP16 passes 11 of 12 items. The pond now shows a moving net, the bed and shaft shadows stay together as the camera travels, and the cost record answers the three earlier findings. Two defects remain on the beach at an ordinary playing distance. The submerged sand shows repeating diagonal shadow bands, and a wholly dry lens incurs the underwater shaft march.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 261989,
+            "cached": 14816384,
+            "output": 40614,
+            "turns": 1
+          },
+          "at": "2026-11-28T03:25:33Z"
         }
       ],
       "authorised": {
