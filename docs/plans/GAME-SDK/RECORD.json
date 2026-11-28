@@ -17,7 +17,7 @@
         {
           "verdict": "fail",
           "commit": "2e5b89b56f19ae5c83c08d043033961b3ca8f876",
-          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review-1.md",
           "items": {
             "WP1.1": "fail",
             "WP1.2": "fail",
@@ -129,6 +129,79 @@
             "turns": 1
           },
           "at": "2026-11-28T00:53:44Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "9ac273d40ca6a2e4a85fc26e06c03fd7aa101da1",
+          "review": ".orchestrate/evidence/GAME-SDK/WP1-review.md",
+          "items": {
+            "WP1.1": "fail",
+            "WP1.2": "fail",
+            "WP1.3": "fail",
+            "WP1.4": "fail",
+            "WP1.5": "fail",
+            "WP1.6": "fail",
+            "WP1.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "Undo loses a component write that changes the sign of zero",
+              "item": "WP1.4",
+              "different": "The compiler diagnostic guard is fixed. A runtime refusal now demonstrably leaves different component bits in the committed world.",
+              "repeat": false
+            },
+            {
+              "name": "A successful manual rule discards a resource write that changes the sign of zero",
+              "item": "WP1.1",
+              "different": "The earlier manual error committed a refused write. This successful invocation discards a valid write in the authority equality check.",
+              "repeat": false
+            },
+            {
+              "name": "A held phase request changes a different scene after a harness transition",
+              "item": "WP1.2",
+              "different": "The old no-op manual call no longer consumes a request early. An explicit scene change now preserves a phase index beyond its originating scene.",
+              "repeat": false
+            },
+            {
+              "name": "Different rule functions share a random stream",
+              "item": "WP1.3",
+              "repeat": true
+            },
+            {
+              "name": "A component keeps its schema identity when an aliased field changes width",
+              "item": "WP1.6",
+              "different": "The schema hashes the field alias spelling across incompatible encodings. The previous findings concerned admission, allocation and component traversal.",
+              "repeat": false
+            },
+            {
+              "name": "Reading events after each tick makes the next warm tick allocate",
+              "item": "WP1.6",
+              "different": "The old scene-transition fixture reuses its payloads. The allocation here is in event collection after a harness read, with no scene transition.",
+              "repeat": false
+            },
+            {
+              "name": "Public method examples do not demonstrate the method they document",
+              "item": "WP1.5",
+              "repeat": true
+            }
+          ],
+          "summary": "WP1 fails. On the target Mac, reversing a zero velocity changed the committed world even though the next rule refused the tick. Rewinding the successful version of the same tick also produced a different digest on replay. Both headless worked examples passed, including the Swarm win at wave 2.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 176280,
+            "cached": 4837376,
+            "output": 16345,
+            "turns": 1
+          },
+          "at": "2026-11-28T01:45:31Z"
         }
       ],
       "authorised": {
