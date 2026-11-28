@@ -4,7 +4,7 @@
     {
       "id": "WP1",
       "name": "A rule asks whether two 3D shapes touch, where a ray meets one and where a moving one is stopped, and gets the same answer on the Mac, in Chrome and on the iPhone simulator",
-      "status": "ready_for_review",
+      "status": "in_progress",
       "depends_on": [
         "SIM-2D:WP3"
       ],
@@ -23,7 +23,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/SIM-3D/WP1/review-2/WP1.1.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         },
         {
@@ -37,8 +37,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SIM-3D/WP1/review-2/WP1.2.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         },
@@ -53,8 +53,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SIM-3D/WP1/review-2/WP1.3.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         },
@@ -69,8 +69,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/SIM-3D/WP1/review-2/WP1.4.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         },
@@ -193,31 +193,30 @@
           "review": ".orchestrate/evidence/SIM-3D/WP1-review.md"
         }
       ],
-      "failed_reviews": 2,
-      "failed_reviews_with_repeat": 1,
+      "failed_reviews": 3,
+      "failed_reviews_with_repeat": 2,
       "findings": [
+        {
+          "name": "An exactly tangent ray misses a sphere",
+          "item": "WP1.3",
+          "different": "The prior endpoint contacts now hit. This ray misses a sphere at an interior tangency at fraction one half.",
+          "repeat": false
+        },
         {
           "name": "Head-on cuboid sweeps return the wrong face normal",
           "item": "WP1.4",
-          "different": "The clear-ended thin crossings are fixed. Two turned solid cuboids now expose an incorrect head-on face normal.",
-          "repeat": false
+          "repeat": true
         },
         {
-          "name": "Finite rays miss solid surfaces at their endpoint",
+          "name": "Finite rays report hits beyond their endpoint",
           "item": "WP1.3",
-          "different": "The prior triangle predicates and missing triangle cases are fixed. Rays ending exactly on a sphere, capsule or cuboid return a false miss.",
+          "different": "The earlier false misses on exact endpoints are fixed. A positive representable clearance is lost when changing frames, causing a false hit beyond the closed segment.",
           "repeat": false
         },
         {
-          "name": "Swapping a point and a turned cuboid changes exact vertex overlap",
+          "name": "Exactly tangent spheres report positive distance from a triangle or capsule",
           "item": "WP1.2",
-          "different": "The collinear triangle now agrees in both orders. This case involves a full-dimensional turned cuboid and a point at its exact vertex.",
-          "repeat": false
-        },
-        {
-          "name": "Half-gap sweeps accept motion longer than 4,096 units",
-          "item": "WP1.1",
-          "different": "Shape extent validation now rejects the oversize sphere. The separate guard on motion length rounds an overlimit value down to 4,096.",
+          "different": "The earlier cuboid vertex is correct in both orders. A rounded closest-feature distance rejects an exact tangency in both orders for a sphere against a triangle or capsule.",
           "repeat": false
         }
       ]
