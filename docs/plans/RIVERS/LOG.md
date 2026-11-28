@@ -581,3 +581,11 @@
   fall between foam streaks, separate contacts through the boil and a ring fading into
   the left bank. The dry transition keeps the waterline after the boil dissipates.
   [Receiving-pool inspection](../../../.orchestrate/evidence/RIVERS/WP6/separate-streams/pool-inspection.md)
+- 2026-11-28 WP6. The final middle-gauge Metal trial keeps real gaps and moving
+  white parcels, but the close front and side takes show a row of hard shoulders
+  through the moving water. Reducing strand depth and drawing the reverse faces
+  did not clear it. Restored single-face shading. WP6.4 remains open, with native
+  crops and the six-view noon sequences retained. All nine automated item checks
+  passed on that rendering source.
+  [Fall inspection](../../../.orchestrate/evidence/RIVERS/WP6/path-strands/README.md)
+  [Handoff](../../../.orchestrate/evidence/RIVERS/WP6-handoff.md)
