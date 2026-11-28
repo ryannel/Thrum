@@ -589,3 +589,13 @@
   passed on that rendering source.
   [Fall inspection](../../../.orchestrate/evidence/RIVERS/WP6/path-strands/README.md)
   [Handoff](../../../.orchestrate/evidence/RIVERS/WP6-handoff.md)
+- 2026-11-28 WP6. Rebased onto the WATERS review repairs. The pass-colour capture
+  reproduced the fixed contours inside the depth-writing pass. Using diffuse
+  aeration through the rounded strands removed that row. Discrete highlights
+  use time since departure, and their edges feather across the strand.
+  The proof driver adds a 960 × 540 realtime take for following those
+  highlights between the full-size inspection views. In the middle-gauge trial,
+  one highlight grew from 16 to 30 screen pixels before reaching the foot.
+  Its measured vertical rate rose from 312 to 504 screen pixels per second.
+  [Pass-colour comparison](../../../.orchestrate/evidence/RIVERS/WP6/cover-diagnostic/middle-front/native-frame-0006.png)
+  [Middle-gauge motion record](../../../.orchestrate/evidence/RIVERS/WP6/continuous-packets/middle-streak/motion-note.md)
